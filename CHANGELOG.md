@@ -7,8 +7,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- Evidence-first weekly learning homepage for Integrated TCM and Western Medicine clinical students
+- 《中医诊断学》 course workspace with chapter scope, learning routes, exam blueprint, material status, and 45-minute session queue
+- Browser-rendered design QA evidence for default, responsive, drawer, and confirmation states
+- Durable project-state, content-architecture, and next-session handoff documentation
+
 ### Changed
 - Raised the project Node.js baseline to 24 across local development, CI, Docker, and contributor-facing documentation
+- Repositioned the repository from a generic landing-page template to the NUR LEARN medical learning product
+- Linked the homepage course navigation to `/courses/tcm-diagnostics`
 
 ## [0.3.1] - 2026-03-29
 

@@ -87,6 +87,19 @@
   --sidebar-ring: oklch(0.708 0 0);
 }
 
+
+/* M4 mobile + touch polish */
+button, [role="button"], a, .interactive {
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* Ensure reasonable tap targets on key controls */
+button:not(.icon-only-large) {
+  min-height: 40px;
+}
+
+
 .dark {
   --background: oklch(0.145 0 0);
   --foreground: oklch(0.985 0 0);
@@ -383,7 +396,6 @@ body {
 .feature-visual {
   align-items: center;
   background:
-    radial-gradient(circle at 20% 20%, rgb(0 0 0 / 22%) 0 8%, transparent 9%),
     linear-gradient(135deg, rgb(0 0 0 / 8%), transparent 50%),
     repeating-linear-gradient(90deg, rgb(0 0 0 / 10%) 0 1px, transparent 1px 18px);
   border: 1px solid currentColor;
@@ -569,6 +581,204 @@ body {
   max-width: 660px;
 }
 
+.account-dock {
+  flex: 0 0 58px;
+  height: 58px;
+  pointer-events: auto;
+  position: relative;
+  width: 58px;
+  z-index: 80;
+}
+
+.account-float-button {
+  align-items: center;
+  background: #000;
+  border: 1px solid #000;
+  border-radius: 999px;
+  box-shadow: 0 18px 42px rgb(0 0 0 / 22%);
+  color: #fff;
+  cursor: pointer;
+  display: flex;
+  height: 58px;
+  justify-content: center;
+  pointer-events: auto;
+  position: absolute;
+  left: 0;
+  top: 0;
+  transition:
+    opacity 180ms ease,
+    transform 220ms ease,
+    visibility 180ms ease;
+  width: 58px;
+  z-index: 2;
+}
+
+.account-float-button:hover {
+  transform: translateY(-3px);
+}
+
+.account-float-button-open {
+  opacity: 0;
+  pointer-events: none;
+  transform: scale(0.92);
+  visibility: hidden;
+}
+
+.account-panel {
+  background: #faf7f2;
+  border: 1px solid #000;
+  border-radius: 999px;
+  box-shadow: 0 24px 70px rgb(0 0 0 / 24%);
+  color: #000;
+  height: 58px;
+  opacity: 0;
+  overflow: hidden;
+  padding: 0;
+  pointer-events: none;
+  position: absolute;
+  left: 0;
+  top: 0;
+  transform-origin: 29px 29px;
+  transition:
+    width 420ms cubic-bezier(0.22, 1, 0.36, 1),
+    height 420ms cubic-bezier(0.22, 1, 0.36, 1),
+    top 420ms cubic-bezier(0.22, 1, 0.36, 1),
+    border-radius 420ms cubic-bezier(0.22, 1, 0.36, 1),
+    opacity 180ms ease,
+    padding 420ms cubic-bezier(0.22, 1, 0.36, 1);
+  width: 58px;
+}
+
+.account-panel-open {
+  border-radius: 28px;
+  height: 410px;
+  opacity: 1;
+  padding: 28px;
+  pointer-events: auto;
+  top: calc(100% + 10px);
+  width: 360px;
+}
+
+.account-panel > * {
+  opacity: 0;
+  transform: translateY(12px);
+  transition:
+    opacity 220ms ease,
+    transform 280ms ease;
+}
+
+.account-panel-open > * {
+  opacity: 1;
+  transform: translateY(0);
+  transition-delay: 130ms;
+}
+
+.account-close-button {
+  align-items: center;
+  background: transparent;
+  border: 1px solid #000;
+  border-radius: 999px;
+  color: #000;
+  cursor: pointer;
+  display: flex;
+  font-size: 24px;
+  height: 34px;
+  justify-content: center;
+  line-height: 1;
+  position: absolute;
+  right: 18px;
+  top: 18px;
+  width: 34px;
+}
+
+.account-avatar-control {
+  align-items: center;
+  cursor: pointer;
+  display: flex;
+  justify-content: center;
+  margin: 24px auto 26px;
+  width: fit-content;
+}
+
+.account-avatar-control input {
+  clip: rect(0 0 0 0);
+  clip-path: inset(50%);
+  height: 1px;
+  overflow: hidden;
+  position: absolute;
+  white-space: nowrap;
+  width: 1px;
+}
+
+.account-avatar {
+  align-items: center;
+  background:
+    linear-gradient(135deg, rgb(255 255 255 / 22%), transparent 46%),
+    #000;
+  border: 1px solid currentColor;
+  border-radius: 999px;
+  color: #fff;
+  display: flex;
+  font-family: var(--font-heading);
+  font-size: 28px;
+  font-weight: 800;
+  height: 44px;
+  justify-content: center;
+  letter-spacing: 0;
+  overflow: hidden;
+  width: 44px;
+}
+
+.account-avatar-large {
+  border-color: #000;
+  font-size: 54px;
+  height: 112px;
+  width: 112px;
+}
+
+.account-avatar img {
+  height: 100%;
+  object-fit: cover;
+  width: 100%;
+}
+
+.account-fields {
+  display: grid;
+  gap: 14px;
+}
+
+.account-input {
+  background: #fffaf2;
+  border: 1px solid #000;
+  border-radius: 16px;
+  color: #000;
+  font-size: 18px;
+  font-weight: 650;
+  height: 58px;
+  outline: none;
+  padding: 0 18px;
+  transition:
+    background 180ms ease,
+    box-shadow 180ms ease,
+    transform 180ms ease;
+}
+
+.account-input::placeholder {
+  color: rgb(0 0 0 / 38%);
+  text-shadow: 0 0 10px rgb(0 0 0 / 36%);
+}
+
+.account-input:focus {
+  background: #fff;
+  box-shadow: 0 0 0 3px rgb(0 0 0 / 10%);
+  transform: translateY(-1px);
+}
+
+.account-input:focus::placeholder {
+  color: transparent;
+  text-shadow: none;
+}
+
 @media (max-width: 900px) {
   .feature-grid {
     grid-template-columns: 1fr;
@@ -645,5 +855,44 @@ body {
 
   .row-content small {
     font-size: 13px;
+  }
+
+  .account-dock {
+    flex-basis: 44px;
+    height: 44px;
+    width: 44px;
+  }
+
+  .account-float-button {
+    height: 44px;
+    width: 44px;
+  }
+
+  .account-float-button .account-avatar {
+    font-size: 22px;
+    height: 34px;
+    width: 34px;
+  }
+
+  .account-panel {
+    height: 44px;
+    transform-origin: 22px 22px;
+    width: 44px;
+  }
+
+  .account-panel-open {
+    height: 360px;
+    padding: 22px;
+    top: calc(100% + 9px);
+    width: min(320px, calc(100vw - 32px));
+  }
+
+  .account-avatar-control {
+    margin-bottom: 22px;
+  }
+
+  .account-avatar-large {
+    height: 96px;
+    width: 96px;
   }
 }

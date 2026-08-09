@@ -1,0 +1,129 @@
+// NUR LEARN 数据层（Prisma）
+// 开发环境使用 SQLite 文件库（零依赖）；生产环境切换 Postgres 只需修改 provider 与连接串。
+// 注意：不使用原生 enum（SQLite 不支持），枚举语义由 TypeScript 类型约束保证可移植性。
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id             String   @id @default(cuid())
+  email          String   @unique
+  passwordHash   String
+  displayName    String
+  // membershipTier: "free" | "pro"（TS 类型约束；付费接入前固定 free）
+  membershipTier String   @default("free")
+  // M3: usage counters for quota (courseBuilds, agentCalls, etc.)
+  usage          Json?     // { courseBuilds?: number, agentCalls?: number }
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  // M2: 学习状态云同步（FSRS、尝试记录、题库、模考）。复用现有 browser contracts 的结构化字段。
+  learnerAttempts                 LearnerAttempt[]
+  learnerFsrsStates               LearnerFsrsState[]
+  qbAttempts                      QbAttempt[]
+  qbFavorites                     QbFavorite[]
+  mockExamSessions                MockExamSession[]
+  // 私人材料准入记录的云同步需单独明确同意（learner-private 边界保持）
+  materialAdmissionSyncConsents   MaterialAdmissionSyncConsent[]
+}
+
+model LearnerAttempt {
+  id                String   @id @default(cuid())
+  userId            String
+  user              User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  courseId          String
+  courseVersionId   String?
+  offeringId        String?
+  knowledgePointId  String
+  surface           String   // "subjective-writing" | "case-reasoning"
+  taskId            String
+  segmentId         String?
+
+  confirmedText     String
+  criterionResults  Json     // 复用 LearnerAttemptCriterionResult[]
+  answerConfidence  String
+  scoringStandard   Json?    // {id, version, authority}
+
+  createdAt         DateTime @default(now())
+  @@index([userId, courseId, knowledgePointId])
+  @@index([userId, createdAt])
+}
+
+model LearnerFsrsState {
+  id            String   @id @default(cuid())
+  userId        String
+  user          User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  criterionId   String   // 对应 memory criterion（知识点+任务维度）
+  state         String   // "new" | "learning" | "review" | "relearning"
+  difficulty    Float
+  stability     Float
+  reps          Int      @default(0)
+  lapses        Int      @default(0)
+  lastReviewAt  DateTime?
+
+  updatedAt     DateTime @updatedAt
+  @@unique([userId, criterionId])
+  @@index([userId])
+}
+
+model QbAttempt {
+  id            String   @id @default(cuid())
+  userId        String
+  user          User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  questionId    String
+  selectedIndex Int
+  isCorrect     Boolean
+  attemptedAt   DateTime @default(now())
+
+  @@index([userId, questionId])
+}
+
+model QbFavorite {
+  id         String   @id @default(cuid())
+  userId     String
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  questionId String
+  createdAt  DateTime @default(now())
+
+  @@unique([userId, questionId])
+}
+
+model MockExamSession {
+  id            String   @id @default(cuid())
+  userId        String
+  user          User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  sessionId     String   @unique
+  courseId      String
+  startedAt     DateTime
+  completedAt   DateTime?
+  answers       Json     // 复用 MockExamPaperItem answers
+  score         Json?    // objective + pending
+
+  createdAt     DateTime @default(now())
+  @@index([userId, courseId])
+}
+
+model MaterialAdmissionSyncConsent {
+  id                String   @id @default(cuid())
+  userId            String
+  user              User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  admissionRecordId String   // 对应 browser 端 versioned record 的 id
+  consentGiven      Boolean  @default(false)
+  consentedAt       DateTime?
+  notes             String?
+
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+  @@unique([userId, admissionRecordId])
+}

@@ -1,0 +1,291 @@
+.agentCard {
+  border: 1px solid rgba(30, 28, 24, 0.22);
+  background: #f4efe4;
+  padding: 22px;
+  display: grid;
+  gap: 16px;
+}
+
+.heading {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  gap: 11px;
+  align-items: center;
+}
+
+.heading > svg {
+  color: #9b392c;
+}
+
+.heading small,
+.omissions > small,
+.historyRelations > small,
+.sources > small,
+.nextStep small {
+  display: block;
+  color: rgba(30, 28, 24, 0.54);
+  font-size: 10px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.heading h3 {
+  margin: 2px 0 0;
+  font-family: var(--font-songti), "Songti SC", serif;
+  font-size: 19px;
+  font-weight: 600;
+}
+
+.heading > span {
+  border: 1px solid rgba(63, 84, 100, 0.28);
+  color: #3f5464;
+  padding: 4px 7px;
+  font-size: 11px;
+}
+
+.boundary,
+.notice,
+.dataNotice {
+  margin: 0;
+  color: rgba(30, 28, 24, 0.68);
+  font-size: 12px;
+  line-height: 1.75;
+}
+
+.waiting,
+.unavailable,
+.runLine,
+.nextStep,
+.clear,
+.policy {
+  display: flex;
+  gap: 10px;
+  align-items: flex-start;
+}
+
+.waiting,
+.unavailable {
+  border-top: 1px solid rgba(30, 28, 24, 0.16);
+  padding-top: 14px;
+}
+
+.waiting p,
+.unavailable p,
+.nextStep p,
+.historyRelations p,
+.sources p,
+.omissions p,
+.result blockquote p {
+  margin: 0;
+  color: rgba(30, 28, 24, 0.72);
+  font-size: 12px;
+  line-height: 1.65;
+}
+
+.unavailable svg {
+  color: #9b392c;
+  flex: 0 0 auto;
+}
+
+.unavailable strong {
+  display: block;
+  margin-bottom: 3px;
+  font-size: 13px;
+}
+
+.requestArea,
+.result,
+.omissions,
+.historyRelations,
+.sources {
+  display: grid;
+  gap: 10px;
+}
+
+.requestArea > p,
+.requestArea > small {
+  margin: 0;
+  color: rgba(30, 28, 24, 0.62);
+  font-size: 11px;
+  line-height: 1.65;
+}
+
+.requestArea > button,
+.rewriteButton {
+  min-height: 42px;
+  border: 1px solid #24211d;
+  border-radius: 0;
+  background: #24211d;
+  color: #f8f3e8;
+  padding: 10px 13px;
+  display: inline-flex;
+  justify-content: center;
+  align-items: center;
+  gap: 8px;
+  font: inherit;
+  font-size: 12px;
+  cursor: pointer;
+}
+
+.requestArea > button:disabled,
+.rewriteButton:disabled {
+  cursor: wait;
+  opacity: 0.68;
+}
+
+.spinner {
+  animation: spin 0.9s linear infinite;
+}
+
+.runLine {
+  align-items: center;
+  color: #3f5464;
+  font-size: 11px;
+}
+
+.runLine strong {
+  margin-left: auto;
+  color: #24211d;
+  font-weight: 600;
+}
+
+.continuation {
+  color: rgba(63, 84, 100, 0.72);
+  font-size: 10px;
+  letter-spacing: 0.06em;
+}
+
+.trace {
+  margin: 0;
+  padding: 0;
+  border-top: 1px solid rgba(30, 28, 24, 0.16);
+  list-style: none;
+}
+
+.trace li {
+  display: grid;
+  grid-template-columns: 28px 1fr;
+  gap: 10px;
+  padding: 11px 0;
+  border-bottom: 1px solid rgba(30, 28, 24, 0.12);
+}
+
+.trace li > span {
+  color: #9b392c;
+  font-family: var(--font-serif), Georgia, serif;
+  font-size: 11px;
+}
+
+.trace strong {
+  display: block;
+  margin-bottom: 3px;
+  font-size: 12px;
+}
+
+.trace p,
+.policy p {
+  margin: 0;
+  color: rgba(30, 28, 24, 0.66);
+  font-size: 11px;
+  line-height: 1.65;
+}
+
+.policy {
+  border: 1px solid rgba(63, 84, 100, 0.24);
+  padding: 11px;
+  background: rgba(255, 252, 244, 0.58);
+}
+
+.policy svg {
+  color: #3f5464;
+  flex: 0 0 auto;
+}
+
+.policy small {
+  display: block;
+  margin-bottom: 3px;
+  color: #3f5464;
+  font-size: 10px;
+  letter-spacing: 0.1em;
+}
+
+.policy[data-status="failed"] {
+  border-color: rgba(155, 57, 44, 0.28);
+}
+
+.omissions article {
+  border-left: 2px solid #9b392c;
+  padding-left: 11px;
+}
+
+.omissions strong {
+  display: block;
+  margin-bottom: 2px;
+  font-size: 13px;
+}
+
+.nextStep {
+  border-top: 1px solid rgba(30, 28, 24, 0.16);
+  border-bottom: 1px solid rgba(30, 28, 24, 0.16);
+  padding: 12px 0;
+}
+
+.nextStep svg,
+.clear svg {
+  color: #9b392c;
+  flex: 0 0 auto;
+}
+
+.historyRelations p,
+.sources p {
+  padding-left: 10px;
+  border-left: 1px solid rgba(63, 84, 100, 0.36);
+}
+
+.result blockquote {
+  margin: 0;
+  border: 1px solid rgba(155, 57, 44, 0.28);
+  padding: 12px;
+  background: rgba(255, 252, 244, 0.72);
+}
+
+.result blockquote b {
+  display: block;
+  margin-bottom: 5px;
+  color: #9b392c;
+  font-size: 11px;
+}
+
+.rewriteButton {
+  background: transparent;
+  color: #24211d;
+}
+
+.notice {
+  border-top: 1px solid rgba(30, 28, 24, 0.16);
+  padding-top: 12px;
+}
+
+.dataNotice {
+  color: rgba(30, 28, 24, 0.52);
+  font-size: 10px;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+@media (max-width: 640px) {
+  .agentCard {
+    padding: 18px;
+  }
+
+  .heading {
+    grid-template-columns: auto 1fr;
+  }
+
+  .heading > span {
+    grid-column: 2;
+    justify-self: start;
+  }
+}

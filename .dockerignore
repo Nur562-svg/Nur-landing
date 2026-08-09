@@ -46,7 +46,6 @@ GEMINI.md
 
 # Docs / research (large, not needed at runtime)
 docs
-scripts
 
 # Docker files themselves (no need to copy into image)
 Dockerfile

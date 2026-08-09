@@ -1,0 +1,358 @@
+.container {
+  --ink: #10100f;
+  --paper: #f7f4ee;
+  --muted: #6c6a66;
+  --line: rgb(16 16 15 / 36%);
+  --soft-line: rgb(16 16 15 / 14%);
+  --red: #bf2118;
+  --blue: #17659a;
+  background: var(--paper);
+  color: var(--ink);
+  min-height: 100dvh;
+  padding: 36px 28px 80px;
+  max-width: 760px;
+  margin: 0 auto;
+}
+
+.header {
+  margin-bottom: 32px;
+}
+
+.backRow {
+  align-items: center;
+  display: flex;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.backLink {
+  color: var(--ink);
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 14px;
+}
+
+.backLink:hover {
+  color: var(--red);
+}
+
+.breadcrumbSep {
+  color: var(--muted);
+  font-size: 14px;
+}
+
+.topMeta {
+  align-items: center;
+  display: flex;
+  gap: 10px;
+}
+
+.kindTag {
+  border: 1px solid var(--ink);
+  font-size: 12px;
+  padding: 3px 10px;
+  white-space: nowrap;
+}
+
+.progressLabel {
+  color: var(--muted);
+  font-size: 14px;
+  margin-left: auto;
+}
+
+.knowledgePointTag {
+  color: var(--blue);
+  font-size: 12px;
+  margin-top: 6px;
+}
+
+.promptSection {
+  margin-bottom: 28px;
+}
+
+.sharedStem {
+  border: 1px solid var(--blue);
+  margin-bottom: 18px;
+  padding: 14px 16px;
+}
+
+.sharedStem strong {
+  color: var(--blue);
+  display: block;
+  font-size: 12px;
+  letter-spacing: 0.08em;
+  margin-bottom: 8px;
+}
+
+.sharedStem p {
+  font-family: var(--font-serif), "Times New Roman", serif;
+  font-size: 16px;
+  line-height: 1.7;
+  margin: 0;
+}
+
+.sharedChoicesHint {
+  border-bottom: 1px solid var(--soft-line);
+  color: var(--muted);
+  font-size: 12px;
+  margin: 0 0 12px;
+  padding-bottom: 10px;
+}
+
+.prompt {
+  font-size: 18px;
+  font-family: var(--font-serif), "Times New Roman", serif;
+  line-height: 1.7;
+  margin: 0 0 20px;
+}
+
+.choices {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.choice {
+  align-items: flex-start;
+  border: 1px solid var(--line);
+  background: transparent;
+  color: var(--ink);
+  cursor: pointer;
+  display: flex;
+  gap: 12px;
+  font-size: 16px;
+  padding: 14px 18px;
+  text-align: left;
+  transition: border-color 0.15s;
+}
+
+.choice:hover {
+  border-color: var(--ink);
+}
+
+.choiceDisabled {
+  cursor: default;
+}
+
+.choiceDisabled:hover {
+  border-color: var(--line);
+}
+
+.choiceLabel {
+  color: var(--muted);
+  font-size: 15px;
+  flex-shrink: 0;
+}
+
+.choiceText {
+  flex: 1;
+}
+
+.choiceCorrect {
+  border-color: var(--red);
+  background: rgb(191 33 24 / 6%);
+}
+
+.choiceSelected {
+  border-color: var(--ink);
+}
+
+.choiceSelectedCorrect {
+  border-color: var(--red);
+}
+
+.choiceSelectedWrong {
+  border-color: var(--red);
+  background: rgb(191 33 24 / 4%);
+}
+
+.resultSection {
+  border-top: 1px solid var(--ink);
+  padding-top: 20px;
+  margin-bottom: 28px;
+}
+
+.resultRow {
+  align-items: center;
+  display: flex;
+  gap: 8px;
+  font-size: 15px;
+  margin-bottom: 8px;
+}
+
+.resultCorrect {
+  color: var(--red);
+  font-weight: 600;
+}
+
+.resultWrong {
+  color: var(--muted);
+}
+
+.answerSource {
+  color: var(--muted);
+  font-size: 13px;
+  border-top: 1px solid var(--soft-line);
+  padding-top: 14px;
+  margin-top: 14px;
+}
+
+.statsRow {
+  align-items: center;
+  display: flex;
+  gap: 16px;
+  font-size: 13px;
+  color: var(--muted);
+  margin-top: 10px;
+}
+
+.statsRow strong {
+  color: var(--ink);
+}
+
+.bottomBar {
+  align-items: center;
+  border-top: 1px solid var(--ink);
+  display: flex;
+  gap: 12px;
+  padding-top: 20px;
+}
+
+.favButton {
+  align-items: center;
+  background: none;
+  border: none;
+  color: var(--muted);
+  cursor: pointer;
+  display: flex;
+  gap: 4px;
+  font-size: 14px;
+  padding: 4px;
+}
+
+.favButtonActive {
+  color: var(--ink);
+}
+
+.navButtons {
+  align-items: center;
+  display: flex;
+  gap: 8px;
+  margin-left: auto;
+}
+
+.navButton {
+  align-items: center;
+  border: 1px solid var(--ink);
+  background: transparent;
+  color: var(--ink);
+  cursor: pointer;
+  display: inline-flex;
+  gap: 4px;
+  font-size: 14px;
+  padding: 7px 18px;
+}
+
+.navButton:hover {
+  background: var(--ink);
+  color: var(--paper);
+}
+
+.navButton:disabled {
+  border-color: var(--line);
+  color: var(--muted);
+  cursor: default;
+}
+
+.navButton:disabled:hover {
+  background: transparent;
+  color: var(--muted);
+}
+
+.navBoundary {
+  border-color: var(--line);
+  color: var(--muted);
+  text-decoration: none;
+}
+
+.navBoundary:hover {
+  background: transparent;
+  border-color: var(--ink);
+  color: var(--ink);
+}
+
+.progressBar {
+  align-items: center;
+  display: flex;
+  flex: 1;
+  gap: 10px;
+  justify-content: flex-end;
+}
+
+.progressTrack {
+  appearance: none;
+  border: 1px solid var(--line);
+  height: 5px;
+  max-width: 120px;
+}
+
+.progressTrack::-webkit-progress-bar {
+  background: var(--paper);
+}
+
+.progressTrack::-webkit-progress-value {
+  background: var(--red);
+}
+
+.progressTrack::-moz-progress-bar {
+  background: var(--red);
+}
+
+.progressText {
+  color: var(--muted);
+  font-size: 13px;
+  white-space: nowrap;
+}
+
+.noChoices {
+  border: 1px solid var(--line);
+  padding: 48px 24px;
+  text-align: center;
+}
+
+.noChoices strong {
+  display: block;
+  font-size: 18px;
+  margin-bottom: 8px;
+}
+
+.noChoices small {
+  color: var(--muted);
+  font-size: 14px;
+}
+
+@media (max-width: 640px) {
+  .container {
+    padding: 24px 16px 60px;
+  }
+
+  .prompt {
+    font-size: 16px;
+  }
+
+  .choice {
+    font-size: 15px;
+    padding: 12px 14px;
+  }
+
+  .bottomBar {
+    flex-wrap: wrap;
+  }
+
+  .navButtons {
+    margin-left: 0;
+    width: 100%;
+    justify-content: space-between;
+  }
+}

@@ -100,6 +100,9 @@ RUN chown node:node .next
 COPY --from=builder --chown=node:node /app/.next/standalone ./
 COPY --from=builder --chown=node:node /app/.next/static ./.next/static
 
+# Prisma schema + migrations（运行时迁移所需，standalone 追踪不会包含 .prisma/schema.prisma）
+COPY --from=builder --chown=node:node /app/prisma ./prisma
+
 # If you want to persist the fetch cache generated during the build so that
 # cached responses are available immediately on startup, uncomment this line:
 # COPY --from=builder --chown=node:node /app/.next/cache ./.next/cache

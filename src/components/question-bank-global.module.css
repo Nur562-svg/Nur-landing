@@ -1,0 +1,573 @@
+/* ── Design tokens (from existing NUR LEARN editorial system) ── */
+.container {
+  --ink: #10100f;
+  --paper: #f7f4ee;
+  --paper-bright: #fbf9f4;
+  --muted: #6c6a66;
+  --line: rgb(16 16 15 / 36%);
+  --soft-line: rgb(16 16 15 / 14%);
+  --red: #bf2118;
+  --blue: #17659a;
+  --radius-card: 12px;
+  --radius-pill: 24px;
+  --radius-tag: 8px;
+
+  background: var(--paper);
+  color: var(--ink);
+  min-height: 100dvh;
+  overflow-x: clip;
+  padding: 0;
+}
+
+.container * {
+  box-sizing: border-box;
+}
+
+.container button {
+  font: inherit;
+}
+
+.container :where(a, button):focus-visible {
+  outline: 2px solid var(--blue);
+  outline-offset: 3px;
+}
+
+/* ── Page inner frame ── */
+.frame {
+  margin: 0 auto;
+  max-width: 960px;
+  padding: 24px 20px 64px;
+}
+
+/* ── 1. Top title bar ── */
+.titleBar {
+  align-items: center;
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 20px;
+}
+
+.titleGroup {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.title {
+  font-family: "Songti SC", "STSong", "Noto Serif CJK SC", serif;
+  font-size: 24px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  line-height: 1.2;
+  margin: 0;
+}
+
+.titleSub {
+  color: var(--muted);
+  font-size: 12px;
+  margin: 0;
+}
+
+.addBtn {
+  align-items: center;
+  background: transparent;
+  border: 1px solid var(--ink);
+  border-radius: var(--radius-tag);
+  color: var(--ink);
+  cursor: pointer;
+  display: flex;
+  font-size: 14px;
+  font-weight: 600;
+  gap: 6px;
+  padding: 8px 16px;
+  transition: background 160ms ease, color 160ms ease;
+}
+
+.addBtn:hover {
+  background: var(--ink);
+  color: var(--paper-bright);
+}
+
+/* ── 2. Search bar ── */
+.searchBar {
+  margin-bottom: 20px;
+}
+
+.searchInput {
+  background: var(--paper-bright);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-pill);
+  color: var(--ink);
+  font-size: 15px;
+  height: 44px;
+  padding: 0 20px 0 48px;
+  width: 100%;
+}
+
+.searchInput::placeholder {
+  color: var(--muted);
+}
+
+.searchInput:focus {
+  border-color: var(--ink);
+  outline: none;
+  box-shadow: 0 0 0 3px rgb(16 16 15 / 8%);
+}
+
+.searchWrap {
+  position: relative;
+}
+
+.searchIcon {
+  left: 18px;
+  pointer-events: none;
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+}
+
+/* ── 3. Main content — two columns ── */
+.mainContent {
+  align-items: stretch;
+  display: grid;
+  gap: 16px;
+  grid-template-columns: minmax(0, 1fr) 240px;
+  margin-bottom: 24px;
+}
+
+/* Left: ad area */
+.adArea {
+  align-items: center;
+  background: var(--paper-bright);
+  border: 1px solid var(--soft-line);
+  border-radius: var(--radius-card);
+  color: var(--muted);
+  display: flex;
+  font-family: "Songti SC", "STSong", serif;
+  font-size: 18px;
+  justify-content: center;
+  min-height: 200px;
+  text-align: center;
+}
+
+/* Right: sidebar */
+.sidebar {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+/* Stats card */
+.statsCard,
+.toolsCard {
+  background: var(--paper-bright);
+  border: 1px solid var(--soft-line);
+  border-radius: var(--radius-card);
+  padding: 16px;
+}
+
+.statsHeader,
+.toolsHeader {
+  align-items: flex-start;
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 14px;
+}
+
+.statsTitle,
+.toolsTitle {
+  font-family: "Songti SC", "STSong", serif;
+  font-size: 16px;
+  font-weight: 600;
+  margin: 0;
+}
+
+.statsHint {
+  color: var(--muted);
+  font-size: 10px;
+  line-height: 1.4;
+  margin: 0;
+  max-width: 120px;
+  text-align: right;
+}
+
+.statsRow {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+}
+
+.statsItem {
+  text-align: center;
+}
+
+.statsValue {
+  font-family: var(--font-serif), Georgia, serif;
+  font-size: 28px;
+  font-weight: 400;
+  line-height: 1;
+}
+
+.statsLabel {
+  color: var(--muted);
+  font-size: 11px;
+  margin-top: 6px;
+}
+
+/* Tools card */
+.toolsGrid {
+  display: grid;
+  gap: 12px;
+  grid-template-columns: repeat(2, 1fr);
+}
+
+.toolsNotice {
+  color: var(--muted);
+  font-size: 11px;
+  margin: 10px 0 0;
+  animation: noticeFade 2.2s ease forwards;
+}
+
+@keyframes noticeFade {
+  0% { opacity: 0; transform: translateY(-4px); }
+  10% { opacity: 1; transform: translateY(0); }
+  80% { opacity: 1; }
+  100% { opacity: 0; }
+}
+
+.toolItem {
+  align-items: center;
+  background: transparent;
+  border: 1px solid var(--soft-line);
+  border-radius: var(--radius-tag);
+  color: var(--ink);
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  font-size: 12px;
+  font-weight: 600;
+  gap: 8px;
+  padding: 14px 8px;
+  transition: background 160ms ease, border-color 160ms ease;
+}
+
+.toolItem:hover {
+  background: rgb(16 16 15 / 4%);
+  border-color: var(--line);
+}
+
+.toolItem svg {
+  color: var(--ink);
+}
+
+/* ── 4. Filter section ── */
+.filterSection {
+  margin-bottom: 0;
+}
+
+/* Primary filter bar */
+.primaryFilter {
+  align-items: center;
+  border-bottom: 1px solid var(--soft-line);
+  display: flex;
+  gap: 4px;
+  overflow-x: auto;
+  padding-bottom: 12px;
+  scrollbar-width: none;
+}
+
+.primaryFilter::-webkit-scrollbar {
+  display: none;
+}
+
+.filterGroup {
+  align-items: center;
+  display: flex;
+  gap: 4px;
+}
+
+.filterDivider {
+  background: var(--soft-line);
+  flex: 0 0 1px;
+  height: 20px;
+  margin: 0 8px;
+}
+
+/* Filter button (shared by left and right groups) */
+.filterBtn {
+  align-items: center;
+  background: transparent;
+  border: 0;
+  border-radius: var(--radius-tag);
+  color: var(--muted);
+  cursor: pointer;
+  display: flex;
+  font-size: 13px;
+  font-weight: 500;
+  gap: 6px;
+  padding: 8px 12px;
+  position: relative;
+  transition: background 180ms ease, color 180ms ease, transform 120ms ease;
+  white-space: nowrap;
+}
+
+.filterBtn:hover {
+  background: rgb(16 16 15 / 4%);
+  color: var(--ink);
+}
+
+.filterBtn:active {
+  transform: scale(0.96);
+}
+
+/* Active state — animated underline + bg highlight + text emphasis */
+.filterActive {
+  background: rgb(16 16 15 / 7%);
+  color: var(--ink);
+  font-weight: 700;
+}
+
+.filterActive::after {
+  background: var(--red);
+  bottom: -12px;
+  content: "";
+  height: 2px;
+  left: 12px;
+  position: absolute;
+  transform: scaleX(1);
+  transform-origin: left;
+  transition: transform 220ms cubic-bezier(0.22, 1, 0.36, 1);
+  width: calc(100% - 24px);
+}
+
+.filterBtn:not(.filterActive)::after {
+  background: var(--red);
+  bottom: -12px;
+  content: "";
+  height: 2px;
+  left: 12px;
+  position: absolute;
+  transform: scaleX(0);
+  transform-origin: left;
+  transition: transform 220ms cubic-bezier(0.22, 1, 0.36, 1);
+  width: calc(100% - 24px);
+}
+
+.filterBtn:hover::after {
+  transform: scaleX(0.4);
+}
+
+.filterActive svg {
+  color: var(--red);
+}
+
+/* Secondary filter bar */
+.secondaryFilter {
+  display: flex;
+  gap: 4px;
+  overflow-x: auto;
+  padding: 12px 0;
+  scrollbar-width: none;
+}
+
+.secondaryFilter::-webkit-scrollbar {
+  display: none;
+}
+
+.secondaryBtn {
+  align-items: center;
+  background: transparent;
+  border: 1px solid var(--soft-line);
+  border-radius: var(--radius-tag);
+  color: var(--muted);
+  cursor: pointer;
+  font-size: 13px;
+  font-weight: 500;
+  padding: 7px 16px;
+  transition: background 180ms ease, border-color 180ms ease, color 180ms ease, transform 120ms ease;
+  white-space: nowrap;
+}
+
+.secondaryBtn:hover {
+  border-color: var(--line);
+  color: var(--ink);
+}
+
+.secondaryBtn:active {
+  transform: scale(0.96);
+}
+
+.secondaryActive {
+  background: var(--ink);
+  border-color: var(--ink);
+  color: var(--paper-bright);
+  font-weight: 700;
+}
+
+/* ── 5. Course list ── */
+.courseList {
+  border-top: 1px solid var(--soft-line);
+  display: flex;
+  flex-direction: column;
+}
+
+.emptyState {
+  align-items: center;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-height: 80px;
+  justify-content: center;
+  padding: 24px 16px;
+}
+
+.emptyState strong {
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.emptyState small {
+  color: var(--muted);
+  font-size: 12px;
+}
+
+/* Filter notice */
+.filterNotice {
+  color: var(--muted);
+  font-size: 11px;
+  margin: 0;
+  padding: 4px 0 0;
+}
+
+.courseItem {
+  align-items: center;
+  border-bottom: 1px solid var(--soft-line);
+  color: var(--ink);
+  display: flex;
+  font-family: "Songti SC", "STSong", serif;
+  font-size: 15px;
+  font-weight: 600;
+  gap: 12px;
+  justify-content: space-between;
+  min-height: 56px;
+  padding: 12px 4px;
+  text-decoration: none;
+  transition: padding-left 140ms ease, color 140ms ease;
+}
+
+.courseItem:hover {
+  color: var(--red);
+  padding-left: 12px;
+}
+
+.courseArrow {
+  color: var(--muted);
+  flex: 0 0 auto;
+  transition: transform 140ms ease;
+}
+
+.courseItem:hover .courseArrow {
+  color: var(--red);
+  transform: translateX(4px);
+}
+
+.courseMeta {
+  color: var(--muted);
+  font-family: var(--font-sans);
+  font-size: 11px;
+  font-weight: 400;
+}
+
+/* ── Responsive ── */
+@media (max-width: 700px) {
+  .frame {
+    padding: 16px 14px 48px;
+  }
+
+  .title {
+    font-size: 20px;
+  }
+
+  .titleSub {
+    font-size: 11px;
+  }
+
+  .addBtn {
+    font-size: 13px;
+    padding: 7px 12px;
+  }
+
+  .mainContent {
+    grid-template-columns: 1fr;
+  }
+
+  .adArea {
+    min-height: 140px;
+    font-size: 16px;
+  }
+
+  .sidebar {
+    flex-direction: row;
+  }
+
+  .statsCard,
+  .toolsCard {
+    flex: 1;
+  }
+
+  .statsHint {
+    display: none;
+  }
+
+  .toolsGrid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .primaryFilter {
+    padding-bottom: 14px;
+  }
+
+  .filterBtn {
+    font-size: 12px;
+    padding: 7px 10px;
+  }
+
+  .secondaryBtn {
+    font-size: 12px;
+    padding: 6px 12px;
+  }
+
+  .courseItem {
+    font-size: 14px;
+    min-height: 50px;
+  }
+}
+
+@media (max-width: 480px) {
+  .sidebar {
+    flex-direction: column;
+  }
+
+  .toolsGrid {
+    grid-template-columns: repeat(4, 1fr);
+  }
+
+  .toolItem {
+    font-size: 10px;
+    padding: 10px 4px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .filterBtn,
+  .filterBtn::after,
+  .secondaryBtn,
+  .courseItem,
+  .toolItem {
+    transition: none;
+  }
+
+  .filterBtn:active,
+  .secondaryBtn:active {
+    transform: none;
+  }
+}

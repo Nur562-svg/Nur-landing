@@ -1,0 +1,1431 @@
+.appShell {
+  --ink: #10100f;
+  --paper: #f7f4ee;
+  --paper-bright: #fbf9f4;
+  --muted: #6c6a66;
+  --line: rgb(16 16 15 / 36%);
+  --soft-line: rgb(16 16 15 / 14%);
+  --red: #bf2118;
+  --blue: #17659a;
+  background: var(--paper);
+  color: var(--ink);
+  min-height: 100dvh;
+  overflow-x: clip;
+}
+
+.appShell button,
+.appShell textarea {
+  font: inherit;
+}
+
+.appShell :where(a, button, textarea):focus-visible {
+  outline: 2px solid var(--blue);
+  outline-offset: 3px;
+}
+
+.header {
+  align-items: center;
+  background: rgb(247 244 238 / 96%);
+  border-bottom: 1px solid var(--ink);
+  display: grid;
+  grid-template-columns: minmax(210px, 1fr) auto minmax(210px, 1fr);
+  height: 81px;
+  padding: 0 28px;
+  position: sticky;
+  top: 0;
+  z-index: 60;
+}
+
+.brand {
+  color: var(--ink);
+  font-family: var(--font-serif), "Times New Roman", serif;
+  font-size: 26px;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  line-height: 1;
+  width: fit-content;
+}
+
+.navigation {
+  align-items: stretch;
+  display: flex;
+  gap: clamp(34px, 5vw, 70px);
+  height: 100%;
+}
+
+.navigation a {
+  align-items: center;
+  color: var(--ink);
+  display: flex;
+  font-size: 17px;
+  font-weight: 650;
+  padding: 3px 0 0;
+  position: relative;
+}
+
+.navigation a::after {
+  background: var(--ink);
+  bottom: 14px;
+  content: "";
+  height: 2px;
+  left: 50%;
+  position: absolute;
+  transform: scaleX(0) translateX(-50%);
+  transform-origin: left;
+  transition: transform 180ms ease;
+  width: 38px;
+}
+
+.navigation a:hover::after,
+.navigation .navActive::after {
+  transform: scaleX(1) translateX(-50%);
+}
+
+.accountArea {
+  justify-self: end;
+  position: relative;
+}
+
+.accountButton {
+  align-items: center;
+  background: transparent;
+  border: 0;
+  color: var(--ink);
+  cursor: pointer;
+  display: flex;
+  gap: 14px;
+  padding: 0;
+}
+
+.avatar {
+  align-items: center;
+  background: #080808;
+  border: 1px solid #080808;
+  border-radius: 50%;
+  box-shadow: inset 0 0 0 5px #080808, inset 0 0 0 6px rgb(255 255 255 / 80%);
+  color: #fff;
+  display: flex;
+  font-family: var(--font-serif), Georgia, serif;
+  font-size: 27px;
+  height: 56px;
+  justify-content: center;
+  width: 56px;
+}
+
+.accountButton > span:nth-child(2) {
+  font-size: 15px;
+  font-weight: 560;
+  white-space: nowrap;
+}
+
+.accountPanel {
+  background: var(--paper-bright);
+  border: 1px solid var(--ink);
+  box-shadow: 8px 8px 0 rgb(16 16 15 / 10%);
+  display: grid;
+  gap: 18px;
+  padding: 20px;
+  position: absolute;
+  right: 0;
+  top: 67px;
+  width: 270px;
+  z-index: 80;
+}
+
+.accountPanel > div {
+  display: grid;
+  gap: 5px;
+}
+
+.accountPanel > div span {
+  color: var(--muted);
+  font-size: 10px;
+}
+
+.accountPanel > div strong {
+  font-family: "Songti SC", "STSong", serif;
+  font-size: 23px;
+}
+
+.accountPanel > div p {
+  color: var(--muted);
+  font-size: 11px;
+  margin: 0;
+}
+
+.accountPanel > a {
+  align-items: center;
+  border-top: 1px solid var(--line);
+  color: var(--ink);
+  display: flex;
+  font-size: 11px;
+  justify-content: space-between;
+  padding-top: 14px;
+}
+
+.workspace {
+  margin: 0 auto;
+  max-width: 1600px;
+  min-height: calc(100dvh - 81px);
+  padding: 30px 42px 72px;
+  position: relative;
+}
+
+.ghostWordmark {
+  color: rgb(16 16 15 / 2.8%);
+  font-family: var(--font-sans);
+  font-size: clamp(120px, 15vw, 218px);
+  font-weight: 760;
+  left: 39%;
+  letter-spacing: -0.08em;
+  line-height: 0.7;
+  pointer-events: none;
+  position: absolute;
+  top: 108px;
+  user-select: none;
+  white-space: nowrap;
+}
+
+.breadcrumbs,
+.hero,
+.labGrid {
+  position: relative;
+  z-index: 1;
+}
+
+.breadcrumbs {
+  align-items: center;
+  color: var(--muted);
+  display: flex;
+  flex-wrap: wrap;
+  font-size: 12px;
+  gap: 10px;
+  margin-bottom: 22px;
+}
+
+.breadcrumbs a {
+  align-items: center;
+  color: var(--ink);
+  display: flex;
+  gap: 6px;
+}
+
+.breadcrumbs strong {
+  color: var(--ink);
+  font-weight: 650;
+}
+
+.learningPath {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  margin-bottom: 18px;
+}
+
+.learningPath > :is(a, span) {
+  align-items: center;
+  border: 1px solid var(--line);
+  color: var(--ink);
+  display: grid;
+  gap: 3px 9px;
+  grid-template-columns: 22px 1fr;
+  min-height: 56px;
+  padding: 9px 12px;
+}
+
+.learningPath > :is(a, span) + :is(a, span) {
+  border-left: 0;
+}
+
+.learningPath > a:hover {
+  background: rgb(16 16 15 / 5%);
+}
+
+.learningPath > :is(a, span) > span {
+  color: var(--red);
+  font-family: var(--font-serif), Georgia, serif;
+  font-size: 17px;
+  grid-row: span 2;
+}
+
+.learningPath strong {
+  font-family: "Songti SC", "STSong", serif;
+  font-size: 13px;
+}
+
+.learningPath small {
+  color: var(--muted);
+  font-size: 9px;
+}
+
+.learningPathCurrent {
+  background: var(--ink);
+  color: var(--paper-bright) !important;
+}
+
+.learningPathCurrent small {
+  color: rgb(255 255 255 / 60%);
+}
+
+.hero {
+  border: 1px solid var(--ink);
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 392px;
+  min-height: 270px;
+}
+
+.heroCopy {
+  padding: 34px 42px 32px;
+}
+
+.eyebrow {
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  margin: 0 0 16px;
+}
+
+.heroCopy h1 {
+  font-family: "Songti SC", "STSong", "Noto Serif CJK SC", serif;
+  font-size: clamp(44px, 4.6vw, 68px);
+  font-weight: 700;
+  letter-spacing: -0.075em;
+  line-height: 1.06;
+  margin: 0;
+}
+
+.heroCopy h1 span {
+  color: var(--red);
+  font-family: var(--font-serif), Georgia, serif;
+  font-weight: 400;
+}
+
+.heroCopy > p:not(.eyebrow) {
+  font-family: "Songti SC", "STSong", serif;
+  font-size: 16px;
+  line-height: 1.75;
+  margin: 21px 0 23px;
+  max-width: 760px;
+}
+
+.heroMeta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.heroMeta span {
+  border: 1px solid var(--line);
+  font-size: 10px;
+  letter-spacing: 0.05em;
+  padding: 6px 9px;
+}
+
+.heroProgress {
+  border-left: 1px solid var(--ink);
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  padding: 30px 32px;
+}
+
+.heroProgress > div:first-child {
+  align-items: flex-end;
+  display: flex;
+  justify-content: space-between;
+}
+
+.heroProgress > div:first-child > span {
+  color: var(--muted);
+  font-size: 11px;
+}
+
+.heroProgress strong {
+  font-family: var(--font-serif), Georgia, serif;
+  font-size: 51px;
+  line-height: 1;
+}
+
+.heroProgress strong small {
+  color: var(--red);
+  font-size: 17px;
+}
+
+.heroProgress progress {
+  accent-color: var(--red);
+  height: 5px;
+  margin: 19px 0 10px;
+  width: 100%;
+}
+
+.heroProgress > p {
+  color: var(--muted);
+  font-size: 11px;
+  margin: 0 0 20px;
+}
+
+.heroProgress > p b {
+  color: var(--ink);
+}
+
+.heroNotice {
+  align-items: flex-start;
+  border-top: 1px solid var(--soft-line);
+  color: var(--muted);
+  display: flex;
+  font-size: 11px;
+  gap: 9px;
+  line-height: 1.65;
+  padding-top: 16px;
+}
+
+.heroNotice svg {
+  color: var(--red);
+  flex: 0 0 auto;
+}
+
+.labGrid {
+  border: 1px solid var(--ink);
+  border-top: 0;
+  display: grid;
+  grid-template-columns: 258px minmax(0, 1fr) 326px;
+}
+
+.stageRail,
+.diagnosticRail {
+  min-width: 0;
+}
+
+.stageRail {
+  border-right: 1px solid var(--ink);
+}
+
+.railHeading {
+  align-items: center;
+  border-bottom: 1px solid var(--ink);
+  display: flex;
+  gap: 14px;
+  min-height: 80px;
+  padding: 16px 18px;
+}
+
+.railHeading > span {
+  color: var(--red);
+  font-family: var(--font-serif), Georgia, serif;
+  font-size: 31px;
+}
+
+.railHeading small {
+  color: var(--muted);
+  font-size: 8px;
+  letter-spacing: 0.12em;
+}
+
+.railHeading h2 {
+  font-family: "Songti SC", "STSong", serif;
+  font-size: 19px;
+  margin: 3px 0 0;
+}
+
+.stageList {
+  display: grid;
+}
+
+.stageList button {
+  align-items: center;
+  background: transparent;
+  border: 0;
+  border-bottom: 1px solid var(--soft-line);
+  color: var(--ink);
+  cursor: pointer;
+  display: grid;
+  gap: 11px;
+  grid-template-columns: 27px minmax(0, 1fr);
+  min-height: 92px;
+  padding: 14px 16px;
+  position: relative;
+  text-align: left;
+}
+
+.stageList button > span {
+  color: var(--muted);
+  font-family: var(--font-serif), Georgia, serif;
+  font-size: 16px;
+}
+
+.stageList button div {
+  display: grid;
+  gap: 3px;
+}
+
+.stageList button small {
+  color: var(--muted);
+  font-size: 8px;
+  letter-spacing: 0.08em;
+}
+
+.stageList button strong {
+  font-family: "Songti SC", "STSong", serif;
+  font-size: 16px;
+}
+
+.stageList button b {
+  bottom: 8px;
+  color: var(--muted);
+  font-size: 8px;
+  font-weight: 560;
+  position: absolute;
+  right: 10px;
+}
+
+.stageList button:hover,
+.stageList .stageActive {
+  background: var(--ink);
+  color: var(--paper-bright);
+}
+
+.stageList .stageActive > span,
+.stageList .stageActive small,
+.stageList .stageActive b {
+  color: rgb(255 255 255 / 62%);
+}
+
+.evidenceSummary {
+  border-top: 1px solid var(--ink);
+  margin-top: 20px;
+  padding: 18px;
+}
+
+.evidenceSummary > div,
+.cardHeading {
+  align-items: center;
+  display: flex;
+  gap: 8px;
+}
+
+.evidenceSummary h3,
+.cardHeading h2 {
+  font-family: "Songti SC", "STSong", serif;
+  font-size: 16px;
+  margin: 0;
+}
+
+.evidenceSummary > strong {
+  display: block;
+  font-family: var(--font-serif), Georgia, serif;
+  font-size: 36px;
+  margin-top: 14px;
+}
+
+.evidenceSummary strong small {
+  color: var(--muted);
+  font-size: 13px;
+}
+
+.evidenceSummary p {
+  color: var(--muted);
+  font-size: 10px;
+  line-height: 1.65;
+  margin: 8px 0 0;
+}
+
+.reasoningDesk {
+  min-width: 0;
+}
+
+.caseHeader {
+  align-items: center;
+  border-bottom: 1px solid var(--ink);
+  display: flex;
+  justify-content: space-between;
+  min-height: 56px;
+  padding: 12px 24px;
+}
+
+.caseHeader > div {
+  display: flex;
+  gap: 7px;
+}
+
+.caseHeader span {
+  border: 1px solid var(--line);
+  font-size: 9px;
+  padding: 5px 7px;
+}
+
+.caseHeader span:first-child {
+  background: var(--ink);
+  border-color: var(--ink);
+  color: #fff;
+}
+
+.caseHeader small {
+  color: var(--muted);
+  font-size: 9px;
+}
+
+.caseCard {
+  border-bottom: 1px solid var(--ink);
+  padding: 28px 30px 25px;
+}
+
+.caseCard h2 {
+  font-family: "Songti SC", "STSong", serif;
+  font-size: 27px;
+  margin: 0 0 14px;
+}
+
+.caseCard > p {
+  font-family: "Songti SC", "STSong", serif;
+  font-size: 16px;
+  line-height: 1.9;
+  margin: 0;
+}
+
+.caseCard > div {
+  align-items: flex-start;
+  border-top: 1px solid var(--soft-line);
+  color: var(--muted);
+  display: flex;
+  font-size: 10px;
+  gap: 8px;
+  line-height: 1.65;
+  margin-top: 18px;
+  padding-top: 13px;
+}
+
+.caseCard > div svg {
+  color: var(--blue);
+  flex: 0 0 auto;
+}
+
+.reasoningSteps {
+  border-bottom: 1px solid var(--ink);
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+
+.reasoningSteps span {
+  border-right: 1px solid var(--soft-line);
+  color: var(--muted);
+  font-size: 9px;
+  padding: 12px 10px;
+  text-align: center;
+}
+
+.reasoningSteps span:last-child {
+  border-right: 0;
+}
+
+.reasoningSteps span[data-active="true"] {
+  background: rgb(191 33 24 / 8%);
+  color: var(--red);
+  font-weight: 700;
+}
+
+.reasoningSteps span[data-complete="true"] {
+  background: var(--ink);
+  color: #fff;
+}
+
+.activeStage {
+  padding: 28px 30px 32px;
+}
+
+.sectionHeading {
+  align-items: flex-start;
+  display: flex;
+  justify-content: space-between;
+}
+
+.sectionHeading > div {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.sectionHeading > div > span {
+  color: var(--red);
+  flex: 0 0 100%;
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+}
+
+.sectionHeading h2 {
+  font-family: "Songti SC", "STSong", serif;
+  font-size: 24px;
+  margin: 0;
+}
+
+.sectionHeading > b,
+.sectionHeading > span {
+  color: var(--muted);
+  font-size: 9px;
+  font-weight: 560;
+}
+
+.evidenceGrid {
+  display: grid;
+  gap: 8px;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  margin: 22px 0;
+}
+
+.evidenceGrid button {
+  align-items: flex-start;
+  background: var(--paper-bright);
+  border: 1px solid var(--line);
+  color: var(--ink);
+  cursor: pointer;
+  display: grid;
+  gap: 10px;
+  grid-template-columns: 18px minmax(0, 1fr);
+  min-height: 92px;
+  padding: 13px;
+  text-align: left;
+}
+
+.evidenceGrid button > span,
+.rubricCheck {
+  align-items: center;
+  border: 1px solid var(--line);
+  display: flex;
+  height: 17px;
+  justify-content: center;
+  margin-top: 1px;
+  width: 17px;
+}
+
+.evidenceGrid button div {
+  display: grid;
+  gap: 4px;
+}
+
+.evidenceGrid button small {
+  color: var(--muted);
+  font-size: 8px;
+}
+
+.evidenceGrid button small[data-role="key"] {
+  color: var(--red);
+}
+
+.evidenceGrid button small[data-role="missing"] {
+  color: var(--blue);
+}
+
+.evidenceGrid button strong {
+  font-family: "Songti SC", "STSong", serif;
+  font-size: 15px;
+}
+
+.evidenceGrid button p {
+  color: var(--muted);
+  font-size: 9px;
+  line-height: 1.5;
+  margin: 0;
+}
+
+.evidenceGrid .evidenceSelected {
+  background: var(--ink);
+  border-color: var(--ink);
+  color: #fff;
+}
+
+.evidenceGrid .evidenceSelected > span {
+  border-color: rgb(255 255 255 / 48%);
+}
+
+.evidenceGrid .evidenceSelected small,
+.evidenceGrid .evidenceSelected p {
+  color: rgb(255 255 255 / 62%);
+}
+
+.stagePrompt {
+  align-items: flex-start;
+  background: rgb(23 101 154 / 6%);
+  border-left: 3px solid var(--blue);
+  display: flex;
+  gap: 11px;
+  margin: 21px 0;
+  padding: 16px 17px;
+}
+
+.stagePrompt svg {
+  color: var(--blue);
+  flex: 0 0 auto;
+}
+
+.stagePrompt p {
+  font-family: "Songti SC", "STSong", serif;
+  font-size: 15px;
+  line-height: 1.7;
+  margin: 0;
+}
+
+.draftArea,
+.repairCard {
+  display: grid;
+}
+
+.draftArea label,
+.repairCard label {
+  font-size: 10px;
+  font-weight: 700;
+  margin-bottom: 8px;
+}
+
+.draftArea textarea,
+.repairCard textarea {
+  background: var(--paper-bright);
+  border: 1px solid var(--ink);
+  color: var(--ink);
+  line-height: 1.8;
+  min-height: 170px;
+  padding: 15px;
+  resize: vertical;
+  width: 100%;
+}
+
+.draftArea > span,
+.repairCard > small {
+  color: var(--muted);
+  font-size: 9px;
+  justify-self: end;
+  margin-top: 7px;
+}
+
+.frameworkSection,
+.rubricSection {
+  border-top: 1px solid var(--ink);
+  margin-top: 28px;
+  padding-top: 24px;
+}
+
+.frameworkSection > button {
+  align-items: center;
+  background: var(--ink);
+  border: 1px solid var(--ink);
+  color: #fff;
+  cursor: pointer;
+  display: flex;
+  justify-content: space-between;
+  margin-top: 15px;
+  padding: 15px 17px;
+  width: 100%;
+}
+
+.frameworkSection > button:disabled {
+  background: transparent;
+  color: var(--muted);
+  cursor: not-allowed;
+}
+
+.frameworkReveal {
+  background: var(--paper-bright);
+  border: 1px solid var(--line);
+  margin-top: 15px;
+  padding: 18px;
+}
+
+.frameworkReveal ol {
+  display: grid;
+  gap: 13px;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.frameworkReveal li {
+  display: grid;
+  gap: 10px;
+  grid-template-columns: 26px minmax(0, 1fr);
+}
+
+.frameworkReveal li > span {
+  color: var(--red);
+  font-family: var(--font-serif), Georgia, serif;
+  font-size: 15px;
+}
+
+.frameworkReveal li p {
+  font-family: "Songti SC", "STSong", serif;
+  font-size: 13px;
+  line-height: 1.75;
+  margin: 0;
+}
+
+.frameworkReveal > p {
+  align-items: flex-start;
+  border-top: 1px solid var(--soft-line);
+  color: var(--muted);
+  display: flex;
+  font-size: 9px;
+  gap: 8px;
+  line-height: 1.6;
+  margin: 17px 0 0;
+  padding-top: 13px;
+}
+
+.rubricHeading {
+  align-items: center;
+  display: flex;
+  justify-content: space-between;
+}
+
+.rubricHeading > div {
+  align-items: center;
+  display: flex;
+  gap: 8px;
+}
+
+.rubricHeading h2 {
+  font-family: "Songti SC", "STSong", serif;
+  font-size: 20px;
+  margin: 0;
+}
+
+.rubricHeading > strong {
+  font-family: var(--font-serif), Georgia, serif;
+  font-size: 29px;
+}
+
+.rubricHeading strong small {
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.rubricSection > p {
+  color: var(--muted);
+  font-size: 9px;
+  line-height: 1.6;
+  margin: 9px 0 14px;
+}
+
+.rubricList {
+  display: grid;
+  gap: 7px;
+}
+
+.rubricList button {
+  align-items: center;
+  background: transparent;
+  border: 1px solid var(--line);
+  color: var(--ink);
+  cursor: pointer;
+  display: grid;
+  gap: 10px;
+  grid-template-columns: 18px 72px minmax(0, 1fr) 28px;
+  min-height: 72px;
+  padding: 11px;
+  text-align: left;
+}
+
+.rubricList button:disabled {
+  cursor: not-allowed;
+  opacity: 0.48;
+}
+
+.rubricPerspective {
+  border: 1px solid var(--line);
+  font-size: 8px;
+  padding: 5px 4px;
+  text-align: center;
+}
+
+.rubricPerspective[data-perspective="modern-medicine"] {
+  border-color: var(--blue);
+  color: var(--blue);
+}
+
+.rubricPerspective[data-perspective="boundary"] {
+  border-color: var(--red);
+  color: var(--red);
+}
+
+.rubricCopy {
+  display: grid;
+  gap: 3px;
+}
+
+.rubricCopy strong {
+  font-family: "Songti SC", "STSong", serif;
+  font-size: 13px;
+}
+
+.rubricCopy small {
+  color: var(--muted);
+  font-size: 9px;
+  line-height: 1.5;
+}
+
+.rubricList button > b {
+  font-family: var(--font-serif), Georgia, serif;
+  font-size: 15px;
+  justify-self: end;
+}
+
+.rubricList .rubricSelected {
+  background: var(--ink);
+  border-color: var(--ink);
+  color: #fff;
+}
+
+.confirmationSection {
+  align-items: center;
+  background: rgb(102 121 139 / 7%);
+  border-top: 1px solid var(--ink);
+  display: grid;
+  gap: 20px;
+  grid-template-columns: minmax(0, 1fr) auto;
+  margin-top: 24px;
+  padding-top: 22px;
+}
+
+.confirmationSection > div {
+  align-items: flex-start;
+  display: flex;
+  gap: 10px;
+}
+
+.confirmationSection h2 {
+  font-family: "Songti SC", "STSong", serif;
+  font-size: 17px;
+  margin: 0;
+}
+
+.confirmationSection p {
+  color: var(--muted);
+  font-size: 9px;
+  line-height: 1.6;
+  margin: 6px 0 0;
+}
+
+.confirmationSection > button {
+  align-items: center;
+  background: var(--ink);
+  border: 1px solid var(--ink);
+  color: #fff;
+  cursor: pointer;
+  display: flex;
+  font-size: 10px;
+  font-weight: 650;
+  gap: 10px;
+  justify-content: center;
+  min-height: 42px;
+  padding: 0 14px;
+  white-space: nowrap;
+}
+
+.confirmationSection > button:disabled {
+  background: transparent;
+  color: var(--muted);
+  cursor: not-allowed;
+}
+
+.rubricSelected .rubricCheck {
+  border-color: rgb(255 255 255 / 48%);
+}
+
+.rubricSelected .rubricCopy small,
+.rubricSelected .rubricPerspective {
+  color: rgb(255 255 255 / 68%);
+}
+
+.rubricSelected .rubricPerspective {
+  border-color: rgb(255 255 255 / 38%);
+}
+
+.deskFooter {
+  align-items: stretch;
+  border-top: 1px solid var(--ink);
+  display: flex;
+  justify-content: space-between;
+}
+
+.deskFooter a,
+.deskFooter button {
+  align-items: center;
+  background: transparent;
+  border: 0;
+  color: var(--ink);
+  cursor: pointer;
+  display: flex;
+  font-size: 11px;
+  gap: 8px;
+  padding: 17px 22px;
+}
+
+.deskFooter > :last-child {
+  background: var(--ink);
+  color: #fff;
+}
+
+.diagnosticRail {
+  border-left: 1px solid var(--ink);
+}
+
+.diagnosticRail > section {
+  border-bottom: 1px solid var(--ink);
+  padding: 20px;
+}
+
+.cardHeading {
+  margin-bottom: 14px;
+}
+
+.cardHeading > span {
+  color: var(--muted);
+  font-family: var(--font-serif), Georgia, serif;
+  margin-left: auto;
+}
+
+.diagnosticRail dl {
+  display: grid;
+  gap: 0;
+  margin: 0;
+}
+
+.diagnosticRail dl > div {
+  align-items: center;
+  border-top: 1px solid var(--soft-line);
+  display: flex;
+  font-size: 10px;
+  justify-content: space-between;
+  padding: 10px 0;
+}
+
+.diagnosticRail dt {
+  color: var(--muted);
+}
+
+.diagnosticRail dd {
+  font-weight: 650;
+  margin: 0;
+}
+
+.diagnosticRail > section > p,
+.repairCard > p {
+  color: var(--muted);
+  font-size: 9px;
+  line-height: 1.65;
+  margin: 12px 0 0;
+}
+
+.warning,
+.pending {
+  color: var(--red);
+}
+
+.resolved {
+  color: var(--blue);
+}
+
+.repairCard > span {
+  border-left: 3px solid var(--red);
+  font-family: "Songti SC", "STSong", serif;
+  font-size: 14px;
+  font-weight: 700;
+  margin-top: 2px;
+  padding: 8px 10px;
+}
+
+.repairCard label {
+  margin-top: 16px;
+}
+
+.repairCard textarea {
+  min-height: 128px;
+}
+
+.noRepair {
+  align-items: flex-start;
+  background: rgb(23 101 154 / 6%);
+  color: var(--blue);
+  display: flex;
+  gap: 9px;
+  padding: 13px;
+}
+
+.noRepair p {
+  font-size: 10px;
+  line-height: 1.6;
+  margin: 0;
+}
+
+.sourceList {
+  display: grid;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.sourceList li {
+  align-items: flex-start;
+  border-top: 1px solid var(--soft-line);
+  display: flex;
+  gap: 9px;
+  justify-content: space-between;
+  padding: 11px 0;
+}
+
+.sourceList li > div {
+  display: grid;
+  gap: 3px;
+}
+
+.sourceList li span {
+  color: var(--muted);
+  font-size: 8px;
+}
+
+.sourceList li strong {
+  font-family: "Songti SC", "STSong", serif;
+  font-size: 11px;
+  line-height: 1.4;
+}
+
+.sourceList li b {
+  color: var(--muted);
+  flex: 0 0 auto;
+  font-size: 8px;
+}
+
+@media (max-width: 1260px) {
+  .header {
+    grid-template-columns: minmax(180px, 1fr) auto minmax(180px, 1fr);
+  }
+
+  .navigation {
+    gap: 31px;
+  }
+
+  .labGrid {
+    grid-template-columns: 230px minmax(0, 1fr);
+  }
+
+  .diagnosticRail {
+    border-left: 0;
+    border-top: 1px solid var(--ink);
+    display: grid;
+    grid-column: 1 / -1;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+
+  .diagnosticRail > section {
+    border-bottom: 0;
+    border-right: 1px solid var(--ink);
+  }
+
+  .diagnosticRail > section:last-child {
+    border-right: 0;
+  }
+
+  .diagnosticRail > div {
+    border-top: 1px solid var(--ink);
+    grid-column: 1 / -1;
+  }
+}
+
+@media (max-width: 980px) {
+  .header {
+    grid-template-columns: 1fr auto;
+  }
+
+  .navigation {
+    display: none;
+  }
+
+  .workspace {
+    padding: 26px 24px 60px;
+  }
+
+  .hero {
+    grid-template-columns: 1fr;
+  }
+
+  .heroProgress {
+    border-left: 0;
+    border-top: 1px solid var(--ink);
+  }
+
+  .labGrid {
+    grid-template-columns: 1fr;
+  }
+
+  .stageRail {
+    border-right: 0;
+  }
+
+  .stageList {
+    grid-template-columns: repeat(4, minmax(160px, 1fr));
+    overflow-x: auto;
+  }
+
+  .stageList button {
+    border-right: 1px solid var(--soft-line);
+  }
+
+  .evidenceSummary {
+    display: none;
+  }
+
+  .reasoningDesk {
+    border-top: 1px solid var(--ink);
+  }
+
+  .diagnosticRail {
+    grid-column: auto;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .diagnosticRail > section:nth-child(2) {
+    border-right: 0;
+  }
+
+  .diagnosticRail > section:nth-child(-n + 2) {
+    border-bottom: 1px solid var(--ink);
+  }
+}
+
+@media (max-width: 760px) {
+  .header {
+    height: 69px;
+    padding: 0 16px;
+  }
+
+  .brand {
+    font-size: 20px;
+  }
+
+  .avatar {
+    font-size: 21px;
+    height: 45px;
+    width: 45px;
+  }
+
+  .accountButton > span:nth-child(2),
+  .accountButton > svg {
+    display: none;
+  }
+
+  .accountPanel {
+    top: 56px;
+  }
+
+  .workspace {
+    padding: 20px 12px 48px;
+  }
+
+  .breadcrumbs {
+    font-size: 10px;
+  }
+
+  .learningPath {
+    grid-template-columns: 1fr;
+  }
+
+  .learningPath > :is(a, span) + :is(a, span) {
+    border-left: 1px solid var(--line);
+    border-top: 0;
+  }
+
+  .heroCopy {
+    padding: 27px 20px 24px;
+  }
+
+  .heroCopy h1 {
+    font-size: clamp(37px, 12vw, 52px);
+  }
+
+  .heroCopy > p:not(.eyebrow) {
+    font-size: 14px;
+  }
+
+  .heroProgress {
+    padding: 24px 20px;
+  }
+
+  .railHeading {
+    min-height: 70px;
+  }
+
+  .stageList {
+    grid-template-columns: repeat(4, 170px);
+  }
+
+  .caseHeader {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 8px;
+    padding: 12px 16px;
+  }
+
+  .caseCard {
+    padding: 22px 18px;
+  }
+
+  .caseCard h2 {
+    font-size: 23px;
+  }
+
+  .reasoningSteps {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .reasoningSteps span:nth-child(-n + 2) {
+    border-bottom: 1px solid var(--soft-line);
+  }
+
+  .activeStage {
+    padding: 23px 18px 26px;
+  }
+
+  .sectionHeading {
+    gap: 10px;
+  }
+
+  .evidenceGrid {
+    grid-template-columns: 1fr;
+  }
+
+  .rubricList button {
+    grid-template-columns: 18px 64px minmax(0, 1fr) 24px;
+  }
+
+  .confirmationSection {
+    grid-template-columns: 1fr;
+  }
+
+  .confirmationSection > button {
+    width: 100%;
+  }
+
+  .deskFooter {
+    flex-direction: column;
+  }
+
+  .deskFooter a,
+  .deskFooter button {
+    justify-content: space-between;
+  }
+
+  .diagnosticRail {
+    grid-template-columns: 1fr;
+  }
+
+  .diagnosticRail > section {
+    border-bottom: 1px solid var(--ink);
+    border-right: 0;
+  }
+
+  .diagnosticRail > section:last-child {
+    border-bottom: 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .navigation a::after {
+    transition: none;
+  }
+}

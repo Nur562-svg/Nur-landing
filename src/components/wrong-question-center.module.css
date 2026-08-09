@@ -1,0 +1,321 @@
+.container {
+  max-width: 1280px;
+  margin: 0 auto;
+  padding: 48px 64px 96px;
+  min-height: 100vh;
+  background: var(--paper, #f4efe4);
+  color: var(--ink, #24211d);
+  font-family: var(--font-sans, system-ui, sans-serif);
+}
+
+/* ── Header ── */
+.header {
+  margin-bottom: 40px;
+}
+
+.backLink {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 14px;
+  color: var(--ink, #24211d);
+  text-decoration: none;
+  margin-bottom: 16px;
+  opacity: 0.7;
+  transition: opacity 0.15s;
+}
+
+.backLink:hover {
+  opacity: 1;
+}
+
+.title {
+  font-family: var(--font-song, "Songti SC", "STSong", serif);
+  font-size: 36px;
+  font-weight: 700;
+  margin: 0 0 8px;
+  letter-spacing: 0.02em;
+}
+
+.subtitle {
+  font-size: 14px;
+  color: var(--muted, #8a857c);
+  margin: 0;
+}
+
+/* ── Stats bar ── */
+.statsBar {
+  display: flex;
+  gap: 40px;
+  padding: 20px 0;
+  border-top: 1px solid var(--rule, #d6cfc1);
+  border-bottom: 1px solid var(--rule, #d6cfc1);
+  margin-bottom: 40px;
+}
+
+.statItem {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-size: 13px;
+  color: var(--muted, #8a857c);
+}
+
+.statItem strong {
+  font-size: 28px;
+  font-weight: 700;
+  color: var(--ink, #24211d);
+  font-family: var(--font-song, "Songti SC", "STSong", serif);
+  line-height: 1;
+}
+
+.statAccent {
+  color: var(--cinnabar, #a04545);
+}
+
+.statAccent strong {
+  color: var(--cinnabar, #a04545);
+}
+
+/* ── Section heading ── */
+.sectionHeading {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  margin-bottom: 20px;
+}
+
+.sectionTitle {
+  font-family: var(--font-song, "Songti SC", "STSong", serif);
+  font-size: 20px;
+  font-weight: 600;
+  margin: 0;
+}
+
+.sectionHint {
+  font-size: 13px;
+  color: var(--muted, #8a857c);
+}
+
+/* ── Weak KP cards ── */
+.weakKpSection {
+  margin-bottom: 48px;
+}
+
+.weakKpGrid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 16px;
+}
+
+.weakKpCard {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 20px 24px;
+  border: 1px solid var(--rule, #d6cfc1);
+  background: rgba(255, 255, 255, 0.35);
+  text-decoration: none;
+  color: inherit;
+  transition: border-color 0.15s, background 0.15s;
+}
+
+.weakKpCard:hover {
+  border-color: var(--ink, #24211d);
+  background: rgba(255, 255, 255, 0.6);
+}
+
+.weakKpCardTop {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.weakKpTitle {
+  font-family: var(--font-song, "Songti SC", "STSong", serif);
+  font-size: 16px;
+  font-weight: 600;
+  margin: 0;
+  line-height: 1.4;
+}
+
+.weakKpBadge {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--cinnabar, #a04545);
+  white-space: nowrap;
+}
+
+.weakKpMeta {
+  display: flex;
+  gap: 16px;
+  font-size: 13px;
+  color: var(--muted, #8a857c);
+}
+
+.weakKpRatio {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.ratioBar {
+  width: 80px;
+  height: 4px;
+  background: var(--rule, #d6cfc1);
+  overflow: hidden;
+}
+
+.ratioFill {
+  height: 100%;
+  background: var(--cinnabar, #a04545);
+}
+
+.weakKpAction {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 13px;
+  color: var(--ink, #24211d);
+  font-weight: 500;
+}
+
+/* ── Wrong question list ── */
+.wrongList {
+  display: flex;
+  flex-direction: column;
+  border: 1px solid var(--rule, #d6cfc1);
+}
+
+.wrongItem {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 14px 20px;
+  border-bottom: 1px solid var(--rule, #d6cfc1);
+  text-decoration: none;
+  color: inherit;
+  transition: background 0.1s;
+}
+
+.wrongItem:last-child {
+  border-bottom: none;
+}
+
+.wrongItem:hover {
+  background: rgba(255, 255, 255, 0.4);
+}
+
+.wrongItemIndex {
+  font-size: 12px;
+  color: var(--muted, #8a857c);
+  min-width: 24px;
+  text-align: right;
+}
+
+.wrongItemPrompt {
+  flex: 1;
+  font-size: 14px;
+  line-height: 1.5;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.wrongItemKind {
+  font-size: 11px;
+  color: var(--muted, #8a857c);
+  padding: 2px 8px;
+  border: 1px solid var(--rule, #d6cfc1);
+  white-space: nowrap;
+}
+
+.wrongItemStats {
+  font-size: 12px;
+  color: var(--cinnabar, #a04545);
+  white-space: nowrap;
+}
+
+.wrongItemAction {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 13px;
+  font-weight: 500;
+  white-space: nowrap;
+}
+
+/* ── Empty state ── */
+.emptyState {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  padding: 80px 24px;
+  text-align: center;
+  border: 1px solid var(--rule, #d6cfc1);
+}
+
+.emptyState strong {
+  font-family: var(--font-song, "Songti SC", "STSong", serif);
+  font-size: 18px;
+  font-weight: 600;
+}
+
+.emptyState small {
+  font-size: 14px;
+  color: var(--muted, #8a857c);
+}
+
+.emptyStateLink {
+  margin-top: 16px;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 20px;
+  background: var(--ink, #24211d);
+  color: var(--paper, #f4efe4);
+  font-size: 14px;
+  text-decoration: none;
+  border: 1px solid var(--ink, #24211d);
+  transition: opacity 0.15s;
+}
+
+.emptyStateLink:hover {
+  opacity: 0.85;
+}
+
+/* ── Responsive ── */
+@media (max-width: 1100px) {
+  .weakKpGrid {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 768px) {
+  .container {
+    padding: 32px 20px 64px;
+  }
+
+  .title {
+    font-size: 28px;
+  }
+
+  .statsBar {
+    flex-wrap: wrap;
+    gap: 20px;
+  }
+
+  .wrongItem {
+    padding: 12px 16px;
+    gap: 10px;
+  }
+
+  .wrongItemPrompt {
+    font-size: 13px;
+  }
+
+  .wrongItemKind {
+    display: none;
+  }
+}

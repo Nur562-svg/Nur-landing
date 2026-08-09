@@ -1,0 +1,310 @@
+.container {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  min-height: 0;
+}
+
+.messageList {
+  flex: 1;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  padding: 16px 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.empty {
+  text-align: center;
+  padding: 32px 16px;
+  color: rgba(30, 28, 24, 0.5);
+  font-size: 13px;
+  line-height: 1.8;
+}
+
+.empty p {
+  margin: 0 0 8px;
+}
+
+.emptyHint {
+  font-size: 12px;
+  color: rgba(30, 28, 24, 0.38);
+}
+
+.userMessage {
+  display: flex;
+  justify-content: flex-end;
+}
+
+.assistantMessage {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  align-items: flex-start;
+}
+
+.bubble {
+  max-width: 85%;
+  padding: 10px 14px;
+  font-size: 14px;
+  line-height: 1.7;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+.userMessage .bubble {
+  background: #ebe5d5;
+  color: #24211d;
+}
+
+.assistantMessage .bubble {
+  background: #ffffff;
+  color: #24211d;
+  border: 1px solid rgba(30, 28, 24, 0.12);
+}
+
+.toolCard {
+  width: 100%;
+  background: #ffffff;
+  border: 1px solid rgba(30, 28, 24, 0.14);
+  padding: 14px;
+  font-size: 13px;
+}
+
+.toolCardHeader {
+  border-bottom: 1px solid rgba(30, 28, 24, 0.1);
+  padding-bottom: 8px;
+  margin-bottom: 10px;
+}
+
+.toolCardTitle {
+  font-family: var(--font-songti), "Songti SC", serif;
+  font-size: 14px;
+  font-weight: 600;
+  color: #24211d;
+}
+
+.toolSection {
+  margin-bottom: 12px;
+}
+
+.toolSection:last-child {
+  margin-bottom: 0;
+}
+
+.toolSection h4 {
+  margin: 0 0 6px;
+  font-size: 12px;
+  font-weight: 600;
+  color: rgba(30, 28, 24, 0.7);
+  text-transform: none;
+}
+
+.toolSection ul {
+  margin: 0;
+  padding-left: 16px;
+  line-height: 1.6;
+}
+
+.toolSection ul li {
+  margin-bottom: 4px;
+}
+
+.toolSection ul li strong {
+  display: block;
+  font-size: 13px;
+  color: #24211d;
+}
+
+.toolSection ul li span {
+  font-size: 12px;
+  color: rgba(30, 28, 24, 0.6);
+}
+
+.toolSection > p {
+  margin: 0;
+  font-size: 13px;
+  line-height: 1.6;
+  color: rgba(30, 28, 24, 0.8);
+}
+
+.toolOk {
+  color: #5a7c4a;
+  font-size: 13px;
+}
+
+.toolError {
+  color: #9b392c;
+  font-size: 13px;
+}
+
+.rewriteProposal {
+  margin-bottom: 8px;
+  padding: 8px;
+  background: rgba(155, 57, 44, 0.04);
+  border-left: 2px solid rgba(155, 57, 44, 0.3);
+}
+
+.rationale {
+  margin: 0 0 4px;
+  font-size: 12px;
+  color: rgba(30, 28, 24, 0.65);
+}
+
+.rewriteText {
+  margin: 0;
+  font-size: 13px;
+  line-height: 1.6;
+  white-space: pre-wrap;
+  word-break: break-word;
+  color: #24211d;
+}
+
+.error {
+  padding: 10px 14px;
+  background: rgba(155, 57, 44, 0.06);
+  border: 1px solid rgba(155, 57, 44, 0.2);
+  font-size: 12px;
+  color: #9b392c;
+}
+
+.error p {
+  margin: 0;
+}
+
+.thinking {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 10px 14px;
+}
+
+.thinkingOrbs {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.thinkingOrb {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: rgba(155, 57, 44, 0.65);
+  animation: thinkingPulse 1.4s ease-in-out infinite;
+}
+
+.thinkingOrb:nth-child(2) {
+  animation-delay: 0.2s;
+}
+
+.thinkingOrb:nth-child(3) {
+  animation-delay: 0.4s;
+}
+
+@keyframes thinkingPulse {
+  0%, 60%, 100% {
+    transform: scale(0.7);
+    opacity: 0.4;
+  }
+  30% {
+    transform: scale(1.1);
+    opacity: 1;
+  }
+}
+
+.inputForm {
+  display: flex;
+  gap: 8px;
+  padding: 12px 14px;
+  border-top: 1px solid rgba(30, 28, 24, 0.12);
+  background: #f4efe4;
+  flex-shrink: 0;
+}
+
+.input {
+  flex: 1;
+  padding: 10px 12px;
+  border: 1px solid rgba(30, 28, 24, 0.2);
+  background: #ffffff;
+  font-size: 14px;
+  font-family: inherit;
+  color: #24211d;
+  outline: none;
+  border-radius: 0;
+}
+
+.input:focus {
+  border-color: rgba(63, 84, 100, 0.5);
+}
+
+.input::placeholder {
+  color: rgba(30, 28, 24, 0.35);
+}
+
+.input:disabled {
+  background: rgba(30, 28, 24, 0.04);
+  color: rgba(30, 28, 24, 0.5);
+}
+
+.sendButton,
+.stopButton {
+  padding: 10px 16px;
+  border: 1px solid rgba(30, 28, 24, 0.2);
+  background: #24211d;
+  color: #f8f3e8;
+  font-size: 13px;
+  font-family: inherit;
+  cursor: pointer;
+  border-radius: 0;
+  white-space: nowrap;
+}
+
+.sendButton:disabled {
+  background: rgba(30, 28, 24, 0.3);
+  cursor: not-allowed;
+}
+
+.stopButton {
+  background: #9b392c;
+  border-color: #9b392c;
+  color: #ffffff;
+}
+
+@media (max-width: 640px) {
+  .messageList {
+    padding: 12px 10px;
+    gap: 10px;
+  }
+
+  .bubble {
+    max-width: 90%;
+    font-size: 13px;
+    padding: 8px 12px;
+  }
+
+  .inputForm {
+    padding: 10px;
+    gap: 6px;
+  }
+
+  .input {
+    font-size: 13px;
+    padding: 8px 10px;
+  }
+
+  .sendButton,
+  .stopButton {
+    padding: 8px 12px;
+    font-size: 12px;
+  }
+}
+
+
+
+
+/* M4 mobile + touch (scoped) */
+.agentMessage,
+.inputArea {
+  min-height: 40px;
+}

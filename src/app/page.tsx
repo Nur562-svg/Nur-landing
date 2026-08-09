@@ -2,6 +2,7 @@
 
 import type { CSSProperties, PointerEvent } from "react";
 import { useState } from "react";
+import Link from "next/link";
 
 const patternRows = Array.from({ length: 12 });
 const patternWords = Array.from({ length: 18 });
@@ -59,14 +60,14 @@ export default function Home() {
   return (
     <main className="min-h-screen bg-[#f7f4ef] text-black">
       <header className="site-shell sticky top-0 z-30 border-b border-black bg-[#f7f4ef]/92 backdrop-blur">
-        <a href="#top" className="brand-lockup" aria-label="Go to top">
+        <Link href="/learn" className="brand-lockup" aria-label="NUR LEARN 学习首页">
           <span className="brand-mark" aria-hidden="true" />
-          <span>Signal Index</span>
-        </a>
+          <span>NUR LEARN</span>
+        </Link>
         <nav className="nav-links" aria-label="Main navigation">
           <a href="#build">Build</a>
           <a href="#journal">Journal</a>
-          <a href="#contact">Contact</a>
+          <Link href="/learn">进入应用</Link>
         </nav>
       </header>
 
@@ -132,14 +133,14 @@ export default function Home() {
           </div>
           <div className="row-list">
             {buildRows.map(([index, title, description]) => (
-              <a className="index-row" href="#contact" key={title}>
+              <Link className="index-row" href="/learn" key={title}>
                 <span className="row-index">{index}</span>
                 <span className="row-content">
                   <strong>{title}</strong>
                   <small>{description}</small>
                 </span>
                 <span className="row-arrow">-&gt;</span>
-              </a>
+              </Link>
             ))}
           </div>
         </section>
@@ -150,13 +151,13 @@ export default function Home() {
           </div>
           <div className="row-list">
             {journalRows.map(([index, title]) => (
-              <a className="index-row compact" href="#contact" key={title}>
+              <div className="index-row compact" key={title} role="article">
                 <span className="row-index">{index}</span>
                 <span className="row-content">
                   <strong>{title}</strong>
                 </span>
-                <span className="row-arrow">-&gt;</span>
-              </a>
+                <span className="row-arrow" aria-hidden="true">-&gt;</span>
+              </div>
             ))}
           </div>
         </section>
@@ -167,6 +168,9 @@ export default function Home() {
             This page is an original interpretation of the interaction language:
             no copied logo, no brand assets, and no source imagery.
           </p>
+          <Link href="/learn" className="contact-cta">
+            进入 NUR LEARN 学习平台 →
+          </Link>
         </section>
       </div>
     </main>
