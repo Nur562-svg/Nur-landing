@@ -232,3 +232,35 @@
 - 状态系统更广泛可用。
 - 全量 npm run check + typecheck 通过（0 errors）。
 
+## 冲突可见性 + 用户裁决 记录（2026-08-16）
+
+背景：原 merge 的「时间戳优先」在多端语义分歧时静默择一，用户无感知。
+且 POST-先-GET 的登录合并中，服务端 FSRS upsert 无条件覆盖会把分歧在上传一步抹掉，
+冲突在结构上不可见。
+
+实现（三层）：
+1. 服务端守卫：`upsertFsrsStateServer` 仅当传入 `lastReviewAt` 不早于已存值才覆盖
+   （「最近复习者胜」取代「最近上传者胜」）。分歧因此在服务端存活到下次下载。
+2. 客户端检测与存储：`mergeServerStateIntoLocal` 以独立 `lastMergeAt` 为基线
+   （纯上传只推进 `lastSyncAt`，不推进基线；首次合并无基线 → 按现行时间戳优先、不记冲突），
+   双方都在基线后更新且语义不同（state/difficulty/stability/reps/lapses 精确比较）→
+   写入版本化 `nur-learn:sync-conflicts:v1`（上限 100 条，含 userEmail 归属）。
+   临时合并值仍取「更新者胜」，不打断学习。attempt 型冲突为防御性实现
+   （现有管线服务端另发 cuid、本地 attempt 不可变，正常不触发）。
+3. 解决与 UI：`resolveSyncConflict` / `resolveAllSyncConflicts`——
+   「以本机为准」把该准则 lastReviewAt 置为当前时刻（用户显式重申）借守卫放行上传覆盖服务端；
+   「以云端为准」应用记录中的服务端快照到本地。处理后移除记录并触发可靠同步；
+   登出时按邮箱清空该账户冲突。`/learn` 账户面板渲染冲突计数、逐条本机/云端快照对比、
+   单条与批量两种操作（`useSyncConflicts` 沿用 use-sync-status 稳定引用模式）。
+   `triggerLearnerStateSync` / `performReliableLoginMerge` 主流程结构未变（仅增可选 userEmail 参数）。
+
+验证：`tests/sync-conflicts.test.ts` 12 例（双向门控、语义相等静默、首合并基线、
+解决应用方向、存储解析）；浏览器对真实 D1 服务端端到端——注册 QA 账户、本地完成复习任务
+（FSRS good）、脚本改服务端行为更新分歧值、刷新后冲突出现且快照对比正确、
+「以本机为准」后服务端被本地值覆盖（查库证实）、「以云端为准」后本地变云端快照
+（错题中心「即将遗忘」出现 relearning/遗忘 7 证实）、一致后无新冲突、
+390/1440 无溢出、dev log 干净。`npm run check` + `npm test` 186/186。
+
+已知遗留（后续独立小任务）：`mergeLocalStateOnLogin` 每次全量上传都用 create 重建 attempts
+（服务端新 cuid、不按 id 去重）→ 双侧 attempt 重复积累（300 上限稀释历史）。
+

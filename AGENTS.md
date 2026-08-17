@@ -56,7 +56,7 @@ The product must:
 - A strict versioned `MaterialAdmissionRecord` now reuses the material asset/family/artifact boundaries, persists only explicitly approved accepted excerpts and audit metadata in browser-local storage, and supports explicit JSON export without granting Course Builder, model-transfer, catalog, registry, or publication rights.
 - A live physiology private-overlay test exposed a product-boundary error: the UI could show an enabled, one-time-authorized build button while `runBuild` silently returned because only the TCM official base pack was allow-listed. DashScope and `qwen3.7-plus` were configured; no model request occurred. This is not merely a button bug: private-material analysis was incorrectly coupled to full official-pack compilation.
 - Latest `npm run check` and the official-pack baseline-only API regression passed on 2026-07-19; earlier Course Builder/material-admission desktop/mobile interactions, five added TCM lesson/writing routes, the synthetic spleen case, empty browser error log, and 390 × 844 no-overflow checks remain current because the official pack changed no visible UI.
-- The product is intentionally local-only for now; do not deploy unless the user explicitly changes that decision.
+- The product is now deployment-ready: standalone Dockerfile, Postgres + Caddy docker-compose, CI pipeline, payment abstraction (mock/wechat/alipay), password reset, email verification, and legal pages are complete. Deployment waits only on ICP filing and merchant account setup.
 
 ## Next Product Priority
 
@@ -72,7 +72,7 @@ Do not create a parallel course truth model. Reuse the existing material, course
 - **Styling:** Tailwind CSS v4 plus CSS Modules for the approved product surfaces
 - **UI primitives:** shadcn/ui / Radix where useful
 - **Icons:** Lucide React, matching the current thin outline icon language
-- **Deployment target:** Vercel later; deployment is not the current milestone
+- **Deployment target:** 国内云（阿里云/腾讯云）+ Postgres 16 + Caddy 自动 HTTPS；standalone Docker 已就绪，待 ICP 备案后上线
 
 ## Commands
 

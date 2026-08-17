@@ -6,7 +6,7 @@ import {
 } from "@/lib/course-builder/service";
 import { listCourseBuildPacks } from "@/lib/course-builder/packs";
 import { getCurrentSession } from "@/lib/auth/session";
-import { recordServerUsage, checkAndEnforceQuota } from "@/lib/quotas";
+import { recordServerUsage, checkAndEnforceQuota } from "@/lib/quotas-server";
 import { prisma } from "@/lib/prisma";
 import {
   CourseBuildRequestError,

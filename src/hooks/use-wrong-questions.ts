@@ -7,8 +7,10 @@ import {
   selectWrongQuestionCenter,
   type WrongQuestionCenterData,
 } from "@/lib/wrong-questions";
+import { parseLearningMemoryJson } from "@/lib/learning-memory";
 
 const QB_ATTEMPTS_KEY = "nur-learn:qb-attempts:v1";
+const MEMORY_KEY = "nur-learn:learning-memory:v1";
 const QB_CHANGE_EVENT = "nur-learn:learning-memory-change"; // reuse existing event
 const MOCK_EXAM_CHANGE_EVENT = "nur-learn:mock-exam-sessions-changed";
 
@@ -19,9 +21,11 @@ const EMPTY_DATA: WrongQuestionCenterData = {
   totalWrong: 0,
   totalAttempts: 0,
   weakKpCount: 0,
+  structuralWeaknesses: [],
+  fsrsHighRisk: [],
 };
 
-/** 订阅 localStorage 变化（qb-attempts + mock-exam + storage 事件） */
+/** 订阅 localStorage 变化（qb-attempts + learning-memory + mock-exam + storage 事件） */
 function subscribeChanges(onChange: () => void): () => void {
   if (typeof window === "undefined") return () => {};
   window.addEventListener("storage", onChange);
@@ -38,6 +42,12 @@ function subscribeChanges(onChange: () => void): () => void {
 function getAttemptsSnapshot(): string | null {
   if (typeof window === "undefined") return null;
   return window.localStorage.getItem(QB_ATTEMPTS_KEY);
+}
+
+/** 获取 learning-memory 快照字符串（SSR 返回 null） */
+function getMemorySnapshot(): string | null {
+  if (typeof window === "undefined") return null;
+  return window.localStorage.getItem(MEMORY_KEY);
 }
 
 function parseAttemptsSnapshot(snapshot: string | null): Record<string, QBAttemptRecord[]> {
@@ -68,7 +78,7 @@ function parseAttemptsSnapshot(snapshot: string | null): Record<string, QBAttemp
 
 /**
  * 错题中心 hook：订阅 localStorage 变化并返回聚合数据。
- * 每次 localStorage 变化时重新计算错题和弱项知识点。
+ * 每次 localStorage 变化时重新计算客观错题、结构薄弱点与 FSRS 高危准则。
  */
 export function useWrongQuestionCenter(
   courses: readonly CourseDefinition[],
@@ -85,9 +95,18 @@ export function useWrongQuestionCenter(
     () => null,
   );
 
+  // learning-memory 的写入会派发 QB_CHANGE_EVENT（learning-memory-change），
+  // 同一订阅下增加 learning-memory key 的快照，使结构薄弱 / FSRS 高危实时重算。
+  const memorySnapshot = useSyncExternalStore(
+    subscribeChanges,
+    getMemorySnapshot,
+    () => null,
+  );
+
   return useMemo(() => {
     if (!mounted) return EMPTY_DATA;
     const attempts = parseAttemptsSnapshot(snapshot);
-    return selectWrongQuestionCenter(courses, attempts);
-  }, [mounted, courses, snapshot]);
+    const memoryState = parseLearningMemoryJson(memorySnapshot);
+    return selectWrongQuestionCenter(courses, attempts, memoryState);
+  }, [mounted, courses, snapshot, memorySnapshot]);
 }

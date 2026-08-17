@@ -16,6 +16,9 @@ WORKDIR /app
 
 # Copy package-related files first to leverage Docker's caching mechanism
 COPY package.json yarn.lock* package-lock.json* pnpm-lock.yaml* .npmrc* ./
+# prepare 钩子 (install-hook.mjs) 与 prisma generate 在 npm ci 时执行，需要 scripts/ 与 prisma/
+COPY scripts ./scripts
+COPY prisma ./prisma
 
 # Install project dependencies with frozen lockfile for reproducible builds
 RUN --mount=type=cache,target=/root/.npm \

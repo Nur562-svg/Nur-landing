@@ -1,12 +1,13 @@
 import type { MetadataRoute } from "next";
+import { SITE_URL } from "@/lib/site-config";
 
 export default function robots(): MetadataRoute.Robots {
   return {
     rules: {
       userAgent: "*",
       allow: "/",
-      disallow: ["/api/", "/login", "/register"],
+      disallow: ["/api/", "/login", "/register", "/account"],
     },
-    sitemap: "https://nur-learn.example.com/sitemap.xml", // placeholder, update on deploy
+    sitemap: `${SITE_URL}/sitemap.xml`,
   };
 }

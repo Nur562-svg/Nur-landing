@@ -137,6 +137,25 @@
   text-align: center;
 }
 
+.consentField {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  font-size: 12px;
+  color: var(--muted);
+  line-height: 1.6;
+}
+
+.consentCheckbox {
+  margin-top: 2px;
+  accent-color: var(--ink);
+}
+
+.consentLink {
+  color: var(--blue);
+  text-decoration: underline;
+}
+
 .cardFooter a {
   color: var(--blue);
   margin-left: 4px;

@@ -1,6 +1,9 @@
 // NUR LEARN 数据层（Prisma）
 // 开发环境使用 SQLite 文件库（零依赖）；生产环境切换 Postgres 只需修改 provider 与连接串。
 // 注意：不使用原生 enum（SQLite 不支持），枚举语义由 TypeScript 类型约束保证可移植性。
+//
+// 重要：不要为 client 指定自定义 output 目录——OpenNext Cloudflare 会 patch
+// node_modules/@prisma/client 使其在 workerd 运行时工作（含 wasm 预编译加载）。
 
 generator client {
   provider = "prisma-client-js"
@@ -8,20 +11,23 @@ generator client {
 
 datasource db {
   provider = "sqlite"
-  url      = env("DATABASE_URL")
 }
 
 model User {
-  id             String   @id @default(cuid())
-  email          String   @unique
-  passwordHash   String
-  displayName    String
-  // membershipTier: "free" | "pro"（TS 类型约束；付费接入前固定 free）
-  membershipTier String   @default("free")
+  id                  String   @id @default(cuid())
+  email               String   @unique
+  passwordHash        String
+  displayName         String
+  // membershipTier: "free" | "lite" | "pro"（TS 类型约束保证可移植性）
+  membershipTier     String   @default("free")
+  // 会员到期时间（null = free）；Pro/Lite 到期后自动回退 free
+  membershipExpiresAt DateTime?
+  // 邮箱验证时间（null = 未验证）；收费前须完成验证
+  emailVerifiedAt     DateTime?
   // M3: usage counters for quota (courseBuilds, agentCalls, etc.)
-  usage          Json?     // { courseBuilds?: number, agentCalls?: number }
-  createdAt      DateTime @default(now())
-  updatedAt      DateTime @updatedAt
+  usage               Json?    // { courseBuilds?: number, agentCalls?: number }
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
 
   // M2: 学习状态云同步（FSRS、尝试记录、题库、模考）。复用现有 browser contracts 的结构化字段。
   learnerAttempts                 LearnerAttempt[]
@@ -31,6 +37,62 @@ model User {
   mockExamSessions                MockExamSession[]
   // 私人材料准入记录的云同步需单独明确同意（learner-private 边界保持）
   materialAdmissionSyncConsents   MaterialAdmissionSyncConsent[]
+  // M4: 会员订单（支付体系）
+  orders                          Order[]
+  // M4: 密码重置令牌
+  passwordResetTokens             PasswordResetToken[]
+}
+
+/// M4: 会员订单（支付抽象层持久化）。provider 切换不影响已存订单。
+model Order {
+  id               String    @id @default(cuid())
+  userId           String
+  user             User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  // 套餐标识：lite-month | lite-quarter | lite-year | pro-month | pro-quarter | pro-year
+  planId           String
+  // "lite" | "pro"
+  tier             String
+  // "month" | "quarter" | "year"
+  period           String
+  // 订单金额（分），避免浮点误差
+  amountCents      Int
+  // 支付渠道："mock" | "wechat" | "alipay"
+  channel          String
+  // "pending" | "paid" | "closed" | "refunded"
+  status           String    @default("pending")
+  // 渠道方交易号（微信/支付宝回调返回）
+  providerTradeNo  String?
+  paidAt           DateTime?
+  createdAt        DateTime  @default(now())
+
+  @@index([userId, status])
+  @@index([status, createdAt])
+}
+
+/// M4: 密码重置令牌（一次性，15 分钟过期）。
+model PasswordResetToken {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  token     String   @unique
+  expiresAt DateTime
+  usedAt    DateTime?
+  createdAt DateTime @default(now())
+
+  @@index([userId])
+}
+
+/// M5: 极简自研埋点（PV / 注册转化 / 关键漏斗计数），不引第三方 SDK。
+model EventLog {
+  id        String   @id @default(cuid())
+  event     String   // "page_view" | "signup" | "login" | "order_create" | "order_paid" | ...
+  userId    String?
+  props     Json?
+  createdAt DateTime @default(now())
+
+  @@index([event, createdAt])
+  @@index([userId])
 }
 
 model LearnerAttempt {

@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState, useSyncExternalStore } from "react";
+import { useEffect, useMemo, useRef, useState, useSyncExternalStore } from "react";
 import Link from "next/link";
 import {
   ArrowLeft,
@@ -8,6 +8,7 @@ import {
   BookOpenText,
   Check,
   ChevronDown,
+  ChevronRight,
   ClipboardCheck,
   Clock3,
   FileText,
@@ -100,6 +101,7 @@ export function CourseWorkspace({ course, learnerState }: CourseWorkspaceProps) 
   }
 
   const [scope, setScope] = useState<CourseScope>("stage");
+  const [scopeOpen, setScopeOpen] = useState(false);
   const [activeChapterId, setActiveChapterId] = useState(learnerState.currentChapterId);
   const [activeRouteId, setActiveRouteId] = useState<LearningRouteId>(learnerState.defaultRouteId);
   const [sessionTarget, setSessionTarget] = useState<SessionTarget>({
@@ -478,13 +480,16 @@ export function CourseWorkspace({ course, learnerState }: CourseWorkspaceProps) 
         ) : null}
 
         <div className={styles.scopeBar}>
-          <div>
-            <span>查看范围</span>
-            <button className={scope === "stage" ? styles.scopeActive : ""} type="button" onClick={() => chooseScope("stage")}>本阶段</button>
-            <button className={scope === "all" ? styles.scopeActive : ""} type="button" onClick={() => chooseScope("all")}>全学期</button>
-            <button className={scope === "weak" ? styles.scopeActive : ""} type="button" onClick={() => chooseScope("weak")}>薄弱优先</button>
-            <Link className={scope === "questions" ? styles.scopeActive : ""} href={`/courses/${course.slug}/question-bank`}>题库</Link>
-          </div>
+          <ScopeSwitcher
+            scope={scope}
+            onChoose={(next) => {
+              chooseScope(next);
+              setScopeOpen(false);
+            }}
+            open={scopeOpen}
+            onToggle={() => setScopeOpen((current) => !current)}
+            questionBankHref={`/courses/${course.slug}/question-bank`}
+          />
           <p><span aria-hidden="true" /> {learnerState.demoLabel}；课程材料已接入，进度仍为演示数据</p>
         </div>
 
@@ -890,5 +895,123 @@ export function CourseWorkspace({ course, learnerState }: CourseWorkspaceProps) 
       ) : null}
       <NurAgentDock surface="platform" />
     </main>
+  );
+}
+
+const SCOPE_LABELS: Record<CourseScope, string> = {
+  stage: "本阶段",
+  all: "全学期",
+  weak: "薄弱优先",
+  questions: "题库",
+};
+
+type ScopeSwitcherProps = {
+  scope: CourseScope;
+  open: boolean;
+  onChoose: (scope: CourseScope) => void;
+  onToggle: () => void;
+  questionBankHref: string;
+};
+
+/**
+ * "查看范围"交互触发器。
+ * 默认仅显示标签 + 当前选中范围；点击触发器迅速展开/收起 4 个选择项。
+ * - 视觉锚点：标签内联显示当前 scope，提供稳定上下文。
+ * - 选中后自动收起：避免长期占用视野，强化"快速切换"心智。
+ * - 点击外部 / Esc：自动收起，符合常见 dropdown 习惯。
+ */
+function ScopeSwitcher({
+  scope,
+  open,
+  onChoose,
+  onToggle,
+  questionBankHref,
+}: ScopeSwitcherProps) {
+  const containerRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!open) return;
+    function handlePointer(event: MouseEvent) {
+      const node = containerRef.current;
+      if (!node) return;
+      if (!node.contains(event.target as Node)) onToggle();
+    }
+    function handleKey(event: KeyboardEvent) {
+      if (event.key === "Escape") onToggle();
+    }
+    window.addEventListener("mousedown", handlePointer);
+    window.addEventListener("keydown", handleKey);
+    return () => {
+      window.removeEventListener("mousedown", handlePointer);
+      window.removeEventListener("keydown", handleKey);
+    };
+  }, [open, onToggle]);
+
+  const choices: Array<{ value: CourseScope; href?: string }> = [
+    { value: "stage" },
+    { value: "all" },
+    { value: "weak" },
+    { value: "questions", href: questionBankHref },
+  ];
+
+  return (
+    <div
+      ref={containerRef}
+      className={`${styles.scopeSwitcher} ${open ? styles.scopeSwitcherOpen : ""}`}
+    >
+      <button
+        type="button"
+        className={styles.scopeTrigger}
+        aria-expanded={open}
+        aria-haspopup="menu"
+        aria-controls="scope-options"
+        onClick={onToggle}
+      >
+        <span className={styles.scopeTriggerLabel}>查看范围</span>
+        <strong className={styles.scopeTriggerValue}>{SCOPE_LABELS[scope]}</strong>
+        <ChevronRight
+          aria-hidden="true"
+          size={14}
+          strokeWidth={1.6}
+          className={styles.scopeTriggerChevron}
+        />
+      </button>
+
+      <div
+        id="scope-options"
+        role="menu"
+        aria-hidden={!open}
+        className={styles.scopeOptions}
+      >
+        {choices.map((choice) => {
+          const isActive = scope === choice.value;
+          const className = `${styles.scopeOption} ${isActive ? styles.scopeActive : ""}`;
+          if (choice.href) {
+            return (
+              <Link
+                key={choice.value}
+                href={choice.href}
+                role="menuitem"
+                className={className}
+                onClick={() => onChoose(choice.value)}
+              >
+                {SCOPE_LABELS[choice.value]}
+              </Link>
+            );
+          }
+          return (
+            <button
+              key={choice.value}
+              type="button"
+              role="menuitem"
+              className={className}
+              onClick={() => onChoose(choice.value)}
+            >
+              {SCOPE_LABELS[choice.value]}
+            </button>
+          );
+        })}
+      </div>
+    </div>
   );
 }

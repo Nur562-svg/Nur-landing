@@ -17,6 +17,7 @@ import {
 } from "lucide-react";
 import { useLearningMemory } from "@/hooks/use-learning-memory";
 import { recordConfirmedAttempt } from "@/lib/learning-memory";
+import { mergeRewriteIntoDraft } from "@/lib/agent-rewrite-merge";
 import {
   selectCaseReasoningHref,
   selectPrimaryCaseForKnowledgePoint,
@@ -91,88 +92,14 @@ function toggleValue(values: readonly string[], value: string): string[] {
     : [...values, value];
 }
 
-
-// Smart merge for Path B (per user rule):
-// - Normal case: keep user complete sentences + insert proposal as supplement.
-// - Full replace when unrelated: discard original completely.
-// This is client heuristic; real intelligence lives in the Agent model + future improvements.
-function computeSmartMerge(current: string, proposalText: string, criterionId: string) {
-  const cur = (current || "").trim();
-  if (!cur || cur.length < 25) {
-    return { 
-      merged: proposalText, 
-      kept: "", 
-      added: proposalText, 
-      before: "", 
-      supplement: proposalText, 
-      after: "", 
-      isFullReplace: true,
-      criterionId 
-    };
-  }
-
-  // Relevance using Chinese-friendly tokens
-  const curLower = cur.toLowerCase();
-  const propLower = (proposalText || "").toLowerCase();
-  const userTokens = curLower.split(/[^\u4e00-\u9fa5a-z0-9]+/).filter(w => w.length > 1);
-  let overlap = 0;
-  for (const t of userTokens) {
-    if (propLower.includes(t)) overlap += 1;
-  }
-  const relevance = overlap / Math.max(userTokens.length, 3);
-
-  if (relevance < 0.06) {
-    // Unrelated -> full replace (original must be discarded)
-    return { 
-      merged: proposalText, 
-      kept: "", 
-      added: proposalText, 
-      before: "", 
-      supplement: proposalText, 
-      after: "", 
-      isFullReplace: true,
-      criterionId 
-    };
-  }
-
-  // Smart insertion: split into sentences (Chinese . ! ? and newlines)
-  const sentenceRegex = /([^。！？.!?\n]+[。！？.!?\n]*)/g;
-  const sentences: string[] = [];
-  let match;
-  while ((match = sentenceRegex.exec(cur)) !== null) {
-    const s = match[1].trim();
-    if (s.length > 3) sentences.push(s);
-  }
-  if (sentences.length === 0) {
-    const added = "\n\n【Agent 补充建议】\n" + proposalText.trim();
-    return { merged: cur + added, kept: cur, added, before: cur, supplement: added, after: "", criterionId };
-  }
-
-  // Score each sentence for relevance to proposal
-  let bestIdx = 0;
-  let bestScore = -1;
-  sentences.forEach((s, i) => {
-    const sLower = s.toLowerCase();
-    let score = 0;
-    userTokens.forEach(t => {
-      if (sLower.includes(t) && propLower.includes(t)) score += t.length;
-    });
-    if (score > bestScore) {
-      bestScore = score;
-      bestIdx = i;
-    }
-  });
-
-  // Insert supplement right after the most relevant sentence user wrote (as targeted supplement)
-  const beforeArr = sentences.slice(0, bestIdx + 1);
-  const afterArr = sentences.slice(bestIdx + 1);
-  const before = beforeArr.join("");
-  const after = afterArr.join("");
-  const supplement = "\n【Agent 补充（针对上面这段）】\n" + proposalText.trim();
-
-  const merged = before + supplement + after;
-  return { merged, kept: cur, added: supplement, before, supplement, after, criterionId };
-}
+/** Agent 改写应用的单槽撤销快照：只记录最近一次应用前的完整文本。 */
+type RewriteUndo = {
+  itemId: string;
+  /** 应用前该题草稿/改写区（应用目标区）的完整文本 */
+  beforeText: string;
+  /** 应用写入的目标区：改写区有内容时为 revision，否则为 draft */
+  target: "draft" | "revision";
+};
 
 export function SubjectiveWritingRoom({
   course,
@@ -197,17 +124,8 @@ export function SubjectiveWritingRoom({
   const [confirmedItemIds, setConfirmedItemIds] = useState<readonly string[]>([]);
   const [confirmedSignatures, setConfirmedSignatures] = useState<Readonly<Record<string, string>>>({});
   const [accountOpen, setAccountOpen] = useState(false);
-  const [pendingMerge, setPendingMerge] = useState<null | {
-    merged: string;
-    kept: string;
-    added: string;
-    before?: string;
-    supplement?: string;
-    after?: string;
-    isFullReplace?: boolean;
-    criterionId: string;
-  }>(null);
-  const [editedSupplement, setEditedSupplement] = useState<string | null>(null);
+  // Agent 改写应用的单槽撤销：记录最近一次应用前文本；再次应用覆盖，切换题目/确认保存后失效。
+  const [rewriteUndo, setRewriteUndo] = useState<RewriteUndo | null>(null);
   const memoryState = useLearningMemory();
 const activeItem = writingItems.find((item) => item.id === activeItemId) ?? firstItem;
   const activeScoring = activeItem.scoring;
@@ -250,6 +168,7 @@ const activeItem = writingItems.find((item) => item.id === activeItemId) ?? firs
 
   function selectItem(itemId: string) {
     setActiveItemId(itemId);
+    setRewriteUndo(null);
     window.scrollTo({ top: 300, behavior: "smooth" });
   }
 
@@ -308,6 +227,7 @@ const activeItem = writingItems.find((item) => item.id === activeItemId) ?? firs
       ? current
       : [...current, activeItem.id]);
     setConfirmedSignatures((current) => ({ ...current, [activeItem.id]: activeSignature }));
+    setRewriteUndo(null);
   }
 
   return (
@@ -492,98 +412,46 @@ const activeItem = writingItems.find((item) => item.id === activeItemId) ?? firs
               currentText={activeAnswerText}
               selfCheckStarted={answerRevealed}
               onApplyRewrite={(text) => {
-                // Radical direct one-click: immediately apply smart merge into live draft (quotes + acts on what student actually wrote)
-                const merge = computeSmartMerge(activeDraft, text, "");
-                const finalSupplement = merge.supplement ?? merge.added ?? "";
-                let finalMerged: string;
-                if (merge.isFullReplace || !(merge.before ?? merge.kept)) {
-                  finalMerged = finalSupplement;
+                if (activeAnswerText.trim().length === 0) return;
+                // 应用目标 = activeAnswerText 的来源区：改写区有内容时写改写区，否则写第一稿
+                const target: "draft" | "revision" = activeRevision.trim().length > 0 ? "revision" : "draft";
+                const currentText = target === "revision" ? activeRevision : activeDraft;
+                const { merged } = mergeRewriteIntoDraft(currentText, text);
+                setRewriteUndo({ itemId: activeItem.id, beforeText: currentText, target });
+                if (target === "revision") {
+                  setRevisions((current) => ({ ...current, [activeItem.id]: merged }));
                 } else {
-                  const before = merge.before ?? merge.kept ?? "";
-                  const after = merge.after ?? "";
-                  finalMerged = before + finalSupplement + after;
+                  setDrafts((current) => ({ ...current, [activeItem.id]: merged }));
                 }
-                setDrafts((current) => ({ ...current, [activeItem.id]: finalMerged }));
                 setTimeout(() => {
                   const ta = draftTextareaRef.current;
-                  if (ta) {
+                  if (ta && target === "draft") {
                     ta.focus();
                     ta.scrollIntoView({ behavior: "smooth", block: "center" });
-                    ta.setSelectionRange(finalMerged.length, finalMerged.length);
+                    ta.setSelectionRange(merged.length, merged.length);
                   }
                 }, 40);
               }}
             />
 
-            {pendingMerge ? (
-              <div style={{ margin: "8px 0 12px", padding: "10px 12px", background: "#fffaf0", border: "1px solid #e8d2b8", borderRadius: "4px" }}>
-                {pendingMerge.isFullReplace || !(pendingMerge.before ?? pendingMerge.kept) ? (
-                  <div style={{ fontSize: "12px", fontWeight: 500, marginBottom: 6, color: "#c45a5a" }}>
-                    将完全替换你的当前答案（因与本要点内容几乎无关）
-                  </div>
-                ) : (
-                  <div style={{ fontSize: "12px", fontWeight: 500, marginBottom: 6 }}>
-                    预览：黑色 = 你自己写的完整句子（优先保留）；红色 = Agent 补充插入内容
-                  </div>
-                )}
-                <div style={{ whiteSpace: "pre-wrap", fontSize: "14px", lineHeight: "1.55" }}>
-                  {!(pendingMerge.isFullReplace || !(pendingMerge.before ?? pendingMerge.kept)) && (
-                    <span>{pendingMerge.before ?? pendingMerge.kept}</span>
-                  )}
-                  <textarea
-                    value={editedSupplement ?? (pendingMerge.supplement ?? pendingMerge.added ?? "")}
-                    onChange={(e) => setEditedSupplement(e.target.value)}
-                    style={{ 
-                      color: "#c45a5a", 
-                      background: "#fff0e6", 
-                      padding: "2px 4px", 
-                      border: "1px solid #d4a57a", 
-                      borderRadius: "2px",
-                      fontSize: "14px",
-                      lineHeight: "1.55",
-                      width: "100%",
-                      minHeight: "60px",
-                      resize: "vertical",
-                      margin: "4px 0"
-                    }}
-                    placeholder={pendingMerge.isFullReplace ? "可直接微调替换内容" : "可直接微调 Agent 补充内容"}
-                  />
-                  {!(pendingMerge.isFullReplace || !(pendingMerge.before ?? pendingMerge.kept)) && (
-                    <span>{pendingMerge.after ?? ""}</span>
-                  )}
-                </div>
-                <div style={{ marginTop: 10, display: "flex", gap: "8px" }}>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      const finalSupplement = editedSupplement ?? (pendingMerge.supplement ?? pendingMerge.added ?? "");
-                      let finalMerged;
-                      if (pendingMerge.isFullReplace || !(pendingMerge.before ?? pendingMerge.kept)) {
-                        // Full replace: discard original completely
-                        finalMerged = finalSupplement;
-                      } else {
-                        const before = pendingMerge.before ?? pendingMerge.kept ?? "";
-                        const after = pendingMerge.after ?? "";
-                        finalMerged = before + finalSupplement + after;
-                      }
-                      setDrafts(current => ({ ...current, [activeItem.id]: finalMerged }));
-                      const finalText = finalMerged;
-                      setPendingMerge(null);
-                      setEditedSupplement(null);
-                      setTimeout(() => {
-                        const ta = draftTextareaRef.current;
-                        if (ta) {
-                          ta.focus();
-                          ta.scrollIntoView({ behavior: "smooth", block: "center" });
-                          ta.setSelectionRange(finalText.length, finalText.length);
-                        }
-                      }, 40);
-                    }}
-                  >
-                    确认应用此合并
-                  </button>
-                  <button type="button" onClick={() => { setPendingMerge(null); setEditedSupplement(null); }}>取消</button>
-                </div>
+            {rewriteUndo && rewriteUndo.itemId === activeItem.id ? (
+              <div className={styles.rewriteUndoBar}>
+                <span>
+                  已应用 Agent 改写；草稿仍是<b>未确认</b>状态，需你完成自核并确认保存。
+                </span>
+                <button
+                  type="button"
+                  onClick={() => {
+                    if (rewriteUndo.target === "revision") {
+                      setRevisions((current) => ({ ...current, [rewriteUndo.itemId]: rewriteUndo.beforeText }));
+                    } else {
+                      setDrafts((current) => ({ ...current, [rewriteUndo.itemId]: rewriteUndo.beforeText }));
+                    }
+                    setRewriteUndo(null);
+                  }}
+                >
+                  撤销，回到应用前全文
+                </button>
               </div>
             ) : null}
 

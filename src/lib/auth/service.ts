@@ -6,7 +6,7 @@ import {
   validatePasswordStrength,
   verifyPassword,
 } from "@/lib/auth/password";
-import type { AuthCredentials, AuthUserView } from "@/types/auth";
+import type { AuthCredentials, AuthUserView, MembershipTier } from "@/types/auth";
 
 /** 简单内存登录限流：同一标识（邮箱+IP）连续失败 5 次后锁定 15 分钟。单实例有效，部署多实例后需换共享存储。 */
 const FAILURE_WINDOW_MS = 15 * 60 * 1000;
@@ -49,13 +49,19 @@ export function toUserView(user: {
   email: string;
   displayName: string;
   membershipTier: string;
+  membershipExpiresAt?: Date | null;
+  emailVerifiedAt?: Date | null;
   createdAt: Date;
 }): AuthUserView {
+  const tier: MembershipTier =
+    user.membershipTier === "pro" ? "pro" : user.membershipTier === "lite" ? "lite" : "free";
   return {
     id: user.id,
     email: user.email,
     displayName: user.displayName,
-    membershipTier: user.membershipTier === "pro" ? "pro" : "free",
+    membershipTier: tier,
+    membershipExpiresAt: user.membershipExpiresAt ? user.membershipExpiresAt.toISOString() : null,
+    emailVerified: !!user.emailVerifiedAt,
     createdAt: user.createdAt.toISOString(),
   };
 }

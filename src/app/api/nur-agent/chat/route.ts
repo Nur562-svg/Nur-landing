@@ -5,7 +5,7 @@ import { createOpenAI } from "@ai-sdk/openai";
 import { z } from "zod/v4";
 import { getRequiredCourseBySlug } from "@/content/courses";
 import { getCurrentSession } from "@/lib/auth/session";
-import { recordServerUsage, checkAndEnforceQuota } from "@/lib/quotas";
+import { recordServerUsage, checkAndEnforceQuota } from "@/lib/quotas-server";
 import { selectKnowledgePointById } from "@/lib/course-selectors";
 import { buildChatContext } from "@/lib/nur-agent/chat-context";
 import { buildChatSystemPrompt } from "@/lib/nur-agent/chat-prompt";

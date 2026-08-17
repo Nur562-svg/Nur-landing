@@ -1,7 +1,7 @@
 "use client";
 
 import type { ChangeEvent } from "react";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import {
   ArrowRight,
@@ -13,10 +13,18 @@ import {
   PenLine,
   X,
 } from "lucide-react";
-import type { CourseDefinition } from "@/types/learning";
+import type { CourseDefinition, FsrsCriterionState, LearnerAttemptRecord } from "@/types/learning";
 import { useLearningMemory } from "@/hooks/use-learning-memory";
 import { useWrongQuestionCenter } from "@/hooks/use-wrong-questions";
-import { triggerLearnerStateSync, performReliableLoginMerge } from "@/lib/learner-state-sync";
+import {
+  clearResolvedConflicts,
+  resolveAllSyncConflicts,
+  resolveSyncConflict,
+  triggerLearnerStateSync,
+  performReliableLoginMerge,
+  type SyncConflictResolution,
+} from "@/lib/learner-state-sync";
+import { useSyncConflicts } from "@/hooks/use-sync-conflicts";
 import { SyncStatusBadge } from "./sync-status-badge";
 import { getAdmissionSyncConsents, setAdmissionSyncConsent } from "@/lib/material-admission";
 import { useSyncStatus } from "@/hooks/use-sync-status";
@@ -68,6 +76,25 @@ function saveProfile(profile: StoredProfile): void {
 }
 
 const DAY_NAMES = ["周日", "周一", "周二", "周三", "周四", "周五", "周六"];
+
+const FSRS_STATE_LABELS: Record<FsrsCriterionState["state"], string> = {
+  new: "未开始",
+  learning: "学习中",
+  review: "复习中",
+  relearning: "重学中",
+};
+
+function formatFsrsSnapshot(snapshot: FsrsCriterionState): string {
+  const date = snapshot.lastReviewAt ? snapshot.lastReviewAt.slice(0, 10) : "无记录";
+  return `${FSRS_STATE_LABELS[snapshot.state]} · 稳定度 ${snapshot.stability.toFixed(1)} · 遗忘 ${snapshot.lapses} 次 · ${date}`;
+}
+
+function formatAttemptSnapshot(snapshot: LearnerAttemptRecord): string {
+  const excerpt = snapshot.confirmedText.length > 16
+    ? `${snapshot.confirmedText.slice(0, 16)}…`
+    : snapshot.confirmedText;
+  return `${snapshot.confirmedAt.slice(0, 10)} · ${excerpt}`;
+}
 
 function computeWeekDays(): { day: string; date: string; today: boolean }[] {
   const today = new Date();
@@ -131,7 +158,6 @@ export function LearningDashboard({ courses }: LearningDashboardProps) {
 
   // M3 会员配额
   const [quotas, setQuotas] = useState<UserQuotas | null>(null);
-  const [upgrading, setUpgrading] = useState(false);
 
   /* eslint-disable react-hooks/set-state-in-effect -- 挂载后从 localStorage 读取实际 profile，避免 hydration mismatch */
   useEffect(() => {
@@ -154,16 +180,29 @@ export function LearningDashboard({ courses }: LearningDashboardProps) {
 
   // M2: 可靠登录合并 + 双向同步骨架（使用集中 performReliableLoginMerge）
   // 按 user.email 去重；全量上传 + 下载 + 客户端 merge + 状态更新
-  const [hasSyncedForUser, setHasSyncedForUser] = useState<string | null>(null);
-  useEffect(() => {
-    if (!user?.email || hasSyncedForUser === user.email) return;
-    setHasSyncedForUser(user.email);
+  // （仅作守卫、不参与渲染，用 ref 避免 effect 内同步 setState）
+  const hasSyncedForUserRef = useRef<string | null>(null);
 
-    void performReliableLoginMerge();
+  const fetchQuotas = async () => {
+    try {
+      const res = await fetch("/api/auth/quotas", { credentials: "include" });
+      if (res.ok) {
+        const data = (await res.json()) as { ok?: boolean; quotas?: UserQuotas };
+        if (data.ok && data.quotas) setQuotas(data.quotas);
+      }
+    } catch (e) { /* silent for demo */ }
+  };
+
+  useEffect(() => {
+    if (!user?.email || hasSyncedForUserRef.current === user.email) return;
+    hasSyncedForUserRef.current = user.email;
+
+    void performReliableLoginMerge(user.email);
 
     // M3: 登录后刷新配额
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- setQuotas 位于 await 之后，非同步 setState；规则跨过程分析无法识别
     void fetchQuotas();
-  }, [user?.email, hasSyncedForUser]);
+  }, [user?.email]);
 
   // M2 全面优化：网络恢复或标签可见时自动重同步（跨设备友好）
   useEffect(() => {
@@ -188,11 +227,14 @@ export function LearningDashboard({ courses }: LearningDashboardProps) {
   }, [user?.email]);
 
   // M3: 当用户存在时确保配额已加载（包括页面直达）
+  // （ref 守卫代替 quotas 依赖，避免 effect → setQuotas → effect 级联）
+  const quotasLoadedRef = useRef(false);
   useEffect(() => {
-    if (user?.email && !quotas) {
-      void fetchQuotas();
-    }
-  }, [user?.email, quotas]);
+    if (!user?.email || quotasLoadedRef.current) return;
+    quotasLoadedRef.current = true;
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- setQuotas 位于 await 之后，非同步 setState；规则跨过程分析无法识别
+    void fetchQuotas();
+  }, [user?.email]);
 
   /* Compute real progress stats from learning memory */
   const weeklyAttempts = useMemo(() => {
@@ -216,39 +258,19 @@ export function LearningDashboard({ courses }: LearningDashboardProps) {
   // M2 优化：使用共享 hook
   const syncStatus = useSyncStatus();
 
-  const fetchQuotas = async () => {
-    try {
-      const res = await fetch("/api/auth/quotas", { credentials: "include" });
-      if (res.ok) {
-        const data = await res.json();
-        if (data.ok) setQuotas(data.quotas);
-      }
-    } catch (e) { /* silent for demo */ }
+  // M2 冲突可见性：当前账户的未解决同步冲突
+  // （快照引用已按原始字符串缓存；列表上限 100，过滤无需 memo）
+  const allConflicts = useSyncConflicts();
+  const conflicts = user?.email
+    ? allConflicts.filter((item) => item.userEmail === user.email)
+    : [];
+
+  const handleResolveConflict = (conflictId: string, resolution: SyncConflictResolution) => {
+    resolveSyncConflict(conflictId, resolution);
   };
 
-  const handleUpgradeToPro = async () => {
-    if (upgrading) return;
-    setUpgrading(true);
-    try {
-      const res = await fetch("/api/auth/demo-upgrade", { method: "POST", credentials: "include" });
-      const data = await res.json();
-      if (data.ok) {
-        // M3: clear client bumps on upgrade
-        try {
-          localStorage.removeItem("nur-learn:quota:course-builds");
-          localStorage.removeItem("nur-learn:quota:agent-calls");
-          window.dispatchEvent(new CustomEvent("nur-quota-update"));
-        } catch {}
-        await fetchQuotas();
-        window.location.reload();
-      } else {
-        alert(data.error || "升级失败");
-      }
-    } catch (e) {
-      alert("升级请求失败");
-    } finally {
-      setUpgrading(false);
-    }
+  const handleResolveAllConflicts = (resolution: SyncConflictResolution) => {
+    resolveAllSyncConflicts(resolution, user?.email);
   };
 
   const handleManualSync = () => {
@@ -412,19 +434,25 @@ export function LearningDashboard({ courses }: LearningDashboardProps) {
                       </div>
                     )}
                     {user.membershipTier !== "pro" && (
-                      <button
-                        onClick={handleUpgradeToPro}
-                        disabled={upgrading}
-                        style={{fontSize: "11px", marginTop: 6, padding: "2px 8px", border: "1px solid #c9a36b", borderRadius: 2, background: "#fffaf0"}}
+                      <a
+                        href="/account/billing"
+                        style={{fontSize: "11px", marginTop: 6, padding: "2px 8px", border: "1px solid #c9a36b", borderRadius: 2, background: "#fffaf0", display: "inline-block", textDecoration: "none", color: "#10100f"}}
                       >
-                        {upgrading ? "升级中..." : "升级到 Pro（演示）"}
-                      </button>
+                        升级会员
+                      </a>
                     )}
+                    <a
+                      href="/account/billing"
+                      style={{fontSize: "12px", marginTop: 6, display: "block", textDecoration: "none", color: "#17659a"}}
+                    >
+                      会员中心 · {user.membershipTier === "pro" ? "Pro 会员" : user.membershipTier === "lite" ? "Lite 会员" : "免费版"}
+                    </a>
                   </div>
                   <button
                     className={styles.accountLogout}
                     type="button"
                     onClick={() => {
+                      clearResolvedConflicts(user.email);
                       void logout();
                       setAccountOpen(false);
                     }}
@@ -446,6 +474,78 @@ export function LearningDashboard({ courses }: LearningDashboardProps) {
                   >
                     导出学习状态（JSON）
                   </button>
+
+                  {/* M2 冲突可见性：同步冲突确认 */}
+                  {conflicts.length > 0 ? (
+                    <section className={styles.conflictSection} aria-label="同步冲突确认">
+                      <p className={styles.conflictHeading}>
+                        有 {conflicts.length} 处同步冲突，需要确认
+                      </p>
+                      <p className={styles.conflictHint}>
+                        本机与云端的同一学习记录都在上次合并后更新过，需要你选择保留哪一份。
+                      </p>
+                      <div className={styles.conflictBulkRow}>
+                        <button
+                          type="button"
+                          className={styles.conflictBulkButton}
+                          onClick={() => handleResolveAllConflicts("local")}
+                        >
+                          全部以本机为准
+                        </button>
+                        <button
+                          type="button"
+                          className={styles.conflictBulkButton}
+                          onClick={() => handleResolveAllConflicts("server")}
+                        >
+                          全部以云端为准
+                        </button>
+                      </div>
+                      <ul className={styles.conflictList}>
+                        {conflicts.map((conflict) => (
+                          <li key={conflict.id} className={styles.conflictItem}>
+                            <div className={styles.conflictItemHead}>
+                              <span className={styles.conflictItemType}>
+                                {conflict.type === "fsrs" ? "FSRS 记忆准则" : "确认作答"}
+                              </span>
+                              <span className={styles.conflictItemRef} title={conflict.refId}>
+                                {conflict.refId}
+                              </span>
+                            </div>
+                            {conflict.type === "fsrs"
+                              && conflict.local.kind === "fsrs"
+                              && conflict.server.kind === "fsrs" ? (
+                              <div className={styles.conflictCompare}>
+                                <p><span>本机</span>{formatFsrsSnapshot(conflict.local.fsrs)}</p>
+                                <p><span>云端</span>{formatFsrsSnapshot(conflict.server.fsrs)}</p>
+                              </div>
+                            ) : null}
+                            {conflict.type === "attempt"
+                              && conflict.local.kind === "attempt"
+                              && conflict.server.kind === "attempt" ? (
+                              <div className={styles.conflictCompare}>
+                                <p><span>本机</span>{formatAttemptSnapshot(conflict.local.attempt)}</p>
+                                <p><span>云端</span>{formatAttemptSnapshot(conflict.server.attempt)}</p>
+                              </div>
+                            ) : null}
+                            <div className={styles.conflictItemActions}>
+                              <button
+                                type="button"
+                                onClick={() => handleResolveConflict(conflict.id, "local")}
+                              >
+                                以本机为准
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => handleResolveConflict(conflict.id, "server")}
+                              >
+                                以云端为准
+                              </button>
+                            </div>
+                          </li>
+                        ))}
+                      </ul>
+                    </section>
+                  ) : null}
 
                   {/* M2 优化：手动同步 + 更完善的 consent 管理 */}
                   <div className={styles.accountLocalSection} style={{marginTop: 8}}>

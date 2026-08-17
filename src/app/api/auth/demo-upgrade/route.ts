@@ -44,6 +44,8 @@ export async function POST() {
       email: updated.email,
       displayName: updated.displayName,
       membershipTier: "pro",
+      membershipExpiresAt: null,
+      emailVerified: false,
       createdAt: updated.createdAt.toISOString(),
     };
 

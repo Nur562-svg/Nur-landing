@@ -12,6 +12,11 @@ const eslintConfig = defineConfig([
     "out/**",
     "build/**",
     "next-env.d.ts",
+    // Gitignored build outputs and scratch directories (same category as .next):
+    ".open-next/**",
+    ".wrangler/**",
+    "tmp/**",
+    ".qoder/**",
   ]),
 ]);
 

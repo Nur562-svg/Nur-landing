@@ -1,389 +1,19 @@
 /**
- * M2: 学习状态云同步服务（server-only）
- * - 复用现有 contracts（types/* , learning-memory parsers, fsrs）
- * - 首次登录时支持 localStorage → server 上传合并
- * - 私人材料准入记录同步需独立 consent（MaterialAdmissionSyncConsent）
- * - 所有写入必须有明确 userId（来自 M1 JWT session）
+ * M2: 学习状态云同步（浏览器端）
+ * 与 server-only 的 learner-state-sync-server.ts 拆分：本文件仅含浏览器端状态管理
+ * 与同步触发逻辑，不含任何服务端依赖（避免客户端 bundle 引入 Prisma）。
+ * 服务端函数见 learner-state-sync-server.ts（仅 API route 使用）。
  */
-
-import { prisma } from "./prisma";
-import { Prisma } from "@prisma/client";
+import type { QBAttemptRecord, QBFavoriteStore } from "@/types/question-bank";
 import type {
-  LearnerAttemptRecord,
   FsrsCriterionState,
+  FsrsLearningState,
+  LearnerAttemptRecord,
   LearningMemoryState,
 } from "@/types/learning";
-import type { QBAttemptRecord, QBFavoriteStore } from "@/types/question-bank";
-import type { MockExamSession } from "@/types/mock-exam";
 import { parseLearningMemoryJson } from "./learning-memory";
 import { getAdmissionSyncConsents } from "./material-admission";
-
-function toJsonValue<T>(v: T): Prisma.InputJsonValue {
-  return v as unknown as Prisma.InputJsonValue;
-}
-
-// 服务器端记录 confirmed attempt（接受 domain types, 内部转 JSON）
-export async function recordConfirmedAttemptServer(
-  userId: string,
-  input: {
-    courseId: string;
-    courseVersionId?: string;
-    offeringId?: string;
-    knowledgePointId: string;
-    surface: "subjective-writing" | "case-reasoning";
-    taskId: string;
-    segmentId?: string | null;
-    confirmedText: string;
-    criterionResults: readonly import("@/types/learning").LearnerAttemptCriterionResult[];
-    answerConfidence: string;
-    scoringStandard?: { id: string; version: string; authority: string };
-  }
-): Promise<{ ok: true; id: string } | { ok: false; error: string }> {
-  try {
-    const attempt = await prisma.learnerAttempt.create({
-      data: {
-        userId,
-        courseId: input.courseId,
-        courseVersionId: input.courseVersionId,
-        offeringId: input.offeringId,
-        knowledgePointId: input.knowledgePointId,
-        surface: input.surface,
-        taskId: input.taskId,
-        segmentId: input.segmentId ?? null,
-        confirmedText: input.confirmedText.slice(0, 12000),
-        criterionResults: toJsonValue(input.criterionResults),
-        answerConfidence: input.answerConfidence,
-        scoringStandard: input.scoringStandard ? toJsonValue(input.scoringStandard) : undefined,
-      },
-    });
-    return { ok: true, id: attempt.id };
-  } catch {
-    return { ok: false, error: "persist-failed" };
-  }
-}
-
-// FSRS 状态 upsert（按 criterionId）
-export async function upsertFsrsStateServer(
-  userId: string,
-  criterionId: string,
-  state: FsrsCriterionState
-): Promise<void> {
-  await prisma.learnerFsrsState.upsert({
-    where: { userId_criterionId: { userId, criterionId } },
-    create: {
-      userId,
-      criterionId,
-      state: state.state,
-      difficulty: state.difficulty,
-      stability: state.stability,
-      reps: state.reps,
-      lapses: state.lapses,
-      lastReviewAt: state.lastReviewAt ? new Date(state.lastReviewAt) : null,
-    },
-    update: {
-      state: state.state,
-      difficulty: state.difficulty,
-      stability: state.stability,
-      reps: state.reps,
-      lapses: state.lapses,
-      lastReviewAt: state.lastReviewAt ? new Date(state.lastReviewAt) : null,
-      updatedAt: new Date(),
-    },
-  });
-}
-
-// 题库 attempt（追加）
-export async function addQbAttemptServer(userId: string, record: QBAttemptRecord): Promise<void> {
-  await prisma.qbAttempt.create({
-    data: {
-      userId,
-      questionId: record.questionId,
-      selectedIndex: record.selectedIndex,
-      isCorrect: record.isCorrect,
-      attemptedAt: new Date(record.attemptedAt),
-    },
-  });
-}
-
-// 题库收藏 toggle（幂等）
-export async function setQbFavoriteServer(userId: string, questionId: string, isFav: boolean): Promise<void> {
-  if (isFav) {
-    await prisma.qbFavorite.upsert({
-      where: { userId_questionId: { userId, questionId } },
-      create: { userId, questionId },
-      update: {},
-    });
-  } else {
-    await prisma.qbFavorite.deleteMany({
-      where: { userId, questionId },
-    });
-  }
-}
-
-// 模考会话持久化
-export async function saveMockExamSessionServer(userId: string, session: MockExamSession): Promise<void> {
-  const scoreValue = (session as { score?: unknown }).score;
-  await prisma.mockExamSession.upsert({
-    where: { sessionId: session.sessionId },
-    create: {
-      userId,
-      sessionId: session.sessionId,
-      courseId: session.courseId,
-      startedAt: new Date(session.startedAt),
-      completedAt: session.completedAt ? new Date(session.completedAt) : null,
-      answers: toJsonValue(session.answers),
-      score: scoreValue != null ? toJsonValue(scoreValue) : undefined,
-    },
-    update: {
-      completedAt: session.completedAt ? new Date(session.completedAt) : null,
-      answers: toJsonValue(session.answers),
-      score: scoreValue != null ? toJsonValue(scoreValue) : undefined,
-    },
-  });
-}
-
-// 私人材料准入云同步同意（单独 gate）
-export async function setAdmissionSyncConsent(
-  userId: string,
-  admissionRecordId: string,
-  consent: boolean
-): Promise<void> {
-  await prisma.materialAdmissionSyncConsent.upsert({
-    where: { userId_admissionRecordId: { userId, admissionRecordId } },
-    create: {
-      userId,
-      admissionRecordId,
-      consentGiven: consent,
-      consentedAt: consent ? new Date() : null,
-    },
-    update: {
-      consentGiven: consent,
-      consentedAt: consent ? new Date() : null,
-      updatedAt: new Date(),
-    },
-  });
-}
-
-// 核心合并入口：首次登录时 local → server
-export async function mergeLocalStateOnLogin(
-  userId: string,
-  localMemoryJson: string | null,
-  localQbAttempts: Record<string, QBAttemptRecord[]> | null,
-  localQbFavorites: Record<string, boolean> | null,
-  localMockSessions: unknown[] | null
-): Promise<{ merged: boolean; errors: string[] }> {
-  const errors: string[] = [];
-
-  // learning memory + FSRS
-  if (localMemoryJson) {
-    try {
-      const mem = parseLearningMemoryJson(localMemoryJson);
-      if (mem) {
-        for (const a of mem.attempts) {
-          await recordConfirmedAttemptServer(userId, {
-            courseId: a.courseId,
-            courseVersionId: a.courseVersionId,
-            offeringId: a.offeringId,
-            knowledgePointId: a.knowledgePointId,
-            surface: a.surface,
-            taskId: a.taskId,
-            segmentId: a.segmentId,
-            confirmedText: a.confirmedText,
-            criterionResults: a.criterionResults,
-            answerConfidence: a.answerConfidence,
-            scoringStandard: a.scoringStandard,
-          });
-        }
-        if (mem.fsrsState?.criteria) {
-          for (const [critId, fs] of Object.entries(mem.fsrsState.criteria)) {
-            await upsertFsrsStateServer(userId, critId, fs);
-          }
-        }
-      }
-    } catch {
-      errors.push("memory-merge-failed");
-    }
-  }
-
-  // QB
-  if (localQbAttempts) {
-    try {
-      for (const [, recs] of Object.entries(localQbAttempts)) {
-        if (Array.isArray(recs)) {
-          for (const r of recs) {
-            await addQbAttemptServer(userId, r);
-          }
-        }
-      }
-    } catch {
-      errors.push("qb-attempt-merge-failed");
-    }
-  }
-  if (localQbFavorites) {
-    try {
-      for (const [qid, fav] of Object.entries(localQbFavorites)) {
-        await setQbFavoriteServer(userId, qid, !!fav);
-      }
-    } catch {
-      errors.push("qb-fav-merge-failed");
-    }
-  }
-
-  // Mock
-  if (Array.isArray(localMockSessions)) {
-    try {
-      for (const s of localMockSessions as MockExamSession[]) {
-        await saveMockExamSessionServer(userId, s);
-      }
-    } catch {
-      errors.push("mock-merge-failed");
-    }
-  }
-
-  return { merged: errors.length === 0, errors };
-}
-
-// === Phase 2: Server fetch for download/merge ===
-async function fetchUserAttempts(userId: string): Promise<LearnerAttemptRecord[]> {
-  const rows = await prisma.learnerAttempt.findMany({
-    where: { userId },
-    orderBy: { createdAt: "desc" },
-    take: 300,
-  });
-  return rows.map((r) => ({
-    version: 1,
-    id: r.id,
-    courseId: r.courseId,
-    courseVersionId: r.courseVersionId ?? "",
-    offeringId: r.offeringId ?? "",
-    knowledgePointId: r.knowledgePointId,
-    surface: r.surface as import("@/types/learning").LearningAttemptSurface,
-    taskId: r.taskId,
-    segmentId: r.segmentId ?? null,
-    confirmedText: r.confirmedText,
-    confirmedAt: r.createdAt.toISOString(),
-    scoringStandard: (r.scoringStandard as unknown) as { id: string; version: string; authority: import("@/types/learning").ScoringAuthority } ?? { id: "", version: "", authority: "nur-platform" as import("@/types/learning").ScoringAuthority },
-    criterionResults: (r.criterionResults as unknown) as readonly import("@/types/learning").LearnerAttemptCriterionResult[] ?? [],
-    answerConfidence: r.answerConfidence as import("@/types/learning").AssessmentAnswerConfidence,
-  }));
-}
-
-async function fetchUserFsrs(userId: string): Promise<import("@/types/learning").FsrsLearningState | null> {
-  const rows = await prisma.learnerFsrsState.findMany({ where: { userId } });
-  if (!rows.length) return null;
-  const criteria: Record<string, import("@/types/learning").FsrsCriterionState> = {};
-  for (const r of rows) {
-    criteria[r.criterionId] = {
-      state: r.state as import("@/types/learning").FsrsCriterionState["state"],
-      difficulty: r.difficulty,
-      stability: r.stability,
-      reps: r.reps,
-      lapses: r.lapses,
-      lastReviewAt: r.lastReviewAt ? r.lastReviewAt.toISOString() : null,
-    };
-  }
-  return { version: 2, criteria };
-}
-
-async function fetchUserQbAttempts(userId: string): Promise<Record<string, import("@/types/question-bank").QBAttemptRecord[]>> {
-  const rows = await prisma.qbAttempt.findMany({ where: { userId }, orderBy: { attemptedAt: "desc" }, take: 500 });
-  const grouped: Record<string, import("@/types/question-bank").QBAttemptRecord[]> = {};
-  for (const r of rows) {
-    if (!grouped[r.questionId]) grouped[r.questionId] = [];
-    grouped[r.questionId].push({
-      questionId: r.questionId,
-      selectedIndex: r.selectedIndex,
-      isCorrect: r.isCorrect,
-      attemptedAt: r.attemptedAt.toISOString(),
-    });
-  }
-  return grouped;
-}
-
-async function fetchUserMockSessions(userId: string): Promise<import("@/types/mock-exam").MockExamSession[]> {
-  const rows = await prisma.mockExamSession.findMany({ where: { userId }, orderBy: { createdAt: "desc" }, take: 50 });
-  return rows.map((r) => ({
-    sessionId: r.sessionId,
-    courseId: r.courseId,
-    startedAt: r.startedAt.toISOString(),
-    completedAt: r.completedAt ? r.completedAt.toISOString() : null,
-    answers: r.answers,
-    score: r.score,
-  })) as unknown as import("@/types/mock-exam").MockExamSession[];
-}
-
-export async function getLearnerStateForUser(userId: string) {
-  const [attempts, fsrsState, qbAttempts, qbFavRows, mockSessions] = await Promise.all([
-    fetchUserAttempts(userId),
-    fetchUserFsrs(userId),
-    fetchUserQbAttempts(userId),
-    prisma.qbFavorite.findMany({ where: { userId } }),
-    fetchUserMockSessions(userId),
-  ]);
-
-  const qbFavorites: import("@/types/question-bank").QBFavoriteStore = {};
-  for (const f of qbFavRows) {
-    qbFavorites[f.questionId] = true;
-  }
-
-  // Reconstruct minimal memory (reviewTasks left empty; client derives on next actions)
-  const memoryState: Partial<import("@/types/learning").LearningMemoryState> = {
-    version: 2,
-    preferences: {
-      currentAnswerEnabled: true,
-      confirmedHistoryEnabled: true,
-      nextStepPromptEnabled: true,
-      historySuggestionHandled: false,
-    },
-    attempts,
-    reviewTasks: [],
-    standardUpdateNotices: [],
-    fsrsState,
-  };
-
-  return {
-    memory: JSON.stringify(memoryState),
-    qbAttempts,
-    qbFavorites,
-    mockSessions,
-  };
-}
-
-export type LearnerSyncPayload = {
-  memory?: string | null;
-  qbAttempts?: Record<string, QBAttemptRecord[]>;
-  qbFavorites?: QBFavoriteStore;
-  mockSessions?: MockExamSession[];
-  admissionConsents?: Array<{ recordId: string; consent: boolean }>;
-};
-
-export async function syncLearnerState(
-  userId: string,
-  payload: LearnerSyncPayload
-): Promise<{ ok: true } | { ok: false; error: string }> {
-  const errs: string[] = [];
-  const res = await mergeLocalStateOnLogin(
-    userId,
-    payload.memory ?? null,
-    payload.qbAttempts ?? null,
-    payload.qbFavorites ?? null,
-    payload.mockSessions ?? null
-  );
-  if (!res.merged) errs.push(...res.errors);
-
-  if (payload.admissionConsents) {
-    for (const c of payload.admissionConsents) {
-      try {
-        await setAdmissionSyncConsent(userId, c.recordId, c.consent);
-      } catch {
-        errs.push("admission-consent-failed");
-      }
-    }
-  }
-
-  return errs.length === 0 ? { ok: true } : { ok: false, error: errs.join(";") };
-}
-
+import type { LearnerSyncPayload } from "./learner-state-sync-server";
 
 // === M2 Phase 4: Sync status (debounce + visibility) ===
 const SYNC_STATUS_KEY = "nur-learn:sync-status:v1";
@@ -393,6 +23,11 @@ export type LearnerSyncStatus = {
   isSyncing: boolean;
   lastSyncAt?: string;
   lastError?: string | null;
+  /**
+   * 上次成功「下载 + 合并」的时间（冲突检测基线）。
+   * 与 lastSyncAt 不同：纯上传也会推进 lastSyncAt，但不推进本字段。
+   */
+  lastMergeAt?: string;
 };
 
 // React 19: getSnapshot 必须返回稳定引用（缓存对象），
@@ -559,13 +194,37 @@ export function triggerLearnerStateSync(immediate = false): void {
 
 // === Phase 2: Client merge (download + union, prefer latest) ===
 
-export function mergeServerStateIntoLocal(server: Partial<LearnerSyncPayload> & { memory?: string | null }) {
+export function mergeServerStateIntoLocal(
+  server: Partial<LearnerSyncPayload> & { memory?: string | null },
+  userEmail?: string,
+) {
   if (typeof window === "undefined") return;
   try {
     // Merge learning-memory (attempts + fsrs)
     if (server.memory) {
       const serverMem = parseLearningMemoryJson(server.memory);
       const local = parseLearningMemoryJson(window.localStorage.getItem("nur-learn:learning-memory:v1"));
+
+      // 冲突检测：用合并前的本地快照 + 上次合并基线（必须在合并改动本地之前）
+      const lastMergeAt = getSyncStatus().lastMergeAt ?? null;
+      const detectedAt = new Date().toISOString();
+      const fsrsConflicts = detectFsrsConflicts(
+        local.fsrsState?.criteria ?? {},
+        serverMem.fsrsState?.criteria ?? {},
+        lastMergeAt,
+        userEmail ?? "",
+        detectedAt,
+      );
+      const attemptConflicts = detectAttemptConflicts(
+        local.attempts,
+        serverMem.attempts,
+        userEmail ?? "",
+        detectedAt,
+      );
+      if (fsrsConflicts.length + attemptConflicts.length > 0) {
+        recordSyncConflicts([...fsrsConflicts, ...attemptConflicts]);
+      }
+
       // attempts: union by id, prefer latest confirmedAt
       const byId = new Map(local.attempts.map((a) => [a.id, a]));
       for (const sa of serverMem.attempts || []) {
@@ -619,7 +278,7 @@ export function mergeServerStateIntoLocal(server: Partial<LearnerSyncPayload> & 
       };
       window.localStorage.setItem("nur-learn:learning-memory:v1", JSON.stringify(merged));
       window.dispatchEvent(new Event("nur-learn:learning-memory-change"));
-      setSyncStatus({ lastSyncAt: new Date().toISOString(), lastError: null });
+      setSyncStatus({ lastSyncAt: detectedAt, lastMergeAt: detectedAt, lastError: null });
     }
 
     // QB attempts: append missing
@@ -670,7 +329,7 @@ export function mergeServerStateIntoLocal(server: Partial<LearnerSyncPayload> & 
 // 3. 客户端 mergeServerStateIntoLocal（timestamp 优先 union + 清理）
 // 4. 更新 sync status，触发 memory 事件让 useLearningMemory 等消费者刷新
 // 所有错误静默（local-first），状态通过 useSyncStatus 暴露。
-export async function performReliableLoginMerge(): Promise<void> {
+export async function performReliableLoginMerge(userEmail?: string): Promise<void> {
   if (typeof window === "undefined") return;
 
   setSyncStatus({ isSyncing: true, lastError: null });
@@ -693,11 +352,11 @@ export async function performReliableLoginMerge(): Promise<void> {
     const getRes = await fetch("/api/learn/sync", {
       credentials: "include",
     });
-    const data: { ok?: boolean; state?: Parameters<typeof mergeServerStateIntoLocal>[0]; error?: string } = await getRes.json().catch(() => ({}));
+    const data = (await getRes.json().catch(() => ({}))) as { ok?: boolean; state?: Parameters<typeof mergeServerStateIntoLocal>[0]; error?: string };
 
-    // 3. 合并到本地（会 dispatch memory-change + 更新 lastSyncAt）
+    // 3. 合并到本地（会 dispatch memory-change + 记录冲突 + 更新 lastMergeAt）
     if (data?.state) {
-      mergeServerStateIntoLocal(data.state);
+      mergeServerStateIntoLocal(data.state, userEmail);
     } else if (data?.ok && !data.state) {
       // server 可能尚无数据，upload 已完成即可
     }
@@ -715,4 +374,384 @@ export async function performReliableLoginMerge(): Promise<void> {
     setSyncStatus({ isSyncing: false, lastError: msg });
     // local 永远优先，不抛
   }
+}
+
+// === 冲突可见性：SyncConflict 检测、存储与解决（2026-08-17） ===
+// 设计要点：
+// - 冲突只在「下载 + 合并」时检测（debounced 上传不下载、不检测）。
+// - 检测基线是 lastMergeAt（不是 lastSyncAt，后者会被纯上传推进）。
+// - FSRS 冲突 = 同一 criterionId 双方都在基线后更新且语义不同；
+//   attempt 冲突 = 同一 id 内容不同（现有管线中服务端 attempt 另发 cuid，
+//   本类型为防御性实现）。
+// - 检出后临时值仍按现行「更新者胜」落地，不打断学习；用户事后裁决。
+// - 解决「以本机为准」= 把该准则 lastReviewAt 置为当前时刻（用户此刻
+//   显式重申），借既有上传通道覆盖服务端（服务端 upsert 有时间戳守卫）。
+
+const SYNC_CONFLICTS_KEY = "nur-learn:sync-conflicts:v1";
+const SYNC_CONFLICTS_EVENT = "nur-learn:sync-conflicts-change";
+const MAX_SYNC_CONFLICTS = 100;
+
+export type SyncConflictResolution = "local" | "server";
+
+export type SyncConflictSnapshot =
+  | { kind: "fsrs"; fsrs: FsrsCriterionState }
+  | { kind: "attempt"; attempt: LearnerAttemptRecord };
+
+export type SyncConflict = {
+  version: 1;
+  /** 确定性主键：`fsrs:${refId}` 或 `attempt:${refId}` */
+  id: string;
+  type: "fsrs" | "attempt";
+  refId: string;
+  /** 冲突归属的账户邮箱（多账号同浏览器不串） */
+  userEmail: string;
+  local: SyncConflictSnapshot;
+  server: SyncConflictSnapshot;
+  reason: "both-updated-since-last-merge" | "same-id-different-content";
+  detectedAt: string;
+};
+
+export type SyncConflictStore = {
+  version: 1;
+  items: SyncConflict[];
+};
+
+function isPlainRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === "object" && value !== null;
+}
+
+function isIsoDateString(value: unknown): value is string {
+  return typeof value === "string" && !Number.isNaN(Date.parse(value));
+}
+
+function isFsrsSnapshot(value: unknown): value is FsrsCriterionState {
+  if (!isPlainRecord(value)) return false;
+  return (value.state === "new"
+      || value.state === "learning"
+      || value.state === "review"
+      || value.state === "relearning")
+    && typeof value.difficulty === "number" && Number.isFinite(value.difficulty)
+    && typeof value.stability === "number" && Number.isFinite(value.stability)
+    && typeof value.reps === "number" && Number.isInteger(value.reps) && value.reps >= 0
+    && typeof value.lapses === "number" && Number.isInteger(value.lapses) && value.lapses >= 0
+    && (value.lastReviewAt === null || isIsoDateString(value.lastReviewAt));
+}
+
+function isAttemptSnapshot(value: unknown): value is LearnerAttemptRecord {
+  if (!isPlainRecord(value) || !isPlainRecord(value.scoringStandard)) return false;
+  return typeof value.id === "string" && value.id.length > 0
+    && typeof value.courseId === "string"
+    && typeof value.knowledgePointId === "string"
+    && (value.surface === "subjective-writing" || value.surface === "case-reasoning")
+    && typeof value.taskId === "string"
+    && (value.segmentId === null || typeof value.segmentId === "string")
+    && typeof value.confirmedText === "string"
+    && isIsoDateString(value.confirmedAt)
+    && Array.isArray(value.criterionResults)
+    && value.criterionResults.length > 0
+    && value.criterionResults.every(isPlainRecord);
+}
+
+function isSyncConflictSnapshot(value: unknown, type: "fsrs" | "attempt"): value is SyncConflictSnapshot {
+  if (!isPlainRecord(value)) return false;
+  if (type === "fsrs") {
+    return value.kind === "fsrs" && isFsrsSnapshot(value.fsrs);
+  }
+  return value.kind === "attempt" && isAttemptSnapshot(value.attempt);
+}
+
+/** 严格解析冲突存储；任何畸形输入返回空存储（local-first，静默降级）。 */
+export function parseSyncConflictStore(raw: string | null): SyncConflictStore {
+  if (!raw) return { version: 1, items: [] };
+  try {
+    const parsed: unknown = JSON.parse(raw);
+    if (!isPlainRecord(parsed) || parsed.version !== 1 || !Array.isArray(parsed.items)) {
+      return { version: 1, items: [] };
+    }
+    const items: SyncConflict[] = [];
+    for (const entry of parsed.items) {
+      if (!isPlainRecord(entry)) continue;
+      if (entry.version !== 1) continue;
+      if (entry.type !== "fsrs" && entry.type !== "attempt") continue;
+      if (typeof entry.id !== "string" || entry.id.length === 0) continue;
+      if (typeof entry.refId !== "string" || entry.refId.length === 0) continue;
+      if (typeof entry.userEmail !== "string") continue;
+      if (!isIsoDateString(entry.detectedAt)) continue;
+      if (entry.reason !== "both-updated-since-last-merge" && entry.reason !== "same-id-different-content") continue;
+      if (!isSyncConflictSnapshot(entry.local, entry.type)) continue;
+      if (!isSyncConflictSnapshot(entry.server, entry.type)) continue;
+      items.push({
+        version: 1,
+        id: entry.id,
+        type: entry.type,
+        refId: entry.refId,
+        userEmail: entry.userEmail,
+        local: entry.local,
+        server: entry.server,
+        reason: entry.reason,
+        detectedAt: entry.detectedAt,
+      });
+    }
+    return { version: 1, items: items.slice(0, MAX_SYNC_CONFLICTS) };
+  } catch {
+    return { version: 1, items: [] };
+  }
+}
+
+function readSyncConflictStore(): SyncConflictStore {
+  if (typeof window === "undefined") return { version: 1, items: [] };
+  try {
+    return parseSyncConflictStore(window.localStorage.getItem(SYNC_CONFLICTS_KEY));
+  } catch {
+    return { version: 1, items: [] };
+  }
+}
+
+function writeSyncConflictStore(store: SyncConflictStore): void {
+  if (typeof window === "undefined") return;
+  try {
+    window.localStorage.setItem(SYNC_CONFLICTS_KEY, JSON.stringify(store));
+    window.dispatchEvent(new Event(SYNC_CONFLICTS_EVENT));
+  } catch {
+    // storage unavailable，静默
+  }
+}
+
+/** 读取冲突列表；给定 userEmail 时只返回该账户的冲突。 */
+export function getSyncConflicts(userEmail?: string): SyncConflict[] {
+  const items = readSyncConflictStore().items;
+  return typeof userEmail === "string" && userEmail.length > 0
+    ? items.filter((item) => item.userEmail === userEmail)
+    : [...items];
+}
+
+export function subscribeToSyncConflicts(callback: () => void): () => void {
+  if (typeof window === "undefined") return () => {};
+  const handler = () => callback();
+  const onStorage = (event: StorageEvent) => {
+    if (event.key === SYNC_CONFLICTS_KEY) handler();
+  };
+  window.addEventListener(SYNC_CONFLICTS_EVENT, handler);
+  window.addEventListener("storage", onStorage);
+  return () => {
+    window.removeEventListener(SYNC_CONFLICTS_EVENT, handler);
+    window.removeEventListener("storage", onStorage);
+  };
+}
+
+function recordSyncConflicts(incoming: readonly SyncConflict[]): void {
+  if (incoming.length === 0) return;
+  const store = readSyncConflictStore();
+  const byId = new Map(store.items.map((item) => [item.id, item]));
+  for (const item of incoming) {
+    const existing = byId.get(item.id);
+    if (!existing || Date.parse(item.detectedAt) >= Date.parse(existing.detectedAt)) {
+      byId.set(item.id, item);
+    }
+  }
+  const items = [...byId.values()].slice(-MAX_SYNC_CONFLICTS);
+  writeSyncConflictStore({ version: 1, items });
+}
+
+function fsrsSemanticallyEqual(a: FsrsCriterionState, b: FsrsCriterionState): boolean {
+  return a.state === b.state
+    && a.difficulty === b.difficulty
+    && a.stability === b.stability
+    && a.reps === b.reps
+    && a.lapses === b.lapses;
+}
+
+/**
+ * FSRS 冲突检测（纯函数）：
+ * 同一 criterionId 双方都有记录、语义不同、且双方的 lastReviewAt 都晚于
+ * 上次合并基线（即两端都在上次同步后各自更新过）→ 冲突。
+ * 无基线（首次合并）时按现行时间戳优先静默合并，不记录冲突。
+ */
+export function detectFsrsConflicts(
+  localCriteria: Readonly<Record<string, FsrsCriterionState>>,
+  serverCriteria: Readonly<Record<string, FsrsCriterionState>>,
+  lastMergeAt: string | null,
+  userEmail: string,
+  detectedAt: string,
+): SyncConflict[] {
+  if (!lastMergeAt) return [];
+  const baseline = Date.parse(lastMergeAt);
+  const conflicts: SyncConflict[] = [];
+  for (const [refId, serverValue] of Object.entries(serverCriteria)) {
+    const localValue = localCriteria[refId];
+    if (!localValue) continue;
+    if (fsrsSemanticallyEqual(localValue, serverValue)) continue;
+    const localChanged = localValue.lastReviewAt !== null && Date.parse(localValue.lastReviewAt) > baseline;
+    const serverChanged = serverValue.lastReviewAt !== null && Date.parse(serverValue.lastReviewAt) > baseline;
+    if (!localChanged || !serverChanged) continue;
+    conflicts.push({
+      version: 1,
+      id: `fsrs:${refId}`,
+      type: "fsrs",
+      refId,
+      userEmail,
+      local: { kind: "fsrs", fsrs: { ...localValue } },
+      server: { kind: "fsrs", fsrs: { ...serverValue } },
+      reason: "both-updated-since-last-merge",
+      detectedAt,
+    });
+  }
+  return conflicts;
+}
+
+/**
+ * attempt 冲突检测（纯函数，防御性）：
+ * 同一 attemptId 两端内容不同 → 冲突。现有上传管线中服务端为 attempt
+ * 另发 cuid，该类型正常流程不会触发；用于异常数据的可见性兜底。
+ */
+export function detectAttemptConflicts(
+  localAttempts: readonly LearnerAttemptRecord[],
+  serverAttempts: readonly LearnerAttemptRecord[],
+  userEmail: string,
+  detectedAt: string,
+): SyncConflict[] {
+  const byId = new Map(localAttempts.map((attempt) => [attempt.id, attempt]));
+  const conflicts: SyncConflict[] = [];
+  for (const serverAttempt of serverAttempts) {
+    const localAttempt = byId.get(serverAttempt.id);
+    if (!localAttempt) continue;
+    const sameContent = localAttempt.confirmedText === serverAttempt.confirmedText
+      && JSON.stringify(localAttempt.criterionResults) === JSON.stringify(serverAttempt.criterionResults);
+    if (sameContent) continue;
+    conflicts.push({
+      version: 1,
+      id: `attempt:${serverAttempt.id}`,
+      type: "attempt",
+      refId: serverAttempt.id,
+      userEmail,
+      local: { kind: "attempt", attempt: { ...localAttempt } },
+      server: { kind: "attempt", attempt: { ...serverAttempt } },
+      reason: "same-id-different-content",
+      detectedAt,
+    });
+  }
+  return conflicts;
+}
+
+/**
+ * 把一次冲突裁决应用到学习记忆（纯函数）。
+ * resolution === "local" 时把该准则 lastReviewAt 置为 now：
+ * 用户此刻显式重申本机值，借服务端时间戳守卫放行后续上传覆盖。
+ */
+export function applyConflictResolutionToMemory(
+  state: LearningMemoryState,
+  conflict: SyncConflict,
+  resolution: SyncConflictResolution,
+  now: string,
+): LearningMemoryState {
+  const chosen = resolution === "local" ? conflict.local : conflict.server;
+  if (conflict.type === "fsrs" && chosen.kind === "fsrs") {
+    const current: FsrsLearningState = state.fsrsState ?? { version: 2, criteria: {} };
+    const criteria = { ...current.criteria };
+    criteria[conflict.refId] = resolution === "local"
+      ? { ...chosen.fsrs, lastReviewAt: now }
+      : { ...chosen.fsrs };
+    return { ...state, fsrsState: { version: 2, criteria } };
+  }
+  if (conflict.type === "attempt" && chosen.kind === "attempt") {
+    const replacement: LearnerAttemptRecord = { ...chosen.attempt };
+    const others = state.attempts.filter((attempt) => attempt.id !== conflict.refId);
+    const attempts = [...others, replacement]
+      .sort((a, b) => a.confirmedAt.localeCompare(b.confirmedAt))
+      .slice(-300);
+    return { ...state, attempts };
+  }
+  return state;
+}
+
+/**
+ * 解决单个冲突：把所选快照写入本地学习记忆、移除冲突记录、
+ * 并触发一次可靠同步。返回是否找到并处理了该冲突。
+ */
+export function resolveSyncConflict(conflictId: string, resolution: SyncConflictResolution): boolean {
+  if (typeof window === "undefined") return false;
+  const store = readSyncConflictStore();
+  const conflict = store.items.find((item) => item.id === conflictId);
+  if (!conflict) return false;
+
+  writeSyncConflictStore({
+    version: 1,
+    items: store.items.filter((item) => item.id !== conflictId),
+  });
+
+  const memoryKey = "nur-learn:learning-memory:v1";
+  const current = parseLearningMemoryJson(window.localStorage.getItem(memoryKey));
+  const next = applyConflictResolutionToMemory(
+    current,
+    conflict,
+    resolution,
+    new Date().toISOString(),
+  );
+  try {
+    window.localStorage.setItem(memoryKey, JSON.stringify(next));
+  } catch {
+    // storage unavailable，静默
+  }
+  window.dispatchEvent(new Event("nur-learn:learning-memory-change"));
+  triggerLearnerStateSync(true);
+  return true;
+}
+
+/** 批量解决当前账户（或全部）冲突，应用后统一触发一次同步。返回处理条数。 */
+export function resolveAllSyncConflicts(resolution: SyncConflictResolution, userEmail?: string): number {
+  if (typeof window === "undefined") return 0;
+  const store = readSyncConflictStore();
+  const targets = store.items.filter((item) => (
+    typeof userEmail !== "string" || userEmail.length === 0 || item.userEmail === userEmail
+  ));
+  if (targets.length === 0) return 0;
+
+  const resolvedIds = new Set(targets.map((item) => item.id));
+  writeSyncConflictStore({
+    version: 1,
+    items: store.items.filter((item) => !resolvedIds.has(item.id)),
+  });
+
+  const memoryKey = "nur-learn:learning-memory:v1";
+  let state = parseLearningMemoryJson(window.localStorage.getItem(memoryKey));
+  const now = new Date().toISOString();
+  for (const conflict of targets) {
+    state = applyConflictResolutionToMemory(state, conflict, resolution, now);
+  }
+  try {
+    window.localStorage.setItem(memoryKey, JSON.stringify(state));
+  } catch {
+    // storage unavailable，静默
+  }
+  window.dispatchEvent(new Event("nur-learn:learning-memory-change"));
+  triggerLearnerStateSync(true);
+  return targets.length;
+}
+
+/**
+ * 清空冲突记录（不应用任何一方的值）。
+ * 给定 userEmail 时只清该账户的记录（登出时使用），否则清空全部。
+ */
+export function clearResolvedConflicts(userEmail?: string): number {
+  if (typeof window === "undefined") return 0;
+  const store = readSyncConflictStore();
+  const remaining = typeof userEmail === "string" && userEmail.length > 0
+    ? store.items.filter((item) => item.userEmail !== userEmail)
+    : [];
+  writeSyncConflictStore({ version: 1, items: remaining });
+  return store.items.length - remaining.length;
+}
+
+// React 19 useSyncExternalStore 快照缓存：按原始字符串缓存稳定引用。
+let cachedConflictsRaw: string | null = null;
+let cachedConflictsItems: readonly SyncConflict[] = [];
+
+/** 带引用缓存的冲突快照（供 useSyncExternalStore 直接使用）。 */
+export function getSyncConflictsSnapshot(): readonly SyncConflict[] {
+  if (typeof window === "undefined") return [];
+  const raw = window.localStorage.getItem(SYNC_CONFLICTS_KEY);
+  if (raw === cachedConflictsRaw) return cachedConflictsItems;
+  cachedConflictsItems = readSyncConflictStore().items;
+  cachedConflictsRaw = raw;
+  return cachedConflictsItems;
 }

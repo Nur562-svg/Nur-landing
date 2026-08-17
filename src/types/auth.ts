@@ -1,5 +1,5 @@
-/** 会员层级（付费接入前固定 free；TS 联合类型约束，不使用数据库 enum 以保证 SQLite/Postgres 可移植）。 */
-export type MembershipTier = "free" | "pro";
+/** 会员层级（TS 联合类型约束，不使用数据库 enum 以保证 SQLite/Postgres 可移植性）。 */
+export type MembershipTier = "free" | "lite" | "pro";
 
 /** 对外暴露的用户视图（绝不包含 passwordHash）。 */
 export type AuthUserView = {
@@ -7,6 +7,8 @@ export type AuthUserView = {
   email: string;
   displayName: string;
   membershipTier: MembershipTier;
+  membershipExpiresAt?: string | null;
+  emailVerified: boolean;
   createdAt: string;
 };
 

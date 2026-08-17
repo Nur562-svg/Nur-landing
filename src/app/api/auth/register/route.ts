@@ -32,7 +32,8 @@ export async function POST(request: Request): Promise<Response> {
     const token = await createSessionToken(result.user);
     await setSessionCookie(token);
     return NextResponse.json<AuthApiResponse>({ ok: true, user: result.user });
-  } catch {
+  } catch (e) {
+    console.error("[/api/auth/register] error:", e);
     return NextResponse.json<AuthApiResponse>(
       { ok: false, error: "服务器暂时不可用，请稍后再试。", field: "form" },
       { status: 500 },

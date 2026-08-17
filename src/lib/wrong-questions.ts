@@ -4,6 +4,7 @@
  * 数据来源：
  * - question-bank-store 中的 QBAttemptRecord（选择题做题记录）
  * - mock-exam-store 中的 MockExamSession（模考中的客观题错误）
+ * - learning-memory 中的已确认 attempts（结构薄弱点）与 fsrsState（临遗忘高危准则）
  *
  * 不创建新的存储；只读取已有 localStorage 数据并聚合。
  * 不进入课程真相；不编造来源或答案。
@@ -12,15 +13,22 @@
 import type {
   AssessmentItemDefinition,
   CourseDefinition,
+  FsrsCriterionState,
   KnowledgePointDefinition,
+  LearnerAttemptRecord,
+  LearningAttemptSurface,
+  LearningMemoryState,
 } from "@/types/learning";
 import type { QBAttemptRecord } from "@/types/question-bank";
 import type { MockExamAnswer, MockExamSession } from "@/types/mock-exam";
 import { getMockExamSessions } from "@/lib/mock-exam-store";
+import { computeFsrsInterval, selectRepeatedOmissions } from "@/lib/learning-memory";
 import {
   flattenCourseAssessmentItems,
   selectKnowledgePointById,
   selectChapterForKnowledgePoint,
+  selectPrimaryCaseForKnowledgePoint,
+  selectSubjectiveWritingItems,
 } from "@/lib/course-selectors";
 
 /** 一道题的错题摘要（聚合了所有来源的错答记录）。 */
@@ -65,6 +73,46 @@ export type WeakKnowledgePoint = {
   hasLesson: boolean;
 };
 
+/** 一个结构薄弱点：同一知识点内同一记忆准则在 ≥3 个不同任务中被漏掉。 */
+export type StructuralWeakness = {
+  courseId: string;
+  courseSlug: string;
+  courseTitle: string;
+  knowledgePointId: string;
+  knowledgePointTitle: string;
+  knowledgePointSlug: string;
+  criterionId: string;
+  /** 从课程定义 learningMemoryCriteria 解析的标签，不硬编码 */
+  criterionLabel: string;
+  /** 漏掉该准则的不同任务数（surface:taskId:segmentId 去重） */
+  distinctTaskCount: number;
+  /** 最近一次漏掉的确认时间（ISO） */
+  lastOmittedAt: string;
+  /** 最近一次漏掉发生的界面（用于快捷入口优先级） */
+  latestSurface: LearningAttemptSurface;
+  hasWritingRoom: boolean;
+  hasCaseRoom: boolean;
+  hasLesson: boolean;
+};
+
+/** 一条 FSRS 高危记忆准则：relearning 或 lapses ≥ 2。 */
+export type FsrsHighRiskItem = {
+  courseId: string;
+  courseSlug: string;
+  courseTitle: string;
+  knowledgePointId: string;
+  knowledgePointTitle: string;
+  knowledgePointSlug: string;
+  criterionId: string;
+  criterionLabel: string;
+  fsrs: FsrsCriterionState;
+  /** FSRS 建议的下次复习间隔（天），复用现有算法 */
+  suggestedIntervalDays: number;
+  hasWritingRoom: boolean;
+  hasCaseRoom: boolean;
+  hasLesson: boolean;
+};
+
 /** 错题中心汇总数据。 */
 export type WrongQuestionCenterData = {
   wrongQuestions: readonly WrongQuestionSummary[];
@@ -72,6 +120,8 @@ export type WrongQuestionCenterData = {
   totalWrong: number;
   totalAttempts: number;
   weakKpCount: number;
+  structuralWeaknesses: readonly StructuralWeakness[];
+  fsrsHighRisk: readonly FsrsHighRiskItem[];
 };
 
 function computeWrongQBAttempts(
@@ -108,12 +158,122 @@ function computeWrongMockExamAnswers(
 }
 
 /**
+ * 聚合结构薄弱点：复用 learning-memory 的 selectRepeatedOmissions
+ * （每任务取最新确认稿、同一准则 ≥3 个不同任务漏掉才成立）。
+ * 准则标签从注册课程的 learningMemoryCriteria 解析；无法归属注册知识点的记录跳过。
+ */
+export function selectStructuralWeaknesses(
+  courses: readonly CourseDefinition[],
+  memoryState: LearningMemoryState | null,
+): StructuralWeakness[] {
+  if (!memoryState || memoryState.attempts.length === 0) {
+    return [];
+  }
+  const attemptById = new Map(
+    memoryState.attempts.map((attempt) => [attempt.id, attempt]),
+  );
+
+  const weaknesses: StructuralWeakness[] = [];
+  for (const course of courses) {
+    for (const kp of course.knowledgePoints) {
+      const criteriaById = new Map(
+        kp.learningMemoryCriteria.map((criterion) => [criterion.id, criterion]),
+      );
+      for (const omission of selectRepeatedOmissions(memoryState.attempts, course.id, kp.id)) {
+        const criterion = criteriaById.get(omission.criterionId);
+        if (!criterion) continue;
+        const omittedAttempts = omission.attemptIds
+          .map((id) => attemptById.get(id))
+          .filter((attempt): attempt is LearnerAttemptRecord => attempt !== undefined);
+        if (omittedAttempts.length === 0) continue;
+
+        const latest = omittedAttempts.reduce((acc, cur) => (
+          Date.parse(cur.confirmedAt) > Date.parse(acc.confirmedAt) ? cur : acc
+        ));
+        weaknesses.push({
+          courseId: course.id,
+          courseSlug: course.slug,
+          courseTitle: course.title,
+          knowledgePointId: kp.id,
+          knowledgePointTitle: kp.title,
+          knowledgePointSlug: kp.slug,
+          criterionId: criterion.id,
+          criterionLabel: criterion.label,
+          distinctTaskCount: omission.distinctTaskCount,
+          lastOmittedAt: latest.confirmedAt,
+          latestSurface: latest.surface,
+          hasWritingRoom: selectSubjectiveWritingItems(course, kp.id).length > 0,
+          hasCaseRoom: selectPrimaryCaseForKnowledgePoint(course, kp.id) !== undefined,
+          hasLesson: kp.lesson !== null,
+        });
+      }
+    }
+  }
+
+  weaknesses.sort((a, b) => {
+    const timeDiff = Date.parse(b.lastOmittedAt) - Date.parse(a.lastOmittedAt);
+    if (timeDiff !== 0) return timeDiff;
+    return b.distinctTaskCount - a.distinctTaskCount;
+  });
+  return weaknesses;
+}
+
+/**
+ * 聚合 FSRS 高危准则：state === "relearning" 或 lapses >= 2。
+ * fsrsState 的 key 不带课程/知识点维度，归属由注册课程的
+ * learningMemoryCriteria 反查确定；无法归属的准则不显示（无标签、无入口）。
+ */
+export function selectFsrsHighRiskItems(
+  courses: readonly CourseDefinition[],
+  memoryState: LearningMemoryState | null,
+): FsrsHighRiskItem[] {
+  const fsrsState = memoryState?.fsrsState ?? null;
+  if (!fsrsState) {
+    return [];
+  }
+
+  const items: FsrsHighRiskItem[] = [];
+  for (const course of courses) {
+    for (const kp of course.knowledgePoints) {
+      for (const criterion of kp.learningMemoryCriteria) {
+        const state = fsrsState.criteria[criterion.id];
+        if (!state) continue;
+        if (state.state !== "relearning" && state.lapses < 2) continue;
+        items.push({
+          courseId: course.id,
+          courseSlug: course.slug,
+          courseTitle: course.title,
+          knowledgePointId: kp.id,
+          knowledgePointTitle: kp.title,
+          knowledgePointSlug: kp.slug,
+          criterionId: criterion.id,
+          criterionLabel: criterion.label,
+          fsrs: state,
+          suggestedIntervalDays: computeFsrsInterval(criterion.id, fsrsState),
+          hasWritingRoom: selectSubjectiveWritingItems(course, kp.id).length > 0,
+          hasCaseRoom: selectPrimaryCaseForKnowledgePoint(course, kp.id) !== undefined,
+          hasLesson: kp.lesson !== null,
+        });
+      }
+    }
+  }
+
+  items.sort((a, b) => {
+    if (b.fsrs.lapses !== a.fsrs.lapses) return b.fsrs.lapses - a.fsrs.lapses;
+    return a.fsrs.stability - b.fsrs.stability;
+  });
+  return items;
+}
+
+/**
  * 聚合所有课程的错题数据。
  * 在组件中通过 useMemo 调用，依赖 localStorage 快照。
+ * memoryState 为可选第三参：客观错题聚合与原有行为完全一致。
  */
 export function selectWrongQuestionCenter(
   courses: readonly CourseDefinition[],
   attemptsSnapshot: Record<string, QBAttemptRecord[]>,
+  memoryState?: LearningMemoryState | null,
 ): WrongQuestionCenterData {
   const wrongQB = computeWrongQBAttempts(attemptsSnapshot);
   const wrongMock = computeWrongMockExamAnswers(courses);
@@ -250,5 +410,7 @@ export function selectWrongQuestionCenter(
     totalWrong: wrongQuestions.length,
     totalAttempts: wrongQuestions.reduce((sum, q) => sum + q.totalAttempts, 0),
     weakKpCount: weakKnowledgePoints.length,
+    structuralWeaknesses: selectStructuralWeaknesses(courses, memoryState ?? null),
+    fsrsHighRisk: selectFsrsHighRiskItems(courses, memoryState ?? null),
   };
 }

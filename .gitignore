@@ -15,6 +15,13 @@ dist/
 .env.development.local
 .env.test.local
 .env.production.local
+.dev.vars
+.dev.vars.local
+
+# Cloudflare / OpenNext 构建产物
+.open-next/
+.wrangler/
+cloudflare-env.d.ts
 
 # Debug
 npm-debug.log*

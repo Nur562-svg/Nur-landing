@@ -10,7 +10,7 @@ import {
   runNurAgent,
 } from "@/lib/nur-agent/service";
 import { getCurrentSession } from "@/lib/auth/session";
-import { recordServerUsage, checkAndEnforceQuota } from "@/lib/quotas";
+import { recordServerUsage, checkAndEnforceQuota } from "@/lib/quotas-server";
 import type { NurAgentErrorResponse } from "@/types/nur-agent";
 
 export const runtime = "nodejs";

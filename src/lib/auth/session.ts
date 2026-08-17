@@ -43,7 +43,7 @@ export async function verifySessionToken(token: string): Promise<SessionPayload 
       return null;
     }
     const tier: MembershipTier =
-      payload.membershipTier === "pro" ? "pro" : "free";
+      payload.membershipTier === "pro" ? "pro" : payload.membershipTier === "lite" ? "lite" : "free";
     return {
       sub: payload.sub,
       email: payload.email,

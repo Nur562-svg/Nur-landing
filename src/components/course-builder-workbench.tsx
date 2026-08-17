@@ -290,7 +290,10 @@ export function CourseBuilderWorkbench({
 
   useEffect(() => {
     // M3: fetch quotas for soft gate
-    fetch("/api/auth/quotas", { credentials: "include" }).then(r => r.ok ? r.json() : null).then(d => d?.ok && setBuilderQuotas(d.quotas)).catch(()=>{});
+    fetch("/api/auth/quotas", { credentials: "include" })
+      .then(r => (r.ok ? r.json() : null))
+      .then(d => { const data = d as { ok?: boolean; quotas?: UserQuotas } | null; if (data?.ok && data.quotas) setBuilderQuotas(data.quotas); })
+      .catch(() => {});
     try {
       const storedResult = window.sessionStorage.getItem(privateAnalysisSessionStorageKey);
       if (storedResult) {

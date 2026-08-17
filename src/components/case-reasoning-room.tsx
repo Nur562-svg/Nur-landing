@@ -17,6 +17,7 @@ import {
 } from "lucide-react";
 import { useLearningMemory } from "@/hooks/use-learning-memory";
 import { recordConfirmedAttempt } from "@/lib/learning-memory";
+import { mergeRewriteIntoDraft } from "@/lib/agent-rewrite-merge";
 import type {
   CaseDefinition,
   CaseEvidenceRole,
@@ -93,6 +94,12 @@ function toggleValue(values: readonly string[], value: string): string[] {
     : [...values, value];
 }
 
+/** Agent 改写应用的单槽撤销快照：只记录最近一次应用前的完整文本。 */
+type RewriteUndo = {
+  stepId: string;
+  beforeText: string;
+};
+
 export function CaseReasoningRoom({
   course,
   chapter,
@@ -119,6 +126,8 @@ export function CaseReasoningRoom({
   const [confirmedStageIds, setConfirmedStageIds] = useState<readonly string[]>([]);
   const [confirmedSignatures, setConfirmedSignatures] = useState<Readonly<Record<string, string>>>({});
   const [accountOpen, setAccountOpen] = useState(false);
+  // Agent 改写应用的单槽撤销：再次应用覆盖，切换阶段/确认保存后失效。
+  const [rewriteUndo, setRewriteUndo] = useState<RewriteUndo | null>(null);
   const memoryState = useLearningMemory();
 
   const activeStep = orderedSteps.find((step) => step.stage === activeStage) ?? firstStep;
@@ -164,6 +173,7 @@ export function CaseReasoningRoom({
 
   function selectStage(stage: CaseReasoningStage) {
     setActiveStage(stage);
+    setRewriteUndo(null);
     window.scrollTo({ top: 310, behavior: "smooth" });
   }
 
@@ -220,6 +230,7 @@ export function CaseReasoningRoom({
       ? current
       : [...current, activeStep.id]);
     setConfirmedSignatures((current) => ({ ...current, [activeStep.id]: activeSignature }));
+    setRewriteUndo(null);
   }
 
   return (
@@ -445,11 +456,33 @@ export function CaseReasoningRoom({
                 currentText={activeAnswerText}
                 selfCheckStarted={activeRevealed}
                 onApplyRewrite={(rewrittenText) => {
-                  // Direct one-click apply into the active stage draft.
-                  // Agent already reads/quotes the student's currentText for this step.
-                  setDrafts((current) => ({ ...current, [activeStep.id]: rewrittenText }));
+                  if (activeDraft.trim().length === 0) return;
+                  // 与写作室一致的智能合并：保留学生原句、把提案作为补充插入；
+                  // 草稿过短或与提案无关时才整体替换。
+                  const { merged } = mergeRewriteIntoDraft(activeDraft, rewrittenText);
+                  setRewriteUndo({ stepId: activeStep.id, beforeText: activeDraft });
+                  setDrafts((current) => ({ ...current, [activeStep.id]: merged }));
+                  // 应用后本步回到未确认状态（与手动编辑行为一致），学生仍需自行自核确认
+                  setConfirmedStageIds((current) => current.filter((item) => item !== activeStep.id));
                 }}
               />
+
+              {rewriteUndo && rewriteUndo.stepId === activeStep.id ? (
+                <div className={styles.rewriteUndoBar}>
+                  <span>
+                    已应用 Agent 改写；本步仍是<b>未确认</b>状态，需你自核并确认保存。
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setDrafts((current) => ({ ...current, [rewriteUndo.stepId]: rewriteUndo.beforeText }));
+                      setRewriteUndo(null);
+                    }}
+                  >
+                    撤销，回到应用前全文
+                  </button>
+                </div>
+              ) : null}
 
               <section className={styles.frameworkSection}>
                 <div className={styles.sectionHeading}>

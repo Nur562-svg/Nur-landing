@@ -13,7 +13,10 @@
   overflow-x: clip;
 }
 
-.appShell 
+.appShell :where(button) {
+  border: 0;
+  font: inherit;
+}
 
 .appShell :where(a):focus-visible {
   outline: 2px solid var(--blue);
@@ -462,27 +465,11 @@
   align-items: center;
   border-bottom: 1px solid var(--ink);
   display: flex;
+  gap: 16px;
   justify-content: space-between;
-  min-height: 64px;
-}
-
-.scopeBar > div {
-  align-items: center;
-  display: flex;
-  gap: 5px;
-}
-
-.scopeBar > div > span {
-  color: var(--muted);
-  font-size: 11px;
-  margin-right: 9px;
-}
-
-.scopeBar 
-
-.scopeBar .scopeActive {
-  background: var(--ink);
-  color: var(--paper-bright);
+  min-height: 48px;
+  padding: 6px 0;
+  position: relative;
 }
 
 .scopeBar > p {
@@ -492,6 +479,138 @@
   font-size: 11px;
   gap: 8px;
   margin: 0;
+}
+
+/* ===================== 查看范围：可展开触发器 ===================== */
+.scopeSwitcher {
+  position: relative;
+}
+
+.scopeTrigger {
+  align-items: center;
+  background: transparent;
+  border: 1px solid var(--line);
+  color: var(--ink);
+  cursor: pointer;
+  display: inline-flex;
+  font-family: inherit;
+  font-size: 11px;
+  font-weight: 600;
+  gap: 8px;
+  line-height: 1;
+  padding: 5px 9px 5px 10px;
+  transition: background 140ms ease, border-color 140ms ease, color 140ms ease;
+}
+
+.scopeTrigger:hover {
+  background: rgb(16 16 15 / 5%);
+  border-color: var(--ink);
+}
+
+.scopeTriggerLabel {
+  color: var(--muted);
+  font-weight: 500;
+}
+
+.scopeTriggerValue {
+  color: var(--ink);
+  font-family: "Songti SC", "STSong", serif;
+  font-size: 13px;
+  letter-spacing: 0.01em;
+}
+
+.scopeTriggerChevron {
+  color: var(--muted);
+  margin-left: 2px;
+  transition: transform 180ms ease;
+}
+
+.scopeSwitcherOpen .scopeTrigger {
+  background: var(--ink);
+  border-color: var(--ink);
+  color: var(--paper-bright);
+}
+
+.scopeSwitcherOpen .scopeTriggerLabel,
+.scopeSwitcherOpen .scopeTriggerValue,
+.scopeSwitcherOpen .scopeTriggerChevron {
+  color: var(--paper-bright);
+}
+
+.scopeSwitcherOpen .scopeTriggerChevron {
+  transform: rotate(180deg);
+}
+
+.scopeOptions {
+  align-items: stretch;
+  background: var(--paper-bright);
+  border: 1px solid var(--ink);
+  /* 软阴影：紧贴边框、向外柔化，避免硬偏移方块越界 */
+  box-shadow: 0 2px 6px rgb(16 16 15 / 6%), 0 1px 2px rgb(16 16 15 / 4%);
+  display: grid;
+  grid-auto-flow: column;
+  grid-auto-columns: minmax(72px, auto);
+  left: calc(100% + 6px);
+  opacity: 0;
+  pointer-events: none;
+  position: absolute;
+  top: 0;
+  transform: translateX(-4px);
+  transition: opacity 140ms ease, transform 140ms ease;
+  z-index: 60;
+}
+
+.scopeSwitcherOpen .scopeOptions {
+  opacity: 1;
+  pointer-events: auto;
+  transform: translateX(0);
+}
+
+.scopeOption {
+  align-items: center;
+  background: transparent;
+  border: 0;
+  border-left: 1px solid var(--line);
+  color: var(--ink);
+  cursor: pointer;
+  display: flex;
+  font-family: inherit;
+  font-size: 12px;
+  font-weight: 550;
+  justify-content: center;
+  line-height: 1;
+  min-width: 84px;
+  padding: 9px 14px;
+  text-align: center;
+  text-decoration: none;
+  transition: background 120ms ease, color 120ms ease;
+  white-space: nowrap;
+}
+
+.scopeOption:first-child {
+  border-left: 0;
+}
+
+.scopeOption:hover {
+  background: rgb(16 16 15 / 5%);
+}
+
+/* 激活态：用极浅朱砂 + 右侧 1.5px 实色阶，让"自成一格"但不溢出框架 */
+.scopeOption.scopeActive {
+  background: #f5e8e6;
+  box-shadow: inset -1.5px 0 0 var(--red);
+  color: var(--red);
+  font-weight: 650;
+}
+
+.scopeOption.scopeActive + .scopeOption {
+  border-left-color: transparent;
+}
+
+.scopeOption.scopeActive:hover {
+  background: #f0ddd9;
+  box-shadow: inset -1.5px 0 0 var(--red);
+  color: var(--red);
 }
 
 .scopeBar > p span {
@@ -549,7 +668,6 @@
   display: grid;
 }
 
-.chapterList 
 
 .chapterList button:hover {
   background: rgb(16 16 15 / 5%);
@@ -597,7 +715,7 @@
 .chapterDetail {
   border-right: 1px solid var(--ink);
   min-height: 730px;
-  padding: 28px 28px 30px;
+  padding: 22px 22px 24px;
 }
 
 .detailHeading {
@@ -645,18 +763,32 @@
   color: var(--muted);
   font-family: "Songti SC", "STSong", serif;
   font-size: 14px;
-  line-height: 1.7;
-  margin: 16px 0 22px;
+  line-height: 1.6;
+  margin: 12px 0 16px;
 }
 
 .routeTabs {
   display: grid;
+  gap: 8px;
   grid-template-columns: repeat(3, minmax(0, 1fr));
 }
 
-.routeTabs 
+.routeTabs button {
+  align-items: flex-start;
+  background: transparent;
+  border: 1px solid var(--ink);
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 10px 12px 11px;
+  text-align: left;
+  transition: background 160ms ease, color 160ms ease;
+}
 
-.routeTabs button + 
+.routeTabs button:hover {
+  background: rgb(16 16 15 / 4%);
+}
 
 .routeTabs button > span {
   color: var(--muted);
@@ -693,7 +825,7 @@
   display: flex;
   gap: 14px;
   justify-content: space-between;
-  margin: 26px 0 9px;
+  margin: 20px 0 8px;
 }
 
 .unitHeading h3 {
@@ -724,17 +856,29 @@
   display: grid;
 }
 
-.unitList 
+.unitList button {
+  align-items: center;
+  background: transparent;
+  border: 0;
+  border-bottom: 1px solid var(--line);
+  cursor: pointer;
+  display: grid;
+  gap: 12px;
+  grid-template-columns: auto 1fr auto auto;
+  padding: 11px 4px 11px 8px;
+  text-align: left;
+  transition: background 160ms ease, padding-left 160ms ease;
+}
 
 .unitList button:hover {
-  background: rgb(16 16 15 / 5%);
-  padding-left: 10px;
+  background: rgb(16 16 15 / 4%);
+  padding-left: 12px;
 }
 
 .unitList .unitActive {
   background: rgb(149 51 42 / 7%);
   box-shadow: inset 3px 0 0 var(--red);
-  padding-left: 10px;
+  padding-left: 12px;
 }
 
 .unitStatus {
@@ -798,15 +942,17 @@
   align-items: center;
   border: 1px solid var(--ink);
   display: flex;
+  gap: 14px;
   justify-content: space-between;
-  margin-top: 19px;
-  min-height: 69px;
-  padding-left: 17px;
+  margin-top: 16px;
+  min-height: 56px;
+  padding: 8px 14px 8px 16px;
 }
 
 .selectedAction > div {
   display: grid;
-  gap: 5px;
+  gap: 3px;
+  min-width: 0;
 }
 
 .selectedAction > div span {
@@ -824,12 +970,41 @@
   font-size: 9px;
 }
 
-.selectedAction > 
+.selectedAction > button {
+  align-items: center;
+  background: var(--ink);
+  border: 1px solid var(--ink);
+  color: var(--paper-bright);
+  cursor: pointer;
+  display: inline-flex;
+  flex: 0 0 auto;
+  font-size: 12px;
+  font-weight: 650;
+  gap: 6px;
+  padding: 8px 12px;
+  transition: background 160ms ease, color 160ms ease;
+}
+
+.selectedAction > button:hover {
+  background: var(--red);
+  border-color: var(--red);
+}
 
 .selectedAction > button:disabled {
   background: rgb(16 16 15 / 8%);
+  border-color: rgb(16 16 15 / 8%);
   color: var(--muted);
   cursor: not-allowed;
+}
+
+.selectedAction > .fallbackLink {
+  align-items: center;
+  color: var(--ink);
+  display: inline-flex;
+  font-size: 12px;
+  font-weight: 650;
+  gap: 6px;
+  text-decoration: none;
 }
 
 .insightRail {
@@ -896,7 +1071,6 @@
   font-size: 9px;
 }
 
-.examConfigBar 
 
 .examRows {
   display: grid;
@@ -1042,15 +1216,15 @@
 }
 
 .examLink {
-  color: var(--blue);
+  color: #fff;
   border-color: var(--blue);
   margin-top: 10px;
 }
 
 .examLink:hover {
-  background: rgb(23 101 154 / 6%);
+  background: rgb(23 101 154 / 12%);
   border-color: var(--blue);
-  color: var(--blue);
+  color: #fff;
 }
 
 .trainingShortcuts {
@@ -1456,7 +1630,6 @@
   margin-top: 18px;
 }
 
-.examDrawerActions 
 
 .examDrawerActions button:last-child {
   background: var(--ink);
@@ -1676,7 +1849,6 @@
     width: 100%;
   }
 
-  .scopeBar 
 
   .scopeBar > p {
     align-items: flex-start;
@@ -1702,7 +1874,6 @@
     scrollbar-width: none;
   }
 
-  .chapterList 
 
   .chapterDetail {
     border-left: 1px solid var(--ink);
@@ -1712,7 +1883,6 @@
     font-size: 36px;
   }
 
-  .routeTabs 
 
   .routeTabs button small {
     display: none;
@@ -1732,7 +1902,6 @@
     display: none;
   }
 
-  .unitList 
 
   .selectedAction {
     align-items: stretch;
@@ -1799,7 +1968,6 @@
     gap: 8px;
   }
 
-  .examDrawerActions 
 
   .examDrawerActions button:last-child {
     min-width: 0;

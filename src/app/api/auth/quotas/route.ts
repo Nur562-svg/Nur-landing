@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { getCurrentSession } from "@/lib/auth/session";
 import { prisma } from "@/lib/prisma";
-import { computeUserQuotas } from "@/lib/quotas";
+import { computeUserQuotas } from "@/lib/quotas-server";
 
 export const dynamic = "force-dynamic";
 

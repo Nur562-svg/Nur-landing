@@ -10,7 +10,7 @@
 
 import { NextResponse } from "next/server";
 import { getCurrentSession } from "@/lib/auth/session";
-import { syncLearnerState, type LearnerSyncPayload, getLearnerStateForUser } from "@/lib/learner-state-sync";
+import { syncLearnerState, type LearnerSyncPayload, getLearnerStateForUser } from "@/lib/learner-state-sync-server";
 
 const MAX_BODY = 512 * 1024; // 512KB 足够记忆状态
 

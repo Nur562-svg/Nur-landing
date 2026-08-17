@@ -250,6 +250,30 @@ export function NurAgentPilot({
     void requestReview(false);
   }
 
+  const canApplyRewrite = Boolean(onApplyRewrite) && currentText.trim().length > 0;
+
+  const rewriteSuggestionBlock = (() => {
+    const suggestion = result?.rewriteSuggestion ?? null;
+    if (!result || !suggestion) return null;
+    return (
+      <div className={styles.omissions}>
+        <small>NUR 改写参考句（本任务注册结构规则的确定性改写，非模型生成）</small>
+        <article>
+          <p>{suggestion.content}</p>
+          {canApplyRewrite && onApplyRewrite ? (
+            <button
+              type="button"
+              onClick={() => onApplyRewrite(suggestion.content, suggestion.criterionId)}
+              style={{ marginTop: 6 }}
+            >
+              应用此改写
+            </button>
+          ) : null}
+        </article>
+      </div>
+    );
+  })();
+
   return (
     <section className={styles.agentCard} aria-live="polite">
       <div className={styles.heading}>
@@ -311,6 +335,8 @@ export function NurAgentPilot({
             </div>
           ) : null}
 
+          {rewriteSuggestionBlock}
+
           <details style={{ marginTop: 8 }}>
             <summary style={{cursor:"pointer", fontSize:12, color:"#666"}}>显示内部运行流程（仅调试）</summary>
             <div className={styles.policy} data-status={result.modelAssist.status}>
@@ -328,13 +354,13 @@ export function NurAgentPilot({
                   <strong>针对 {p.criterionId}</strong>
                   <p>{p.rationale}（置信 {Math.round(p.confidence * 100)}%）</p>
                   <pre style={{ whiteSpace: "pre-wrap", fontSize: "12px" }}>{p.rewrittenText}</pre>
-                  {onApplyRewrite ? (
+                  {canApplyRewrite && onApplyRewrite ? (
                     <button
                       type="button"
                       onClick={() => onApplyRewrite(p.rewrittenText, p.criterionId)}
                       style={{ marginTop: 6 }}
                     >
-                      应用到当前稿
+                      应用此改写
                     </button>
                   ) : null}
                 </article>

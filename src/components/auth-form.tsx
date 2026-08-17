@@ -20,12 +20,17 @@ export function AuthForm({ mode }: AuthFormProps) {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [displayName, setDisplayName] = useState("");
+  const [agreed, setAgreed] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
 
   async function handleSubmit(event: React.FormEvent) {
     event.preventDefault();
     if (submitting) {
+      return;
+    }
+    if (isRegister && !agreed) {
+      setError("请阅读并同意《用户协议》与《隐私政策》后再注册。");
       return;
     }
     setSubmitting(true);
@@ -116,6 +121,24 @@ export function AuthForm({ mode }: AuthFormProps) {
             />
           </label>
 
+          {isRegister ? (
+            <label className={styles.consentField}>
+              <input
+                className={styles.consentCheckbox}
+                type="checkbox"
+                checked={agreed}
+                onChange={(e) => setAgreed(e.currentTarget.checked)}
+                required
+              />
+              <span>
+                我已阅读并同意
+                <Link href="/terms" className={styles.consentLink} target="_blank">《用户协议》</Link>
+                与
+                <Link href="/privacy-policy" className={styles.consentLink} target="_blank">《隐私政策》</Link>
+              </span>
+            </label>
+          ) : null}
+
           {error ? (
             <p className={styles.error} role="alert">
               {error}
@@ -137,6 +160,8 @@ export function AuthForm({ mode }: AuthFormProps) {
           ) : (
             <>
               还没有账户？<Link href={`/register${next !== "/learn" ? `?next=${encodeURIComponent(next)}` : ""}`}>免费注册</Link>
+              <br />
+              <Link href="/forgot-password">忘记密码？</Link>
             </>
           )}
         </footer>

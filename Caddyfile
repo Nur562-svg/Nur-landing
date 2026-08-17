@@ -1,0 +1,7 @@
+# 替换为你的真实域名
+your-domain.com {
+	reverse_proxy app:3000
+	encode gzip zstd
+}
+
+# 备案号展示（可选：在页面脚注展示）
