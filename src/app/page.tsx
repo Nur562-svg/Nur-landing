@@ -33,10 +33,6 @@ const courseNames = [
   "中医外科学",
 ];
 
-function pickRandomCourse() {
-  return courseNames[Math.floor(Math.random() * courseNames.length)];
-}
-
 const features = [
   {
     title: "证据先行",
@@ -68,9 +64,15 @@ const journalRows = [
 export default function Home() {
   const [cursor, setCursor] = useState({ x: -400, y: -400, radius: 0 });
 
+  // Deterministic grid (no Math.random) so SSR HTML matches client hydration.
   const shuffledCourses = useMemo(() => {
     const total = patternRows.length * patternWords.length;
-    return Array.from({ length: total }, () => pickRandomCourse());
+    return Array.from({ length: total }, (_, index) => {
+      // Mild row/column stride so adjacent cells are not identical.
+      const stride =
+        (index * 7 + Math.floor(index / patternWords.length) * 3) % courseNames.length;
+      return courseNames[stride];
+    });
   }, []);
 
   function handleHeroPointerMove(event: PointerEvent<HTMLDivElement>) {
