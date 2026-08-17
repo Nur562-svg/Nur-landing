@@ -313,6 +313,37 @@
   color: var(--red);
 }
 
+.accountExportBlock {
+  border-top: 1px solid var(--line);
+  display: grid;
+  gap: 8px;
+  margin: 4px 0 12px;
+  max-width: 100%;
+  padding-top: 12px;
+}
+
+.accountExportButton {
+  background: transparent;
+  border: 1px solid var(--line);
+  color: var(--ink);
+  cursor: pointer;
+  font-size: 13px;
+  min-height: 44px;
+  padding: 9px 0;
+  width: 100%;
+}
+
+.accountExportButton:hover {
+  border-color: var(--ink);
+}
+
+.accountExportStatus {
+  color: rgb(0 0 0 / 62%);
+  font-size: 11px;
+  line-height: 1.45;
+  margin: 0;
+}
+
 /* M2 冲突可见性：账户面板同步冲突确认区 */
 .conflictSection {
   border-top: 1px solid var(--line);

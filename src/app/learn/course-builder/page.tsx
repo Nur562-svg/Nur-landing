@@ -6,6 +6,7 @@ import type { Metadata } from "next";
 export const metadata: Metadata = {
   title: "课程构建器 | NUR LEARN",
   description: "私人材料摄入、DOCX 解析、Qwen 私人分析、材料准入与课程草稿编译工作台。",
+  robots: { index: false, follow: false },
 };
 
 export default function CourseBuilderPage() {

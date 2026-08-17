@@ -29,7 +29,11 @@ import { SyncStatusBadge } from "./sync-status-badge";
 import { getAdmissionSyncConsents, setAdmissionSyncConsent } from "@/lib/material-admission";
 import { useSyncStatus } from "@/hooks/use-sync-status";
 import { useSession } from "@/hooks/use-session";
-import { collectLearnerExport, downloadLearnerExport } from "@/lib/export-learner-data";
+import {
+  buildLearnerExportFilename,
+  collectLearnerDataExportFromBrowser,
+  downloadLearnerExport,
+} from "@/lib/export-learner-data";
 import type { UserQuotas } from "@/lib/quotas";
 import { NurAgentDock } from "./nur-agent-dock";
 import styles from "./learning-dashboard.module.css";
@@ -150,6 +154,7 @@ export function LearningDashboard({ courses }: LearningDashboardProps) {
   const [activeStep, setActiveStep] = useState(0);
   const [planOpen, setPlanOpen] = useState(false);
   const [accountOpen, setAccountOpen] = useState(false);
+  const [exportNotice, setExportNotice] = useState<string | null>(null);
   // 初始渲染始终使用 DEFAULT_PROFILE，避免 hydration mismatch；
   // 挂载后从 localStorage 读取实际值。
   const [avatarSrc, setAvatarSrc] = useState<string | null>(DEFAULT_PROFILE.avatarSrc);
@@ -349,6 +354,25 @@ export function LearningDashboard({ courses }: LearningDashboardProps) {
       ? `继续：${nextStep.title}`
       : "完成本次辨证";
 
+
+  const handleExportLearnerData = useCallback(() => {
+    try {
+      const exportData = collectLearnerDataExportFromBrowser({
+        account: {
+          signedIn: Boolean(user),
+          email: user?.email ?? null,
+        },
+        courses,
+      });
+      downloadLearnerExport(exportData, buildLearnerExportFilename());
+      setExportNotice("本机学习数据快照已开始下载（非官方成绩单）。");
+      window.setTimeout(() => setExportNotice(null), 2500);
+    } catch (error) {
+      setExportNotice(error instanceof Error ? error.message : "导出失败");
+      window.setTimeout(() => setExportNotice(null), 3000);
+    }
+  }, [user, courses]);
+
   return (
     <main className={styles.appShell}>
       <header className={styles.header}>
@@ -459,21 +483,7 @@ export function LearningDashboard({ courses }: LearningDashboardProps) {
                   >
                     退出登录
                   </button>
-                  <button
-                    className={styles.accountLogout}
-                    type="button"
-                    onClick={() => {
-                      try {
-                        const exportData = collectLearnerExport(quotas);
-                        downloadLearnerExport(exportData);
-                      } catch (e) {
-                        alert("导出失败: " + (e instanceof Error ? e.message : String(e)));
-                      }
-                    }}
-                    style={{fontSize: "11px", marginTop: 4}}
-                  >
-                    导出学习状态（JSON）
-                  </button>
+
 
                   {/* M2 冲突可见性：同步冲突确认 */}
                   {conflicts.length > 0 ? (
@@ -593,6 +603,23 @@ export function LearningDashboard({ courses }: LearningDashboardProps) {
                   </Link>
                 </div>
               )}
+
+
+              <div className={styles.accountExportBlock}>
+                <p className={styles.accountHint}>
+                  导出当前浏览器中的本机学习数据快照，便于备份；不是官方成绩单，也不含课程原文与密钥。
+                </p>
+                <button
+                  className={styles.accountExportButton}
+                  type="button"
+                  onClick={handleExportLearnerData}
+                >
+                  导出学习数据
+                </button>
+                {exportNotice ? (
+                  <p className={styles.accountExportStatus} role="status">{exportNotice}</p>
+                ) : null}
+              </div>
 
               {user ? (
                 <div className={styles.accountLocalSection}>

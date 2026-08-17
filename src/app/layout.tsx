@@ -1,5 +1,10 @@
 import type { Metadata } from "next";
 import { Geist_Mono, Instrument_Serif, Inter } from "next/font/google";
+import {
+  SITE_DESCRIPTION,
+  SITE_NAME,
+  SITE_URL,
+} from "@/lib/site-config";
 import "./globals.css";
 
 const inter = Inter({
@@ -22,16 +27,25 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
+  metadataBase: new URL(SITE_URL),
   title: {
-    default: "NUR LEARN｜中西医结合学习",
-    template: "%s | NUR LEARN",
+    default: `${SITE_NAME}｜中西医结合学习`,
+    template: `%s | ${SITE_NAME}`,
   },
-  description: "面向中西医结合临床医学生的持续学习、辨证推理与考试训练平台。证据先行，保留教师权威边界。",
+  description: SITE_DESCRIPTION,
   icons: { icon: "/favicon.ico" },
   openGraph: {
-    title: "NUR LEARN - 证据驱动的中西医临床学习平台",
-    description: "从证据开始辨证。支持主观题完整表达、案例推理、题库练习与 Agent 辅助。",
-    images: [{ url: "/og.png" }],
+    type: "website",
+    locale: "zh_CN",
+    siteName: SITE_NAME,
+    title: `${SITE_NAME}｜从证据开始辨证`,
+    description: SITE_DESCRIPTION,
+    url: SITE_URL,
+  },
+  twitter: {
+    card: "summary",
+    title: `${SITE_NAME}｜从证据开始辨证`,
+    description: SITE_DESCRIPTION,
   },
   keywords: ["中医诊断学", "中西医结合", "学习平台", "辨证", "主观题训练", "医学生"],
 };

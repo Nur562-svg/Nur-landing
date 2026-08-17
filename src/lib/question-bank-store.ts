@@ -1,4 +1,8 @@
 import { triggerLearnerStateSync } from "@/lib/learner-state-sync";
+import {
+  foldQbAttemptsByStableIdentity,
+  qbAttemptContentIdentityKey,
+} from "@/lib/qb-attempt-identity";
 import type {
   ChapterQBProgress,
   QBAttemptRecord,
@@ -94,7 +98,9 @@ export function getAllQBAttempts(): Record<string, QBAttemptRecord[]> {
   const result: Record<string, QBAttemptRecord[]> = {};
   for (const [questionId, records] of Object.entries(all)) {
     if (Array.isArray(records)) {
-      const valid = records.filter(isQBAttemptRecord);
+      const valid = foldQbAttemptsByStableIdentity(
+        records.filter(isQBAttemptRecord),
+      );
       if (valid.length > 0) {
         result[questionId] = valid;
       }
@@ -109,7 +115,7 @@ export function getQBAttempts(questionId: string): QBAttemptRecord[] {
   if (!Array.isArray(records)) {
     return [];
   }
-  return records.filter(isQBAttemptRecord);
+  return foldQbAttemptsByStableIdentity(records.filter(isQBAttemptRecord));
 }
 
 export function addQBAttempt(
@@ -120,6 +126,11 @@ export function addQBAttempt(
   const existing = Array.isArray(all[questionId])
     ? (all[questionId] as unknown[]).filter(isQBAttemptRecord)
     : [];
+  const newKey = qbAttemptContentIdentityKey(record);
+  const already = existing.some((e) => qbAttemptContentIdentityKey(e as QBAttemptRecord) === newKey);
+  if (already) {
+    return; // idempotent: same logical attempt already recorded
+  }
   existing.push(record);
   all[questionId] = existing;
   writeStored(QB_ATTEMPTS_KEY, all);

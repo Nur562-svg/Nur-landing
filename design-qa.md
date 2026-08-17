@@ -535,3 +535,18 @@ On 2026-08-16, the NUR Agent's rewrite proposals became one-click applicable in 
 - With an empty draft, no apply buttons render anywhere. Both rooms reported `scrollWidth === clientWidth` at 1440 × 1000 and 390 × 844; the dev log stayed clean through the flow. One recurring QA-environment caveat (not a product defect): the sticky page header can cover page-level controls at certain scroll offsets and the in-app browser's command broker intermittently drops a click — retrying after closing the Agent drawer and scrolling resolved both during QA.
 - `npm run check` passed ESLint (0 errors), strict TypeScript, and the production build; `npm test` 192/192 (6 new in `tests/agent-rewrite-merge.test.ts`).
 - Evidence: `docs/design-references/agent-rewrite-apply-2026-08-16.png`.
+
+## M4 切片 A — 错误边界 / 加载态 / SEO（2026-08-17）
+
+- 全局与 segment（learn / courses / wrong-questions）error：暖象牙方框中文提示 + 重试 + 回学习首页；**不**渲染 error.message/stack。
+- global-error / not-found 同语言。
+- loading：细线 + 一行「正在准备/打开…」，min-height 60vh，避免花哨 skeleton。
+- SEO：metadataBase + site-config；robots 排除 api/auth/account/错题/建课；sitemap 仅公开入口 + 有 lesson 的知识点 + 法律页。
+- 验收建议：本地触发 error（临时 throw）应见中文页；访问 `/robots.txt` `/sitemap.xml`；390 宽度卡片无横向溢出。
+- 未新增大图 og.png（去掉坏链）。
+
+## M4 切片 B — 本机学习数据导出（2026-08-17）
+
+- /learn 账户面板（登录/访客）「导出学习数据」：克制说明 + 全宽次要按钮（min-height 44px）。
+- JSON 文件名 `nur-learn-data-YYYY-MM-DD.json`；文案标明非官方成绩单。
+- 390 账户面板 max-width 100%，无新增横向溢出预期。

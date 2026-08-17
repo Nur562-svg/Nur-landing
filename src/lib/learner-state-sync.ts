@@ -4,16 +4,17 @@
  * 与同步触发逻辑，不含任何服务端依赖（避免客户端 bundle 引入 Prisma）。
  * 服务端函数见 learner-state-sync-server.ts（仅 API route 使用）。
  */
-import type { QBAttemptRecord, QBFavoriteStore } from "@/types/question-bank";
 import type {
   FsrsCriterionState,
   FsrsLearningState,
   LearnerAttemptRecord,
   LearningMemoryState,
 } from "@/types/learning";
+import type { QBAttemptRecord, QBFavoriteStore } from "@/types/question-bank";
 import { parseLearningMemoryJson } from "./learning-memory";
 import { getAdmissionSyncConsents } from "./material-admission";
 import { mergeAttemptLists } from "./learner-attempt-identity";
+import { mergeQbAttemptStores } from "./qb-attempt-identity";
 import type { LearnerSyncPayload } from "./learner-state-sync-server";
 
 // === M2 Phase 4: Sync status (debounce + visibility) ===
@@ -274,28 +275,21 @@ export function mergeServerStateIntoLocal(
       setSyncStatus({ lastSyncAt: detectedAt, lastMergeAt: detectedAt, lastError: null });
     }
 
-    // QB attempts: append missing
+    // QB attempts: stable identity merge (idempotent, content-key fold, local-first)
     if (server.qbAttempts) {
       const raw = window.localStorage.getItem("nur-learn:qb-attempts:v1");
-      const localQ: Record<string, import("@/types/question-bank").QBAttemptRecord[]> = raw ? JSON.parse(raw) : {};
-      for (const [qid, arr] of Object.entries(server.qbAttempts)) {
-        if (!localQ[qid]) localQ[qid] = [];
-        const seen = new Set(localQ[qid].map((x) => x.attemptedAt || JSON.stringify(x)));
-        for (const rec of arr) {
-          const key = rec.attemptedAt || JSON.stringify(rec);
-          if (!seen.has(key)) {
-            localQ[qid].push(rec);
-            seen.add(key);
-          }
-        }
-      }
-      window.localStorage.setItem("nur-learn:qb-attempts:v1", JSON.stringify(localQ));
+      const localQ: Record<string, QBAttemptRecord[]> = raw ? JSON.parse(raw) : {};
+      const merged = mergeQbAttemptStores(
+        localQ,
+        server.qbAttempts as Record<string, QBAttemptRecord[]>,
+      );
+      window.localStorage.setItem("nur-learn:qb-attempts:v1", JSON.stringify(merged));
     }
 
     // QB favorites: union
     if (server.qbFavorites) {
       const raw = window.localStorage.getItem("nur-learn:qb-favorites:v1");
-      const localF: import("@/types/question-bank").QBFavoriteStore = raw ? JSON.parse(raw) : {};
+      const localF: QBFavoriteStore = raw ? JSON.parse(raw) : {};
       Object.assign(localF, server.qbFavorites);
       window.localStorage.setItem("nur-learn:qb-favorites:v1", JSON.stringify(localF));
     }

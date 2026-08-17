@@ -28,6 +28,11 @@ import {
   completeKnowledgePointItems,
   completeSubjectiveItems,
 } from "@/content/courses/tcm-diagnostics-question-bank-groups";
+import {
+  buildTongueCoatingKnowledgePoint,
+  tongueCoatingAssessmentItems,
+  tongueCoatingReasoningCase,
+} from "@/content/courses/tcm-diagnostics-tongue-coating-loop";
 
 /** 把新增题库题目挂到知识点（无新增时原样返回）。 */
 function withQuestionBankItems(point: KnowledgePointDefinition): KnowledgePointDefinition {
@@ -109,7 +114,7 @@ const inspectionKnowledgePoints = [
 const tongueKnowledgePoints = [
   createDemoKnowledgePoint("kp-tongue-method", "tongue-method", 1, "舌诊原理与方法", "光线、姿势与观察顺序", "基础"),
   withQuestionBankItems(createDemoKnowledgePoint("kp-tongue-body", "tongue-body", 2, "望舌质", "舌色、舌形、舌态", "高频")),
-  withQuestionBankItems(deepKnowledgePoints.tongue),
+  buildTongueCoatingKnowledgePoint(createDemoKnowledgePoint),
   createDemoKnowledgePoint("kp-tongue-analysis", "combined-analysis", 4, "舌象综合分析", "主次兼顾，动态判断", "重点"),
 ] as const;
 
@@ -1997,11 +2002,17 @@ export const tcmDiagnosticsCourse = {
   assessmentItems: [
     ...inquiryDietAssessmentItems,
     ...coldHeatAssessmentItems,
+    ...tongueCoatingAssessmentItems,
     ...deepAssessmentItems,
     ...questionBankAssessmentItems,
     ...completeAssessmentItems,
     ...completeSubjectiveItems,
   ],
   assessmentGroups: completeAssessmentGroups,
-  cases: [inquiryDietReasoningCase, spleenReasoningCase, coldHeatReasoningCase],
+  cases: [
+    inquiryDietReasoningCase,
+    spleenReasoningCase,
+    coldHeatReasoningCase,
+    tongueCoatingReasoningCase,
+  ],
 } satisfies CourseDefinition;

@@ -20,6 +20,10 @@ import {
   attemptContentIdentityKey,
   MAX_LEARNER_ATTEMPTS,
 } from "./learner-attempt-identity";
+import {
+  foldQbAttemptsByStableIdentity,
+  qbAttemptContentIdentityKey,
+} from "./qb-attempt-identity";
 
 function toJsonValue<T>(v: T): Prisma.InputJsonValue {
   return v as unknown as Prisma.InputJsonValue;
@@ -335,8 +339,25 @@ export async function upsertFsrsStateServer(
   });
 }
 
-// 题库 attempt（追加）
+// 题库 attempt（幂等追加，使用内容键去重）
 export async function addQbAttemptServer(userId: string, record: QBAttemptRecord): Promise<void> {
+  const newKey = qbAttemptContentIdentityKey(record);
+  // 加载该题近期记录做键匹配（题库练习量小）
+  const candidates = await prisma.qbAttempt.findMany({
+    where: { userId, questionId: record.questionId },
+    select: { questionId: true, selectedIndex: true, isCorrect: true, attemptedAt: true },
+    take: 100,
+    orderBy: { attemptedAt: "desc" },
+  });
+  for (const c of candidates) {
+    const ck = qbAttemptContentIdentityKey({
+      questionId: c.questionId,
+      selectedIndex: c.selectedIndex,
+      isCorrect: c.isCorrect,
+      attemptedAt: c.attemptedAt.toISOString(),
+    });
+    if (ck === newKey) return; // 同一逻辑作答已存在
+  }
   await prisma.qbAttempt.create({
     data: {
       userId,
@@ -434,7 +455,7 @@ export async function mergeLocalStateOnLogin(
     }
   }
 
-  // QB
+  // QB (幂等 + 折叠老重复)
   if (localQbAttempts) {
     try {
       for (const [, recs] of Object.entries(localQbAttempts)) {
@@ -444,6 +465,7 @@ export async function mergeLocalStateOnLogin(
           }
         }
       }
+      await dedupeQbAttemptsForUser(userId);
     } catch {
       errors.push("qb-attempt-merge-failed");
     }
@@ -525,6 +547,10 @@ async function fetchUserQbAttempts(userId: string): Promise<Record<string, impor
       isCorrect: r.isCorrect,
       attemptedAt: r.attemptedAt.toISOString(),
     });
+  }
+  // Fold residual dups if physical dedupe has not yet run
+  for (const qid of Object.keys(grouped)) {
+    grouped[qid] = foldQbAttemptsByStableIdentity(grouped[qid]);
   }
   return grouped;
 }
@@ -611,4 +637,42 @@ export async function syncLearnerState(
   }
 
   return errs.length === 0 ? { ok: true } : { ok: false, error: errs.join(";") };
+}
+
+
+// 题库 attempt 物理折叠（按内容键保留最早 attemptedAt），老数据安全折叠
+export async function dedupeQbAttemptsForUser(userId: string): Promise<number> {
+  const rows = await prisma.qbAttempt.findMany({
+    where: { userId },
+    select: { id: true, questionId: true, selectedIndex: true, isCorrect: true, attemptedAt: true },
+    orderBy: { attemptedAt: "asc" },
+  });
+
+  const keepByKey = new Map<string, string>();
+  const deleteIds: string[] = [];
+  for (const row of rows) {
+    const key = qbAttemptContentIdentityKey({
+      questionId: row.questionId,
+      selectedIndex: row.selectedIndex,
+      isCorrect: row.isCorrect,
+      attemptedAt: row.attemptedAt.toISOString(),
+    });
+    const kept = keepByKey.get(key);
+    if (!kept) {
+      keepByKey.set(key, row.id);
+      continue;
+    }
+    deleteIds.push(row.id);
+  }
+
+  if (deleteIds.length === 0) return 0;
+
+  const chunkSize = 50;
+  for (let i = 0; i < deleteIds.length; i += chunkSize) {
+    const chunk = deleteIds.slice(i, i + chunkSize);
+    await prisma.qbAttempt.deleteMany({
+      where: { userId, id: { in: chunk } },
+    });
+  }
+  return deleteIds.length;
 }
