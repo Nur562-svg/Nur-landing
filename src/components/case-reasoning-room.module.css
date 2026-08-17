@@ -37,6 +37,9 @@
 }
 
 .brand {
+  min-height: 44px;
+  display: inline-flex;
+  align-items: center;
   color: var(--ink);
   font-family: var(--font-serif), "Times New Roman", serif;
   font-size: 26px;
@@ -59,7 +62,8 @@
   display: flex;
   font-size: 17px;
   font-weight: 650;
-  padding: 3px 0 0;
+  padding: 10px 4px 6px;
+  min-height: 44px;
   position: relative;
 }
 
@@ -204,6 +208,7 @@
 }
 
 .breadcrumbs a {
+  min-height: 44px;
   align-items: center;
   color: var(--ink);
   display: flex;
@@ -1012,7 +1017,7 @@
   font-weight: 650;
   gap: 10px;
   justify-content: center;
-  min-height: 42px;
+  min-height: 44px;
   padding: 0 14px;
   white-space: nowrap;
 }

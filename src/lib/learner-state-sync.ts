@@ -355,7 +355,7 @@ export async function performReliableLoginMerge(userEmail?: string): Promise<voi
     });
   } catch (e: unknown) {
     const msg = (e as Error)?.message || "login-sync-failed";
-    if (process.env.NODE_ENV !== "production") {
+    if (process.env.NODE_ENV === "development") {
       console.warn("[M2 login sync] reliable merge failed:", msg);
     }
     setSyncStatus({ isSyncing: false, lastError: msg });

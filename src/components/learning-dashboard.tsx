@@ -408,6 +408,7 @@ export function LearningDashboard({ courses }: LearningDashboardProps) {
           <button
             className={styles.accountButton}
             type="button"
+            aria-label={`打开${studentName ?? "学习"}账户`}
             aria-expanded={accountOpen}
             aria-controls="account-panel"
             onClick={() => setAccountOpen((current) => !current)}
@@ -813,7 +814,7 @@ export function LearningDashboard({ courses }: LearningDashboardProps) {
 
       {planOpen ? (
         <aside className={styles.planDrawer} id="weekly-plan" aria-label="本周计划">
-          <button className={styles.drawerClose} type="button" onClick={() => setPlanOpen(false)}>
+          <button className={styles.drawerClose} type="button" aria-label="收起本周计划" onClick={() => setPlanOpen(false)}>
             收起 <ChevronUp aria-hidden="true" size={17} strokeWidth={1.4} />
           </button>
           <div className={styles.metricGroup}>

@@ -37,6 +37,9 @@
 }
 
 .brand {
+  min-height: 44px;
+  display: inline-flex;
+  align-items: center;
   color: var(--ink);
   font-family: var(--font-serif), "Times New Roman", serif;
   font-size: 26px;
@@ -59,7 +62,8 @@
   display: flex;
   font-size: 17px;
   font-weight: 650;
-  padding: 3px 0 0;
+  padding: 10px 4px 6px;
+  min-height: 44px;
   position: relative;
 }
 
@@ -204,6 +208,7 @@
 }
 
 .breadcrumbs a {
+  min-height: 44px;
   align-items: center;
   color: var(--ink);
   display: flex;
@@ -591,7 +596,7 @@
   color: var(--muted);
   font-size: 8px;
   font-weight: 650;
-  min-height: 43px;
+  min-height: 44px;
   padding: 15px 9px 0;
   text-align: center;
 }
@@ -1089,8 +1094,8 @@
 
   .avatar {
     font-size: 20px;
-    height: 43px;
-    width: 43px;
+    min-height: 44px;
+    min-width: 44px;
   }
 
   .accountPanel {

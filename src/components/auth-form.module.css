@@ -17,6 +17,8 @@
 }
 
 .backLink {
+  min-height: 44px;
+  padding: 10px 0;
   align-items: center;
   color: var(--ink);
   display: inline-flex;
@@ -157,6 +159,7 @@
 }
 
 .cardFooter a {
+  min-height: 44px;
   color: var(--blue);
   margin-left: 4px;
 }

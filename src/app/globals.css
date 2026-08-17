@@ -88,15 +88,35 @@
 }
 
 
-/* M4 mobile + touch polish */
-button, [role="button"], a, .interactive {
+/* M4 mobile + touch polish (44px targets for main learning path controls on ~390 wide) */
+button,
+[role="button"],
+a,
+.interactive,
+.closeButton,
+.account-close-button,
+.accountPanelHeading button,
+.tab,
+.navigation :is(button, a) {
   touch-action: manipulation;
   -webkit-tap-highlight-color: transparent;
 }
 
-/* Ensure reasonable tap targets on key controls */
-button:not(.icon-only-large) {
-  min-height: 40px;
+/* Key interactive controls target ~44px touch (no new horizontal overflow, preserve editorial) */
+button:not(.icon-only-large),
+.closeButton,
+.account-close-button,
+.accountPanelHeading button,
+.tab,
+.navigation :is(button, a) {
+  min-height: 44px;
+}
+
+/* Icon-like closes and tabs also need width floor on touch */
+.closeButton,
+.account-close-button,
+.accountPanelHeading button {
+  min-width: 44px;
 }
 
 
@@ -682,13 +702,13 @@ body {
   cursor: pointer;
   display: flex;
   font-size: 24px;
-  height: 34px;
+  min-height: 44px;
+  min-width: 44px;
   justify-content: center;
   line-height: 1;
   position: absolute;
   right: 18px;
   top: 18px;
-  width: 34px;
 }
 
 .account-avatar-control {

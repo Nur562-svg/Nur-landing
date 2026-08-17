@@ -37,6 +37,9 @@
 }
 
 .brand {
+  min-height: 44px;
+  display: inline-flex;
+  align-items: center;
   color: var(--ink);
   font-family: var(--font-serif), "Times New Roman", serif;
   font-size: 26px;
@@ -59,7 +62,8 @@
   display: flex;
   font-size: 17px;
   font-weight: 650;
-  padding: 3px 0 0;
+  padding: 10px 4px 6px;
+  min-height: 44px;
   position: relative;
 }
 
@@ -206,6 +210,7 @@
 }
 
 .breadcrumbs a {
+  min-height: 44px;
   align-items: center;
   color: var(--ink);
   display: flex;
@@ -1278,9 +1283,9 @@
   border: 1px solid var(--line);
   color: var(--ink);
   display: flex;
-  height: 29px;
+  min-height: 44px;
   justify-content: center;
-  width: 29px;
+  min-width: 44px;
 }
 
 .sourceCard li b {
@@ -1398,8 +1403,8 @@
 
   .avatar {
     font-size: 20px;
-    height: 43px;
-    width: 43px;
+    min-height: 44px;
+    min-width: 44px;
   }
 
   .accountPanel {

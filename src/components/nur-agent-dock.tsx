@@ -1,6 +1,7 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState, useSyncExternalStore } from "react";
+import { createPortal } from "react-dom";
 import { Bot, MessageSquare, ScanText, X } from "lucide-react";
 import type { LearningAttemptSurface, LearningMemoryState } from "@/types/learning";
 import type { FsrsCriterionSummary } from "@/types/nur-agent";
@@ -49,6 +50,11 @@ type NurAgentDockProps = {
 type TabId = "chat" | "analysis";
 
 export function NurAgentDock(props: NurAgentDockProps) {
+  const mounted = useSyncExternalStore(
+    () => () => {},
+    () => true,
+    () => false,
+  );
   const [open, setOpen] = useState(false);
   const [tab, setTab] = useState<TabId>("chat");
   const { surface } = props;
@@ -127,7 +133,11 @@ export function NurAgentDock(props: NurAgentDockProps) {
 
   const hasDraft = Boolean(props.currentText && props.currentText.trim().length > 0);
 
-  return (
+  if (!mounted) {
+    return null;
+  }
+
+  return createPortal(
     <>
       <button
         className={styles.fab}
@@ -220,6 +230,7 @@ export function NurAgentDock(props: NurAgentDockProps) {
           </aside>
         </div>
       ) : null}
-    </>
+    </>,
+    document.body,
   );
 }

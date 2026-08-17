@@ -1,6 +1,6 @@
 # NUR LEARN — Canonical Project State
 
-Last updated: 2026-08-17 (Asia/Shanghai) — 舌诊「望舌苔」第3完整闭环升级完成（腐腻鉴别 lesson + 名词/简答 + 四阶段案例 + 8 memory criteria；course-validation 0 issues） — 问诊「问寒热」闭环已完成 — FSRS 真实路径可触发高危 — M2 attempt 稳定身份 + 同步冲突裁决 — Agent 改写一键应用 — 错题中心三层 — M2 云同步 Phase 1-5 — M4 切片 A/B（错误/加载/SEO + 本机导出）；next priority: 表里辨证完整闭环或 M4 移动端/a11y
+Last updated: 2026-08-17 (Asia/Shanghai) — 八纲「表里辨证」升级为第4个完整闭环；M4 切片 A/B/C 已完成；next priority: design-qa 浏览器补强 / 下一知识点闭环或 M5 部署
 
 This file is the durable source of truth for continuing NUR LEARN when conversation history is unavailable. Update it after material product decisions, completed milestones, verification changes, or priority changes.
 
@@ -668,7 +668,7 @@ On 2026-07-19, the user selected deeper official 《中医诊断学》 coverage 
 - 舌诊「望舌苔」：舌质舌苔合参，重点鉴别腐苔与腻苔；（**2026-08-17 已升级为第3个完整闭环**，见下）
 - 问诊「问寒热」：恶寒发热、但寒不热、但热不寒、寒热往来；（**2026-08-17 已升级为完整闭环**，见下）
 - 脉诊「常见病脉」：按位、数、形、势组织浮沉迟数与洪脉；
-- 八纲辨证「表里辨证」：表证、里证及表里转化；
+- 八纲辨证「表里辨证」：表证、里证及表里转化；（**2026-08-17 已升级为第4个完整闭环**，见下）
 - 脏腑辨证「脾胃病辨证」：脾气虚与脾阳虚鉴别，并加入纯合成四阶段病案。
 
 Each point has a four-section lesson, evidence groups, TCM and modern-observation blocks with `可关联 / 帮助理解 / 不可直接等同`, NUR practice scoring, a transfer exercise or case, and one scored NUR-adapted short answer. Exact school/white-book prompts for tongue, cold/heat, pulse, and exterior/interior are retained as source-verbatim candidates with `answer.status = missing` and no scoring; they are not promoted to school answers. Teacher-specific grading remains pending.
@@ -695,7 +695,19 @@ Each point has a four-section lesson, evidence groups, TCM and modern-observatio
 - **Assessments hung on KP**: deep short + whitebook missing + QB/complete + NUR term/short (orders 20–21).
 - **Sources**: textbook P37/P39 + teacher review (existing deep-loop verified sources); no fabricated exam frequency or teacher rubric points.
 - **Routes**: `/courses/tcm-diagnostics/knowledge-points/tongue-coating`, `.../subjective-writing`, `.../case-reasoning`.
-- **Verification**: `validateCourseDefinition` 0 issues. Full `npm run check` recorded with this milestone. Pilot now has three diet-class closed loops: 问饮食口味、问寒热、望舌苔. Next content depth candidate remains 表里辨证.
+- **Verification**: `validateCourseDefinition` 0 issues. Full `npm run check` recorded with this milestone. Pilot then had three diet-class closed loops: 问饮食口味、问寒热、望舌苔. （表里辨证随后升为第4个，见下。）
+
+### 八纲「表里辨证」closed loop upgrade (2026-08-17)
+
+`kp-eight-principles-exterior-interior` / slug `exterior-interior` was upgraded from the thinner deep-loop skeleton to a diet/cold-heat/tongue-class vertical slice. Content lives in `src/content/courses/tcm-diagnostics-exterior-interior-loop.ts` and is registered from `tcm-diagnostics.ts` (deep-loop short-answer + white-book missing candidate + QB items remain hung; new structure short scoring id is `scoring-exterior-interior-structure-short`; term scoring `scoring-exterior-interior-term`; case scoring `scoring-case-exterior-interior-reasoning`).
+
+- **Lesson** `lesson-exterior-interior`: 取证 → 对照 → 输出 → 迁移；evidence for 病程与起势、表位线索、里位与四诊复核、转化/兼夹与现代边界；TCM + modern lenses with three relationship labels（可关联 / 帮助理解 / 不可直接等同）；NUR practice scoring；`transferCaseId: case-exterior-interior-reasoning`.
+- **Writing**: NUR-adapted term (`半表半里证`) + structure short-answer（表/里界定与鉴别 + 转化/兼夹边界 + 现代病程–系统观察 + 不可直接等同）with criteria + 1:1 `assistanceRules` → 5 primary `memory-exterior-interior-*` criteria (plus 3 deep-loop memory ids retained).
+- **Case**: synthetic four-stage room — D0 表症组合 → D2 恶寒减/高热口渴心烦便结（入里倾向）+ 舌脉与检查缺口 + 家属标签压力；10-point NUR structure scoring; not clinical diagnosis; deliberately separates 转化 vs 表里同病 vs 半表半里.
+- **Assessments hung on KP**: deep short + whitebook missing + QB/complete + NUR term/short (orders 20–21).
+- **Sources**: textbook P89–91 + teacher review (existing deep-loop verified sources) + editorial; no fabricated exam frequency or teacher rubric points.
+- **Routes**: `/courses/tcm-diagnostics/knowledge-points/exterior-interior`, `.../subjective-writing`, `.../case-reasoning` (SSG confirmed in production build).
+- **Verification**: `validateCourseDefinition` 0 issues; `npm run check` (lint 0 errors / existing warnings + typecheck + production build after clean `.next`) green. Pilot diet-class closed loops now **four**: 问饮食口味、问寒热、望舌苔、**表里辨证**. Teacher scoring rubric remains pending; white-book/historical answers remain missing and are not promoted. No commit/push/deploy in this slice.
 
 The material catalog now records the supplied third-edition textbook, two-page teacher review, all five heart/lung/spleen/liver/kidney slide artifacts, the 2021–2022 TCM final, and the legacy school white-book file with full SHA identity, source family/artifact relations, privacy/publication state, and read-only path aliases. Page locators were visually checked at textbook P37/P39, P52–53, P60–61, P69/P71/P73/P79, P89–91, and P121–123; other teacher-review page pointers remain source-declared or pending rather than silently upgraded. The two files titled only `《诊断学》` are separate misfiled Western Diagnostics artifacts and remain excluded from TCM truth.
 
@@ -1151,10 +1163,41 @@ Answer: modern medicine also enters exam-answer and scoring training. The implem
 
 **Not in slice:** 云端导出、PDF、一键导入、会员/同步主流程改动。
 
+
+### M4 切片 C — 移动端触控 44px / 基础 a11y / console 卫生（completed 2026-08-17）
+
+**Scope（唯一）：** 主学习路径 UI 触控可达、基础可访问名/焦点、主路径 console 噪声；不新功能、不改课程内容/同步协议/Agent/会员/导出主逻辑/SEO。
+
+**Touch (~390)**
+- `src/app/globals.css`：主交互控件 `min-height: 44px`；`.account-close-button` / `.closeButton` 类 `min-width: 44px`；`touch-action: manipulation` 保留；`:focus-visible` 既有蓝描边保留。
+- `nur-agent-dock.module.css`：drawer 关闭钮 30px → min 44px + padding。
+- `learning-dashboard.module.css`：账户面板关闭、账户钮、主 CTA、计划折叠/收起、导出钮、主导航链 min 44；清理重复 padding。
+- `course-workspace.module.css`：drawerClose / 考试编辑关闭、导航、exam 输入与添加题型、主操作高度地板。
+- `knowledge-point-lesson` / `subjective-writing-room` / `case-reasoning-room` module.css：主导航 padding + min-height 44；主操作/头像容器/来源链触控地板。
+- `wrong-question-center.module.css`：tab / tabActive、错题与薄弱项、empty CTA min-height 44。
+- 装饰性 underline `::after`、brand-mark、状态点尺寸未当触控目标放大，避免横向溢出。
+
+**a11y（无大型框架）**
+- `/learn` 账户开关补 `aria-label`；计划抽屉收起补 `aria-label="收起本周计划"`。
+- 写作/案例室 rubric 与证据多选已有 `aria-pressed`；账户关闭/Agent FAB/关闭/多数 icon 钮已有可访问名；auth 隐式 label 保留。
+- 不引入 a11y 库；不重做导航信息架构。
+
+**Console**
+- `performReliableLoginMerge` 失败路径 warn 仅 `development`（避免 prod 噪声 + 修复 TS2367 窄化）；错误仍写入 `lastError`，不吞失败。
+- 既有 error boundary / mail mock 仍为 dev-only 或错误路径；未在主路径新增 log。
+
+**Verify**
+- `npm run check` 全绿（lint 既有 14 warnings / 0 errors；tsc；next build）。
+- 未自动 commit / push / 部署。
+- 未在本轮完成真实设备 390 点击串与 design-qa 新截图（见残余）。
+
+**Not in slice:** 内容扩写、完整新闭环、SEO/导出主逻辑重做、重型 UI 库、导航 IA 重构。
+
 ### M4 仍待
 - ✅ 本机学习数据导出（切片 B，2026-08-17）
-- 移动端 44px / a11y / console 清理的残余核对
-- 浏览器 QA 与 design-qa 截图补强（error/loading 文案级已记）
+- ✅ 移动端 44px / 基础 a11y / console 卫生（切片 C，2026-08-17）
+- 浏览器 QA 与 design-qa 截图补强（390 路径：登录→课程→闭环→错题→导出；error/loading 文案级已记）
+- 性能细抠（非阻塞）
 - M5 部署仍待 ICP/域名
 
 - 复用现有 contracts，不新加大模型或支付。
@@ -1182,14 +1225,14 @@ Answer: modern medicine also enters exam-answer and scoring training. The implem
 2. M4 发布前打磨：
    - ✅ SEO 元数据、robots/sitemap、ErrorBoundary + loading（切片 A，2026-08-17）
    - ✅ export-learner-data 本机快照导出（切片 B）
-   - 移动端 44px touch + a11y 残余
-   - 性能、console guard 残余
-   - design-qa 截图补强
+   - ✅ 移动端 44px touch + 基础 a11y + console 卫生（切片 C）
+   - 性能细抠残余
+   - design-qa / 390 真机点击串截图补强
 3. M5 部署（待用户采购域名后决策）。
 4. 内容 pending（教师 9 页 rubric、部分 unverified 答案、错题中心 FSRS/主观增强）。
 5. 转接工作：三个计划文件保持最新（本更新已完成）。
 
-**优先级**：M2 可靠登录合并核心已落地。M4 切片 A（错误/加载/SEO）+ 切片 B（本机学习数据导出）已完成；M4 残余打磨 → M5 待定。
+**优先级**：M2 可靠登录合并核心已落地。M4 切片 A/B/C（错误/SEO、本机导出、触控44/a11y/console）已完成；表里辨证第4闭环已完成（2026-08-17）；残余为 design-qa 浏览器补强与性能细抠 → 下一知识点闭环或 M5。
 
 
 ## M5 上线准备（知径上线检查清单）— 2026-08-17 完成
@@ -1224,3 +1267,18 @@ Answer: modern medicine also enters exam-answer and scoring training. The implem
 ---
 
 **优先级**：上线准备完成。下一步由外部条件（域名/服务器/备案）驱动。
+
+
+### M4 切片 C · 390 验证（2026-08-17 续）
+
+- **工具**: Playwright Chromium，`viewport 390×844`，`isMobile+hasTouch`
+- **路径**: `/learn`（账户面板+导出）→ `/courses/tcm-diagnostics` → KP 课页 → 写作室/案例室 → `/wrong-questions` tabs → `/login`
+- **结果**:
+  - 全页 `scrollWidth === clientWidth`（390）
+  - 主按钮/`role=tab` 高度 ≥40/44；无无名 button
+  - 主路径 console warning/error / pageerror：**0**
+  - 导出钮实测约 274×50；Agent FAB/关闭 44×44
+- **缺陷修复**: 写作室 390 下 Agent 关闭被 sticky header 头像拦截 → `nur-agent-dock` 改为 `createPortal(..., document.body)` + 提高 overlay/drawer z-index；客户端挂载用 `useSyncExternalStore`（避免 `setState-in-effect` lint）
+- **截图**: `docs/design-references/m4-touch-*-390-2026-08-17.png`
+- **check**: `npm run check` EXIT 0
+- **仍残留**: 真机 Safari/手势；设计 QA 人工走查；既有 lint warning 14 条；性能细抠非本轮

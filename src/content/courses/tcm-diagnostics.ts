@@ -33,6 +33,11 @@ import {
   tongueCoatingAssessmentItems,
   tongueCoatingReasoningCase,
 } from "@/content/courses/tcm-diagnostics-tongue-coating-loop";
+import {
+  buildExteriorInteriorKnowledgePoint,
+  exteriorInteriorAssessmentItems,
+  exteriorInteriorReasoningCase,
+} from "@/content/courses/tcm-diagnostics-exterior-interior-loop";
 
 /** 把新增题库题目挂到知识点（无新增时原样返回）。 */
 function withQuestionBankItems(point: KnowledgePointDefinition): KnowledgePointDefinition {
@@ -1469,7 +1474,7 @@ const pulseKnowledgePoints = [
 ] as const;
 
 const eightPrinciplesKnowledgePoints = [
-  withQuestionBankItems(deepKnowledgePoints.exteriorInterior),
+  buildExteriorInteriorKnowledgePoint(createDemoKnowledgePoint),
   createDemoKnowledgePoint("kp-eight-principles-cold-heat", "cold-heat", 2, "寒热辨证", "区分性质与真假寒热", "高频"),
   createDemoKnowledgePoint("kp-eight-principles-deficiency-excess", "deficiency-excess", 3, "虚实辨证", "判断邪正盛衰", "高频"),
   createDemoKnowledgePoint("kp-eight-principles-yin-yang", "yin-yang", 4, "阴阳辨证", "八纲总纲与证候统摄", "重点"),
@@ -2003,6 +2008,7 @@ export const tcmDiagnosticsCourse = {
     ...inquiryDietAssessmentItems,
     ...coldHeatAssessmentItems,
     ...tongueCoatingAssessmentItems,
+    ...exteriorInteriorAssessmentItems,
     ...deepAssessmentItems,
     ...questionBankAssessmentItems,
     ...completeAssessmentItems,
@@ -2014,5 +2020,6 @@ export const tcmDiagnosticsCourse = {
     spleenReasoningCase,
     coldHeatReasoningCase,
     tongueCoatingReasoningCase,
+    exteriorInteriorReasoningCase,
   ],
 } satisfies CourseDefinition;
