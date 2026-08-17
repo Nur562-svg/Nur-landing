@@ -129,6 +129,13 @@ const inquiryDietSourceIds = {
   taste: "source-nidcd-taste-disorders",
 } as const;
 
+const coldHeatSourceIds = {
+  textbook: "source-tcm-cold-heat-textbook-pages",
+  teacherReview: "source-tcm-cold-heat-teacher-review",
+  editorial: "source-tcm-cold-heat-teacher-review",
+  pastExams: "source-tcm-diagnostics-past-exams",
+} as const;
+
 const inquiryDietCaseId = "case-inquiry-diet-reasoning";
 
 const inquiryDietTcmLens: LensContent = {
@@ -160,6 +167,38 @@ const inquiryDietModernLens: LensContent = {
     inquiryDietSourceIds.diabetes,
     inquiryDietSourceIds.taste,
   ],
+};
+
+const inquiryColdHeatTcmLens: LensContent = {
+  id: "lens-inquiry-cold-heat-tcm",
+  perspective: "tcm",
+  title: "中医视角",
+  status: "verified",
+  explanation: "按第三版教材先区分恶寒与发热是否并见，再根据轻重、先后、持续方式（持续、潮作、往来）及兼症判断表里、寒热、邪正状态。恶寒发热多提示表证，但寒不热多里寒，但热不寒多里热，寒热往来常与少阳或半表半里相关。",
+  clinicalObservations: [
+    "恶寒与发热是否同时出现及轻重对比",
+    "热型（壮热、潮热、微热、低热）与节律",
+    "兼症：汗出、头身痛、鼻塞、口渴、二便、舌脉",
+    "病程新久与演变",
+  ],
+  missingLabel: null,
+  sourceIds: [coldHeatSourceIds.textbook, coldHeatSourceIds.teacherReview],
+};
+
+const inquiryColdHeatModernLens: LensContent = {
+  id: "lens-inquiry-cold-heat-modern",
+  perspective: "modern-medicine",
+  title: "现代医学视角",
+  status: "available",
+  explanation: "需区分主观畏寒感与实测体温，记录起病时间、热型曲线、用药反应及警示伴随（意识改变、呼吸急促、脱水等），用于安全评估和鉴别方向，不直接等同于中医寒热八纲。",
+  clinicalObservations: [
+    "主观寒冷感 vs 体温计读数",
+    "热型时间轴（持续、间歇、弛张）",
+    "退热药、环境、感染影响",
+    "全身状态与危险信号",
+  ],
+  missingLabel: null,
+  sourceIds: [coldHeatSourceIds.teacherReview],
 };
 
 const inquiryDietLesson = {
@@ -314,6 +353,361 @@ const inquiryDietLesson = {
     inquiryDietSourceIds.taste,
   ],
 } satisfies KnowledgeLessonDefinition;
+
+const inquiryColdHeatLesson = {
+  id: "lesson-inquiry-cold-heat",
+  status: "available",
+  eyebrow: "INQUIRY · EVIDENCE TO ANSWER",
+  objective: "把寒热问诊拆成可核对证据，区分四种类型，分别完成中医辨证与现代医学分析，并在作答中明确二者边界。",
+  durationMinutes: 45,
+  sections: [
+    { id: "evidence", order: 1, indexLabel: "01", title: "取证", detail: "问全寒热类型与兼症" },
+    { id: "compare", order: 2, indexLabel: "02", title: "对照", detail: "并列类型鉴别与中西推理" },
+    { id: "output", order: 3, indexLabel: "03", title: "输出", detail: "按采分点成句" },
+    { id: "transfer", order: 4, indexLabel: "04", title: "迁移", detail: "回到案例复核" },
+  ],
+  evidenceGroups: [
+    {
+      id: "evidence-cold-heat-presence",
+      order: 1,
+      title: "寒热并见与单见",
+      detail: "先确定恶寒与发热是否同时存在，以及单见寒或热的情况。",
+      prompts: [
+        { id: "prompt-cold-heat-together", label: "并见", question: "恶寒与发热是否同时出现？" },
+        { id: "prompt-cold-only", label: "但寒不热", question: "是否只有恶寒而无发热？" },
+        { id: "prompt-heat-only", label: "但热不寒", question: "是否只有发热而无恶寒？" },
+      ],
+      sourceIds: [coldHeatSourceIds.textbook, coldHeatSourceIds.teacherReview],
+    },
+    {
+      id: "evidence-rhythm-intensity",
+      order: 2,
+      title: "轻重与节律",
+      detail: "区分恶寒重发热轻、发热重恶寒轻、寒热往来等类型及热型。",
+      prompts: [
+        { id: "prompt-intensity", label: "轻重", question: "恶寒和发热哪一项更重？" },
+        { id: "prompt-rhythm", label: "节律", question: "是持续、潮作还是交替往来？何时加重？" },
+        { id: "prompt-heat-type", label: "热型", question: "壮热、潮热、微热或低热？" },
+      ],
+      sourceIds: [coldHeatSourceIds.textbook, coldHeatSourceIds.teacherReview],
+    },
+    {
+      id: "evidence-comorbidities",
+      order: 3,
+      title: "兼症与四诊复核",
+      detail: "用汗、痛、口渴、二便、舌脉等兼症收紧判断。",
+      prompts: [
+        { id: "prompt-sweat-pain", label: "汗与痛", question: "有无汗出、头身痛或鼻塞？" },
+        { id: "prompt-thirst-stool", label: "津液二便", question: "口渴、二便情况如何？" },
+        { id: "prompt-tongue-pulse", label: "舌脉", question: "舌象、脉象提供什么复核？" },
+      ],
+      sourceIds: [coldHeatSourceIds.textbook, coldHeatSourceIds.teacherReview],
+    },
+    {
+      id: "evidence-course-safety",
+      order: 4,
+      title: "病程与安全边界",
+      detail: "记录起病时间、演变，并识别需要评估的警示线索。",
+      prompts: [
+        { id: "prompt-onset", label: "病程", question: "何时起病，持续还是反复？" },
+        { id: "prompt-triggers", label: "诱因反应", question: "与受凉、用药、环境相关吗？" },
+        { id: "prompt-red-flags", label: "警示", question: "有无高热不退、神昏、呼吸急促或明显脱水？" },
+      ],
+      sourceIds: [coldHeatSourceIds.teacherReview],
+    },
+  ],
+  lensBlocks: [
+    {
+      id: "reasoning-inquiry-cold-heat-tcm",
+      perspective: "tcm",
+      status: "verified",
+      eyebrow: "TCM REASONING · TEXTBOOK VERIFIED",
+      title: "从寒热证据进入辨证",
+      summary: "教材强调先分恶寒发热四种基本类型，再结合轻重、节律、兼症判断表里寒热与邪正。作答须规范描述类型及复核证据。",
+      reasoningSteps: [
+        "先明确并见或单见，再分轻重与节律（恶寒重发热轻提示表寒；发热重恶寒轻提示表热或里热等）。",
+        "寒热往来多与少阳或半表半里相关，但仍需舌脉与兼症复核。",
+        "兼症（汗、痛、口渴、二便）与舌脉是定型的关键复核，不能只凭寒热一词定证。",
+        "最终结论仍需四诊合参，避免从单一症状直接跳到证名。",
+      ],
+      boundaryNote: "教材术语与教师复习范围已核对；任课教师主观题逐项采分标准尚未提供。",
+      sourceIds: [coldHeatSourceIds.textbook, coldHeatSourceIds.teacherReview],
+    },
+    {
+      id: "reasoning-inquiry-cold-heat-modern",
+      perspective: "modern-medicine",
+      status: "available",
+      eyebrow: "MODERN MEDICINE · ASSESSABLE",
+      title: "从热型与伴随提出鉴别与评估",
+      summary: "现代医学部分需准确记录主观与客观体温、热型时间轴，并提出合理鉴别方向与安全评估线索。",
+      reasoningSteps: [
+        "区分主观畏寒与实测体温；记录起病、峰值、退热反应。",
+        "热型（持续、间歇、弛张）提示不同感染或非感染可能。",
+        "伴随症状（神志、呼吸、脱水）提示是否需紧急评估。",
+      ],
+      boundaryNote: "作答训练评估的是观察、热型描述与安全意识，不以热型直接下现代诊断或等同中医证候。",
+      sourceIds: [coldHeatSourceIds.teacherReview],
+    },
+  ],
+  scoring: {
+    id: "scoring-inquiry-cold-heat-integrated-answer",
+    status: "available",
+    authority: "nur-platform",
+    title: "中西医并列作答训练",
+    totalPoints: 10,
+    notice: "这是 NUR 平台训练量表，不代表任课教师真实题目或评分标准；接入课程资料后再校准。",
+    prompt: "患者诉昨日起恶寒明显，发热38.5℃，伴无汗头痛。今晨恶寒减轻但发热升至39.2℃，口渴欲饮，舌红苔黄。请写出你还需补问的证据，并分别说明中医寒热类型与现代医学分析方向。",
+    answerFramework: [
+      "先补证据：寒热并见/轻重/节律 → 兼症（汗、痛、口渴、舌脉） → 病程与诱因 → 警示线索。",
+      "中医部分：类型（表寒/表热/里热/往来）→ 表里寒热邪正方向 → 需由哪些四诊证据复核。",
+      "现代医学部分：主观畏寒 vs 实测体温、热型 → 鉴别或评估方向 → 安全线索与下一步。",
+      "边界句：两套解释并列记录、互助理解，但证候与疾病不可直接等同。",
+    ],
+    criteria: [
+      { id: "score-tcm-evidence", order: 1, perspective: "tcm", label: "中医证据完整", detail: "写出寒热并见/单见、轻重节律及关键兼症，并补充四诊复核。", points: 2 },
+      { id: "score-tcm-reasoning", order: 2, perspective: "tcm", label: "中医推理成链", detail: "从证据写到表里寒热/邪正方向，不只报结论。", points: 2 },
+      { id: "score-modern-pattern", order: 3, perspective: "modern-medicine", label: "现代热型与组合", detail: "准确组织主观/实测、热型时间轴及伴随组合。", points: 2 },
+      { id: "score-modern-assessment", order: 4, perspective: "modern-medicine", label: "现代鉴别与安全", detail: "提出评估方向并识别警示线索，避免单热型下诊断。", points: 2 },
+      { id: "score-boundary", order: 5, perspective: "boundary", label: "关系边界清楚", detail: "明确可关联与帮助理解之处，同时写明不可直接等同。", points: 2 },
+    ],
+    sourceIds: [
+      coldHeatSourceIds.textbook,
+      coldHeatSourceIds.teacherReview,
+      coldHeatSourceIds.pastExams,
+    ],
+  },
+  transferCaseId: "case-inquiry-cold-heat-reasoning",
+  transferExercise: null,
+  sourceIds: [
+    coldHeatSourceIds.textbook,
+    coldHeatSourceIds.teacherReview,
+    coldHeatSourceIds.pastExams,
+  ],
+} satisfies KnowledgeLessonDefinition;
+
+const coldHeatLearningMemoryCriteria = [
+  {
+    id: "memory-cold-heat-type",
+    order: 1,
+    label: "寒热类型区分不完整",
+    detail: "作答常漏掉并见/单见、轻重节律或往来特征的明确描述。",
+  },
+  {
+    id: "memory-cold-heat-evidence",
+    order: 2,
+    label: "证据与兼症不完整",
+    detail: "常只写寒热而漏掉汗、痛、口渴、二便、舌脉等关键复核证据。",
+  },
+  {
+    id: "memory-cold-heat-reasoning",
+    order: 3,
+    label: "推理链缺少连接",
+    detail: "从类型证据到表里寒热/邪正方向的中间论证没有写成完整句。",
+  },
+  {
+    id: "memory-cold-heat-boundary",
+    order: 4,
+    label: "结论强度与关系边界缺失",
+    detail: "没有主动限制结论，或没有说明中医证候与现代疾病/热型不可直接等同。",
+  },
+  {
+    id: "memory-cold-heat-modern",
+    order: 5,
+    label: "现代评估链不完整",
+    detail: "主观与实测、热型时间轴、安全警示没有独立清晰说明。",
+  },
+  {
+    id: "cold-heat-inquiry-memory-evidence",
+    order: 6,
+    label: "寒热分型",
+    detail: "能先按并见、单见或往来分型。",
+  },
+  {
+    id: "cold-heat-inquiry-memory-reasoning",
+    order: 7,
+    label: "邪正推理",
+    detail: "能结合轻重、时间与兼症解释病位病性。",
+  },
+  {
+    id: "cold-heat-inquiry-memory-boundary",
+    order: 8,
+    label: "测量边界",
+    detail: "能区分主观感觉、实测体温与中医寒热。",
+  },
+] as const satisfies readonly LearningMemoryCriterionDefinition[];
+
+const coldHeatAssessmentItemIds = {
+  termColdHeat: "assessment-writing-cold-heat-term",
+  shortColdHeat: "assessment-writing-cold-heat-structure-short-answer",
+} as const;
+
+const coldHeatAssessmentItems = [
+  {
+    id: coldHeatAssessmentItemIds.termColdHeat,
+    order: 20,
+    knowledgePointId: "kp-inquiry-cold-heat",
+    questionKind: "term",
+    status: "available",
+    prompt: "寒热往来",
+    promptSource: {
+      authority: "nur-editorial",
+      wording: "nur-adapted",
+      locator: "NUR LEARN · 问寒热 名词解释训练",
+      note: "依据教材与教师重点改编的 NUR 结构化名词解释训练题。",
+      sourceIds: [coldHeatSourceIds.textbook, coldHeatSourceIds.teacherReview],
+    },
+    answer: {
+      status: "available",
+      authority: "nur-platform",
+      confidence: "source-cross-checked",
+      content: ["寒热往来指患者自觉恶寒与发热交替出现，恶寒时体温不高，发热时恶寒减轻或消失。常见于邪正相持、邪在少阳或半表半里之证。临床须结合舌脉与兼症判断具体病机。"],
+      notice: "NUR 改编参考答案，依据教材P52–53及教师重点交叉核对；不是教师标准答案。",
+      sourceIds: [coldHeatSourceIds.textbook, coldHeatSourceIds.teacherReview],
+    },
+    scoring: {
+      id: "scoring-cold-heat-term",
+      standardVersion: "nur-term-v1",
+      status: "available",
+      authority: "nur-platform",
+      title: "NUR 名词解释结构评分",
+      totalPoints: 6,
+      suggestedCharacters: 120,
+      notice: "仅用于结构训练；任课教师的真实评分点仍待确认。",
+      answerFramework: ["定义（寒热交替出现）", "病机方向（邪正相持/少阳）", "临床意义及复核要点"],
+      criteria: [
+        { id: "cold-heat-term-def", order: 1, perspective: "tcm", label: "定义准确", detail: "清晰写出恶寒与发热交替出现的特征。", points: 2 },
+        { id: "cold-heat-term-mechanism", order: 2, perspective: "tcm", label: "病机要点", detail: "提及邪正相持或少阳/半表半里方向。", points: 2 },
+        { id: "cold-heat-term-boundary", order: 3, perspective: "boundary", label: "复核与边界", detail: "说明需结合舌脉兼症判断，不孤立使用。", points: 2 },
+      ],
+      assistanceRules: [
+        { criterionId: "cold-heat-term-def", memoryCriterionId: "memory-cold-heat-type", signalGroups: [["交替", "往来"], ["恶寒", "发热"]], nextStepPrompt: "先写清恶寒与发热交替出现的核心特征。", rewriteSuggestion: "寒热往来指患者自觉恶寒与发热交替出现，恶寒时体温不高，发热时恶寒减轻或消失。" },
+        { criterionId: "cold-heat-term-mechanism", memoryCriterionId: "memory-cold-heat-reasoning", signalGroups: [["少阳", "半表半里"], ["邪正", "相持"]], nextStepPrompt: "补写病机方向，不要只背定义。", rewriteSuggestion: "常见于邪正相持、邪在少阳或半表半里之证。" },
+        { criterionId: "cold-heat-term-boundary", memoryCriterionId: "memory-cold-heat-boundary", signalGroups: [["舌脉", "兼症"], ["不能", "孤立", "复核"]], nextStepPrompt: "说明需结合舌脉兼症判断，不可孤立使用。", rewriteSuggestion: "临床须结合舌脉与兼症判断具体病机，不能仅凭往来二字定证。" },
+      ],
+      sourceIds: [coldHeatSourceIds.textbook, coldHeatSourceIds.teacherReview],
+    },
+    sourceIds: [coldHeatSourceIds.textbook, coldHeatSourceIds.teacherReview],
+  },
+  {
+    id: coldHeatAssessmentItemIds.shortColdHeat,
+    order: 21,
+    knowledgePointId: "kp-inquiry-cold-heat",
+    questionKind: "short-answer",
+    status: "available",
+    prompt: "简述问寒热的取证要点、主要类型及辨证意义，并说明与现代医学发热评估的关系。",
+    promptSource: {
+      authority: "nur-editorial",
+      wording: "nur-adapted",
+      locator: "NUR LEARN · 问寒热 简答训练",
+      note: "依据教材P52–53、教师复习范围及公开临床参考改编的 NUR 结构化简答训练题。",
+      sourceIds: [coldHeatSourceIds.textbook, coldHeatSourceIds.teacherReview],
+    },
+    answer: {
+      status: "available",
+      authority: "nur-platform",
+      confidence: "source-cross-checked",
+      content: ["问寒热先问是否并见，再问轻重、节律（持续、潮作、往来）、病程及兼症（汗、痛、口渴、舌脉）。主要类型：恶寒发热（多表证）、但寒不热（多里寒）、但热不寒（多里热）、寒热往来（多少阳或半表半里）。辨证意义在于判断表里寒热与邪正状态。现代医学需记录实测体温、热型及警示表现，两者可关联但不可直接等同。"],
+      notice: "NUR 改编参考答案，依据教材与教师重点交叉核对；不是教师标准答案。",
+      sourceIds: [coldHeatSourceIds.textbook, coldHeatSourceIds.teacherReview],
+    },
+    scoring: {
+      id: "scoring-cold-heat-short",
+      standardVersion: "nur-structure-v1",
+      status: "available",
+      authority: "nur-platform",
+      title: "NUR 简答结构评分",
+      totalPoints: 10,
+      suggestedCharacters: 280,
+      notice: "仅用于结构训练；任课教师的真实评分点仍待确认。",
+      answerFramework: ["取证顺序与类型区分", "中医辨证意义（表里寒热邪正）", "现代评估要点与边界"],
+      criteria: [
+        { id: "cold-heat-short-evidence", order: 1, perspective: "tcm", label: "证据与类型完整", detail: "写出并见/单见/往来及轻重节律，并补充兼症。", points: 2 },
+        { id: "cold-heat-short-reasoning", order: 2, perspective: "tcm", label: "中医推理成链", detail: "由类型写到表里寒热/邪正方向并说明复核。", points: 2 },
+        { id: "cold-heat-short-modern", order: 3, perspective: "modern-medicine", label: "现代评估独立", detail: "写出实测体温、热型、安全线索。", points: 2 },
+        { id: "cold-heat-short-boundary", order: 4, perspective: "boundary", label: "关系边界清楚", detail: "明确可关联与帮助理解，同时写明不可直接等同。", points: 2 },
+        { id: "cold-heat-short-completeness", order: 5, perspective: "tcm", label: "结构完整", detail: "取证→类型→意义→边界成句，无明显遗漏。", points: 2 },
+      ],
+      assistanceRules: [
+        { criterionId: "cold-heat-short-evidence", memoryCriterionId: "memory-cold-heat-type", signalGroups: [["并见", "单见", "往来"], ["轻重", "节律"]], nextStepPrompt: "先明确寒热是并见还是单见或往来，再分轻重节律。", rewriteSuggestion: "恶寒与发热是否同时出现？是恶寒重还是发热重？有无往来规律？" },
+        { criterionId: "cold-heat-short-reasoning", memoryCriterionId: "memory-cold-heat-reasoning", signalGroups: [["表证", "里寒", "里热", "少阳"], ["邪正", "表里"]], nextStepPrompt: "由类型写到病机方向，并说明仍需哪些四诊复核。", rewriteSuggestion: "恶寒重发热轻多提示表寒，需结合舌脉与汗痛判断邪正状态。" },
+        { criterionId: "cold-heat-short-modern", memoryCriterionId: "memory-cold-heat-modern", signalGroups: [["体温", "热型"], ["警示", "评估"]], nextStepPrompt: "把主观感受与实测数据分开，并列出需要评估的伴随。", rewriteSuggestion: "主观恶寒与实测38.5℃需分别记录，热型及神志、呼吸等警示应独立说明。" },
+        { criterionId: "cold-heat-short-boundary", memoryCriterionId: "memory-cold-heat-boundary", signalGroups: [["不可直接等同", "不能直接等同"], ["复核", "四诊"]], nextStepPrompt: "补一句说明中医证候与现代热型的关系边界。", rewriteSuggestion: "中医寒热类型可与现代热型相互参考，但证候结论与疾病诊断不可直接等同，仍需四诊合参。" },
+        { criterionId: "cold-heat-short-completeness", memoryCriterionId: "memory-cold-heat-evidence", signalGroups: [["取证", "类型", "意义"], ["边界", "完整"]], nextStepPrompt: "检查是否按取证→类型→意义→边界成句，有无整块遗漏。", rewriteSuggestion: "先写问诊取证顺序与类型，再写辨证意义，最后补现代评估与不可直接等同的边界句。" },
+      ],
+      sourceIds: [coldHeatSourceIds.textbook, coldHeatSourceIds.teacherReview],
+    },
+    sourceIds: [coldHeatSourceIds.textbook, coldHeatSourceIds.teacherReview],
+  },
+] as const satisfies readonly AssessmentItemDefinition[];
+
+const coldHeatReasoningCase = {
+  id: "case-inquiry-cold-heat-reasoning",
+  order: 3,
+  knowledgePointIds: ["kp-inquiry-cold-heat"],
+  status: "available",
+  eyebrow: "CASE REASONING · FIND THE BROKEN LINK",
+  title: "寒热线索不能合成一个结论",
+  stem: "患者诉昨日受凉后恶寒明显，今晨发热38.8℃，头痛无汗。今日下午恶寒减轻但发热升至39.5℃，口渴引饮，大便溏。舌脉信息尚未提供。",
+  promptSource: {
+    authority: "nur-editorial",
+    wording: "nur-adapted",
+    locator: "NUR LEARN · 问寒热案例迁移",
+    note: "案例由 NUR 根据教材P52–53、教师复习范围及临床参考组织，不是学校原题或真实患者诊断。",
+    sourceIds: [coldHeatSourceIds.textbook, coldHeatSourceIds.teacherReview],
+  },
+  evidence: [
+    { id: "case-evidence-aversion", order: 1, label: "恶寒", detail: "昨日起明显", role: "key", requiredForReasoning: true },
+    { id: "case-evidence-fever", order: 2, label: "发热", detail: "今晨38.8℃，下午39.5℃", role: "key", requiredForReasoning: true },
+    { id: "case-evidence-no-sweat", order: 3, label: "无汗头痛", detail: "早期表现", role: "supporting", requiredForReasoning: true },
+    { id: "case-evidence-thirst", order: 4, label: "口渴引饮", detail: "发热时出现", role: "key", requiredForReasoning: true },
+    { id: "case-evidence-stool", order: 5, label: "大便溏", detail: "今日出现", role: "supporting", requiredForReasoning: true },
+    { id: "case-evidence-tongue-pulse", order: 6, label: "舌脉缺失", detail: "中医定型关键信息不足", role: "missing", requiredForReasoning: true },
+    { id: "case-evidence-lab", order: 7, label: "实验室信息缺失", detail: "现代评估方向待补", role: "missing", requiredForReasoning: true },
+    { id: "case-evidence-course", order: 8, label: "病程演变", detail: "受凉后恶寒→发热加重", role: "key", requiredForReasoning: true },
+  ],
+  reasoningSteps: [
+    { id: "case-step-evidence", order: 1, stage: "evidence", label: "证据分组", prompt: "把现有表现按寒热类型、兼症、缺失信息重新组织。", placeholder: "例如：寒热表现……兼症……仍缺……", minimumCharacters: 70, answerFramework: ["寒热：昨日恶寒明显，今晨发热38.8℃，下午39.5℃，有从寒转热趋势。", "兼症：无汗头痛、口渴引饮、大便溏。", "中医仍缺舌脉；现代仍缺详细热型曲线、感染指标及警示评估。"], sourceIds: [coldHeatSourceIds.textbook, coldHeatSourceIds.teacherReview] },
+    { id: "case-step-mechanism", order: 2, stage: "mechanism", label: "病机与评估方向", prompt: "分别写出中医寒热类型方向和现代医学评估方向，不要先报一个确定诊断。", placeholder: "中医：可能表寒入里或……；现代：发热伴口渴需评估……", minimumCharacters: 90, answerFramework: ["中医：早期恶寒明显提示表证可能，后续发热加重、口渴、大便溏提示可能入里或兼有里热/湿；仍需舌脉复核。", "现代医学：发热伴口渴引饮需关注感染、代谢或脱水方向；大便溏提示胃肠受累；需补热型曲线及相关检查。", "两条推理链共享症状记录，但病机、评估方法和结论依据分别成立。"], sourceIds: [coldHeatSourceIds.textbook, coldHeatSourceIds.teacherReview] },
+    { id: "case-step-syndrome", order: 3, stage: "syndrome", label: "暂定辨证结论", prompt: "给出当前能支持到什么程度的中医辨证方向，并主动写明不能下确定结论的原因。", placeholder: "现有证据更支持……方向；但因为缺少……只能作为暂定……", minimumCharacters: 70, answerFramework: ["现有寒热演变+兼症更支持表寒可能入里或兼湿热方向。", "舌脉、完整病程细节及其他四诊未补全，因此不能把方向直接写成最终证型。", "口渴和大便溏也不能单独证明某个中医证候。"], sourceIds: [coldHeatSourceIds.textbook, coldHeatSourceIds.teacherReview] },
+    { id: "case-step-differential", order: 4, stage: "differential", label: "鉴别排除与边界", prompt: "排除至少一个容易被单一症状带偏的方向，并分别写出中医复核、现代评估和关系边界。", placeholder: "不能仅凭发热判断……；需要用……复核；现代医学应……；二者不可……", minimumCharacters: 110, answerFramework: ["不能仅凭发热直接转向里热或阳明热；早期恶寒+无汗仍要求复核表证可能及入里程度。", "中医用舌脉、完整兼症和病程继续鉴别表里寒热；现代医学对发热、口渴、便溏分别补问并安排必要评估。", "中医证候与现代医学疾病/热型不可直接等同；本案例只训练推理结构，不提供临床诊断。"], sourceIds: [coldHeatSourceIds.textbook, coldHeatSourceIds.teacherReview] },
+  ],
+  answer: {
+    authority: "nur-platform",
+    confidence: "source-cross-checked",
+    notice: "结构参考由 NUR 按已接入资料交叉核对，用于发现推理断点；不是学校标准答案、教师批改答案或医疗诊断。",
+    sourceIds: [coldHeatSourceIds.textbook, coldHeatSourceIds.teacherReview],
+  },
+  scoring: {
+    id: "scoring-case-inquiry-cold-heat-reasoning",
+    standardVersion: "nur-case-v1",
+    status: "available",
+    authority: "nur-platform",
+    title: "NUR 推理链自核量表",
+    totalPoints: 10,
+    notice: "该10分仅表示平台推理训练结构，不代表本课程案例题真实采分点；教师评分标准仍待提供。",
+    criteria: [
+      { id: "case-cold-score-evidence", order: 1, stage: "evidence", perspective: "shared-evidence", label: "证据分组完整", detail: "区分寒热演变、兼症及缺失信息，没有漏掉会改变结论的证据。", points: 2 },
+      { id: "case-cold-score-mechanism", order: 2, stage: "mechanism", perspective: "tcm", label: "病机推理成链", detail: "由现有证据写到表里寒热/邪正方向，并说明仍需四诊复核。", points: 2 },
+      { id: "case-cold-score-syndrome", order: 3, stage: "syndrome", perspective: "tcm", label: "结论强度恰当", detail: "给出暂定辨证方向，同时主动限制结论，不因缺失舌脉而强行定证。", points: 2 },
+      { id: "case-cold-score-modern", order: 4, stage: "differential", perspective: "modern-medicine", label: "现代评估独立", detail: "把发热、口渴、便溏组织成待评估组合，不以单症状下现代诊断。", points: 2 },
+      { id: "case-cold-score-boundary", order: 5, stage: "differential", perspective: "boundary", label: "鉴别与边界明确", detail: "写出反证、下一步复核，并明确中医证候与现代疾病不可直接等同。", points: 2 },
+    ],
+    assistanceRules: [
+      { criterionId: "case-cold-score-evidence", memoryCriterionId: "memory-cold-heat-evidence", signalGroups: [["恶寒", "发热", "38", "39"], ["无汗", "头痛", "口渴", "便溏"], ["缺", "舌脉", "实验室", "未提供"]], nextStepPrompt: "先把寒热演变、兼症和缺失信息分成组，再限制结论强度。", rewriteSuggestion: "现有证据应分为寒热时间轴、兼症（汗痛口渴便溏）与缺失信息（舌脉、实验室）三组。" },
+      { criterionId: "case-cold-score-mechanism", memoryCriterionId: "memory-cold-heat-reasoning", signalGroups: [["表", "入里", "少阳"], ["评估", "感染", "脱水"]], nextStepPrompt: "分别补一条中医病机链和现代医学评估链，不要把两者合成一个诊断。", rewriteSuggestion: "中医方面可由恶寒转热、口渴便溏推至表寒可能入里或兼湿热方向；现代医学方面则需分别评估感染与代谢/脱水线索。" },
+      { criterionId: "case-cold-score-syndrome", memoryCriterionId: "memory-cold-heat-boundary", signalGroups: [["暂定", "方向", "支持"], ["不能", "缺少", "复核", "尚缺"]], nextStepPrompt: "把“支持什么方向”和“为什么还不能定证”写在同一段。", rewriteSuggestion: "现有证据仅支持表寒可能入里或兼湿热的暂定方向；因舌脉及其他四诊尚缺，不能据此写成最终证型。" },
+      { criterionId: "case-cold-score-modern", memoryCriterionId: "memory-cold-heat-modern", signalGroups: [["发热", "口渴", "39"], ["评估", "热型", "检查", "实验室"]], nextStepPrompt: "把发热口渴写成待评估组合，并说明需要补什么信息。", rewriteSuggestion: "发热升至39.5℃与口渴便溏应作为待评估的症状组合，继续补充热型曲线、体重、感染指标和必要的检查，而不能据单一表现下诊断。" },
+      { criterionId: "case-cold-score-boundary", memoryCriterionId: "memory-cold-heat-boundary", signalGroups: [["不可直接等同", "不能直接等同", "分别论证"], ["鉴别", "复核", "不能仅凭", "下一步"]], nextStepPrompt: "补一个容易被单症状带偏的方向，再写中医复核、现代评估和不可直接等同。", rewriteSuggestion: "不能仅凭发热直接定里热或下现代感染诊断；中医需结合舌脉等四诊复核，现代医学需独立评估热型与伴随，二者结论不可直接等同。" },
+    ],
+    sourceIds: [coldHeatSourceIds.textbook, coldHeatSourceIds.teacherReview],
+  },
+  boundaryNote: "本案例仅用于学习推理结构，不提供临床诊断、个人医疗建议或任课教师真实评分。",
+  sourceIds: [coldHeatSourceIds.textbook, coldHeatSourceIds.teacherReview],
+} satisfies CaseDefinition;
+
+
+
+
 
 const inquiryDietReasoningCase = {
   id: inquiryDietCaseId,
@@ -936,7 +1330,64 @@ const inquiryDietAssessmentItems = [
 ] as const satisfies readonly AssessmentItemDefinition[];
 
 const inquiryKnowledgePoints = [
-  withQuestionBankItems(deepKnowledgePoints.coldHeat),
+  createDemoKnowledgePoint(
+    "kp-inquiry-cold-heat",
+    "cold-and-heat",
+    1,
+    "问寒热",
+    "恶寒发热、寒热往来、轻重节律与兼症",
+    "重点",
+    {
+      contentStatus: "available",
+      evidenceFramework: ["寒热并见/单见", "轻重与节律", "兼症与四诊复核", "病程、现代评估与安全边界"],
+      lenses: [inquiryColdHeatTcmLens, inquiryColdHeatModernLens],
+      relationships: [
+        {
+          id: "relationship-inquiry-cold-heat-related",
+          fromLensId: inquiryColdHeatTcmLens.id,
+          toLensId: inquiryColdHeatModernLens.id,
+          label: "related",
+          status: "available",
+          note: "两种视角共享恶寒发热、轻重节律、兼症等原始问诊证据。",
+          sourceIds: [coldHeatSourceIds.textbook, coldHeatSourceIds.teacherReview],
+        },
+        {
+          id: "relationship-inquiry-cold-heat-learning-aid",
+          fromLensId: inquiryColdHeatTcmLens.id,
+          toLensId: inquiryColdHeatModernLens.id,
+          label: "learning-aid",
+          status: "available",
+          note: "现代医学的热型、评估与警示进入 NUR 作答及评分训练，帮助把证据描述得更完整。",
+          sourceIds: [coldHeatSourceIds.textbook, coldHeatSourceIds.teacherReview],
+        },
+        {
+          id: "relationship-inquiry-cold-heat-not-equivalent",
+          fromLensId: inquiryColdHeatTcmLens.id,
+          toLensId: inquiryColdHeatModernLens.id,
+          label: "not-equivalent",
+          status: "available",
+          note: "中医寒热类型与现代热型/疾病不是一一对应，必须分别论证和评分。",
+          sourceIds: [coldHeatSourceIds.textbook, coldHeatSourceIds.teacherReview],
+        },
+      ],
+      learningMemoryCriteria: coldHeatLearningMemoryCriteria,
+      sourceIds: [
+        coldHeatSourceIds.textbook,
+        coldHeatSourceIds.teacherReview,
+        coldHeatSourceIds.pastExams,
+      ],
+      assessmentItemIds: [
+        "assessment-cold-heat-inquiry-short",
+        "assessment-cold-heat-historical",
+        ...(questionBankKnowledgePointItems["kp-inquiry-cold-heat"] ?? []),
+        ...(completeKnowledgePointItems["kp-inquiry-cold-heat"] ?? []),
+        coldHeatAssessmentItemIds.termColdHeat,
+        coldHeatAssessmentItemIds.shortColdHeat,
+      ],
+      caseIds: ["case-inquiry-cold-heat-reasoning"],
+      lesson: inquiryColdHeatLesson,
+    },
+  ),
   createDemoKnowledgePoint("kp-inquiry-sweat", "sweat", 2, "问汗", "有汗无汗、部位与时间", "重点"),
   createDemoKnowledgePoint("kp-inquiry-pain", "pain", 3, "问疼痛", "部位、性质、时间与喜恶", "高频"),
   createDemoKnowledgePoint(
@@ -1196,36 +1647,15 @@ export const tcmDiagnosticsCourse = {
     {
       id: "source-tcm-diagnostics-whitebook",
       order: 5,
-      role: "course-evidence",
+      role: "course-material",
       type: "question-bank",
       authority: "school",
       scope: "general-reference",
-      displayLabel: "学校白皮书",
-      status: "verified",
-      missingLabel: null,
-      citation: {
-        label: "南京中医药大学中医诊断学试题 · 练习06卷",
-        edition: null,
-        page: null,
-        slide: null,
-        academicYear: null,
-        url: null,
-      },
-      verifiedAt: "2026-07-16",
-      materialArtifactIds: ["artifact-tcm-diagnostics-whitebook"],
-    },
-    {
-      id: "source-tcm-diagnostics-choice-bank",
-      order: 6,
-      role: "course-evidence",
-      type: "question-bank",
-      authority: "student",
-      scope: "general-reference",
-      displayLabel: "选择题资料",
+      displayLabel: "学校白皮题库",
       status: "available",
       missingLabel: null,
       citation: {
-        label: "《中医诊断学》考试模拟题库 · 260题（答案待核）",
+        label: "南京中医药大学中医诊断学白皮题库 · 练习卷",
         edition: null,
         page: null,
         slide: null,
@@ -1233,6 +1663,7 @@ export const tcmDiagnosticsCourse = {
         url: null,
       },
       verifiedAt: null,
+      materialArtifactIds: ["artifact-tcm-diagnostics-whitebook"],
     },
     {
       id: inquiryDietSourceIds.textbook,
@@ -1565,11 +1996,12 @@ export const tcmDiagnosticsCourse = {
   learningTasks: [],
   assessmentItems: [
     ...inquiryDietAssessmentItems,
+    ...coldHeatAssessmentItems,
     ...deepAssessmentItems,
     ...questionBankAssessmentItems,
     ...completeAssessmentItems,
     ...completeSubjectiveItems,
   ],
   assessmentGroups: completeAssessmentGroups,
-  cases: [inquiryDietReasoningCase, spleenReasoningCase],
+  cases: [inquiryDietReasoningCase, spleenReasoningCase, coldHeatReasoningCase],
 } satisfies CourseDefinition;

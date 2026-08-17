@@ -23,6 +23,7 @@ const EMPTY_DATA: WrongQuestionCenterData = {
   weakKpCount: 0,
   structuralWeaknesses: [],
   fsrsHighRisk: [],
+  hasFsrsMemory: false,
 };
 
 /** 订阅 localStorage 变化（qb-attempts + learning-memory + mock-exam + storage 事件） */

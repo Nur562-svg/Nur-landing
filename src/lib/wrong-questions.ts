@@ -122,6 +122,8 @@ export type WrongQuestionCenterData = {
   weakKpCount: number;
   structuralWeaknesses: readonly StructuralWeakness[];
   fsrsHighRisk: readonly FsrsHighRiskItem[];
+  /** 是否已有任意 FSRS 准则状态（用于区分「尚无数据」与「暂无高危」空态） */
+  hasFsrsMemory: boolean;
 };
 
 function computeWrongQBAttempts(
@@ -412,5 +414,9 @@ export function selectWrongQuestionCenter(
     weakKpCount: weakKnowledgePoints.length,
     structuralWeaknesses: selectStructuralWeaknesses(courses, memoryState ?? null),
     fsrsHighRisk: selectFsrsHighRiskItems(courses, memoryState ?? null),
+    hasFsrsMemory: Boolean(
+      memoryState?.fsrsState
+      && Object.keys(memoryState.fsrsState.criteria).length > 0,
+    ),
   };
 }

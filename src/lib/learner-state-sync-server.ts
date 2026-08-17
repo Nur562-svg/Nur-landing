@@ -4,6 +4,7 @@
  * - 首次登录时支持 localStorage → server 上传合并
  * - 私人材料准入记录同步需独立 consent（MaterialAdmissionSyncConsent）
  * - 所有写入必须有明确 userId（来自 M1 JWT session）
+ * - attempt 稳定身份：客户端 id 权威；上传幂等；内容键折叠历史 cuid 重复
  */
 
 import { prisma } from "./prisma";
@@ -11,37 +12,111 @@ import { Prisma } from "@prisma/client";
 import type {
   LearnerAttemptRecord,
   FsrsCriterionState,
-  LearningMemoryState,
 } from "@/types/learning";
 import type { QBAttemptRecord, QBFavoriteStore } from "@/types/question-bank";
 import type { MockExamSession } from "@/types/mock-exam";
 import { parseLearningMemoryJson } from "./learning-memory";
-import { getAdmissionSyncConsents } from "./material-admission";
+import {
+  attemptContentIdentityKey,
+  MAX_LEARNER_ATTEMPTS,
+} from "./learner-attempt-identity";
 
 function toJsonValue<T>(v: T): Prisma.InputJsonValue {
   return v as unknown as Prisma.InputJsonValue;
 }
 
+type AttemptPersistInput = {
+  id?: string;
+  courseId: string;
+  courseVersionId?: string;
+  offeringId?: string;
+  knowledgePointId: string;
+  surface: "subjective-writing" | "case-reasoning";
+  taskId: string;
+  segmentId?: string | null;
+  confirmedText: string;
+  confirmedAt?: string;
+  criterionResults: readonly import("@/types/learning").LearnerAttemptCriterionResult[];
+  answerConfidence: string;
+  scoringStandard?: { id: string; version: string; authority: string };
+};
+
+function contentKeyFromPersistInput(input: AttemptPersistInput, confirmedAtIso: string): string {
+  return attemptContentIdentityKey({
+    courseId: input.courseId,
+    knowledgePointId: input.knowledgePointId,
+    surface: input.surface,
+    taskId: input.taskId,
+    segmentId: input.segmentId ?? null,
+    confirmedText: input.confirmedText,
+    confirmedAt: confirmedAtIso,
+  });
+}
+
 // 服务器端记录 confirmed attempt（接受 domain types, 内部转 JSON）
+// 幂等：同 client id 不重复插入；同内容键命中历史 cuid 行则 skip。
 export async function recordConfirmedAttemptServer(
   userId: string,
-  input: {
-    courseId: string;
-    courseVersionId?: string;
-    offeringId?: string;
-    knowledgePointId: string;
-    surface: "subjective-writing" | "case-reasoning";
-    taskId: string;
-    segmentId?: string | null;
-    confirmedText: string;
-    criterionResults: readonly import("@/types/learning").LearnerAttemptCriterionResult[];
-    answerConfidence: string;
-    scoringStandard?: { id: string; version: string; authority: string };
-  }
+  input: AttemptPersistInput,
 ): Promise<{ ok: true; id: string } | { ok: false; error: string }> {
   try {
+    const text = input.confirmedText.slice(0, 12000);
+    const confirmedAtIso = input.confirmedAt && !Number.isNaN(Date.parse(input.confirmedAt))
+      ? new Date(input.confirmedAt).toISOString()
+      : new Date().toISOString();
+    const createdAt = new Date(confirmedAtIso);
+    const clientId = typeof input.id === "string" && input.id.length > 0 ? input.id : undefined;
+
+    if (clientId) {
+      const byId = await prisma.learnerAttempt.findUnique({ where: { id: clientId } });
+      if (byId) {
+        if (byId.userId !== userId) {
+          return { ok: false, error: "attempt-id-conflict" };
+        }
+        return { ok: true, id: byId.id };
+      }
+    }
+
+    const contentKey = contentKeyFromPersistInput({ ...input, confirmedText: text }, confirmedAtIso);
+    const existingRows = await prisma.learnerAttempt.findMany({
+      where: {
+        userId,
+        courseId: input.courseId,
+        knowledgePointId: input.knowledgePointId,
+        surface: input.surface,
+        taskId: input.taskId,
+        segmentId: input.segmentId ?? null,
+        confirmedText: text,
+      },
+      select: {
+        id: true,
+        createdAt: true,
+        courseId: true,
+        knowledgePointId: true,
+        surface: true,
+        taskId: true,
+        segmentId: true,
+        confirmedText: true,
+      },
+    });
+    for (const row of existingRows) {
+      const rowKey = attemptContentIdentityKey({
+        courseId: row.courseId,
+        knowledgePointId: row.knowledgePointId,
+        surface: row.surface,
+        taskId: row.taskId,
+        segmentId: row.segmentId,
+        confirmedText: row.confirmedText,
+        confirmedAt: row.createdAt.toISOString(),
+      });
+      if (rowKey === contentKey) {
+        return { ok: true, id: row.id };
+      }
+    }
+
     const attempt = await prisma.learnerAttempt.create({
       data: {
+        ...(clientId ? { id: clientId } : {}),
         userId,
         courseId: input.courseId,
         courseVersionId: input.courseVersionId,
@@ -50,16 +125,169 @@ export async function recordConfirmedAttemptServer(
         surface: input.surface,
         taskId: input.taskId,
         segmentId: input.segmentId ?? null,
-        confirmedText: input.confirmedText.slice(0, 12000),
+        confirmedText: text,
         criterionResults: toJsonValue(input.criterionResults),
         answerConfidence: input.answerConfidence,
         scoringStandard: input.scoringStandard ? toJsonValue(input.scoringStandard) : undefined,
+        createdAt,
       },
     });
     return { ok: true, id: attempt.id };
   } catch {
     return { ok: false, error: "persist-failed" };
   }
+}
+
+/**
+ * 批量幂等写入 attempts：一次加载已有行，按 id + 内容键 skip，仅 create 缺失项。
+ * 写完后物理折叠同内容键重复行（保留最早 createdAt，优先保留可解析为客户端 UUID 形态的 id 无强制）。
+ */
+export async function upsertAttemptsBatchServer(
+  userId: string,
+  attempts: readonly LearnerAttemptRecord[],
+): Promise<{ created: number; skipped: number; deduped: number }> {
+  const existing = await prisma.learnerAttempt.findMany({
+    where: { userId },
+    select: {
+      id: true,
+      createdAt: true,
+      courseId: true,
+      knowledgePointId: true,
+      surface: true,
+      taskId: true,
+      segmentId: true,
+      confirmedText: true,
+    },
+  });
+
+  const idSet = new Set(existing.map((r) => r.id));
+  const contentToId = new Map<string, string>();
+  for (const row of existing) {
+    const key = attemptContentIdentityKey({
+      courseId: row.courseId,
+      knowledgePointId: row.knowledgePointId,
+      surface: row.surface,
+      taskId: row.taskId,
+      segmentId: row.segmentId,
+      confirmedText: row.confirmedText,
+      confirmedAt: row.createdAt.toISOString(),
+    });
+    if (!contentToId.has(key)) {
+      contentToId.set(key, row.id);
+    }
+  }
+
+  let created = 0;
+  let skipped = 0;
+
+  for (const a of attempts) {
+    const text = a.confirmedText.slice(0, 12000);
+    const confirmedAtIso = a.confirmedAt && !Number.isNaN(Date.parse(a.confirmedAt))
+      ? new Date(a.confirmedAt).toISOString()
+      : new Date().toISOString();
+    const key = attemptContentIdentityKey({
+      courseId: a.courseId,
+      knowledgePointId: a.knowledgePointId,
+      surface: a.surface,
+      taskId: a.taskId,
+      segmentId: a.segmentId,
+      confirmedText: text,
+      confirmedAt: confirmedAtIso,
+    });
+
+    if (a.id && idSet.has(a.id)) {
+      skipped += 1;
+      continue;
+    }
+    if (contentToId.has(key)) {
+      skipped += 1;
+      continue;
+    }
+
+    const clientId = typeof a.id === "string" && a.id.length > 0 ? a.id : undefined;
+    try {
+      const row = await prisma.learnerAttempt.create({
+        data: {
+          ...(clientId ? { id: clientId } : {}),
+          userId,
+          courseId: a.courseId,
+          courseVersionId: a.courseVersionId || undefined,
+          offeringId: a.offeringId || undefined,
+          knowledgePointId: a.knowledgePointId,
+          surface: a.surface,
+          taskId: a.taskId,
+          segmentId: a.segmentId ?? null,
+          confirmedText: text,
+          criterionResults: toJsonValue(a.criterionResults),
+          answerConfidence: a.answerConfidence,
+          scoringStandard: a.scoringStandard ? toJsonValue(a.scoringStandard) : undefined,
+          createdAt: new Date(confirmedAtIso),
+        },
+      });
+      idSet.add(row.id);
+      contentToId.set(key, row.id);
+      created += 1;
+    } catch {
+      // 并发/唯一冲突：记 skip，不中断整批
+      skipped += 1;
+    }
+  }
+
+  const deduped = await dedupeLearnerAttemptsForUser(userId);
+  return { created, skipped, deduped };
+}
+
+/**
+ * 物理删除同内容键重复 attempt，保留 createdAt 最早的一条。
+ * 不碰 FSRS / reviewTasks。返回删除行数。
+ */
+export async function dedupeLearnerAttemptsForUser(userId: string): Promise<number> {
+  const rows = await prisma.learnerAttempt.findMany({
+    where: { userId },
+    select: {
+      id: true,
+      createdAt: true,
+      courseId: true,
+      knowledgePointId: true,
+      surface: true,
+      taskId: true,
+      segmentId: true,
+      confirmedText: true,
+    },
+    orderBy: { createdAt: "asc" },
+  });
+
+  const keepByKey = new Map<string, string>();
+  const deleteIds: string[] = [];
+  for (const row of rows) {
+    const key = attemptContentIdentityKey({
+      courseId: row.courseId,
+      knowledgePointId: row.knowledgePointId,
+      surface: row.surface,
+      taskId: row.taskId,
+      segmentId: row.segmentId,
+      confirmedText: row.confirmedText,
+      confirmedAt: row.createdAt.toISOString(),
+    });
+    const kept = keepByKey.get(key);
+    if (!kept) {
+      keepByKey.set(key, row.id);
+      continue;
+    }
+    deleteIds.push(row.id);
+  }
+
+  if (deleteIds.length === 0) return 0;
+
+  // 分批删除，避免超大 IN
+  const chunkSize = 50;
+  for (let i = 0; i < deleteIds.length; i += chunkSize) {
+    const chunk = deleteIds.slice(i, i + chunkSize);
+    await prisma.learnerAttempt.deleteMany({
+      where: { userId, id: { in: chunk } },
+    });
+  }
+  return deleteIds.length;
 }
 
 // FSRS 状态 upsert（按 criterionId）。
@@ -179,7 +407,7 @@ export async function setAdmissionSyncConsent(
   });
 }
 
-// 核心合并入口：首次登录时 local → server
+// 核心合并入口：local → server（attempts 幂等，不再每次换 cuid）
 export async function mergeLocalStateOnLogin(
   userId: string,
   localMemoryJson: string | null,
@@ -194,21 +422,7 @@ export async function mergeLocalStateOnLogin(
     try {
       const mem = parseLearningMemoryJson(localMemoryJson);
       if (mem) {
-        for (const a of mem.attempts) {
-          await recordConfirmedAttemptServer(userId, {
-            courseId: a.courseId,
-            courseVersionId: a.courseVersionId,
-            offeringId: a.offeringId,
-            knowledgePointId: a.knowledgePointId,
-            surface: a.surface,
-            taskId: a.taskId,
-            segmentId: a.segmentId,
-            confirmedText: a.confirmedText,
-            criterionResults: a.criterionResults,
-            answerConfidence: a.answerConfidence,
-            scoringStandard: a.scoringStandard,
-          });
-        }
+        await upsertAttemptsBatchServer(userId, mem.attempts);
         if (mem.fsrsState?.criteria) {
           for (const [critId, fs] of Object.entries(mem.fsrsState.criteria)) {
             await upsertFsrsStateServer(userId, critId, fs);
@@ -263,10 +477,10 @@ async function fetchUserAttempts(userId: string): Promise<LearnerAttemptRecord[]
   const rows = await prisma.learnerAttempt.findMany({
     where: { userId },
     orderBy: { createdAt: "desc" },
-    take: 300,
+    take: MAX_LEARNER_ATTEMPTS,
   });
   return rows.map((r) => ({
-    version: 1,
+    version: 1 as const,
     id: r.id,
     courseId: r.courseId,
     courseVersionId: r.courseVersionId ?? "",

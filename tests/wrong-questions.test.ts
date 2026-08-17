@@ -315,6 +315,7 @@ describe("selectWrongQuestionCenter three-layer compatibility", () => {
     assert.strictEqual(data.weakKpCount, 1);
     assert.deepStrictEqual(data.structuralWeaknesses, []);
     assert.deepStrictEqual(data.fsrsHighRisk, []);
+    assert.strictEqual(data.hasFsrsMemory, false);
   });
 
   it("aggregates all three layers when memory state is provided", () => {
@@ -334,6 +335,7 @@ describe("selectWrongQuestionCenter three-layer compatibility", () => {
     assert.strictEqual(data.totalWrong, 0);
     assert.strictEqual(data.structuralWeaknesses.length, 1);
     assert.strictEqual(data.fsrsHighRisk.length, 1);
+    assert.strictEqual(data.hasFsrsMemory, true);
     // 同一准则可同时出现在结构薄弱与临遗忘两层，互不排斥
     assert.strictEqual(data.structuralWeaknesses[0]?.criterionId, data.fsrsHighRisk[0]?.criterionId);
   });

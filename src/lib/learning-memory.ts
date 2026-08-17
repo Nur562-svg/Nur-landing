@@ -427,7 +427,6 @@ function applyConfirmedAttempt(
       .map(([criterionId]) => criterionId),
   );
 
-  const newlyCompletedCriterionIds: string[][] = [];
   let reviewTasks = state.reviewTasks.map((task) => {
     if (task.courseId !== attempt.courseId
       || task.knowledgePointId !== attempt.knowledgePointId
@@ -443,9 +442,6 @@ function applyConfirmedAttempt(
     const completed = task.criterionIds.every((criterionId) => (
       resolvedCriterionIds.includes(criterionId)
     ));
-    if (completed) {
-      newlyCompletedCriterionIds.push([...task.criterionIds]);
-    }
     return {
       ...task,
       resolvedCriterionIds,
@@ -509,17 +505,18 @@ function applyConfirmedAttempt(
     }
   }
 
+  // FSRS: every confirmed attempt rates the criteria in this self-check.
+  // present → good, missing → again. Review-task completion no longer owns
+  // ratings (that path made "again" unreachable for single-criterion tasks).
   let fsrsState = state.fsrsState;
-  if (newlyCompletedCriterionIds.length > 0) {
+  if (currentStatuses.size > 0) {
     const params = defaultFsrsParameters();
     const currentFsrs: FsrsLearningState = state.fsrsState ?? { version: 2, criteria: {} };
     const criteria = { ...currentFsrs.criteria };
-    for (const criterionIds of newlyCompletedCriterionIds) {
-      for (const criterionId of criterionIds) {
-        const current = criteria[criterionId] ?? createNewFsrsState();
-        const rating = presentCriterionIds.has(criterionId) ? "good" : "again";
-        criteria[criterionId] = fsrsNextState(current, rating, attempt.confirmedAt, params);
-      }
+    for (const [criterionId, status] of currentStatuses) {
+      const current = criteria[criterionId] ?? createNewFsrsState();
+      const rating = status === "present" ? "good" : "again";
+      criteria[criterionId] = fsrsNextState(current, rating, attempt.confirmedAt, params);
     }
     fsrsState = { version: 2, criteria };
   }
@@ -530,6 +527,14 @@ function applyConfirmedAttempt(
     reviewTasks: reviewTasks.slice(-maxReviewTasks),
     fsrsState,
   };
+}
+
+/** Pure apply for unit tests and non-window callers (no localStorage side effects). */
+export function applyConfirmedAttemptToState(
+  state: LearningMemoryState,
+  attempt: LearnerAttemptRecord,
+): LearningMemoryState {
+  return applyConfirmedAttempt(state, attempt);
 }
 
 function readLearningMemoryState(): LearningMemoryState {

@@ -322,10 +322,21 @@ export function WrongQuestionCenter({ courses }: WrongQuestionCenterProps) {
             {data.fsrsHighRisk.length === 0 ? (
               <div className={styles.emptyState}>
                 <CircleX size={32} strokeWidth={1.3} />
-                <strong>暂无临遗忘的记忆准则</strong>
-                <small>
-                  接受复习计划并完成回做后，遗忘风险高的记忆准则会出现在这里。
-                </small>
+                {data.hasFsrsMemory ? (
+                  <>
+                    <strong>暂无高危记忆准则</strong>
+                    <small>
+                      已有自评确认记录，但当前没有处于重学中或遗忘次数达到 2 次的准则。继续练习并关注复习计划即可。
+                    </small>
+                  </>
+                ) : (
+                  <>
+                    <strong>尚未产生足够的记忆数据</strong>
+                    <small>
+                      在写作/案例房间完成自评确认后，系统会按准则更新记忆强度；同一准则连续漏掉两次后，会出现在这里。
+                    </small>
+                  </>
+                )}
               </div>
             ) : (
               <div className={styles.weaknessList}>

@@ -13,6 +13,7 @@ import type {
 } from "@/types/learning";
 import { parseLearningMemoryJson } from "./learning-memory";
 import { getAdmissionSyncConsents } from "./material-admission";
+import { mergeAttemptLists } from "./learner-attempt-identity";
 import type { LearnerSyncPayload } from "./learner-state-sync-server";
 
 // === M2 Phase 4: Sync status (debounce + visibility) ===
@@ -225,17 +226,9 @@ export function mergeServerStateIntoLocal(
         recordSyncConflicts([...fsrsConflicts, ...attemptConflicts]);
       }
 
-      // attempts: union by id, prefer latest confirmedAt
-      const byId = new Map(local.attempts.map((a) => [a.id, a]));
-      for (const sa of serverMem.attempts || []) {
-        const la = byId.get(sa.id);
-        if (!la || new Date(sa.confirmedAt) > new Date(la.confirmedAt)) {
-          byId.set(sa.id, sa);
-        }
-      }
-      const mergedAttempts = Array.from(byId.values())
-        .sort((a, b) => b.confirmedAt.localeCompare(a.confirmedAt))
-        .slice(0, 300);
+      // attempts: client id 权威 union + 内容键折叠（消除历史「服务端换 cuid」重复）
+      // local 在前，同内容键优先保留本机 UUID
+      const mergedAttempts = mergeAttemptLists(local.attempts, serverMem.attempts || []);
       // fsrs: prefer latest lastReviewAt
       let mergedFsrs = local.fsrsState;
       if (serverMem.fsrsState) {
@@ -381,8 +374,8 @@ export async function performReliableLoginMerge(userEmail?: string): Promise<voi
 // - 冲突只在「下载 + 合并」时检测（debounced 上传不下载、不检测）。
 // - 检测基线是 lastMergeAt（不是 lastSyncAt，后者会被纯上传推进）。
 // - FSRS 冲突 = 同一 criterionId 双方都在基线后更新且语义不同；
-//   attempt 冲突 = 同一 id 内容不同（现有管线中服务端 attempt 另发 cuid，
-//   本类型为防御性实现）。
+//   attempt 冲突 = 同一 id 内容不同（上传已改为客户端 id 权威 + 幂等；
+//   同内容不同 id 由 mergeAttemptLists 内容键折叠，不进冲突列表）。
 // - 检出后临时值仍按现行「更新者胜」落地，不打断学习；用户事后裁决。
 // - 解决「以本机为准」= 把该准则 lastReviewAt 置为当前时刻（用户此刻
 //   显式重申），借既有上传通道覆盖服务端（服务端 upsert 有时间戳守卫）。
@@ -600,9 +593,10 @@ export function detectFsrsConflicts(
 }
 
 /**
- * attempt 冲突检测（纯函数，防御性）：
- * 同一 attemptId 两端内容不同 → 冲突。现有上传管线中服务端为 attempt
- * 另发 cuid，该类型正常流程不会触发；用于异常数据的可见性兜底。
+ * attempt 冲突检测（纯函数）：
+ * 同一 attemptId 两端内容不同 → 冲突。
+ * 上传路径已持久化客户端 id 且 attempt 不可变；同内容不同 id 的历史脏数据
+ * 由 mergeAttemptLists 折叠，不会进入本检测。
  */
 export function detectAttemptConflicts(
   localAttempts: readonly LearnerAttemptRecord[],
