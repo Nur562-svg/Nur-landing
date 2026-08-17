@@ -593,27 +593,25 @@ function createMissingCandidate(
 
 const tongueCandidate = createMissingCandidate("assessment-tongue-coating-whitebook", 2, tongue.point.id, "简述腻苔的舌象特征和形成原因。", "school", "学校白皮题库 · 简答题", ["source-tcm-diagnostics-whitebook"]);
 const coldHeatCandidate = createMissingCandidate("assessment-cold-heat-historical", 2, coldHeat.point.id, "何谓恶寒发热？其意义及产生机理是什么？有哪些类型？", "school", "2021–2022学年第一学期期末试卷 · 第60题", ["source-tcm-diagnostics-past-exams"]);
-const pulseCandidate = createMissingCandidate("assessment-common-pulses-whitebook", 2, pulse.point.id, "简述洪脉的脉象特点和临床意义。", "school", "学校白皮题库 · 简答题", ["source-tcm-diagnostics-whitebook"]);
 const exteriorCandidate = createMissingCandidate("assessment-exterior-interior-whitebook", 2, exteriorInterior.point.id, "简述表证的特点和临床表现。", "school", "学校白皮题库 · 简答题", ["source-tcm-diagnostics-whitebook"]);
 
+/** pulse/spleen KP + 简答/白皮已迁至 standard companion；此处仅保留工厂产物供 case 等内部引用 */
 export const deepKnowledgePoints = {
   tongue: { ...tongue.point, assessmentItemIds: [tongue.assessment.id, tongueCandidate.id] },
   coldHeat: { ...coldHeat.point, assessmentItemIds: [coldHeat.assessment.id, coldHeatCandidate.id] },
-  pulse: { ...pulse.point, assessmentItemIds: [pulse.assessment.id, pulseCandidate.id] },
+  pulse: pulse.point,
   exteriorInterior: { ...exteriorInterior.point, assessmentItemIds: [exteriorInterior.assessment.id, exteriorCandidate.id] },
   spleen: spleen.point,
 } as const satisfies Record<string, KnowledgePointDefinition>;
 
+/** 不含常见病脉/脾胃标准层 assessment（见 common-pulses-standard / spleen-stomach-standard） */
 export const deepAssessmentItems = [
   tongue.assessment,
   tongueCandidate,
   coldHeat.assessment,
   coldHeatCandidate,
-  pulse.assessment,
-  pulseCandidate,
   exteriorInterior.assessment,
   exteriorCandidate,
-  spleen.assessment,
 ] as const satisfies readonly AssessmentItemDefinition[];
 
 export const spleenReasoningCase = {

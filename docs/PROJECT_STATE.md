@@ -1,6 +1,6 @@
 # NUR LEARN — Canonical Project State
 
-Last updated: 2026-08-17 (Asia/Shanghai) — 八纲「表里辨证」升级为第4个完整闭环；M4 切片 A/B/C 已完成；next priority: design-qa 浏览器补强 / 下一知识点闭环或 M5 部署
+Last updated: 2026-08-17 (Asia/Shanghai) — 脉诊「常见病脉」与脏腑「脾胃病辨证」升级为**标准层**（非第5/第6完整闭环）；错题中心次要文案对比度与表里第4闭环仍有效；next priority: design-qa 浏览器补强 / 下一知识点或 M5 部署
 
 This file is the durable source of truth for continuing NUR LEARN when conversation history is unavailable. Update it after material product decisions, completed milestones, verification changes, or priority changes.
 
@@ -142,6 +142,8 @@ Implemented on 2026-08-06:
 - `src/lib/question-bank-store.ts` — added `getAllQBAttempts()` for cross-course aggregation
 
 The center reads from existing `nur-learn:qb-attempts:v1` (question-bank practice) and `nur-learn:mock-exam-sessions:v1` (mock exam) localStorage keys without creating new storage. It aggregates wrong answers by knowledge point, sorts by wrong count and wrong ratio, and provides deep links to lesson pages, question-bank practice, or subjective-writing rooms. The `/learn` dashboard integrates weak-KP chips into the weekly-plan drawer and activates the `错题` nav link with a count badge.
+
+**2026-08-17 可读性修复（仅样式）：** 错题中心 `.container` 未本地定义 `--muted`，继承了 globals shadcn 的 `--muted: oklch(0.97 0 0)`（近白背景 token），导致 `subtitle` / `sectionHint` / meta / empty-state 次要文案在象牙底上几乎不可读；CSS 回退色 `#8a857c` 从未生效。已在 `.container` 覆盖与 `/learn`、题库、课程壳一致的 editorial tokens（`--muted: #6c6a66`、`--ink: #10100f`、`--paper: #f7f4ee`），并给 `sectionHeading` 加 `flex-wrap` 避免 390 长 hint 溢出。未改聚合逻辑与三层 tab。`/learn` 等同风格页本身已有本地 `--muted: #6c6a66`，无需改动。
 
 ### `/learn/course-builder` — evidence-gated Course Builder workbench
 
@@ -667,9 +669,9 @@ On 2026-07-19, the user selected deeper official 《中医诊断学》 coverage 
 
 - 舌诊「望舌苔」：舌质舌苔合参，重点鉴别腐苔与腻苔；（**2026-08-17 已升级为第3个完整闭环**，见下）
 - 问诊「问寒热」：恶寒发热、但寒不热、但热不寒、寒热往来；（**2026-08-17 已升级为完整闭环**，见下）
-- 脉诊「常见病脉」：按位、数、形、势组织浮沉迟数与洪脉；
+- 脉诊「常见病脉」：按位、数、形、势组织浮沉迟数与洪脉；（**2026-08-17 已升级为标准层**，见下；**不是**完整闭环）
 - 八纲辨证「表里辨证」：表证、里证及表里转化；（**2026-08-17 已升级为第4个完整闭环**，见下）
-- 脏腑辨证「脾胃病辨证」：脾气虚与脾阳虚鉴别，并加入纯合成四阶段病案。
+- 脏腑辨证「脾胃病辨证」：脾气虚与脾阳虚鉴别；既有合成四阶段病案保留不扩写；（**2026-08-17 已升级为标准层**，见下；**不是**完整闭环）
 
 Each point has a four-section lesson, evidence groups, TCM and modern-observation blocks with `可关联 / 帮助理解 / 不可直接等同`, NUR practice scoring, a transfer exercise or case, and one scored NUR-adapted short answer. Exact school/white-book prompts for tongue, cold/heat, pulse, and exterior/interior are retained as source-verbatim candidates with `answer.status = missing` and no scoring; they are not promoted to school answers. Teacher-specific grading remains pending.
 
@@ -708,6 +710,21 @@ Each point has a four-section lesson, evidence groups, TCM and modern-observatio
 - **Sources**: textbook P89–91 + teacher review (existing deep-loop verified sources) + editorial; no fabricated exam frequency or teacher rubric points.
 - **Routes**: `/courses/tcm-diagnostics/knowledge-points/exterior-interior`, `.../subjective-writing`, `.../case-reasoning` (SSG confirmed in production build).
 - **Verification**: `validateCourseDefinition` 0 issues; `npm run check` (lint 0 errors / existing warnings + typecheck + production build after clean `.next`) green. Pilot diet-class closed loops now **four**: 问饮食口味、问寒热、望舌苔、**表里辨证**. Teacher scoring rubric remains pending; white-book/historical answers remain missing and are not promoted. No commit/push/deploy in this slice.
+
+### 标准层升级：脉诊「常见病脉」+ 脏腑「脾胃病辨证」(2026-08-17)
+
+两个 deep-loop 工厂 KP 升为 **标准层**（完整 lesson + 双镜三关系 + 可写作进记忆），**明确不是**第 5、第 6 个完整闭环：不新增/扩写四阶段 case 评分，不同步/Agent/会员改动。
+
+| KP | slug | companion | 写作 | case |
+|---|---|---|---|---|
+| `kp-pulse-common` | `common-pulses` | `tcm-diagnostics-common-pulses-standard.ts` | 简答（保留 deep id）+ 名词「洪脉」order 20 | **无**（`caseIds: []`，lesson 用 `transferExercise`） |
+| `kp-organs-spleen-stomach` | `spleen-stomach` | `tcm-diagnostics-spleen-stomach-standard.ts` | 简答（保留 deep id）+ 名词「脾阳虚证」order 20 | **保留**既有 `case-spleen-qi-yang-differential`（deep-loops 本体不改）；lesson 仅 `transferCaseId`，无并行 transferExercise |
+
+- **共用约束**：memory id 保留 `common-pulses-memory-*` / `spleen-qi-yang-memory-*`（3 条）以便历史 attempt 与 case assistanceRules 不断链；assistanceRules 1:1；来源诚实（白皮洪脉 `answer.missing`；NUR 改编不冒充教师标准答案）；三关系标签 related / learning-aid / not-equivalent。
+- **接线**：`tcm-diagnostics.ts` 用 `buildCommonPulsesKnowledgePoint` / `buildSpleenStomachKnowledgePoint` 替代 `withQuestionBankItems(deepKnowledgePoints.pulse|spleen)`；assessment 数组挂 `commonPulsesAssessmentItems` + `spleenStomachAssessmentItems`。
+- **deep-loops**：`deepAssessmentItems` 去掉 pulse 简答/白皮与 spleen 简答，避免 id 重复；`spleenReasoningCase` 仍导出并注册于 course.cases。
+- **Routes**：两 KP lesson + subjective-writing；脾胃既有 case-reasoning 仍可走；脉诊**无** case-reasoning。
+- **Verification**：`validateCourseDefinition` 0 issues；`selectSubjectiveWritingItems` 各 2 题；`npm run check` 见本切片记录。No commit/push.
 
 The material catalog now records the supplied third-edition textbook, two-page teacher review, all five heart/lung/spleen/liver/kidney slide artifacts, the 2021–2022 TCM final, and the legacy school white-book file with full SHA identity, source family/artifact relations, privacy/publication state, and read-only path aliases. Page locators were visually checked at textbook P37/P39, P52–53, P60–61, P69/P71/P73/P79, P89–91, and P121–123; other teacher-review page pointers remain source-declared or pending rather than silently upgraded. The two files titled only `《诊断学》` are separate misfiled Western Diagnostics artifacts and remain excluded from TCM truth.
 

@@ -12,7 +12,6 @@ import type {
 } from "@/types/learning";
 import {
   deepAssessmentItems,
-  deepKnowledgePoints,
   deepLoopSources,
   spleenReasoningCase,
 } from "@/content/courses/tcm-diagnostics-deep-loops";
@@ -38,6 +37,14 @@ import {
   exteriorInteriorAssessmentItems,
   exteriorInteriorReasoningCase,
 } from "@/content/courses/tcm-diagnostics-exterior-interior-loop";
+import {
+  buildCommonPulsesKnowledgePoint,
+  commonPulsesAssessmentItems,
+} from "@/content/courses/tcm-diagnostics-common-pulses-standard";
+import {
+  buildSpleenStomachKnowledgePoint,
+  spleenStomachAssessmentItems,
+} from "@/content/courses/tcm-diagnostics-spleen-stomach-standard";
 
 /** 把新增题库题目挂到知识点（无新增时原样返回）。 */
 function withQuestionBankItems(point: KnowledgePointDefinition): KnowledgePointDefinition {
@@ -1469,7 +1476,7 @@ const inquiryKnowledgePoints = [
 const pulseKnowledgePoints = [
   createDemoKnowledgePoint("kp-pulse-method", "pulse-method", 1, "诊脉部位与方法", "寸口、布指与平息", "基础"),
   createDemoKnowledgePoint("kp-pulse-normal", "normal-pulse", 2, "正常脉象", "有胃、有神、有根", "重点"),
-  withQuestionBankItems(deepKnowledgePoints.pulse),
+  buildCommonPulsesKnowledgePoint(createDemoKnowledgePoint),
   createDemoKnowledgePoint("kp-pulse-combined", "combined-pulses", 4, "相兼脉与主病", "组合分析，避免机械套用", "高频"),
 ] as const;
 
@@ -1490,7 +1497,7 @@ const diseaseNatureKnowledgePoints = [
 const organKnowledgePoints = [
   createDemoKnowledgePoint("kp-organs-heart-small-intestine", "heart-small-intestine", 1, "心与小肠病辨证", "神志、血脉与小便线索", "重点"),
   createDemoKnowledgePoint("kp-organs-lung-large-intestine", "lung-large-intestine", 2, "肺与大肠病辨证", "宣降、呼吸与传导", "重点"),
-  withQuestionBankItems(deepKnowledgePoints.spleen),
+  buildSpleenStomachKnowledgePoint(createDemoKnowledgePoint),
   createDemoKnowledgePoint("kp-organs-liver-gallbladder", "liver-gallbladder", 4, "肝胆病辨证", "疏泄、藏血与胆汁", "高频"),
   createDemoKnowledgePoint("kp-organs-kidney-bladder", "kidney-bladder", 5, "肾与膀胱病辨证", "藏精、纳气与水液", "高频"),
 ] as const;
@@ -2009,6 +2016,8 @@ export const tcmDiagnosticsCourse = {
     ...coldHeatAssessmentItems,
     ...tongueCoatingAssessmentItems,
     ...exteriorInteriorAssessmentItems,
+    ...commonPulsesAssessmentItems,
+    ...spleenStomachAssessmentItems,
     ...deepAssessmentItems,
     ...questionBankAssessmentItems,
     ...completeAssessmentItems,

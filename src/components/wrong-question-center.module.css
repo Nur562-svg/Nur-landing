@@ -1,10 +1,17 @@
 .container {
+  /* Local editorial tokens — override global shadcn --muted (near-white bg token)
+     so secondary copy stays readable on warm ivory. Matches /learn, QB, course shell. */
+  --ink: #10100f;
+  --paper: #f7f4ee;
+  --muted: #6c6a66;
+  --rule: rgb(16 16 15 / 22%);
+  --cinnabar: #a04545;
   max-width: 1280px;
   margin: 0 auto;
   padding: 48px 64px 96px;
   min-height: 100vh;
-  background: var(--paper, #f4efe4);
-  color: var(--ink, #24211d);
+  background: var(--paper);
+  color: var(--ink);
   font-family: var(--font-sans, system-ui, sans-serif);
 }
 
@@ -20,7 +27,7 @@
   align-items: center;
   gap: 6px;
   font-size: 14px;
-  color: var(--ink, #24211d);
+  color: var(--ink);
   text-decoration: none;
   margin-bottom: 16px;
   opacity: 0.7;
@@ -41,7 +48,7 @@
 
 .subtitle {
   font-size: 14px;
-  color: var(--muted, #8a857c);
+  color: var(--muted);
   margin: 0;
 }
 
@@ -56,9 +63,9 @@
 .tab,
 .tabActive {
   appearance: none;
-  border: 1px solid var(--rule, #d6cfc1);
+  border: 1px solid var(--rule);
   background: transparent;
-  color: var(--muted, #8a857c);
+  color: var(--muted);
   font-family: inherit;
   font-size: 14px;
   padding: 11px 16px;
@@ -68,14 +75,14 @@
 }
 
 .tab:hover {
-  color: var(--ink, #24211d);
-  border-color: var(--ink, #24211d);
+  color: var(--ink);
+  border-color: var(--ink);
 }
 
 .tabActive {
-  background: var(--ink, #24211d);
-  border-color: var(--ink, #24211d);
-  color: var(--paper, #f4efe4);
+  background: var(--ink);
+  border-color: var(--ink);
+  color: var(--paper);
   font-weight: 600;
   cursor: default;
 }
@@ -95,8 +102,8 @@
   display: flex;
   gap: 40px;
   padding: 20px 0;
-  border-top: 1px solid var(--rule, #d6cfc1);
-  border-bottom: 1px solid var(--rule, #d6cfc1);
+  border-top: 1px solid var(--rule);
+  border-bottom: 1px solid var(--rule);
   margin-bottom: 40px;
 }
 
@@ -105,23 +112,23 @@
   flex-direction: column;
   gap: 4px;
   font-size: 13px;
-  color: var(--muted, #8a857c);
+  color: var(--muted);
 }
 
 .statItem strong {
   font-size: 28px;
   font-weight: 700;
-  color: var(--ink, #24211d);
+  color: var(--ink);
   font-family: var(--font-song, "Songti SC", "STSong", serif);
   line-height: 1;
 }
 
 .statAccent {
-  color: var(--cinnabar, #a04545);
+  color: var(--cinnabar);
 }
 
 .statAccent strong {
-  color: var(--cinnabar, #a04545);
+  color: var(--cinnabar);
 }
 
 /* ── Section heading ── */
@@ -129,6 +136,8 @@
   display: flex;
   align-items: baseline;
   justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 6px 16px;
   margin-bottom: 20px;
 }
 
@@ -141,7 +150,9 @@
 
 .sectionHint {
   font-size: 13px;
-  color: var(--muted, #8a857c);
+  color: var(--muted);
+  line-height: 1.45;
+  max-width: 100%;
 }
 
 /* ── Weak KP cards ── */
@@ -160,7 +171,7 @@
   flex-direction: column;
   gap: 12px;
   padding: 20px 24px;
-  border: 1px solid var(--rule, #d6cfc1);
+  border: 1px solid var(--rule);
   background: rgba(255, 255, 255, 0.35);
   text-decoration: none;
   color: inherit;
@@ -168,7 +179,7 @@
 }
 
 .weakKpCard:hover {
-  border-color: var(--ink, #24211d);
+  border-color: var(--ink);
   background: rgba(255, 255, 255, 0.6);
 }
 
@@ -189,7 +200,7 @@
 .weakKpBadge {
   font-size: 12px;
   font-weight: 600;
-  color: var(--cinnabar, #a04545);
+  color: var(--cinnabar);
   white-space: nowrap;
 }
 
@@ -197,7 +208,7 @@
   display: flex;
   gap: 16px;
   font-size: 13px;
-  color: var(--muted, #8a857c);
+  color: var(--muted);
 }
 
 .weakKpRatio {
@@ -209,13 +220,13 @@
 .ratioBar {
   width: 80px;
   height: 4px;
-  background: var(--rule, #d6cfc1);
+  background: var(--rule);
   overflow: hidden;
 }
 
 .ratioFill {
   height: 100%;
-  background: var(--cinnabar, #a04545);
+  background: var(--cinnabar);
 }
 
 .weakKpAction {
@@ -223,7 +234,7 @@
   align-items: center;
   gap: 4px;
   font-size: 13px;
-  color: var(--ink, #24211d);
+  color: var(--ink);
   font-weight: 500;
 }
 
@@ -231,7 +242,7 @@
 .wrongList {
   display: flex;
   flex-direction: column;
-  border: 1px solid var(--rule, #d6cfc1);
+  border: 1px solid var(--rule);
 }
 
 .wrongItem {
@@ -240,7 +251,7 @@
   gap: 16px;
   min-height: 44px;
   padding: 14px 20px;
-  border-bottom: 1px solid var(--rule, #d6cfc1);
+  border-bottom: 1px solid var(--rule);
   text-decoration: none;
   color: inherit;
   transition: background 0.1s;
@@ -256,7 +267,7 @@
 
 .wrongItemIndex {
   font-size: 12px;
-  color: var(--muted, #8a857c);
+  color: var(--muted);
   min-width: 24px;
   text-align: right;
 }
@@ -272,15 +283,15 @@
 
 .wrongItemKind {
   font-size: 11px;
-  color: var(--muted, #8a857c);
+  color: var(--muted);
   padding: 2px 8px;
-  border: 1px solid var(--rule, #d6cfc1);
+  border: 1px solid var(--rule);
   white-space: nowrap;
 }
 
 .wrongItemStats {
   font-size: 12px;
-  color: var(--cinnabar, #a04545);
+  color: var(--cinnabar);
   white-space: nowrap;
 }
 
@@ -297,7 +308,7 @@
 .weaknessList {
   display: flex;
   flex-direction: column;
-  border: 1px solid var(--rule, #d6cfc1);
+  border: 1px solid var(--rule);
 }
 
 .weaknessItem {
@@ -306,7 +317,7 @@
   gap: 16px;
   min-height: 44px;
   padding: 14px 20px;
-  border-bottom: 1px solid var(--rule, #d6cfc1);
+  border-bottom: 1px solid var(--rule);
   text-decoration: none;
   color: inherit;
   transition: background 0.1s;
@@ -343,7 +354,7 @@
   font-family: var(--font-sans, system-ui, sans-serif);
   font-size: 13px;
   font-weight: 500;
-  color: var(--cinnabar, #a04545);
+  color: var(--cinnabar);
 }
 
 .weaknessMeta {
@@ -352,7 +363,7 @@
   flex-wrap: wrap;
   gap: 4px 8px;
   font-size: 12px;
-  color: var(--muted, #8a857c);
+  color: var(--muted);
 }
 
 .weaknessAction {
@@ -372,7 +383,7 @@
   gap: 8px;
   padding: 80px 24px;
   text-align: center;
-  border: 1px solid var(--rule, #d6cfc1);
+  border: 1px solid var(--rule);
 }
 
 .emptyState strong {
@@ -383,7 +394,7 @@
 
 .emptyState small {
   font-size: 14px;
-  color: var(--muted, #8a857c);
+  color: var(--muted);
 }
 
 .emptyStateLink {
@@ -393,11 +404,11 @@
   gap: 6px;
   min-height: 44px;
   padding: 10px 20px;
-  background: var(--ink, #24211d);
-  color: var(--paper, #f4efe4);
+  background: var(--ink);
+  color: var(--paper);
   font-size: 14px;
   text-decoration: none;
-  border: 1px solid var(--ink, #24211d);
+  border: 1px solid var(--ink);
   transition: opacity 0.15s;
 }
 
