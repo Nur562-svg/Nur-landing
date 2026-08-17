@@ -1,6 +1,6 @@
 # NUR LEARN — Canonical Project State
 
-Last updated: 2026-08-17 (Asia/Shanghai) — 问诊「问寒热」闭环升级完成（rich lesson + 名词解释/简答 + 四阶段案例 + 题库/深环 assessment 挂接；course-validation 0 issues；`npm run check` 绿） — FSRS 真实路径可触发高危（确认 attempt 按 present/missing 评分；见里程碑 25） — M2 attempt 稳定身份修复完成 — Agent 改写提案一键应用完成 — M2 同步冲突可见性 + 用户裁决完成 — 错题中心三层能力中心完成 — M2 学习状态云同步 Phase 1-5 完成；next priority: M4 发布前打磨 / 残余 M2 边界（QB attempt 仍非幂等）
+Last updated: 2026-08-17 (Asia/Shanghai) — 舌诊「望舌苔」第3完整闭环升级完成（腐腻鉴别 lesson + 名词/简答 + 四阶段案例 + 8 memory criteria；course-validation 0 issues） — 问诊「问寒热」闭环已完成 — FSRS 真实路径可触发高危 — M2 attempt 稳定身份 + 同步冲突裁决 — Agent 改写一键应用 — 错题中心三层 — M2 云同步 Phase 1-5 — M4 切片 A/B（错误/加载/SEO + 本机导出）；next priority: 表里辨证完整闭环或 M4 移动端/a11y
 
 This file is the durable source of truth for continuing NUR LEARN when conversation history is unavailable. Update it after material product decisions, completed milestones, verification changes, or priority changes.
 
@@ -665,7 +665,7 @@ The dual-view knowledge-point page, dedicated subjective-writing room, four-stag
 
 On 2026-07-19, the user selected deeper official 《中医诊断学》 coverage as the next narrow increment. Five existing demo knowledge-point IDs were upgraded in place, preserving the 9-chapter / 39-knowledge-point course structure and all reusable route contracts:
 
-- 舌诊「望舌苔」：舌质舌苔合参，重点鉴别腐苔与腻苔；
+- 舌诊「望舌苔」：舌质舌苔合参，重点鉴别腐苔与腻苔；（**2026-08-17 已升级为第3个完整闭环**，见下）
 - 问诊「问寒热」：恶寒发热、但寒不热、但热不寒、寒热往来；（**2026-08-17 已升级为完整闭环**，见下）
 - 脉诊「常见病脉」：按位、数、形、势组织浮沉迟数与洪脉；
 - 八纲辨证「表里辨证」：表证、里证及表里转化；
@@ -684,6 +684,18 @@ Each point has a four-section lesson, evidence groups, TCM and modern-observatio
 - **Sources**: textbook P52–53 and teacher-review pages; course also registers missing `source-tcm-diagnostics-whitebook` so pulse/exterior white-book locators validate honestly.
 - **Routes generated**: `/courses/tcm-diagnostics/knowledge-points/cold-and-heat`, `.../subjective-writing`, `.../case-reasoning`.
 - **Verification**: `validateCourseDefinition` 0 issues; `npm run check` (lint + typecheck + production build) green. Teacher scoring rubric and original nine-page final review remain pending; white-book/historical answers remain missing and are not promoted.
+
+### 舌诊「望舌苔」closed loop upgrade (2026-08-17)
+
+`kp-tongue-coating` / slug `tongue-coating` was upgraded from the thinner deep-loop skeleton to a diet/cold-heat-class vertical slice. Content lives in `src/content/courses/tcm-diagnostics-tongue-coating-loop.ts` and is registered from `tcm-diagnostics.ts` (deep-loop short-answer + white-book missing candidate + QB items remain hung; scoring id for the new structure short is `scoring-tongue-coating-structure-short` to avoid collision with deep `scoring-tongue-coating-short`).
+
+- **Lesson** `lesson-tongue-coating`: 取证 → 对照 → 输出 → 迁移；evidence for 苔质颗粒/黏着刮除、苔色厚薄润燥、舌质兼症合参、观察条件；TCM + modern lenses with three relationship labels；NUR practice scoring；`transferCaseId: case-tongue-coating-reasoning`.
+- **Writing**: NUR-adapted term (`腐苔`) + structure short-answer (腐腻鉴别 + 意义 + 合参 + 现代条件 + 边界) with criteria + 1:1 `assistanceRules` → 5 primary `memory-tongue-coating-*` criteria (plus 3 deep-loop memory ids retained).
+- **Case**: synthetic four-stage room — thick fine adhesive hard-to-scrape slightly yellow coating + 脘胀口黏纳呆 + missing tongue body/pulse + post-meal yellowish photo bias; 10-point NUR structure scoring; not clinical diagnosis.
+- **Assessments hung on KP**: deep short + whitebook missing + QB/complete + NUR term/short (orders 20–21).
+- **Sources**: textbook P37/P39 + teacher review (existing deep-loop verified sources); no fabricated exam frequency or teacher rubric points.
+- **Routes**: `/courses/tcm-diagnostics/knowledge-points/tongue-coating`, `.../subjective-writing`, `.../case-reasoning`.
+- **Verification**: `validateCourseDefinition` 0 issues. Full `npm run check` recorded with this milestone. Pilot now has three diet-class closed loops: 问饮食口味、问寒热、望舌苔. Next content depth candidate remains 表里辨证.
 
 The material catalog now records the supplied third-edition textbook, two-page teacher review, all five heart/lung/spleen/liver/kidney slide artifacts, the 2021–2022 TCM final, and the legacy school white-book file with full SHA identity, source family/artifact relations, privacy/publication state, and read-only path aliases. Page locators were visually checked at textbook P37/P39, P52–53, P60–61, P69/P71/P73/P79, P89–91, and P121–123; other teacher-review page pointers remain source-declared or pending rather than silently upgraded. The two files titled only `《诊断学》` are separate misfiled Western Diagnostics artifacts and remain excluded from TCM truth.
 
@@ -1037,7 +1049,7 @@ M2 全面优化（2026-08-07 后续）:
 - `detectAttemptConflicts` remains same-id different-content only; different-id same-content is folded silently (not a SyncConflict).
 - Debounce / immediate / admission consent / FSRS timestamp guard / conflict UI unchanged.
 
-**Compatibility:** old users are not wiped; duplicates fold on next merge/upload; unique confirmations retained. No course-truth / FSRS algorithm / membership / Agent apply changes. QB attempt upload remains append-only (out of scope).
+**Compatibility:** old users are not wiped; duplicates fold on next merge/upload; unique confirmations retained. No course-truth / FSRS algorithm / membership / Agent apply changes. QB attempt now has stable identity (see milestone 26).
 
 **Verification:** `tests/learner-attempt-sync-identity.test.ts` + existing `tests/sync-conflicts.test.ts`; full suite 202/202; `tsc` clean. Run `npm run check` after this note.
 
@@ -1056,6 +1068,27 @@ M2 全面优化（2026-08-07 后续）:
 **Still limited:** never confirming → empty; high-risk still needs two misses (or relearning) — not first-miss spam. `acceptReviewTask` still only stamps `lastReviewAt` for scheduling, not a rating. QB/objective path unrelated.
 
 **Files:** `src/lib/learning-memory.ts`, `src/lib/wrong-questions.ts`, `src/components/wrong-question-center.tsx`, `tests/learning-memory-fsrs-path.test.ts`, `tests/wrong-questions.test.ts`.
+
+
+
+26. QB attempt 稳定身份与去重（与 confirmed attempt 同级）—— completed 2026-08-17
+
+**Problem:** QB attempt 仍是 append-only。在多设备或重复上传/登录全量时，同一题同一作答被重复追加，统计与同步污染。
+
+**Decision:** 内容键折叠（不加 id 字段到 QBAttemptRecord，保持与错题中心等聚合最小变更）。
+
+**Content identity key:** `questionId | selectedIndex | isCorrect | normalizeToSec(attemptedAt)` （秒精度，容忍时钟漂移；不同秒的不同练习实例保留）。
+
+**Changes:**
+- New pure `src/lib/qb-attempt-identity.ts`（normalize、qbAttemptContentIdentityKey、foldQbAttemptsByStableIdentity、mergeQbAttemptStores）。
+- Client: `question-bank-store.ts` addQBAttempt 遇相同 key 跳过（本地幂等）；getQBAttempts/getAllQBAttempts 读时 fold（折叠历史脏数据）；`learner-state-sync.ts` merge 用 mergeQbAttemptStores（local-first）。
+- Server: `addQbAttemptServer` 按 key 查重 skip；`mergeLocalStateOnLogin` QB 部分后调用 `dedupeQbAttemptsForUser`（物理折叠，保留最早）；`fetchUserQbAttempts` 返回前 fold。
+- `tests/qb-attempt-identity.test.ts` 平行覆盖 normalize/漂移/折叠/ merge / 老数据。
+- PROJECT_STATE 更新。
+
+**Verification:** 同一逻辑 key 上传/下载/合并后只 1 条；不同时间保留；老重复安全折叠；`npm run check` + 测试通过。不改课程真相、错题中心逻辑、FSRS、practice UI、QBAttemptRecord 形状。
+
+**Files:** `src/lib/qb-attempt-identity.ts` (new), question-bank-store.ts, learner-state-sync.ts, learner-state-sync-server.ts, tests/qb-attempt-identity.test.ts, docs/PROJECT_STATE.md。
 
 The first vertical slice should connect one real knowledge point through learning, drilling, subjective output, case transfer, and review before every navigation route is filled.
 
@@ -1077,16 +1110,55 @@ Answer: modern medicine also enters exam-answer and scoring training. The implem
 
 
 ## M4 准备（M3 完成后启动）
-- 重点：发布前打磨
-  - SEO：title, meta, opengraph for learn pages and course
-  - robots.txt + sitemap
-  - 全局错误边界 (ErrorBoundary) + loading.tsx 完善
-  - 数据导出增强（当前已有 material admission export，扩展 learner state / attempts）
-  - 移动端细节：更多响应、触摸优化、无 overflow
-  - 其他：性能、a11y、console 清理
+
+### M4 切片 A — 错误边界 / 加载态 / 基础 SEO（completed 2026-08-17）
+
+**Error / not-found**
+- Rewrote `src/app/error.tsx`：固定中文可恢复 UI，不展示 `error.message`/stack；dev-only console。
+- Added `src/app/global-error.tsx`（根 layout 崩溃兜底，自带 html/body）。
+- Added `src/app/not-found.tsx`。
+- Segment errors: `learn/error.tsx`、`wrong-questions/error.tsx`、`courses/error.tsx`（覆盖工作台/知识点/写作/案例/题库）。
+- Shared: `src/components/route-error-fallback.tsx`、`route-not-found-fallback.tsx`、`system-fallback.module.css`（暖象牙、细线、方按钮）。
+
+**Loading**
+- Rewrote `src/app/loading.tsx`；segment `learn` / `wrong-questions` / `courses` loading。
+- Shared `route-loading-fallback.tsx`（细线 + 一行文案，无花哨 skeleton）。
+- login/register Suspense fallback 接同一 loading。
+
+**SEO**
+- Root `layout.tsx`：`metadataBase` + `SITE_*` from `site-config`；去掉不存在的 `/og.png` 坏链；OG/twitter 文字卡。
+- `robots.ts`：disallow api/auth/account/wrong-questions/course-builder/forgot/reset。
+- `sitemap.ts`：`/`、`/learn`、法律页、已有课程工作台 `tcm-diagnostics`、有 lesson 的知识点页；不含私密训练室/题库深链/builder/错题。
+- noindex：login、register、forgot/reset layouts、wrong-questions、course-builder、billing。
+
+**Not in this slice:** 新监控、课程内容、同步/Agent/会员逻辑、自动 commit。
+
+**Verify:** `npm run check`；robots/sitemap 构建产物可访问。
+
+
+### M4 切片 B — 本机学习数据导出（completed 2026-08-17）
+
+**Problem fixed:** 早期 `export-learner-data.ts` starter 使用错误 localStorage key（`attempts:v1` / `fsrs:v1`），无法读到真实 `learning-memory:v1`，导出会空。
+
+**Implementation**
+- Rewrote `src/lib/export-learner-data.ts`：纯函数 `buildLearnerDataExport` + 浏览器 `collectLearnerDataExportFromBrowser`。
+- 通过既有 store/parse：learning-memory（attempts / reviewTasks / fsrsState）、`getAllQBAttempts` / favorites、mock sessions、material admission store、按 courseId 的 user exam structure。
+- 可选 `wrongQuestionSummary`（`selectWrongQuestionCenter` 紧凑统计，不含课程全文）。
+- 包字段：`kind=nur-learner-data-snapshot`、disclaimer、account 元数据（仅登录邮箱）、counts、exportBoundary（全非授予，importSupported=false，非成绩单）。
+- 文件名 `nur-learn-data-YYYY-MM-DD.json`；不含 API key / 课程真相 / 原始私人二进制 / 服务端独有态。
+- UI：`/learn` 账户面板登录与访客均可「导出学习数据」+ 克制说明。
+- Tests：`tests/export-learner-data.test.ts`。
+
+**Not in slice:** 云端导出、PDF、一键导入、会员/同步主流程改动。
+
+### M4 仍待
+- ✅ 本机学习数据导出（切片 B，2026-08-17）
+- 移动端 44px / a11y / console 清理的残余核对
+- 浏览器 QA 与 design-qa 截图补强（error/loading 文案级已记）
+- M5 部署仍待 ICP/域名
+
 - 复用现有 contracts，不新加大模型或支付。
-- 启动后先做一轮 npm run check + 浏览器 QA。
-- 参考设计-qa.md 更新。
+- 参考 design-qa.md 更新。
 
 ## 2026-08-08 更新：M2 可靠登录合并 + 双向同步骨架 + 文件审计 + 转接准备（本次完成）
 
@@ -1108,14 +1180,47 @@ Answer: modern medicine also enters exam-answer and scoring training. The implem
 **剩余待办（已补全）：**
 1. M2 可靠登录剩余增量（跨设备测试、consent 边界强化、增量 payload）。
 2. M4 发布前打磨：
-   - SEO 元数据、robots/sitemap 完善
-   - ErrorBoundary + loading.tsx
-   - export-learner-data 增强（attempts/FSRS/QB/mocks/admission）
-   - 移动端 44px touch + a11y
-   - 性能、console guard
-   - 浏览器 QA + 更新 design-qa.md
+   - ✅ SEO 元数据、robots/sitemap、ErrorBoundary + loading（切片 A，2026-08-17）
+   - ✅ export-learner-data 本机快照导出（切片 B）
+   - 移动端 44px touch + a11y 残余
+   - 性能、console guard 残余
+   - design-qa 截图补强
 3. M5 部署（待用户采购域名后决策）。
 4. 内容 pending（教师 9 页 rubric、部分 unverified 答案、错题中心 FSRS/主观增强）。
 5. 转接工作：三个计划文件保持最新（本更新已完成）。
 
-**优先级**：M2 可靠登录合并核心已落地。M4 打磨启动。M5 待定。
+**优先级**：M2 可靠登录合并核心已落地。M4 切片 A（错误/加载/SEO）+ 切片 B（本机学习数据导出）已完成；M4 残余打磨 → M5 待定。
+
+
+## M5 上线准备（知径上线检查清单）— 2026-08-17 完成
+
+**目标**：产出可执行的 docs/LAUNCH_CHECKLIST.md + 最小生产缺口修复（仅上线必须项）。
+
+### 已完成的最小修复（仅上线必须）
+- prisma/schema.prisma：添加 url = env("DATABASE_URL")
+- docker-compose.yml：移除损坏的内联 DATABASE_URL 插值（改为依赖 .env.local + 清晰注释）
+- Dockerfile（runner）：添加 wget 安装，解决 node:slim 健康检查失败
+- .env.example：补全所有 NEXT_PUBLIC_*、加强 AUTH_SECRET 生成与“显式失败”说明、增加生产 Postgres 示例
+- package.json：添加 "postinstall": "prisma generate"
+- src/lib/prisma.ts：支持 Postgres（纯 Node 环境使用 plain PrismaClient），sqlite 路径尊重 DATABASE_URL
+- docs/DEPLOYMENT.md：同步当前实际（prisma runtime、env 来源、健康检查、generate 保证等）
+- 新建 docs/LAUNCH_CHECKLIST.md（完整 4 部分：必做、建议、暂缓、回滚风险；可执行命令与验证）
+
+### 验证结果
+- npm run check 通过（lint + typecheck + build）
+- AUTH_SECRET 已有显式 throw（无需额外修复）
+- 健康检查、数据库策略、隐私导出边界已在 checklist 中明确记录
+- 所有文档与真实代码/配置一致
+
+### 仍阻塞项（M5 依赖外部）
+- 域名 + ICP 备案 + 服务器采购
+- 真实支付商户号
+- 生成式 AI 服务登记（若使用 DashScope 生产流量）
+- 公安联网备案
+- 生产环境实际部署演练（当前仅代码层就绪）
+
+**结论**：上线准备（代码 + 可执行文档）已完成。等待域名/备案后即可执行 docker 部署与最终验证。不自动 commit / push / 部署。
+
+---
+
+**优先级**：上线准备完成。下一步由外部条件（域名/服务器/备案）驱动。

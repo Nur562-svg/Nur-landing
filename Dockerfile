@@ -106,6 +106,10 @@ COPY --from=builder --chown=node:node /app/.next/static ./.next/static
 # Prisma schema + migrations（运行时迁移所需，standalone 追踪不会包含 .prisma/schema.prisma）
 COPY --from=builder --chown=node:node /app/prisma ./prisma
 
+# Install wget for container healthcheck (node:*slim does not ship it by default)
+RUN apt-get update && apt-get install -y --no-install-recommends wget \
+  && rm -rf /var/lib/apt/lists/*
+
 # If you want to persist the fetch cache generated during the build so that
 # cached responses are available immediately on startup, uncomment this line:
 # COPY --from=builder --chown=node:node /app/.next/cache ./.next/cache

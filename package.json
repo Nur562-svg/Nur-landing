@@ -37,7 +37,8 @@
     "quick-check": "node scripts/quick-check.mjs",
     "quick-check:staged": "node scripts/quick-check.mjs --staged",
     "test": "tsx --test tests/**/*.test.ts",
-    "prepare": "node scripts/install-hook.mjs"
+    "prepare": "node scripts/install-hook.mjs",
+    "postinstall": "prisma generate"
   },
   "dependencies": {
     "@ai-sdk/openai": "^4.0.20",

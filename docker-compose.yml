@@ -43,7 +43,8 @@ services:
     environment:
       - NODE_ENV=production
       - NEXT_TELEMETRY_DISABLED=1
-      - DATABASE_URL=postgresql://${POSTGRES_USER:-nur}:${POSTGRES_PASSWORD}@db:5432/${POSTGRES_DB:-nur_learn}?schema=public
+      # DATABASE_URL provided via env_file (.env.local recommended for prod with full postgres URL incl. password)
+      # Example in .env.local: DATABASE_URL=postgresql://nur:strongpass@db:5432/nur_learn?schema=public
     env_file:
       - path: .env.local
         required: false

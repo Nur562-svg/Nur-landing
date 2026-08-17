@@ -58,6 +58,13 @@ DASHSCOPE_API_KEY=（仅服务端）
 DASHSCOPE_BASE_URL=https://dashscope.aliyuncs.com/compatible-mode/v1
 NUR_COURSE_BUILDER_PROVIDER=dashscope
 NUR_COURSE_BUILDER_MODEL=qwen3.7-plus
+
+# 生产关键提醒（当前代码状态）：
+# - .env.local 中的 DATABASE_URL 必须是完整 postgres 串
+# - docker-compose 不再硬编码损坏的 DATABASE_URL（依赖 env_file）
+# - 健康检查依赖 wget（Dockerfile 已安装）
+# - prisma runtime 支持 postgres（src/lib/prisma.ts）
+# - 构建会运行 postinstall: prisma generate
 ```
 
 ## 部署步骤
@@ -65,11 +72,15 @@ NUR_COURSE_BUILDER_MODEL=qwen3.7-plus
 ### 1. 本地准备
 
 ```bash
-# 切换 schema 为 Postgres（生产）
-# 编辑 prisma/schema.prisma: provider = "postgresql"
+# 注意：当前 schema 默认 sqlite（生产需切换 provider）
+# 1. 确保 .env.local 包含完整 DATABASE_URL（生产 postgres）
+# 2. 运行 postinstall 会触发 prisma generate（已在 package.json）
+npm install
 
-# 生成 Postgres migration
-npx prisma migrate dev --name init_postgres
+# 生产 Postgres 准备（按需）：
+# 编辑 prisma/schema.prisma 将 provider 改为 "postgresql"
+# npx prisma generate
+# npx prisma migrate dev --name init_postgres   # 或在服务器用 migrate deploy
 
 # 构建生产镜像
 docker compose build app
