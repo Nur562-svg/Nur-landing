@@ -1,0 +1,848 @@
+import type {
+  AssessmentItemDefinition,
+  AssessmentItemGroupDefinition,
+} from "@/types/learning";
+
+/**
+ * 医学遗传学 学习指导与习题集（第4版）— 第17章 表观遗传病 题库提取（等比取样）
+ * 来源：《医学遗传学学习指导与习题集》第4版（人民卫生出版社，主编：张咸宁、杨玲）
+ *
+ * == 统计报告（本文件题量 = 按“每教材 600、章节等比缩放”预算）==
+ * - 名词解释：5 题
+ * - A1/A2/X 型选择题（统一映射为 a1-single 单选）：14 题（A1×10 + A2×4）
+ * - 简答题 / 病例（映射 short-answer 或 case）：1 题
+ * - B1 共用备选答案配伍题：1 组、共 3 个成员
+ * - 独立记分题合计：23 题（含 B1 组成员；预算 23，已取满）
+ * - 缺失答案：0 题；无法可靠提取：0 题
+ * - 说明：本章原书顺序完整取材：名词解释 5、A1型选择题 10、A2型选择题 4、B1配伍题 3 成员、
+ *   简答题 1（取首题），共计 5+10+4+3+1=23，正好达到预算。OCR错字已按语义恢复（如"Incar"→IncRNA、
+ *   "喊基S换"→碱基替换、"乙酿化"→乙酰化、"总fi"→总量、"弓丨起"→引起等）；DNA甲基化、基因组印记、
+ *   印记基因名（SNRPN/UBE3A）、X失活、lncRNA机制描述均保留原文，数值保留原值，未捏造。
+ *
+ * 解析内容位于 answer.content 数组的第二个元素。
+ */
+
+const topic = "medical-genetics-ch17-epigenetic-diseases";
+const locatorBase =
+  "《医学遗传学学习指导与习题集》第4版 第17章 表观遗传病 复习思考题 习题（PDF 第102–106页）";
+const promptNote =
+  "题干改写；原题来自用户提供的题集，未经第三方授权审核";
+const xMapNote =
+  "题干改写并映射为单选；原书为X型多选题，按项目规约映射为a1-single，原题来自用户题集，未经第三方授权审核";
+const answerNotice =
+  "答案依据上传题集整理并改写，尚未与权威教材交叉核对";
+
+const kp = `kp-${topic}`;
+
+/** 名词解释（term），5 道 */
+const termItems: readonly AssessmentItemDefinition[] = [
+  {
+    id: "ext-medical-genetics-ch17-epigenetic-diseases-term001",
+    order: 1,
+    knowledgePointId: kp,
+    questionKind: "term",
+    status: "available",
+    prompt: "名词解释：DNA甲基化",
+    promptSource: {
+      authority: "nur-editorial",
+      wording: "nur-adapted",
+      locator: locatorBase,
+      note: promptNote,
+      sourceIds: [],
+    },
+    answer: {
+      status: "available",
+      authority: "nur-platform",
+      confidence: "unverified",
+      content: [
+        "DNA甲基化",
+        "DNA甲基化是指在DNA甲基转移酶的催化下，以S-腺苷甲硫氨酸为甲基供体，将甲基转移到DNA特定碱基上的过程（通常为基因组DNA上的胞嘧啶第5位碳原子和甲基基团间的共价结合，胞嘧啶由此被修饰为5-甲基胞嘧啶）。在多数情况下，DNA甲基化可抑制基因的表达。",
+      ],
+      notice: answerNotice,
+      sourceIds: [],
+    },
+    scoring: null,
+    sourceIds: [],
+  },
+  {
+    id: "ext-medical-genetics-ch17-epigenetic-diseases-term002",
+    order: 2,
+    knowledgePointId: kp,
+    questionKind: "term",
+    status: "available",
+    prompt: "名词解释：表观基因组",
+    promptSource: {
+      authority: "nur-editorial",
+      wording: "nur-adapted",
+      locator: locatorBase,
+      note: promptNote,
+      sourceIds: [],
+    },
+    answer: {
+      status: "available",
+      authority: "nur-platform",
+      confidence: "unverified",
+      content: [
+        "表观基因组",
+        "表观基因组是指一个个体的全基因组的表观遗传修饰图谱。",
+      ],
+      notice: answerNotice,
+      sourceIds: [],
+    },
+    scoring: null,
+    sourceIds: [],
+  },
+  {
+    id: "ext-medical-genetics-ch17-epigenetic-diseases-term003",
+    order: 3,
+    knowledgePointId: kp,
+    questionKind: "term",
+    status: "available",
+    prompt: "名词解释：差异甲基化",
+    promptSource: {
+      authority: "nur-editorial",
+      wording: "nur-adapted",
+      locator: locatorBase,
+      note: promptNote,
+      sourceIds: [],
+    },
+    answer: {
+      status: "available",
+      authority: "nur-platform",
+      confidence: "unverified",
+      content: [
+        "差异甲基化",
+        "差异甲基化意即父源和母源染色体上的印记中心的甲基化呈现分化状态。",
+      ],
+      notice: answerNotice,
+      sourceIds: [],
+    },
+    scoring: null,
+    sourceIds: [],
+  },
+  {
+    id: "ext-medical-genetics-ch17-epigenetic-diseases-term004",
+    order: 4,
+    knowledgePointId: kp,
+    questionKind: "term",
+    status: "available",
+    prompt: "名词解释：染色质重塑",
+    promptSource: {
+      authority: "nur-editorial",
+      wording: "nur-adapted",
+      locator: locatorBase,
+      note: promptNote,
+      sourceIds: [],
+    },
+    answer: {
+      status: "available",
+      authority: "nur-platform",
+      confidence: "unverified",
+      content: [
+        "染色质重塑",
+        "染色质重塑是指基因在活化和转录时，染色质发生去凝集，核小体变成开放式疏松结构，使转录因子等更易接近并结合核小体DNA等的一系列染色质构型的重要变化。",
+      ],
+      notice: answerNotice,
+      sourceIds: [],
+    },
+    scoring: null,
+    sourceIds: [],
+  },
+  {
+    id: "ext-medical-genetics-ch17-epigenetic-diseases-term005",
+    order: 5,
+    knowledgePointId: kp,
+    questionKind: "term",
+    status: "available",
+    prompt: "名词解释：lncRNA",
+    promptSource: {
+      authority: "nur-editorial",
+      wording: "nur-adapted",
+      locator: locatorBase,
+      note: promptNote,
+      sourceIds: [],
+    },
+    answer: {
+      status: "available",
+      authority: "nur-platform",
+      confidence: "unverified",
+      content: [
+        "lncRNA",
+        "lncRNA即“长链非编码RNA（long ncRNA）”。ncRNA是一类能转录但不编码蛋白质、具有特定功能的RNA小分子。lncRNA是指长度大于200个核苷酸的ncRNA分子。",
+      ],
+      notice: answerNotice,
+      sourceIds: [],
+    },
+    scoring: null,
+    sourceIds: [],
+  },
+];
+
+/** A1/A2 型选择题（统一映射为 a1-single），14 道 */
+const a1Items: readonly AssessmentItemDefinition[] = [
+  {
+    id: "ext-medical-genetics-ch17-epigenetic-diseases-a1001",
+    order: 6,
+    knowledgePointId: kp,
+    questionKind: "a1-single",
+    status: "available",
+    prompt: "DNA甲基化主要指发生在",
+    promptSource: {
+      authority: "nur-editorial",
+      wording: "nur-adapted",
+      locator: locatorBase,
+      note: promptNote,
+      sourceIds: [],
+    },
+    choices: [
+      "鸟嘌呤环第5位碳原子上",
+      "胞嘧啶环第5位碳原子上",
+      "胞嘧啶环第3位碳原子上",
+      "胸腺嘧啶环第3位碳原子上",
+      "鸟嘌呤环第5位碳原子",
+    ],
+    correctChoiceIndex: 1,
+    answer: {
+      status: "available",
+      authority: "nur-platform",
+      confidence: "unverified",
+      content: [
+        "胞嘧啶环第5位碳原子上",
+        "原书A1型选择题第1题答案为D，即胞嘧啶环第5位碳原子上，这是DNA甲基化的典型修饰位点。",
+      ],
+      notice: answerNotice,
+      sourceIds: [],
+    },
+    scoring: null,
+    sourceIds: [],
+  },
+  {
+    id: "ext-medical-genetics-ch17-epigenetic-diseases-a1002",
+    order: 7,
+    knowledgePointId: kp,
+    questionKind: "a1-single",
+    status: "available",
+    prompt: "组蛋白的甲基化",
+    promptSource: {
+      authority: "nur-editorial",
+      wording: "nur-adapted",
+      locator: locatorBase,
+      note: promptNote,
+      sourceIds: [],
+    },
+    choices: [
+      "仅与浓缩异染色质关联",
+      "既与浓缩的异染色质及基因转录受抑相关，也与转录活性关联",
+      "仅与转录活性相关",
+      "仅与基因转录有关",
+      "仅与开放常染色质关联",
+    ],
+    correctChoiceIndex: 1,
+    answer: {
+      status: "available",
+      authority: "nur-platform",
+      confidence: "unverified",
+      content: [
+        "既与浓缩的异染色质及基因转录受抑相关，也与转录活性关联",
+        "原书A1型选择题第2题答案为B，组蛋白甲基化的效应取决于具体修饰位点，既可抑制也可激活转录。",
+      ],
+      notice: answerNotice,
+      sourceIds: [],
+    },
+    scoring: null,
+    sourceIds: [],
+  },
+  {
+    id: "ext-medical-genetics-ch17-epigenetic-diseases-a1003",
+    order: 8,
+    knowledgePointId: kp,
+    questionKind: "a1-single",
+    status: "available",
+    prompt: "下列哪一项不属于表观遗传修饰的方式",
+    promptSource: {
+      authority: "nur-editorial",
+      wording: "nur-adapted",
+      locator: locatorBase,
+      note: promptNote,
+      sourceIds: [],
+    },
+    choices: [
+      "DNA甲基化",
+      "启动子区的某个碱基替换",
+      "组蛋白乙酰化",
+      "X染色质失活",
+      "非编码RNA",
+    ],
+    correctChoiceIndex: 1,
+    answer: {
+      status: "available",
+      authority: "nur-platform",
+      confidence: "unverified",
+      content: [
+        "启动子区的某个碱基替换",
+        "原书A1型选择题第3题答案为A，碱基替换属于DNA序列突变，不属于表观遗传修饰。",
+      ],
+      notice: answerNotice,
+      sourceIds: [],
+    },
+    scoring: null,
+    sourceIds: [],
+  },
+  {
+    id: "ext-medical-genetics-ch17-epigenetic-diseases-a1004",
+    order: 9,
+    knowledgePointId: kp,
+    questionKind: "a1-single",
+    status: "available",
+    prompt: "下列哪一种遗传病与表观遗传修饰的改变无关",
+    promptSource: {
+      authority: "nur-editorial",
+      wording: "nur-adapted",
+      locator: locatorBase,
+      note: promptNote,
+      sourceIds: [],
+    },
+    choices: [
+      "肝豆状核变性（Wilson病）",
+      "脆性X综合征",
+      "恶性肿瘤",
+      "Rett综合征",
+      "1型ICF综合征",
+    ],
+    correctChoiceIndex: 0,
+    answer: {
+      status: "available",
+      authority: "nur-platform",
+      confidence: "unverified",
+      content: [
+        "肝豆状核变性（Wilson病）",
+        "原书A1型选择题第4题答案为A，Wilson病是ATP7B基因突变导致的铜代谢障碍，属于经典的单基因遗传病，与表观遗传修饰改变无关。",
+      ],
+      notice: answerNotice,
+      sourceIds: [],
+    },
+    scoring: null,
+    sourceIds: [],
+  },
+  {
+    id: "ext-medical-genetics-ch17-epigenetic-diseases-a1005",
+    order: 10,
+    knowledgePointId: kp,
+    questionKind: "a1-single",
+    status: "available",
+    prompt: "哺乳动物基因组DNA中5-mC约占全部胞嘧啶总量的",
+    promptSource: {
+      authority: "nur-editorial",
+      wording: "nur-adapted",
+      locator: locatorBase,
+      note: promptNote,
+      sourceIds: [],
+    },
+    choices: [
+      "0.2% - 0.7%",
+      "2% - 7%",
+      "20%",
+      "50%",
+      "70%",
+    ],
+    correctChoiceIndex: 1,
+    answer: {
+      status: "available",
+      authority: "nur-platform",
+      confidence: "unverified",
+      content: [
+        "2% - 7%",
+        "原书A1型选择题第5题答案为B，哺乳动物基因组中约2%~7%的胞嘧啶被甲基化为5-甲基胞嘧啶。",
+      ],
+      notice: answerNotice,
+      sourceIds: [],
+    },
+    scoring: null,
+    sourceIds: [],
+  },
+  {
+    id: "ext-medical-genetics-ch17-epigenetic-diseases-a1006",
+    order: 11,
+    knowledgePointId: kp,
+    questionKind: "a1-single",
+    status: "available",
+    prompt: "肿瘤基因组中常见的表观遗传修饰改变有",
+    promptSource: {
+      authority: "nur-editorial",
+      wording: "nur-adapted",
+      locator: locatorBase,
+      note: promptNote,
+      sourceIds: [],
+    },
+    choices: [
+      "全基因组范围的去甲基化状态",
+      "某些特定染色体区域异常的高甲基化状态",
+      "印记缺失",
+      "ncRNA异常表达",
+      "以上都是",
+    ],
+    correctChoiceIndex: 4,
+    answer: {
+      status: "available",
+      authority: "nur-platform",
+      confidence: "unverified",
+      content: [
+        "以上都是",
+        "原书A1型选择题第6题答案为E，肿瘤发生中上述四种表观遗传改变均常见。",
+      ],
+      notice: answerNotice,
+      sourceIds: [],
+    },
+    scoring: null,
+    sourceIds: [],
+  },
+  {
+    id: "ext-medical-genetics-ch17-epigenetic-diseases-a1007",
+    order: 12,
+    knowledgePointId: kp,
+    questionKind: "a1-single",
+    status: "available",
+    prompt: "在DNA复制过程中，维持甲基化状态作用的酶是",
+    promptSource: {
+      authority: "nur-editorial",
+      wording: "nur-adapted",
+      locator: locatorBase,
+      note: promptNote,
+      sourceIds: [],
+    },
+    choices: [
+      "DNMT1",
+      "DNA聚合酶",
+      "DNMT3a",
+      "DNMT3b",
+      "DNA连接酶",
+    ],
+    correctChoiceIndex: 0,
+    answer: {
+      status: "available",
+      authority: "nur-platform",
+      confidence: "unverified",
+      content: [
+        "DNMT1",
+        "原书A1型选择题第7题答案为B，DNMT1主要负责维持DNA复制后的甲基化状态，保持表观遗传信息的传递。",
+      ],
+      notice: answerNotice,
+      sourceIds: [],
+    },
+    scoring: null,
+    sourceIds: [],
+  },
+  {
+    id: "ext-medical-genetics-ch17-epigenetic-diseases-a1008",
+    order: 13,
+    knowledgePointId: kp,
+    questionKind: "a1-single",
+    status: "available",
+    prompt: "在RNA沉默(RNA silencing)过程中，siRNA和miRNA通常结合于所调控的mRNA分子的哪一部分",
+    promptSource: {
+      authority: "nur-editorial",
+      wording: "nur-adapted",
+      locator: locatorBase,
+      note: promptNote,
+      sourceIds: [],
+    },
+    choices: [
+      "5'-UTR",
+      "编码氨基酸的节段",
+      "3'-UTR",
+      "启动子",
+      "以上都不对",
+    ],
+    correctChoiceIndex: 2,
+    answer: {
+      status: "available",
+      authority: "nur-platform",
+      confidence: "unverified",
+      content: [
+        "3'-UTR",
+        "原书A1型选择题第8题答案为D，siRNA和miRNA主要通过结合mRNA的3'非翻译区（3'-UTR）发挥抑制翻译的作用。",
+      ],
+      notice: answerNotice,
+      sourceIds: [],
+    },
+    scoring: null,
+    sourceIds: [],
+  },
+  {
+    id: "ext-medical-genetics-ch17-epigenetic-diseases-a1009",
+    order: 14,
+    knowledgePointId: kp,
+    questionKind: "a1-single",
+    status: "available",
+    prompt: "关于非编码RNA的描述，下列哪一项不正确",
+    promptSource: {
+      authority: "nur-editorial",
+      wording: "nur-adapted",
+      locator: locatorBase,
+      note: promptNote,
+      sourceIds: [],
+    },
+    choices: [
+      "ncRNA在调控真核基因组的表达和功能中发挥重要作用",
+      "miRNA主要表现为外源性基因调控子，针对病毒等外源或入侵的核酸发挥作用",
+      "ncRNA的调控作用与DNA甲基化、组蛋白修饰作用均密切相关",
+      "siRNA和miRNA前体均为双链分子，被Dicer酶加工成典型的长约21个核苷酸的双链",
+      "tRNA和rRNA均不属于ncRNA",
+    ],
+    correctChoiceIndex: 1,
+    answer: {
+      status: "available",
+      authority: "nur-platform",
+      confidence: "unverified",
+      content: [
+        "miRNA主要表现为外源性基因调控子，针对病毒等外源或入侵的核酸发挥作用",
+        "原书A1型选择题第9题答案为D，该描述不正确。实际上siRNA才主要针对外源入侵核酸，miRNA主要调控内源基因表达。",
+      ],
+      notice: answerNotice,
+      sourceIds: [],
+    },
+    scoring: null,
+    sourceIds: [],
+  },
+  {
+    id: "ext-medical-genetics-ch17-epigenetic-diseases-a1010",
+    order: 15,
+    knowledgePointId: kp,
+    questionKind: "a1-single",
+    status: "available",
+    prompt: "关于组蛋白修饰的描述，下列哪一项不正确",
+    promptSource: {
+      authority: "nur-editorial",
+      wording: "nur-adapted",
+      locator: locatorBase,
+      note: promptNote,
+      sourceIds: [],
+    },
+    choices: [
+      "组蛋白乙酰化一般与浓缩的异染色质以及基因转录抑制有关",
+      "组蛋白相应氨基酸残基的乙酰化通常与开放的常染色质构型以及转录激活有关",
+      "组蛋白氨基酸的排列顺序构成了可被转录复合物识别的组蛋白密码(histone code)",
+      "组蛋白脱乙酰酶(HDAC)可以催化组蛋白脱去乙酰基，从而发生异染色质改变",
+      "组蛋白去乙酰化与DNA甲基化具有协同效应",
+    ],
+    correctChoiceIndex: 0,
+    answer: {
+      status: "available",
+      authority: "nur-platform",
+      confidence: "unverified",
+      content: [
+        "组蛋白乙酰化一般与浓缩的异染色质以及基因转录抑制有关",
+        "原书A1型选择题第10题答案为C，该描述不正确。组蛋白乙酰化通常中和组蛋白的正电荷，削弱与DNA的结合，使染色质开放，激活转录。",
+      ],
+      notice: answerNotice,
+      sourceIds: [],
+    },
+    scoring: null,
+    sourceIds: [],
+  },
+  {
+    id: "ext-medical-genetics-ch17-epigenetic-diseases-a1011",
+    order: 16,
+    knowledgePointId: kp,
+    questionKind: "a1-single",
+    status: "available",
+    prompt: "某新生女婴，其母妊娠和生产均无异常。但此新生儿严重张力过低(hypotonia)，严重到需要管饲(tube-feeding)，面部异常—杏仁状眼、下弯嘴角，阴唇不发达。提示女婴罹患Prader-Willi综合征。Prader-Willi综合征涉及染色体的结构或修饰异常。主治医师预约了染色体分析和DNA检测，以便确定是否为15号染色体缺失，或基因组印记的改变。试问，胞苷结构的第5位碳原子发生什么改变，常常与基因的失活相关",
+    promptSource: {
+      authority: "nur-editorial",
+      wording: "nur-adapted",
+      locator: locatorBase,
+      note: promptNote,
+      sourceIds: [],
+    },
+    choices: [
+      "基因转变",
+      "姐妹染色单体交换",
+      "假基因",
+      "基因重排",
+      "DNA甲基化",
+    ],
+    correctChoiceIndex: 4,
+    answer: {
+      status: "available",
+      authority: "nur-platform",
+      confidence: "unverified",
+      content: [
+        "DNA甲基化",
+        "原书A2型选择题第11题答案为E，胞嘧啶第5位碳的DNA甲基化通常导致相关基因的沉默失活。",
+      ],
+      notice: answerNotice,
+      sourceIds: [],
+    },
+    scoring: null,
+    sourceIds: [],
+  },
+  {
+    id: "ext-medical-genetics-ch17-epigenetic-diseases-a1012",
+    order: 17,
+    knowledgePointId: kp,
+    questionKind: "a1-single",
+    status: "available",
+    prompt: "某男孩，罹患Angelman综合征，症见重度癫痫，孤独症和发育迟缓(developmental delay)。染色体核型分析发现，患者的第15号染色体有缺失的条带。试问下列哪一种描述正确",
+    promptSource: {
+      authority: "nur-editorial",
+      wording: "nur-adapted",
+      locator: locatorBase,
+      note: promptNote,
+      sourceIds: [],
+    },
+    choices: [
+      "第15号染色体中间缺失（interstitial deletion)",
+      "第15号染色体末端缺失（terminal deletion)",
+      "第15号染色体臂间倒位(pericentric inversion)",
+      "第15号染色体臂内倒位(paracentric inversion)",
+      "15q11-q13缺失",
+    ],
+    correctChoiceIndex: 0,
+    answer: {
+      status: "available",
+      authority: "nur-platform",
+      confidence: "unverified",
+      content: [
+        "第15号染色体中间缺失（interstitial deletion)",
+        "原书A2型选择题第12题答案为A，Angelman综合征常见的病因是母源15q11-q13区域中间缺失。",
+      ],
+      notice: answerNotice,
+      sourceIds: [],
+    },
+    scoring: null,
+    sourceIds: [],
+  },
+  {
+    id: "ext-medical-genetics-ch17-epigenetic-diseases-a1013",
+    order: 18,
+    knowledgePointId: kp,
+    questionKind: "a1-single",
+    status: "available",
+    prompt: "2016年，被誉为“东方诺贝尔奖”的邵逸夫奖生命科学与医学奖授予了2位在Rett综合征的致病基因MECP2方面做出卓越贡献的学者:英国的Adrian Bird教授和Huda Zoghbi教授。Rett综合征为一种X-连锁显性遗传病，由奥地利维也纳医生Andreas Rett于1966年首次报道，发病率约为1/15 000，患者均为女童。患者可表现不同程度的神经发育迟滞、行为异常、精神发育迟缓等症状。目前，临床上只能对患者进行康复治疗。Rett综合征的致病基因MECP2或蛋白通常发生什么改变",
+    promptSource: {
+      authority: "nur-editorial",
+      wording: "nur-adapted",
+      locator: locatorBase,
+      note: promptNote,
+      sourceIds: [],
+    },
+    choices: [
+      "MECP2蛋白表达增高",
+      "MECP2基因所转录生成的mRNA变长",
+      "用甲基化敏感的限制酶检测后，可见MECP2基因甲基化位点的获得",
+      "用甲基化敏感的限制酶检测后，可见基因甲基化位点的丢失",
+      "MECP2基因的启动子区域发生了三核苷酸重复扩增",
+    ],
+    correctChoiceIndex: 2,
+    answer: {
+      status: "available",
+      authority: "nur-platform",
+      confidence: "unverified",
+      content: [
+        "用甲基化敏感的限制酶检测后，可见MECP2基因甲基化位点的获得",
+        "原书A2型选择题第13题答案为D，Rett综合征患者MECP2基因异常甲基化增加，导致基因表达下调。",
+      ],
+      notice: answerNotice,
+      sourceIds: [],
+    },
+    scoring: null,
+    sourceIds: [],
+  },
+  {
+    id: "ext-medical-genetics-ch17-epigenetic-diseases-a1014",
+    order: 19,
+    knowledgePointId: kp,
+    questionKind: "a1-single",
+    status: "available",
+    prompt: "某婴儿肌无力严重。其母有轻度的肌无力和肌强直(即受累骨骼肌肉在收缩后不易放松，如手紧握拳之后不能立即轻松张开);其外祖父则症状更轻，前额有点秃发，轻度白内障。这种后代发病症状更重的现象源于遗传学的哪一种机制",
+    promptSource: {
+      authority: "nur-editorial",
+      wording: "nur-adapted",
+      locator: locatorBase,
+      note: promptNote,
+      sourceIds: [],
+    },
+    choices: [
+      "基因组印记",
+      "杂质性",
+      "不稳定的三核苷酸重复扩增",
+      "多因子遗传",
+      "线粒体遗传",
+    ],
+    correctChoiceIndex: 2,
+    answer: {
+      status: "available",
+      authority: "nur-platform",
+      confidence: "unverified",
+      content: [
+        "不稳定的三核苷酸重复扩增",
+        "原书A2型选择题第14题答案为C，这种现象称为遗传早现（anticipation），由不稳定的三核苷酸重复扩增在世代传递中拷贝数逐代增加所致，本例为强直性肌营养不良。",
+      ],
+      notice: answerNotice,
+      sourceIds: [],
+    },
+    scoring: null,
+    sourceIds: [],
+  },
+];
+
+/** 简答题（short-answer），取第1题，总预算控制为23 */
+const shortItems: readonly AssessmentItemDefinition[] = [
+  {
+    id: "ext-medical-genetics-ch17-epigenetic-diseases-short001",
+    order: 23,
+    knowledgePointId: kp,
+    questionKind: "short-answer",
+    status: "available",
+    prompt: "什么是CpG岛？",
+    promptSource: {
+      authority: "nur-editorial",
+      wording: "nur-adapted",
+      locator: locatorBase,
+      note: promptNote,
+      sourceIds: [],
+    },
+    answer: {
+      status: "available",
+      authority: "nur-platform",
+      confidence: "unverified",
+      content: [
+        "CpG岛",
+        "CpG岛（CpG island）是指基因组中长度为300〜3000bp的富含CpG二核苷酸序列的DNA区域，主要位于基因的5'-区域（启动子和第1外显子区）。启动子区CpG岛的未甲基化状态是基因转录所必需的，而CpG序列中的C的甲基化可导致基因转录被抑制，沉默基因转录。",
+      ],
+      notice: answerNotice,
+      sourceIds: [],
+    },
+    scoring: null,
+    sourceIds: [],
+  },
+];
+
+/** 病例：本章无非选择型病例 */
+const caseItems: readonly AssessmentItemDefinition[] = [];
+
+/** B1 共用备选答案配伍题：1组 × 3成员 */
+const bGroups: readonly AssessmentItemGroupDefinition[] = [
+  {
+    id: "ext-medical-genetics-ch17-epigenetic-diseases-b001",
+    order: 20,
+    questionKind: "b1",
+    status: "available",
+    groupPrompt: null,
+    sharedChoices: [
+      "多与胚胎生长发育相关",
+      "早期原始生殖细胞进入性腺时，原有的表观遗传学修饰被移除",
+      "通过Dicer酶加工",
+      "具有遗传异质性",
+      "对外源核酸起作用",
+    ],
+    promptSource: {
+      authority: "nur-editorial",
+      wording: "nur-adapted",
+      locator: locatorBase,
+      note: promptNote,
+      sourceIds: [],
+    },
+    members: [
+      {
+        id: "ext-medical-genetics-ch17-epigenetic-diseases-b001m1",
+        order: 20,
+        knowledgePointId: kp,
+        questionKind: "b1",
+        status: "available",
+        prompt: "印记基因是",
+        promptSource: {
+          authority: "nur-editorial",
+          wording: "nur-adapted",
+          locator: locatorBase,
+          note: promptNote,
+          sourceIds: [],
+        },
+        correctChoiceIndex: 0,
+        answer: {
+          status: "available",
+          authority: "nur-platform",
+          confidence: "unverified",
+          content: [
+            "多与胚胎生长发育相关",
+            "原书B1型第15题答案为A，印记基因通常在胚胎发育调控中发挥重要作用。",
+          ],
+          notice: answerNotice,
+          sourceIds: [],
+        },
+        scoring: null,
+        sourceIds: [],
+      },
+      {
+        id: "ext-medical-genetics-ch17-epigenetic-diseases-b001m2",
+        order: 21,
+        knowledgePointId: kp,
+        questionKind: "b1",
+        status: "available",
+        prompt: "基因表达的重编程(reprogramming)是",
+        promptSource: {
+          authority: "nur-editorial",
+          wording: "nur-adapted",
+          locator: locatorBase,
+          note: promptNote,
+          sourceIds: [],
+        },
+        correctChoiceIndex: 1,
+        answer: {
+          status: "available",
+          authority: "nur-platform",
+          confidence: "unverified",
+          content: [
+            "早期原始生殖细胞进入性腺时，原有的表观遗传学修饰被移除",
+            "原书B1型第16题答案为B，配子发生过程中需要去除原有表观修饰标记，重新建立新的印记，这个过程即为表观重编程。",
+          ],
+          notice: answerNotice,
+          sourceIds: [],
+        },
+        scoring: null,
+        sourceIds: [],
+      },
+      {
+        id: "ext-medical-genetics-ch17-epigenetic-diseases-b001m3",
+        order: 22,
+        knowledgePointId: kp,
+        questionKind: "b1",
+        status: "available",
+        prompt: "miRNA是",
+        promptSource: {
+          authority: "nur-editorial",
+          wording: "nur-adapted",
+          locator: locatorBase,
+          note: promptNote,
+          sourceIds: [],
+        },
+        correctChoiceIndex: 2,
+        answer: {
+          status: "available",
+          authority: "nur-platform",
+          confidence: "unverified",
+          content: [
+            "通过Dicer酶加工",
+            "原书B1型第17题答案为C，miRNA前体需要经过Dicer酶切割加工成为成熟的miRNA分子。",
+          ],
+          notice: answerNotice,
+          sourceIds: [],
+        },
+        scoring: null,
+        sourceIds: [],
+      },
+    ],
+    sourceIds: [],
+  },
+];
+
+export const extractedItems: readonly AssessmentItemDefinition[] = [
+  ...termItems,
+  ...a1Items,
+  ...shortItems,
+  ...caseItems,
+];
+
+export const extractedGroups: readonly AssessmentItemGroupDefinition[] = [
+  ...bGroups,
+];

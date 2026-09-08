@@ -1,0 +1,422 @@
+{
+ "ch01": {
+  "name": "影像诊断学总论",
+  "pages": [
+   2,
+   21
+  ],
+  "budget": 71,
+  "source_counts": {
+   "term": 37,
+   "fill": 32,
+   "a1": 67,
+   "b1": 29,
+   "short": 26
+  },
+  "T": 191,
+  "quotas": {
+   "term": 14,
+   "fill": 12,
+   "a1": 25,
+   "b1": 11,
+   "short": 9
+  },
+  "a1_final": 24,
+  "b1_actual": 12,
+  "b1_groups": 4,
+  "b1_groups_total": 11,
+  "blocks": 1
+ },
+ "ch02": {
+  "name": "中枢神经系统",
+  "pages": [
+   22,
+   37
+  ],
+  "budget": 55,
+  "source_counts": {
+   "term": 19,
+   "fill": 20,
+   "a1": 68,
+   "b1": 19,
+   "short": 19
+  },
+  "T": 145,
+  "quotas": {
+   "term": 7,
+   "fill": 8,
+   "a1": 26,
+   "b1": 7,
+   "short": 7
+  },
+  "a1_final": 27,
+  "b1_actual": 6,
+  "b1_groups": 3,
+  "b1_groups_total": 7,
+  "blocks": 1
+ },
+ "ch03": {
+  "name": "头颈部",
+  "pages": [
+   38,
+   54
+  ],
+  "budget": 34,
+  "source_counts": {
+   "term": 6,
+   "fill": 15,
+   "a1": 39,
+   "b1": 13,
+   "short": 8
+  },
+  "T": 81,
+  "quotas": {
+   "term": 3,
+   "fill": 6,
+   "a1": 16,
+   "b1": 6,
+   "short": 3
+  },
+  "a1_final": 16,
+  "b1_actual": 6,
+  "b1_groups": 2,
+  "b1_groups_total": 7,
+  "blocks": 7
+ },
+ "ch04": {
+  "name": "呼吸系统",
+  "pages": [
+   55,
+   70
+  ],
+  "budget": 49,
+  "source_counts": {
+   "term": 12,
+   "fill": 13,
+   "a1": 80,
+   "b1": 15,
+   "short": 15
+  },
+  "T": 135,
+  "quotas": {
+   "term": 4,
+   "fill": 5,
+   "a1": 29,
+   "b1": 6,
+   "short": 5
+  },
+  "a1_final": 30,
+  "b1_actual": 5,
+  "b1_groups": 2,
+  "b1_groups_total": 6,
+  "blocks": 1
+ },
+ "ch05": {
+  "name": "循环系统",
+  "pages": [
+   71,
+   85
+  ],
+  "budget": 48,
+  "source_counts": {
+   "term": 18,
+   "fill": 21,
+   "a1": 66,
+   "b1": 15,
+   "short": 19
+  },
+  "T": 139,
+  "quotas": {
+   "term": 6,
+   "fill": 7,
+   "a1": 23,
+   "b1": 5,
+   "short": 7
+  },
+  "a1_final": 23,
+  "b1_actual": 5,
+  "b1_groups": 1,
+  "b1_groups_total": 3,
+  "blocks": 1
+ },
+ "ch06": {
+  "name": "乳腺",
+  "pages": [
+   86,
+   92
+  ],
+  "budget": 22,
+  "source_counts": {
+   "term": 9,
+   "fill": 8,
+   "a1": 27,
+   "b1": 6,
+   "short": 8
+  },
+  "T": 58,
+  "quotas": {
+   "term": 4,
+   "fill": 3,
+   "a1": 10,
+   "b1": 2,
+   "short": 3
+  },
+  "a1_final": 9,
+  "b1_actual": 3,
+  "b1_groups": 1,
+  "b1_groups_total": 2,
+  "blocks": 1
+ },
+ "ch07": {
+  "name": "消化系统与腹膜腔",
+  "pages": [
+   93,
+   119
+  ],
+  "budget": 85,
+  "source_counts": {
+   "term": 20,
+   "fill": 42,
+   "a1": 114,
+   "b1": 36,
+   "short": 24
+  },
+  "T": 236,
+  "quotas": {
+   "term": 7,
+   "fill": 15,
+   "a1": 41,
+   "b1": 13,
+   "short": 9
+  },
+  "a1_final": 43,
+  "b1_actual": 11,
+  "b1_groups": 3,
+  "b1_groups_total": 12,
+  "blocks": 4
+ },
+ "ch08": {
+  "name": "泌尿生殖系统与腹膜后间隙",
+  "pages": [
+   120,
+   142
+  ],
+  "budget": 73,
+  "source_counts": {
+   "term": 31,
+   "fill": 24,
+   "a1": 79,
+   "b1": 23,
+   "short": 28
+  },
+  "T": 185,
+  "quotas": {
+   "term": 12,
+   "fill": 10,
+   "a1": 31,
+   "b1": 9,
+   "short": 11
+  },
+  "a1_final": 32,
+  "b1_actual": 8,
+  "b1_groups": 4,
+  "b1_groups_total": 11,
+  "blocks": 5
+ },
+ "ch09": {
+  "name": "骨骼与肌肉系统",
+  "pages": [
+   143,
+   160
+  ],
+  "budget": 55,
+  "source_counts": {
+   "term": 26,
+   "fill": 36,
+   "a1": 96,
+   "b1": 0,
+   "short": 23
+  },
+  "T": 181,
+  "quotas": {
+   "term": 8,
+   "fill": 11,
+   "a1": 29,
+   "b1": 0,
+   "short": 7
+  },
+  "a1_final": 29,
+  "b1_actual": 0,
+  "b1_groups": 0,
+  "b1_groups_total": 8,
+  "blocks": 1
+ },
+ "ch10": {
+  "name": "儿科影像诊断学",
+  "pages": [
+   161,
+   166
+  ],
+  "budget": 15,
+  "source_counts": {
+   "term": 7,
+   "fill": 7,
+   "a1": 23,
+   "b1": 6,
+   "short": 6
+  },
+  "T": 49,
+  "quotas": {
+   "term": 2,
+   "fill": 2,
+   "a1": 7,
+   "b1": 2,
+   "short": 2
+  },
+  "a1_final": 9,
+  "b1_actual": 0,
+  "b1_groups": 0,
+  "b1_groups_total": 1,
+  "blocks": 1
+ },
+ "ch11": {
+  "name": "传染性疾病",
+  "pages": [
+   167,
+   169
+  ],
+  "budget": 5,
+  "source_counts": {
+   "term": 2,
+   "fill": 5,
+   "a1": 2,
+   "b1": 3,
+   "short": 4
+  },
+  "T": 16,
+  "quotas": {
+   "term": 1,
+   "fill": 1,
+   "a1": 1,
+   "b1": 1,
+   "short": 1
+  },
+  "a1_final": 2,
+  "b1_actual": 0,
+  "b1_groups": 0,
+  "b1_groups_total": 1,
+  "blocks": 1
+ },
+ "ch12": {
+  "name": "介入放射学总论",
+  "pages": [
+   170,
+   175
+  ],
+  "budget": 14,
+  "source_counts": {
+   "term": 8,
+   "fill": 10,
+   "a1": 24,
+   "b1": 5,
+   "short": 4
+  },
+  "T": 51,
+  "quotas": {
+   "term": 2,
+   "fill": 3,
+   "a1": 7,
+   "b1": 1,
+   "short": 1
+  },
+  "a1_final": 8,
+  "b1_actual": 0,
+  "b1_groups": 0,
+  "b1_groups_total": 1,
+  "blocks": 1
+ },
+ "ch13": {
+  "name": "血管疾病的介入治疗",
+  "pages": [
+   176,
+   186
+  ],
+  "budget": 35,
+  "source_counts": {
+   "term": 9,
+   "fill": 10,
+   "a1": 45,
+   "b1": 11,
+   "short": 14
+  },
+  "T": 89,
+  "quotas": {
+   "term": 4,
+   "fill": 4,
+   "a1": 18,
+   "b1": 4,
+   "short": 5
+  },
+  "a1_final": 18,
+  "b1_actual": 4,
+  "b1_groups": 1,
+  "b1_groups_total": 3,
+  "blocks": 1
+ },
+ "ch14": {
+  "name": "非血管疾病的介入治疗",
+  "pages": [
+   187,
+   191
+  ],
+  "budget": 13,
+  "source_counts": {
+   "term": 4,
+   "fill": 8,
+   "a1": 12,
+   "b1": 4,
+   "short": 6
+  },
+  "T": 34,
+  "quotas": {
+   "term": 2,
+   "fill": 3,
+   "a1": 5,
+   "b1": 1,
+   "short": 2
+  },
+  "a1_final": 6,
+  "b1_actual": 0,
+  "b1_groups": 0,
+  "b1_groups_total": 2,
+  "blocks": 1
+ },
+ "ch15": {
+  "name": "良恶性肿瘤的介入治疗",
+  "pages": [
+   192,
+   200
+  ],
+  "budget": 26,
+  "source_counts": {
+   "term": 2,
+   "fill": 17,
+   "a1": 32,
+   "b1": 15,
+   "short": 8
+  },
+  "T": 74,
+  "quotas": {
+   "term": 1,
+   "fill": 6,
+   "a1": 11,
+   "b1": 5,
+   "short": 3
+  },
+  "a1_final": 10,
+  "b1_actual": 6,
+  "b1_groups": 2,
+  "b1_groups_total": 5,
+  "blocks": 1
+ }
+}

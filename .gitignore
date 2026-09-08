@@ -64,3 +64,11 @@ prisma/dev.db-journal
 .workbuddy/
 .qoder/
 .codebuddy/
+
+# 题库提取源 PDF（受版权原始资料，只读区，绝不提交）
+src/source_pdfs*
+
+# 题库提取临时/中间产物（可重建，不提交）
+.qbwork/
+ch5_*.txt
+scripts_tmp_*.py

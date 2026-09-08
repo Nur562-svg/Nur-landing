@@ -1,0 +1,447 @@
+{
+ "order": [
+  "ch01-药理学总论绪言",
+  "ch02-药物代谢动力学",
+  "ch03-药物效应动力学",
+  "ch04-影响药物效应的因素",
+  "ch05-传出神经系统药理概论",
+  "ch06-胆碱受体激动药",
+  "ch07-抗胆碱酯酶药和胆碱酯酶复活药",
+  "ch08-胆碱受体阻断药-M胆碱受体阻断药",
+  "ch09-胆碱受体阻断药-N胆碱受体阻断药",
+  "ch10-肾上腺素受体激动药",
+  "ch11-肾上腺素受体阻断药",
+  "ch12-中枢神经系统药理学概论",
+  "ch13-全身麻醉药",
+  "ch14-局部麻醉药",
+  "ch15-镇静催眠药",
+  "ch16-抗癫痫药和抗惊厥药",
+  "ch17-治疗中枢神经系统退行性疾病药",
+  "ch18-抗精神失常药",
+  "ch19-镇痛药",
+  "ch20-解热镇痛抗炎药",
+  "ch21-离子通道概论及钙通道阻滞药",
+  "ch22-抗心律失常药",
+  "ch23-作用于肾素血管紧张素系统的药物",
+  "ch24-利尿药",
+  "ch25-抗高血压药",
+  "ch26-治疗心力衰竭的药物",
+  "ch27-调血脂药与抗动脉粥样硬化药",
+  "ch28-抗心绞痛药",
+  "ch29-作用于血液及造血系统的药物",
+  "ch30-影响自体活性物质的药物",
+  "ch31-作用于呼吸系统的药物",
+  "ch32-作用于消化系统的药物",
+  "ch33-子宫平滑肌兴奋药和抑制药",
+  "ch34-性激素类药及避孕药",
+  "ch35-肾上腺皮质激素类药物",
+  "ch36-甲状腺激素及抗甲状腺药",
+  "ch37-胰岛素及其他降血糖药",
+  "ch38-抗骨质疏松药",
+  "ch39-抗菌药物概述",
+  "ch40-β内酰胺类抗生素",
+  "ch41-大环内酯类林可霉素类及多肽类抗生素",
+  "ch42-氨基苷类抗生素",
+  "ch43-四环素类及氯霉素类",
+  "ch44-人工合成抗菌药",
+  "ch45-抗病毒药和抗真菌药",
+  "ch46-抗结核药及抗麻风病药",
+  "ch47-抗寄生虫药",
+  "ch48-抗恶性肿瘤药",
+  "ch49-影响免疫功能的药物"
+ ],
+ "summary": {
+  "ch01-药理学总论绪言": {
+   "start": 6,
+   "end": 9,
+   "chars_total": 3228,
+   "has_习题": true,
+   "has_参考答案": true,
+   "ex_chars": 2412
+  },
+  "ch02-药物代谢动力学": {
+   "start": 10,
+   "end": 26,
+   "chars_total": 18141,
+   "has_习题": true,
+   "has_参考答案": true,
+   "ex_chars": 12605
+  },
+  "ch03-药物效应动力学": {
+   "start": 27,
+   "end": 34,
+   "chars_total": 6941,
+   "has_习题": true,
+   "has_参考答案": true,
+   "ex_chars": 4461
+  },
+  "ch04-影响药物效应的因素": {
+   "start": 35,
+   "end": 38,
+   "chars_total": 2763,
+   "has_习题": true,
+   "has_参考答案": true,
+   "ex_chars": 2439
+  },
+  "ch05-传出神经系统药理概论": {
+   "start": 39,
+   "end": 42,
+   "chars_total": 2753,
+   "has_习题": true,
+   "has_参考答案": true,
+   "ex_chars": 1895
+  },
+  "ch06-胆碱受体激动药": {
+   "start": 43,
+   "end": 46,
+   "chars_total": 2581,
+   "has_习题": true,
+   "has_参考答案": true,
+   "ex_chars": 1816
+  },
+  "ch07-抗胆碱酯酶药和胆碱酯酶复活药": {
+   "start": 47,
+   "end": 52,
+   "chars_total": 5089,
+   "has_习题": true,
+   "has_参考答案": true,
+   "ex_chars": 3913
+  },
+  "ch08-胆碱受体阻断药-M胆碱受体阻断药": {
+   "start": 53,
+   "end": 56,
+   "chars_total": 3466,
+   "has_习题": true,
+   "has_参考答案": true,
+   "ex_chars": 2820
+  },
+  "ch09-胆碱受体阻断药-N胆碱受体阻断药": {
+   "start": 57,
+   "end": 60,
+   "chars_total": 2620,
+   "has_习题": true,
+   "has_参考答案": true,
+   "ex_chars": 1653
+  },
+  "ch10-肾上腺素受体激动药": {
+   "start": 61,
+   "end": 69,
+   "chars_total": 8256,
+   "has_习题": true,
+   "has_参考答案": true,
+   "ex_chars": 6535
+  },
+  "ch11-肾上腺素受体阻断药": {
+   "start": 70,
+   "end": 76,
+   "chars_total": 6050,
+   "has_习题": true,
+   "has_参考答案": true,
+   "ex_chars": 4569
+  },
+  "ch12-中枢神经系统药理学概论": {
+   "start": 77,
+   "end": 82,
+   "chars_total": 6572,
+   "has_习题": true,
+   "has_参考答案": true,
+   "ex_chars": 2380
+  },
+  "ch13-全身麻醉药": {
+   "start": 83,
+   "end": 86,
+   "chars_total": 2646,
+   "has_习题": true,
+   "has_参考答案": true,
+   "ex_chars": 1465
+  },
+  "ch14-局部麻醉药": {
+   "start": 87,
+   "end": 91,
+   "chars_total": 4536,
+   "has_习题": true,
+   "has_参考答案": true,
+   "ex_chars": 3629
+  },
+  "ch15-镇静催眠药": {
+   "start": 92,
+   "end": 94,
+   "chars_total": 1950,
+   "has_习题": true,
+   "has_参考答案": true,
+   "ex_chars": 1141
+  },
+  "ch16-抗癫痫药和抗惊厥药": {
+   "start": 95,
+   "end": 102,
+   "chars_total": 6674,
+   "has_习题": true,
+   "has_参考答案": true,
+   "ex_chars": 3164
+  },
+  "ch17-治疗中枢神经系统退行性疾病药": {
+   "start": 103,
+   "end": 108,
+   "chars_total": 5103,
+   "has_习题": true,
+   "has_参考答案": true,
+   "ex_chars": 2227
+  },
+  "ch18-抗精神失常药": {
+   "start": 109,
+   "end": 116,
+   "chars_total": 8647,
+   "has_习题": true,
+   "has_参考答案": true,
+   "ex_chars": 4842
+  },
+  "ch19-镇痛药": {
+   "start": 117,
+   "end": 124,
+   "chars_total": 6346,
+   "has_习题": true,
+   "has_参考答案": true,
+   "ex_chars": 3000
+  },
+  "ch20-解热镇痛抗炎药": {
+   "start": 125,
+   "end": 131,
+   "chars_total": 6805,
+   "has_习题": true,
+   "has_参考答案": true,
+   "ex_chars": 4247
+  },
+  "ch21-离子通道概论及钙通道阻滞药": {
+   "start": 132,
+   "end": 137,
+   "chars_total": 4501,
+   "has_习题": true,
+   "has_参考答案": true,
+   "ex_chars": 3120
+  },
+  "ch22-抗心律失常药": {
+   "start": 138,
+   "end": 147,
+   "chars_total": 9372,
+   "has_习题": true,
+   "has_参考答案": true,
+   "ex_chars": 6548
+  },
+  "ch23-作用于肾素血管紧张素系统的药物": {
+   "start": 148,
+   "end": 152,
+   "chars_total": 4236,
+   "has_习题": true,
+   "has_参考答案": true,
+   "ex_chars": 2666
+  },
+  "ch24-利尿药": {
+   "start": 153,
+   "end": 160,
+   "chars_total": 8619,
+   "has_习题": true,
+   "has_参考答案": true,
+   "ex_chars": 4984
+  },
+  "ch25-抗高血压药": {
+   "start": 161,
+   "end": 167,
+   "chars_total": 5703,
+   "has_习题": true,
+   "has_参考答案": true,
+   "ex_chars": 3819
+  },
+  "ch26-治疗心力衰竭的药物": {
+   "start": 168,
+   "end": 181,
+   "chars_total": 13412,
+   "has_习题": true,
+   "has_参考答案": true,
+   "ex_chars": 11490
+  },
+  "ch27-调血脂药与抗动脉粥样硬化药": {
+   "start": 182,
+   "end": 189,
+   "chars_total": 8059,
+   "has_习题": true,
+   "has_参考答案": true,
+   "ex_chars": 5040
+  },
+  "ch28-抗心绞痛药": {
+   "start": 190,
+   "end": 195,
+   "chars_total": 5555,
+   "has_习题": true,
+   "has_参考答案": true,
+   "ex_chars": 4509
+  },
+  "ch29-作用于血液及造血系统的药物": {
+   "start": 196,
+   "end": 204,
+   "chars_total": 9742,
+   "has_习题": true,
+   "has_参考答案": true,
+   "ex_chars": 6484
+  },
+  "ch30-影响自体活性物质的药物": {
+   "start": 205,
+   "end": 211,
+   "chars_total": 6185,
+   "has_习题": true,
+   "has_参考答案": true,
+   "ex_chars": 2757
+  },
+  "ch31-作用于呼吸系统的药物": {
+   "start": 212,
+   "end": 217,
+   "chars_total": 5453,
+   "has_习题": true,
+   "has_参考答案": true,
+   "ex_chars": 3526
+  },
+  "ch32-作用于消化系统的药物": {
+   "start": 218,
+   "end": 223,
+   "chars_total": 5178,
+   "has_习题": true,
+   "has_参考答案": true,
+   "ex_chars": 3006
+  },
+  "ch33-子宫平滑肌兴奋药和抑制药": {
+   "start": 224,
+   "end": 228,
+   "chars_total": 4275,
+   "has_习题": true,
+   "has_参考答案": true,
+   "ex_chars": 2521
+  },
+  "ch34-性激素类药及避孕药": {
+   "start": 229,
+   "end": 234,
+   "chars_total": 4787,
+   "has_习题": true,
+   "has_参考答案": true,
+   "ex_chars": 2660
+  },
+  "ch35-肾上腺皮质激素类药物": {
+   "start": 235,
+   "end": 239,
+   "chars_total": 4425,
+   "has_习题": true,
+   "has_参考答案": true,
+   "ex_chars": 3608
+  },
+  "ch36-甲状腺激素及抗甲状腺药": {
+   "start": 240,
+   "end": 244,
+   "chars_total": 4336,
+   "has_习题": true,
+   "has_参考答案": true,
+   "ex_chars": 2662
+  },
+  "ch37-胰岛素及其他降血糖药": {
+   "start": 245,
+   "end": 249,
+   "chars_total": 4100,
+   "has_习题": true,
+   "has_参考答案": true,
+   "ex_chars": 3428
+  },
+  "ch38-抗骨质疏松药": {
+   "start": 250,
+   "end": 255,
+   "chars_total": 5058,
+   "has_习题": true,
+   "has_参考答案": true,
+   "ex_chars": 4446
+  },
+  "ch39-抗菌药物概述": {
+   "start": 256,
+   "end": 261,
+   "chars_total": 4724,
+   "has_习题": true,
+   "has_参考答案": true,
+   "ex_chars": 2296
+  },
+  "ch40-β内酰胺类抗生素": {
+   "start": 262,
+   "end": 268,
+   "chars_total": 6517,
+   "has_习题": true,
+   "has_参考答案": true,
+   "ex_chars": 5205
+  },
+  "ch41-大环内酯类林可霉素类及多肽类抗生素": {
+   "start": 269,
+   "end": 272,
+   "chars_total": 3615,
+   "has_习题": true,
+   "has_参考答案": true,
+   "ex_chars": 2014
+  },
+  "ch42-氨基苷类抗生素": {
+   "start": 273,
+   "end": 278,
+   "chars_total": 4899,
+   "has_习题": true,
+   "has_参考答案": true,
+   "ex_chars": 3265
+  },
+  "ch43-四环素类及氯霉素类": {
+   "start": 279,
+   "end": 283,
+   "chars_total": 4046,
+   "has_习题": true,
+   "has_参考答案": true,
+   "ex_chars": 2825
+  },
+  "ch44-人工合成抗菌药": {
+   "start": 284,
+   "end": 289,
+   "chars_total": 5150,
+   "has_习题": true,
+   "has_参考答案": true,
+   "ex_chars": 2773
+  },
+  "ch45-抗病毒药和抗真菌药": {
+   "start": 290,
+   "end": 296,
+   "chars_total": 7830,
+   "has_习题": true,
+   "has_参考答案": true,
+   "ex_chars": 3288
+  },
+  "ch46-抗结核药及抗麻风病药": {
+   "start": 297,
+   "end": 302,
+   "chars_total": 5524,
+   "has_习题": true,
+   "has_参考答案": true,
+   "ex_chars": 3366
+  },
+  "ch47-抗寄生虫药": {
+   "start": 303,
+   "end": 307,
+   "chars_total": 3886,
+   "has_习题": true,
+   "has_参考答案": true,
+   "ex_chars": 1771
+  },
+  "ch48-抗恶性肿瘤药": {
+   "start": 308,
+   "end": 313,
+   "chars_total": 6280,
+   "has_习题": true,
+   "has_参考答案": true,
+   "ex_chars": 2812
+  },
+  "ch49-影响免疫功能的药物": {
+   "start": 314,
+   "end": 319,
+   "chars_total": 5468,
+   "has_习题": true,
+   "has_参考答案": true,
+   "ex_chars": 3257
+  }
+ }
+}

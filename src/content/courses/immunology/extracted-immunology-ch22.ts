@@ -1,0 +1,852 @@
+import type {
+  AssessmentItemDefinition,
+  AssessmentItemGroupDefinition,
+} from "@/types/learning";
+
+/**
+ * 医学免疫学学习指导与习题集（第3版）— 第22章 肿瘤免疫 题库提取（等比取样）
+ * 来源：《医学免疫学学习指导与习题集》第3版（人民卫生出版社；扫描件 OCR 恢复）
+ *
+ * == 统计报告（本文件题量 = 每教材 600、章节等比缩放预算）==
+ * - 名词解释：4 题
+ * - 填空题（fill）：5 题
+ * - 选择题（a1-single）：13 题（含 A2 病例题 2 题）
+ * - 问答题（short-answer）：3 题
+ * - 独立记分题合计：25 题（须等于本文件预算 25）
+ * - 缺失答案：0；无法可靠提取：0
+ * - 说明：本章原题依序含名词解释 4、填空题 5、选择题 A1 47 题＋A2 20 题＋B1 8 题、问答题 3；
+ *   本文件按 25 道预算等比取材（名词、填空、问答全部收录，单选取样 13）。B1 配伍题按项目
+ *   规约不映射独立记分，归入空数组。
+ *   OCR 错字与符号已按免疫学医学语义恢复（如 MHCⅠ类、CD4⁺/CD8⁺、Treg、TAM、MDSC、
+ *   穿孔素-颗粒酶、Fas-FasL/TNF-TNFR、HER-2、CAR-T 等）；A2 病例题保留全部临床细节。
+ *   肿瘤抗原类别、免疫逃逸与免疫治疗术语均按源文恢复，未捏造。
+ * 解析内容位于 answer.content 的第二个元素。
+ */
+
+const topic = "immunology-ch22-tumor-immunity";
+const locatorBase =
+  "《医学免疫学学习指导与习题集》第3版 第22章 肿瘤免疫 习题（核对PDF 第245–256页）";
+const promptNote =
+  "题干改写；原题来自用户提供的章节习题集（扫描件 OCR 恢复），未经第三方授权审核";
+const xMapNote =
+  "题干改写并映射为单选；原题为多项选择题，按项目规约映射为 a1-single，原题来自用户题集，未经第三方授权审核";
+const answerNotice =
+  "答案依据题集参考答案整理并改写，未经权威教材交叉核对，OCR 错字已按免疫学医学语义恢复";
+
+const kp = `kp-${topic}`;
+
+/** 名词解释（term），4 道 */
+const termItems: readonly AssessmentItemDefinition[] = [
+  {
+    id: "ext-immunology-ch22-tumor-immunity-term001",
+    order: 1,
+    knowledgePointId: kp,
+    questionKind: "term",
+    status: "available",
+    prompt: "名词解释：肿瘤抗原",
+    promptSource: {
+      authority: "nur-editorial",
+      wording: "nur-adapted",
+      locator: locatorBase,
+      note: promptNote,
+      sourceIds: [],
+    },
+    answer: {
+      status: "available",
+      authority: "nur-platform",
+      confidence: "unverified",
+      content: [
+        "细胞癌变过程中出现的新抗原及肿瘤细胞异常或过度表达的抗原物质的总称",
+        "肿瘤抗原分为肿瘤特异性抗原和肿瘤相关抗原两大类；按其产生机制又可分为突变基因或癌基因表达产物、致癌病毒表达的肿瘤抗原、异常表达的细胞蛋白和糖基化等导致的异常细胞蛋白及其产物。原书名词解释第 1 题参考答案。",
+      ],
+      notice: answerNotice,
+      sourceIds: [],
+    },
+    scoring: null,
+    sourceIds: [],
+  },
+  {
+    id: "ext-immunology-ch22-tumor-immunity-term002",
+    order: 2,
+    knowledgePointId: kp,
+    questionKind: "term",
+    status: "available",
+    prompt: "名词解释：肿瘤特异性抗原",
+    promptSource: {
+      authority: "nur-editorial",
+      wording: "nur-adapted",
+      locator: locatorBase,
+      note: promptNote,
+      sourceIds: [],
+    },
+    answer: {
+      status: "available",
+      authority: "nur-platform",
+      confidence: "unverified",
+      content: [
+        "肿瘤细胞特有的、只存在于某种肿瘤细胞而不存在于正常细胞的新抗原",
+        "肿瘤特异性抗原（如病毒诱生的肿瘤抗原、突变基因表达产物）可作为免疫治疗与诊断的靶标，是机体特异性抗肿瘤免疫的靶点。原书名词解释第 2 题参考答案。",
+      ],
+      notice: answerNotice,
+      sourceIds: [],
+    },
+    scoring: null,
+    sourceIds: [],
+  },
+  {
+    id: "ext-immunology-ch22-tumor-immunity-term003",
+    order: 3,
+    knowledgePointId: kp,
+    questionKind: "term",
+    status: "available",
+    prompt: "名词解释：肿瘤相关抗原",
+    promptSource: {
+      authority: "nur-editorial",
+      wording: "nur-adapted",
+      locator: locatorBase,
+      note: promptNote,
+      sourceIds: [],
+    },
+    answer: {
+      status: "available",
+      authority: "nur-platform",
+      confidence: "unverified",
+      content: [
+        "肿瘤细胞和正常组织均可表达、仅含量在细胞癌变时明显增高的抗原，只有量的变化而无严格的肿瘤特异性",
+        "肿瘤相关抗原（如 AFP、CEA）常用于肿瘤的免疫学诊断与肿瘤状态评估。原书名词解释第 3 题参考答案。",
+      ],
+      notice: answerNotice,
+      sourceIds: [],
+    },
+    scoring: null,
+    sourceIds: [],
+  },
+  {
+    id: "ext-immunology-ch22-tumor-immunity-term004",
+    order: 4,
+    knowledgePointId: kp,
+    questionKind: "term",
+    status: "available",
+    prompt: "名词解释：抗原调变",
+    promptSource: {
+      authority: "nur-editorial",
+      wording: "nur-adapted",
+      locator: locatorBase,
+      note: promptNote,
+      sourceIds: [],
+    },
+    answer: {
+      status: "available",
+      authority: "nur-platform",
+      confidence: "unverified",
+      content: [
+        "肿瘤细胞表面抗原表位减少或丢失，从而使肿瘤细胞避免宿主免疫系统杀伤的现象",
+        "抗原调变是肿瘤免疫逃逸的重要机制之一，与肿瘤抗原缺失、MHC I 类分子表达低下等共同削弱机体对肿瘤的识别和杀伤。原书名词解释第 4 题参考答案。",
+      ],
+      notice: answerNotice,
+      sourceIds: [],
+    },
+    scoring: null,
+    sourceIds: [],
+  },
+];
+
+/** 选择题 A1/A2 型（统一映射为 a1-single），13 道 */
+const a1Items: readonly AssessmentItemDefinition[] = [
+  {
+    id: "ext-immunology-ch22-tumor-immunity-a1001",
+    order: 5,
+    knowledgePointId: kp,
+    questionKind: "a1-single",
+    status: "available",
+    prompt: "AFP属于",
+    promptSource: {
+      authority: "nur-editorial",
+      wording: "nur-adapted",
+      locator: locatorBase,
+      note: promptNote,
+      sourceIds: [],
+    },
+    choices: [
+      "胚胎抗原",
+      "致癌病毒产物",
+      "基因突变产物",
+      "正常组织中的隐蔽抗原",
+      "分化抗原",
+    ],
+    correctChoiceIndex: 0,
+    answer: {
+      status: "available",
+      authority: "nur-platform",
+      confidence: "unverified",
+      content: [
+        "胚胎抗原",
+        "甲胎蛋白（AFP）是胚胎期表达、出生后降低、肝癌时明显升高的胚胎抗原，属肿瘤相关抗原；常用于原发性肝细胞癌的诊断。原书 A1 第 1 题答案 D。",
+      ],
+      notice: answerNotice,
+      sourceIds: [],
+    },
+    scoring: null,
+    sourceIds: [],
+  },
+  {
+    id: "ext-immunology-ch22-tumor-immunity-a1002",
+    order: 6,
+    knowledgePointId: kp,
+    questionKind: "a1-single",
+    status: "available",
+    prompt: "CEA属于",
+    promptSource: {
+      authority: "nur-editorial",
+      wording: "nur-adapted",
+      locator: locatorBase,
+      note: promptNote,
+      sourceIds: [],
+    },
+    choices: [
+      "胚胎抗原",
+      "致癌病毒产物",
+      "突变的抑癌基因产物",
+      "肿瘤睾丸抗原",
+      "分化抗原",
+    ],
+    correctChoiceIndex: 0,
+    answer: {
+      status: "available",
+      authority: "nur-platform",
+      confidence: "unverified",
+      content: [
+        "胚胎抗原",
+        "癌胚抗原（CEA）为胚胎期表达、癌变时升高的胚胎抗原，属肿瘤相关抗原，常用于结肠癌等消化道肿瘤的辅助诊断。原书 A1 第 2 题答案 D。",
+      ],
+      notice: answerNotice,
+      sourceIds: [],
+    },
+    scoring: null,
+    sourceIds: [],
+  },
+  {
+    id: "ext-immunology-ch22-tumor-immunity-a1003",
+    order: 7,
+    knowledgePointId: kp,
+    questionKind: "a1-single",
+    status: "available",
+    prompt: "病毒诱生的肿瘤抗原多属于",
+    promptSource: {
+      authority: "nur-editorial",
+      wording: "nur-adapted",
+      locator: locatorBase,
+      note: promptNote,
+      sourceIds: [],
+    },
+    choices: [
+      "肿瘤特异性抗原",
+      "肿瘤相关抗原",
+      "肿瘤睾丸抗原",
+      "胚胎抗原",
+      "分化抗原",
+    ],
+    correctChoiceIndex: 0,
+    answer: {
+      status: "available",
+      authority: "nur-platform",
+      confidence: "unverified",
+      content: [
+        "肿瘤特异性抗原",
+        "病毒诱生的肿瘤抗原（如 HPV E6/E7）仅由病毒感染表达的肿瘤细胞特有，属肿瘤特异性抗原。原书 A1 第 3 题答案 A。",
+      ],
+      notice: answerNotice,
+      sourceIds: [],
+    },
+    scoring: null,
+    sourceIds: [],
+  },
+  {
+    id: "ext-immunology-ch22-tumor-immunity-a1004",
+    order: 8,
+    knowledgePointId: kp,
+    questionKind: "a1-single",
+    status: "available",
+    prompt: "PSA主要用于诊断",
+    promptSource: {
+      authority: "nur-editorial",
+      wording: "nur-adapted",
+      locator: locatorBase,
+      note: promptNote,
+      sourceIds: [],
+    },
+    choices: [
+      "前列腺癌",
+      "宫颈癌",
+      "乳腺癌",
+      "黑色素瘤",
+      "肝癌",
+    ],
+    correctChoiceIndex: 0,
+    answer: {
+      status: "available",
+      authority: "nur-platform",
+      confidence: "unverified",
+      content: [
+        "前列腺癌",
+        "前列腺特异性抗原（PSA）是前列腺癌的常用肿瘤标志物。原书 A1 第 9 题答案 E。",
+      ],
+      notice: answerNotice,
+      sourceIds: [],
+    },
+    scoring: null,
+    sourceIds: [],
+  },
+  {
+    id: "ext-immunology-ch22-tumor-immunity-a1005",
+    order: 9,
+    knowledgePointId: kp,
+    questionKind: "a1-single",
+    status: "available",
+    prompt: "AFP主要用于诊断",
+    promptSource: {
+      authority: "nur-editorial",
+      wording: "nur-adapted",
+      locator: locatorBase,
+      note: promptNote,
+      sourceIds: [],
+    },
+    choices: ["肝癌", "宫颈癌", "乳腺癌", "黑色素瘤", "前列腺癌"],
+    correctChoiceIndex: 0,
+    answer: {
+      status: "available",
+      authority: "nur-platform",
+      confidence: "unverified",
+      content: [
+        "肝癌",
+        "甲胎蛋白（AFP）升高主要用于原发性肝细胞癌的辅助诊断与评估。原书 A1 第 10 题答案 D。",
+      ],
+      notice: answerNotice,
+      sourceIds: [],
+    },
+    scoring: null,
+    sourceIds: [],
+  },
+  {
+    id: "ext-immunology-ch22-tumor-immunity-a1006",
+    order: 10,
+    knowledgePointId: kp,
+    questionKind: "a1-single",
+    status: "available",
+    prompt: "机体抗肿瘤免疫的主力是",
+    promptSource: {
+      authority: "nur-editorial",
+      wording: "nur-adapted",
+      locator: locatorBase,
+      note: promptNote,
+      sourceIds: [],
+    },
+    choices: [
+      "细胞免疫",
+      "体液免疫",
+      "皮肤的屏障作用",
+      "肠道微生物菌群的作用",
+      "肿瘤坏死因子的杀瘤作用",
+    ],
+    correctChoiceIndex: 0,
+    answer: {
+      status: "available",
+      authority: "nur-platform",
+      confidence: "unverified",
+      content: [
+        "细胞免疫",
+        "T 细胞（CTL、Th）介导的特异性细胞免疫是机体抗肿瘤免疫的主力，NK 细胞等固有免疫细胞为辅。原书 A1 第 16 题答案 B。",
+      ],
+      notice: answerNotice,
+      sourceIds: [],
+    },
+    scoring: null,
+    sourceIds: [],
+  },
+  {
+    id: "ext-immunology-ch22-tumor-immunity-a1007",
+    order: 11,
+    knowledgePointId: kp,
+    questionKind: "a1-single",
+    status: "available",
+    prompt: "具有抗肿瘤作用的CTL内含有下列哪种酶而发挥杀伤肿瘤细胞的作用",
+    promptSource: {
+      authority: "nur-editorial",
+      wording: "nur-adapted",
+      locator: locatorBase,
+      note: promptNote,
+      sourceIds: [],
+    },
+    choices: [
+      "颗粒酶",
+      "溶菌酶",
+      "胰蛋白酶",
+      "淀粉酶",
+      "乙醛脱氢酶",
+    ],
+    correctChoiceIndex: 0,
+    answer: {
+      status: "available",
+      authority: "nur-platform",
+      confidence: "unverified",
+      content: [
+        "颗粒酶",
+        "CTL 通过穿孔素-颗粒酶途径特异性杀伤肿瘤细胞，颗粒酶进入靶细胞触发凋亡。原书 A1 第 22 题答案 A。",
+      ],
+      notice: answerNotice,
+      sourceIds: [],
+    },
+    scoring: null,
+    sourceIds: [],
+  },
+  {
+    id: "ext-immunology-ch22-tumor-immunity-a1008",
+    order: 12,
+    knowledgePointId: kp,
+    questionKind: "a1-single",
+    status: "available",
+    prompt: "在免疫系统发挥抗肿瘤免疫过程中，巨噬细胞",
+    promptSource: {
+      authority: "nur-editorial",
+      wording: "nur-adapted",
+      locator: locatorBase,
+      note: promptNote,
+      sourceIds: [],
+    },
+    choices: [
+      "具有抗肿瘤和促进肿瘤生长的双重作用",
+      "不具有抗肿瘤作用",
+      "只作为专职APC提呈肿瘤抗原激活抗肿瘤免疫",
+      "只起到免疫抑制作用帮助肿瘤生长",
+      "具有特异性杀伤肿瘤细胞的作用",
+    ],
+    correctChoiceIndex: 0,
+    answer: {
+      status: "available",
+      authority: "nur-platform",
+      confidence: "unverified",
+      content: [
+        "具有抗肿瘤和促进肿瘤生长的双重作用",
+        "巨噬细胞（肿瘤相关巨噬细胞 TAM）既可呈递肿瘤抗原、参与杀伤肿瘤，也可在肿瘤微环境中促进肿瘤生长与转移，具有双重作用。原书 A1 第 25 题答案 D。",
+      ],
+      notice: answerNotice,
+      sourceIds: [],
+    },
+    scoring: null,
+    sourceIds: [],
+  },
+  {
+    id: "ext-immunology-ch22-tumor-immunity-a1009",
+    order: 13,
+    knowledgePointId: kp,
+    questionKind: "a1-single",
+    status: "available",
+    prompt: "免疫监视学说是由谁提出的",
+    promptSource: {
+      authority: "nur-editorial",
+      wording: "nur-adapted",
+      locator: locatorBase,
+      note: promptNote,
+      sourceIds: [],
+    },
+    choices: [
+      "Frank MacFarlane Burnet 和 Lewis Thomas",
+      "Robert Koch",
+      "Emil Von Behring",
+      "Paul Ehrlich",
+      "Karl Landsteiner",
+    ],
+    correctChoiceIndex: 0,
+    answer: {
+      status: "available",
+      authority: "nur-platform",
+      confidence: "unverified",
+      content: [
+        "Frank MacFarlane Burnet 和 Lewis Thomas",
+        "免疫监视学说由 Burnet 和 Lewis Thomas 提出，认为免疫系统可识别并清除突变/肿瘤细胞。原书 A1 第 32 题答案 A。",
+      ],
+      notice: answerNotice,
+      sourceIds: [],
+    },
+    scoring: null,
+    sourceIds: [],
+  },
+  {
+    id: "ext-immunology-ch22-tumor-immunity-a1010",
+    order: 14,
+    knowledgePointId: kp,
+    questionKind: "a1-single",
+    status: "available",
+    prompt: "抗原调变是指",
+    promptSource: {
+      authority: "nur-editorial",
+      wording: "nur-adapted",
+      locator: locatorBase,
+      note: promptNote,
+      sourceIds: [],
+    },
+    choices: [
+      "在机体抗肿瘤免疫的压力下，肿瘤细胞表达的肿瘤抗原减少或丢失",
+      "机体免疫系统为适应环境改变自身抗原",
+      "肿瘤细胞表达新抗原的方式",
+      "树突状细胞等抗原提呈细胞对抗原的加工方式",
+      "B细胞提呈特异性肿瘤抗原的方式",
+    ],
+    correctChoiceIndex: 0,
+    answer: {
+      status: "available",
+      authority: "nur-platform",
+      confidence: "unverified",
+      content: [
+        "在机体抗肿瘤免疫的压力下，肿瘤细胞表达的肿瘤抗原减少或丢失",
+        "抗原调变指肿瘤细胞在机体抗肿瘤免疫压力下表面抗原表位减少或丢失，从而逃避免疫杀伤，是肿瘤逃逸机制之一。原书 A1 第 35 题答案 A。",
+      ],
+      notice: answerNotice,
+      sourceIds: [],
+    },
+    scoring: null,
+    sourceIds: [],
+  },
+  {
+    id: "ext-immunology-ch22-tumor-immunity-a1011",
+    order: 15,
+    knowledgePointId: kp,
+    questionKind: "a1-single",
+    status: "available",
+    prompt: "靶向抗原CD20的基因工程抗体主要用于治疗哪类肿瘤",
+    promptSource: {
+      authority: "nur-editorial",
+      wording: "nur-adapted",
+      locator: locatorBase,
+      note: promptNote,
+      sourceIds: [],
+    },
+    choices: [
+      "B细胞淋巴瘤",
+      "宫颈癌",
+      "乳腺癌",
+      "肝癌",
+      "前列腺癌",
+    ],
+    correctChoiceIndex: 0,
+    answer: {
+      status: "available",
+      authority: "nur-platform",
+      confidence: "unverified",
+      content: [
+        "B细胞淋巴瘤",
+        "CD20 表达于正常及恶变 B 细胞，抗 CD20 单抗（如利妥昔单抗）用于治疗 B 细胞淋巴瘤，是首个获批用于临床治疗非霍奇金淋巴瘤的单抗靶分子。原书 A1 第 40 题答案 C。",
+      ],
+      notice: answerNotice,
+      sourceIds: [],
+    },
+    scoring: null,
+    sourceIds: [],
+  },
+  {
+    id: "ext-immunology-ch22-tumor-immunity-a1012",
+    order: 16,
+    knowledgePointId: kp,
+    questionKind: "a1-single",
+    status: "available",
+    prompt: "CAR-T细胞（CAR-T）疗法在哪类肿瘤治疗中获得成功",
+    promptSource: {
+      authority: "nur-editorial",
+      wording: "nur-adapted",
+      locator: locatorBase,
+      note: promptNote,
+      sourceIds: [],
+    },
+    choices: ["白血病", "肺癌", "肝癌", "胃癌", "黑色素瘤"],
+    correctChoiceIndex: 0,
+    answer: {
+      status: "available",
+      authority: "nur-platform",
+      confidence: "unverified",
+      content: [
+        "白血病",
+        "CAR-T 细胞疗法在 B 细胞急性淋巴细胞白血病等血液系统肿瘤治疗中取得显著成功。原书 A2 第 44 题答案 C。",
+      ],
+      notice: answerNotice,
+      sourceIds: [],
+    },
+    scoring: null,
+    sourceIds: [],
+  },
+  {
+    id: "ext-immunology-ch22-tumor-immunity-a1013",
+    order: 17,
+    knowledgePointId: kp,
+    questionKind: "a1-single",
+    status: "available",
+    prompt: "患者，男性，55岁，慢性乙肝病史20年，体检显示AFP值大于1000，其可能的诊断是",
+    promptSource: {
+      authority: "nur-editorial",
+      wording: "nur-adapted",
+      locator: locatorBase,
+      note: promptNote,
+      sourceIds: [],
+    },
+    choices: ["肝癌", "肺癌", "结肠癌", "胃癌", "白血病"],
+    correctChoiceIndex: 0,
+    answer: {
+      status: "available",
+      authority: "nur-platform",
+      confidence: "unverified",
+      content: [
+        "肝癌",
+        "慢性 HBV 感染是肝细胞癌重要危险因素，AFP 显著升高高度提示原发性肝细胞癌。原书 A2 第 52 题答案 C。",
+      ],
+      notice: answerNotice,
+      sourceIds: [],
+    },
+    scoring: null,
+    sourceIds: [],
+  },
+];
+
+/** 填空题（fill），5 道 */
+const fillItems: readonly AssessmentItemDefinition[] = [
+  {
+    id: "ext-immunology-ch22-tumor-immunity-fill001",
+    order: 18,
+    knowledgePointId: kp,
+    questionKind: "fill",
+    status: "available",
+    prompt: "根据肿瘤抗原特异性可以将肿瘤抗原分为如下两类：___和___。",
+    promptSource: {
+      authority: "nur-editorial",
+      wording: "nur-adapted",
+      locator: locatorBase,
+      note: promptNote,
+      sourceIds: [],
+    },
+    answer: {
+      status: "available",
+      authority: "nur-platform",
+      confidence: "unverified",
+      content: [
+        "肿瘤特异性抗原、肿瘤相关抗原",
+        "按抗原特异性分类为肿瘤特异性抗原（肿瘤细胞特有）与肿瘤相关抗原（正常组织也表达、癌变时量增高）。原书填空题第 1 题答案。",
+      ],
+      notice: answerNotice,
+      sourceIds: [],
+    },
+    scoring: null,
+    sourceIds: [],
+  },
+  {
+    id: "ext-immunology-ch22-tumor-immunity-fill002",
+    order: 19,
+    knowledgePointId: kp,
+    questionKind: "fill",
+    status: "available",
+    prompt: "肿瘤抗原可有如下四种机制产生：___、___、___和___。",
+    promptSource: {
+      authority: "nur-editorial",
+      wording: "nur-adapted",
+      locator: locatorBase,
+      note: promptNote,
+      sourceIds: [],
+    },
+    answer: {
+      status: "available",
+      authority: "nur-platform",
+      confidence: "unverified",
+      content: [
+        "①突变基因或癌基因的表达产物；②致癌病毒表达的肿瘤抗原；③异常表达的细胞蛋白（肿瘤睾丸抗原异常表达、相关基因异常扩增、组织特异性分化抗原异常表达、异常表达的胚胎抗原）；④糖基化等原因导致异常的细胞蛋白及其产物",
+        "肿瘤抗原有四大产生机制：突变基因/癌基因表达产物、致癌病毒表达的肿瘤抗原、异常表达的细胞蛋白（包括肿瘤睾丸抗原的异常表达、表达某种抗原蛋白的基因异常扩增、异常表达的组织特异性分化抗原、异常表达的胚胎抗原）以及糖基化等原因导致的异常细胞蛋白及其产物。原书填空题第 2 题答案。",
+      ],
+      notice: answerNotice,
+      sourceIds: [],
+    },
+    scoring: null,
+    sourceIds: [],
+  },
+  {
+    id: "ext-immunology-ch22-tumor-immunity-fill003",
+    order: 20,
+    knowledgePointId: kp,
+    questionKind: "fill",
+    status: "available",
+    prompt: "CTL主要通过如下两条途径对突变细胞或肿瘤细胞进行特异性杀伤：___和___。",
+    promptSource: {
+      authority: "nur-editorial",
+      wording: "nur-adapted",
+      locator: locatorBase,
+      note: promptNote,
+      sourceIds: [],
+    },
+    answer: {
+      status: "available",
+      authority: "nur-platform",
+      confidence: "unverified",
+      content: [
+        "①穿孔素-颗粒酶途径；②Fas-FasL 和 TNF-TNFR 途径（死亡受体途径）",
+        "CTL 特异性杀伤肿瘤细胞的两条途径为穿孔素-颗粒酶途径以及 Fas-FasL、TNF-TNFR 途径（合称死亡受体途径）。原书填空题第 3 题答案。",
+      ],
+      notice: answerNotice,
+      sourceIds: [],
+    },
+    scoring: null,
+    sourceIds: [],
+  },
+  {
+    id: "ext-immunology-ch22-tumor-immunity-fill004",
+    order: 21,
+    knowledgePointId: kp,
+    questionKind: "fill",
+    status: "available",
+    prompt: "根据肿瘤免疫编辑学说肿瘤的发生发展分为如下三个阶段：___、___和___。",
+    promptSource: {
+      authority: "nur-editorial",
+      wording: "nur-adapted",
+      locator: locatorBase,
+      note: promptNote,
+      sourceIds: [],
+    },
+    answer: {
+      status: "available",
+      authority: "nur-platform",
+      confidence: "unverified",
+      content: [
+        "清除期、平衡期、免疫逃逸期",
+        "肿瘤免疫编辑学说将肿瘤发生发展分为清除（immunoediting 中宿主清除肿瘤细胞）、平衡（肿瘤与免疫相持）和免疫逃逸（肿瘤逃避免疫监视而生长）三个阶段。原书填空题第 4 题答案。",
+      ],
+      notice: answerNotice,
+      sourceIds: [],
+    },
+    scoring: null,
+    sourceIds: [],
+  },
+  {
+    id: "ext-immunology-ch22-tumor-immunity-fill005",
+    order: 22,
+    knowledgePointId: kp,
+    questionKind: "fill",
+    status: "available",
+    prompt: "肿瘤微环境内已知的主要免疫抑制性细胞有如下三类：___、___和___。",
+    promptSource: {
+      authority: "nur-editorial",
+      wording: "nur-adapted",
+      locator: locatorBase,
+      note: promptNote,
+      sourceIds: [],
+    },
+    answer: {
+      status: "available",
+      authority: "nur-platform",
+      confidence: "unverified",
+      content: [
+        "调节性T细胞（Treg）、肿瘤相关巨噬细胞（TAM）、髓源性抑制细胞（MDSC）",
+        "肿瘤微环境内的主要免疫抑制性细胞包括调节性T细胞（Treg）、肿瘤相关巨噬细胞（TAM）和髓源性抑制细胞（MDSC），它们促进肿瘤生长、增殖和转移。原书填空题第 5 题答案。",
+      ],
+      notice: answerNotice,
+      sourceIds: [],
+    },
+    scoring: null,
+    sourceIds: [],
+  },
+];
+
+/** 问答题（short-answer），3 道 */
+const shortItems: readonly AssessmentItemDefinition[] = [
+  {
+    id: "ext-immunology-ch22-tumor-immunity-short001",
+    order: 23,
+    knowledgePointId: kp,
+    questionKind: "short-answer",
+    status: "available",
+    prompt: "简述肿瘤抗原的分类方法。",
+    promptSource: {
+      authority: "nur-editorial",
+      wording: "nur-adapted",
+      locator: locatorBase,
+      note: promptNote,
+      sourceIds: [],
+    },
+    answer: {
+      status: "available",
+      authority: "nur-platform",
+      confidence: "unverified",
+      content: [
+        "①按抗原特异性：分为肿瘤特异性抗原和肿瘤相关抗原两类；②按诱发和发生情况：分为突变基因或癌基因的表达产物、致癌病毒表达的肿瘤抗原、异常表达的细胞蛋白、糖基化等原因导致异常的细胞蛋白及其产物四类",
+        "肿瘤抗原有多种分类方法，被普遍接受的两类方法：①根据抗原特异性分为肿瘤特异性抗原（肿瘤细胞特有的新抗原）和肿瘤相关抗原（正常组织也表达、癌变时含量明显增高）；②根据诱发和发生情况分为四类：突变基因或癌基因的表达产物、致癌病毒表达的肿瘤抗原、异常表达的细胞蛋白（机制包括肿瘤睾丸抗原的异常表达、表达某抗原蛋白的基因异常扩增、异常表达的组织特异性分化抗原、异常表达的胚胎抗原）以及糖基化等原因导致的异常细胞蛋白及其产物。原书问答题第 1 题参考答案。",
+      ],
+      notice: answerNotice,
+      sourceIds: [],
+    },
+    scoring: null,
+    sourceIds: [],
+  },
+  {
+    id: "ext-immunology-ch22-tumor-immunity-short002",
+    order: 24,
+    knowledgePointId: kp,
+    questionKind: "short-answer",
+    status: "available",
+    prompt: "机体抗肿瘤免疫的效应机制有哪些？",
+    promptSource: {
+      authority: "nur-editorial",
+      wording: "nur-adapted",
+      locator: locatorBase,
+      note: promptNote,
+      sourceIds: [],
+    },
+    answer: {
+      status: "available",
+      authority: "nur-platform",
+      confidence: "unverified",
+      content: [
+        "①T细胞介导的特异性抗肿瘤免疫：CTL 通过穿孔素-颗粒酶途径及 Fas-FasL、TNF-TNFR（死亡受体）途径特异性杀伤肿瘤细胞，CD4⁺Th 细胞辅助 CTL 激活并分泌细胞因子间接参与；②固有免疫细胞的抗肿瘤效应：NK、巨噬细胞、γδT 及 NKT 细胞等，其中巨噬细胞具有双重作用；③免疫效应分子等的抗肿瘤作用：抗体、干扰素、肿瘤坏死因子等细胞因子、补体分子及多种酶类非特异性抑制或杀伤肿瘤细胞",
+        "机体抗肿瘤免疫的效应机制包括：①T 细胞介导的特异性抗肿瘤免疫——CTL 通过穿孔素-颗粒酶途径和 Fas-FasL、TNF-TNFR 途径（死亡受体途径）两条途径特异性杀伤突变/肿瘤细胞；CD4⁺Th 细胞不仅辅助 CD8⁺CTL 激活，本身也能产生细胞因子间接参与抗肿瘤免疫效应。②固有免疫细胞的抗肿瘤效应——NK 细胞、巨噬细胞、γδT 细胞及 NKT 细胞等都是重要的抗肿瘤效应细胞，其中巨噬细胞在肿瘤免疫中具有双重作用。③免疫效应分子等的抗肿瘤作用——包括抗体在抗肿瘤免疫中的双重作用，以及干扰素、肿瘤坏死因子等细胞因子、补体分子和多种酶类非特异性抑制或杀伤肿瘤细胞。原书问答题第 2 题参考答案。",
+      ],
+      notice: answerNotice,
+      sourceIds: [],
+    },
+    scoring: null,
+    sourceIds: [],
+  },
+  {
+    id: "ext-immunology-ch22-tumor-immunity-short003",
+    order: 25,
+    knowledgePointId: kp,
+    questionKind: "short-answer",
+    status: "available",
+    prompt: "简述肿瘤细胞的免疫逃逸的机制。",
+    promptSource: {
+      authority: "nur-editorial",
+      wording: "nur-adapted",
+      locator: locatorBase,
+      note: promptNote,
+      sourceIds: [],
+    },
+    answer: {
+      status: "available",
+      authority: "nur-platform",
+      confidence: "unverified",
+      content: [
+        "①肿瘤细胞自身的逃逸能力：肿瘤抗原缺失与抗原调变、MHC I 类分子表达低下、共刺激信号异常、表达或分泌免疫抑制分子、主动诱导 Treg 和 MDSC 抑制免疫应答、抗凋亡作用；②肿瘤微环境的作用：微环境内含促进肿瘤生长、增殖和转移的免疫抑制性细胞（Treg、TAM、MDSC）与免疫抑制分子；③宿主免疫功能低下状态有助于肿瘤逃逸",
+        "肿瘤细胞的免疫逃逸机制：①肿瘤细胞所具有的逃避免疫监视的能力——肿瘤抗原缺失和抗原调变、MHCI类分子表达低下、共刺激信号异常、表达或分泌某些免疫分子抑制或破坏机体抗肿瘤免疫功能、主动诱导荷瘤机体产生 Treg 和 MDSC 抑制免疫应答、肿瘤细胞的抗凋亡作用；②肿瘤微环境的作用——微环境中既有抑制肿瘤的免疫效应细胞和分子，也有促进肿瘤生长、增殖和转移的多类成分，包括 Treg、肿瘤相关巨噬细胞、髓源性抑制细胞等免疫抑制性细胞以及免疫抑制分子；③宿主免疫功能的影响——宿主处于免疫功能低下状态时，有助于肿瘤逃避宿主免疫系统的攻击。原书问答题第 3 题参考答案。",
+      ],
+      notice: answerNotice,
+      sourceIds: [],
+    },
+    scoring: null,
+    sourceIds: [],
+  },
+];
+
+/** B1 配伍题：本书第 22 章虽有 B1 组题，但按项目规约 B 型不映射独立记分，置空数组。 */
+const bGroups: readonly AssessmentItemGroupDefinition[] = [];
+
+export const extractedItems: readonly AssessmentItemDefinition[] = [
+  ...termItems,
+  ...a1Items,
+  ...fillItems,
+  ...shortItems,
+];
+
+export const extractedGroups: readonly AssessmentItemGroupDefinition[] = [
+  ...bGroups,
+];

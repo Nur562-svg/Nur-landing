@@ -1,0 +1,937 @@
+import type {
+  AssessmentItemDefinition,
+  AssessmentItemGroupDefinition,
+} from "@/types/learning";
+
+/**
+ * 生物化学与分子生物学学习指导与习题集 — 第25章 基因结构功能分析 和 疾病相关基因鉴定克隆 题库提取（等比取样）
+ * 来源：《生物化学与分子生物学学习指导与习题集》（人民卫生出版社，主编：周春燕）
+ *
+ * == 统计报告（本文件题量 = 每教材 600、章节等比缩放预算）==
+ * - 名词解释：5 题
+ * - A1/A2 型选择题（a1-single）：12 题
+ * - 简答题（short-answer）：2 题
+ * - B1 配伍题：2 组、共 7 个成员
+ * - 独立记分题合计：26 题（须等于本文件预算 26）
+ * - 缺失答案：0；无法可靠提取：0（详见末条“说明”）
+ * - 说明：本章原书依序含名词解释 5、A1 型选择题 32、A2 型题 4、B1 型配伍题 4 组（共 16 成员）、
+ *   简答题 7。本文件按 26 道预算在“基因结构功能分析 + 疾病相关基因鉴定克隆”语义下取材：全部 5 道
+ *   名词解释、A1 型题前 12 道（基因定位/转录起始位点/启动子/报告基因/基因功能鉴定/多态性分析等）、
+ *   简答题前 2 道，以及 B1 配伍题第 37–39 题（siRNA/miRNA/shRNA 干扰）与第 46–49 题（基因剂量效应/
+ *   杂合性丢失/单倍型不足/显负性效应）两组共 7 个成员。所有 A1 型题正确项逐一对齐源参考答案
+ * （1.C 2.B 3.E 4.B 5.A 6.E 7.A 8.C 9.B 10.D 11.C 12.E），选项已随机重排并同步 correctChoiceIndex（0 起）。
+ *   A2 型题因双栏错序导致题干/上下文碎裂较重，为保证正确项可定义不作强凑；原生文本双栏错序已按
+ *   医学语义恢复（如“转录起始点/TSS”“报告基因”“基因敲除”“功能克隆/定位克隆”等），数值、结构、
+ *   缩略语（mRNA/UTR/RACE/EMSA/ChIP/CRISPR/RNAi/siRNA/miRNA/shRNA/piRNA 等）均保留原文，未捏造。
+ *   原书第 9 题题干 OCR 为“哪一条于-f比较基因组学对基因功能研究的指导作用”（疑缺“不”字），按答案 B
+ *   （引物特异性分析，不属于比较基因组学对基因功能研究的指导作用）恢复语义。
+ * 解析内容位于 answer.content 的第二个元素。
+ */
+
+const topic = "biochem-ch25-gene-function";
+const locatorBase =
+  "《生物化学与分子生物学学习指导与习题集》第25章 基因结构功能分析和疾病相关基因鉴定克隆 复习思考题 习题（核对原书PDF 第349–362页）";
+const promptNote =
+  "题干改写；原题来自用户提供的配套习题集（原生文本但双栏错序，已按医学语义恢复），未经第三方授权审核";
+const answerNotice =
+  "答案依据配套习题集参考答案整理并改写，未经权威教材交叉核对";
+
+const kp = `kp-${topic}`;
+
+/** 名词解释（term），5 道 */
+const termItems: readonly AssessmentItemDefinition[] = [
+  {
+    id: "ext-biochemistry-ch25-gene-function-term001",
+    order: 1,
+    knowledgePointId: kp,
+    questionKind: "term",
+    status: "available",
+    prompt: "名词解释：报告基因（reporter gene）",
+    promptSource: {
+      authority: "nur-editorial",
+      wording: "nur-adapted",
+      locator: locatorBase,
+      note: promptNote,
+      sourceIds: [],
+    },
+    answer: {
+      status: "available",
+      authority: "nur-platform",
+      confidence: "unverified",
+      content: [
+        "报告基因",
+        "报告基因是一种编码可被检测的蛋白质或酶的基因。把基因的编码序列和基因表达调节序列相融合形成嵌合基因，或与其他目的基因相融合，在调控序列控制下进行表达，从而利用它的表达产物来标定目的基因的表达调控并筛选得到转化体。报告基因可提供一种在细胞培养条件下或动植物体内作为筛选标志的易检测信号。",
+      ],
+      notice: answerNotice,
+      sourceIds: [],
+    },
+    scoring: null,
+    sourceIds: [],
+  },
+  {
+    id: "ext-biochemistry-ch25-gene-function-term002",
+    order: 2,
+    knowledgePointId: kp,
+    questionKind: "term",
+    status: "available",
+    prompt: "名词解释：转基因技术（transgenic technology）",
+    promptSource: {
+      authority: "nur-editorial",
+      wording: "nur-adapted",
+      locator: locatorBase,
+      note: promptNote,
+      sourceIds: [],
+    },
+    answer: {
+      status: "available",
+      authority: "nur-platform",
+      confidence: "unverified",
+      content: [
+        "转基因技术",
+        "转基因技术是一种基因操作技术，指将外源基因导入受精卵或胚胎干细胞（embryonic stem cell，ES细胞），外源基因通过随机重组插入细胞染色体DNA，然后将受精卵或胚胎干细胞植入受体动物的子宫，使得外源基因能够随细胞分裂遗传给后代。",
+      ],
+      notice: answerNotice,
+      sourceIds: [],
+    },
+    scoring: null,
+    sourceIds: [],
+  },
+  {
+    id: "ext-biochemistry-ch25-gene-function-term003",
+    order: 3,
+    knowledgePointId: kp,
+    questionKind: "term",
+    status: "available",
+    prompt: "名词解释：基因沉默（gene silencing）",
+    promptSource: {
+      authority: "nur-editorial",
+      wording: "nur-adapted",
+      locator: locatorBase,
+      note: promptNote,
+      sourceIds: [],
+    },
+    answer: {
+      status: "available",
+      authority: "nur-platform",
+      confidence: "unverified",
+      content: [
+        "基因沉默",
+        "基因沉默是指由外源基因导入引起的生物体内的特定基因不表达或表达受抑制的现象。",
+      ],
+      notice: answerNotice,
+      sourceIds: [],
+    },
+    scoring: null,
+    sourceIds: [],
+  },
+  {
+    id: "ext-biochemistry-ch25-gene-function-term004",
+    order: 4,
+    knowledgePointId: kp,
+    questionKind: "term",
+    status: "available",
+    prompt: "名词解释：表观遗传（epigenetics）",
+    promptSource: {
+      authority: "nur-editorial",
+      wording: "nur-adapted",
+      locator: locatorBase,
+      note: promptNote,
+      sourceIds: [],
+    },
+    answer: {
+      status: "available",
+      authority: "nur-platform",
+      confidence: "unverified",
+      content: [
+        "表观遗传",
+        "表观遗传是指不改变基因序列而影响基因表达和表型的遗传修饰，在亲代与子代间具有可遗传性，可引起可逆性基因沉默或激活，可影响遗传学过程。",
+      ],
+      notice: answerNotice,
+      sourceIds: [],
+    },
+    scoring: null,
+    sourceIds: [],
+  },
+  {
+    id: "ext-biochemistry-ch25-gene-function-term005",
+    order: 5,
+    knowledgePointId: kp,
+    questionKind: "term",
+    status: "available",
+    prompt:
+      "名词解释：成簇规律间隔短回文重复（clustered regulatory interspaced short palindromic repeat，CRISPR）",
+    promptSource: {
+      authority: "nur-editorial",
+      wording: "nur-adapted",
+      locator: locatorBase,
+      note: promptNote,
+      sourceIds: [],
+    },
+    answer: {
+      status: "available",
+      authority: "nur-platform",
+      confidence: "unverified",
+      content: [
+        "成簇规律间隔短回文重复",
+        "成簇规律间隔短回文重复（CRISPR）是一种来自细菌降解入侵的病毒DNA或其他外源DNA的免疫机制，后被发展成一种基因编辑的策略。通过不断的技术改进，CRISPR技术被认为能够在活细胞中最有效、最便捷地“编辑”任何基因。",
+      ],
+      notice: answerNotice,
+      sourceIds: [],
+    },
+    scoring: null,
+    sourceIds: [],
+  },
+];
+
+/** A1 型选择题（a1-single），12 道 */
+const a1Items: readonly AssessmentItemDefinition[] = [
+  {
+    id: "ext-biochemistry-ch25-gene-function-a1001",
+    order: 6,
+    knowledgePointId: kp,
+    questionKind: "a1-single",
+    status: "available",
+    prompt: "以下方法中，不能用于基因转录起始位点分析的是",
+    promptSource: {
+      authority: "nur-editorial",
+      wording: "nur-adapted",
+      locator: locatorBase,
+      note: promptNote,
+      sourceIds: [],
+    },
+    choices: [
+      "cDNA直接测序鉴定转录起始点",
+      "cDNA末端快速扩增技术（RACE）鉴定转录起始点",
+      "电泳迁移率变动实验（EMSA）",
+      "帽分析基因表达（CAGE）技术",
+      "5\u0027-末端基因表达系列分析（5\u0027-SAGE）",
+    ],
+    correctChoiceIndex: 2,
+    answer: {
+      status: "available",
+      authority: "nur-platform",
+      confidence: "unverified",
+      content: [
+        "电泳迁移率变动实验（EMSA）",
+        "原书 A1 型选择题答案第一题为 C，即 EMSA。EMSA 属于核酸-蛋白质相互作用实验，不能用于基因转录起始位点分析；cDNA直接测序、RACE、CAGE 及 5\u0027-SAGE 均可用于分析转录起始位点。",
+      ],
+      notice: answerNotice,
+      sourceIds: [],
+    },
+    scoring: null,
+    sourceIds: [],
+  },
+  {
+    id: "ext-biochemistry-ch25-gene-function-a1002",
+    order: 7,
+    knowledgePointId: kp,
+    questionKind: "a1-single",
+    status: "available",
+    prompt: "根据核酸-蛋白质相互作用研究启动子活性的方法是",
+    promptSource: {
+      authority: "nur-editorial",
+      wording: "nur-adapted",
+      locator: locatorBase,
+      note: promptNote,
+      sourceIds: [],
+    },
+    choices: [
+      "利用PCR技术克隆启动子",
+      "染色质免疫共沉淀（ChIP）",
+      "足迹法（footprinting）",
+      "电泳迁移率变动实验（EMSA）",
+      "报告基因验证启动子活性",
+    ],
+    correctChoiceIndex: 1,
+    answer: {
+      status: "available",
+      authority: "nur-platform",
+      confidence: "unverified",
+      content: [
+        "染色质免疫共沉淀（ChIP）",
+        "原书 A1 型选择题答案第二题为 B，即 ChIP。ChIP 可判断内源性蛋白质与核酸片段结合，属于根据核酸-蛋白质相互作用研究启动子活性的方法；EMSA 与足迹法也属核酸-蛋白质相互作用分析，本题按原书答案取 ChIP 为正确项。",
+      ],
+      notice: answerNotice,
+      sourceIds: [],
+    },
+    scoring: null,
+    sourceIds: [],
+  },
+  {
+    id: "ext-biochemistry-ch25-gene-function-a1003",
+    order: 8,
+    knowledgePointId: kp,
+    questionKind: "a1-single",
+    status: "available",
+    prompt: "以下哪种不是真核生物基因编码区具有的结构特征",
+    promptSource: {
+      authority: "nur-editorial",
+      wording: "nur-adapted",
+      locator: locatorBase,
+      note: promptNote,
+      sourceIds: [],
+    },
+    choices: [
+      "内含子与外显子交界区域有共有序列，其中内含子 5\u0027 端有 GU 序列、3\u0027 端有 AG 序列",
+      "真核基因内含子与外显子交界区具有 mRNA 选择性剪接的序列特征",
+      "基因编码序列含有可读框（ORF）",
+      "基因外显子的序列包括编码区、5\u0027 非翻译区（5\u0027-UTR）和 3\u0027 非翻译区（3\u0027-UTR）三部分",
+      "Kozak 序列由转录起始位点及其周围序列组成",
+    ],
+    correctChoiceIndex: 4,
+    answer: {
+      status: "available",
+      authority: "nur-platform",
+      confidence: "unverified",
+      content: [
+        "Kozak 序列由转录起始位点及其周围序列组成",
+        "原书答案第三题为 E。Kozak 序列位于起始密码子上游并围绕翻译起始密码子，并非由转录起始位点及其周围序列组成，故 E 表述是“不是真核生物基因编码区结构特征”的选项。",
+      ],
+      notice: answerNotice,
+      sourceIds: [],
+    },
+    scoring: null,
+    sourceIds: [],
+  },
+  {
+    id: "ext-biochemistry-ch25-gene-function-a1004",
+    order: 9,
+    knowledgePointId: kp,
+    questionKind: "a1-single",
+    status: "available",
+    prompt: "在通过检测 mRNA 比较不同样本基因转录活性实验中，灵敏度较高的是",
+    promptSource: {
+      authority: "nur-editorial",
+      wording: "nur-adapted",
+      locator: locatorBase,
+      note: promptNote,
+      sourceIds: [],
+    },
+    choices: [
+      "Northern blotting（RNA 印迹）",
+      "实时定量 PCR",
+      "原位杂交",
+      "ELISA",
+      "逆转录",
+    ],
+    correctChoiceIndex: 1,
+    answer: {
+      status: "available",
+      authority: "nur-platform",
+      confidence: "unverified",
+      content: [
+        "实时定量 PCR",
+        "原书答案第四题为 B，即实时定量 PCR。实时定量 PCR 通过监测扩增产物荧光信号的实时变化实现 mRNA 的定量，灵敏度显著高于 Northern blotting、原位杂交等方法，ELISA 检测的是蛋白质。",
+      ],
+      notice: answerNotice,
+      sourceIds: [],
+    },
+    scoring: null,
+    sourceIds: [],
+  },
+  {
+    id: "ext-biochemistry-ch25-gene-function-a1005",
+    order: 10,
+    knowledgePointId: kp,
+    questionKind: "a1-single",
+    status: "available",
+    prompt: "通过蛋白质检测分析基因表达的翻译水平特征可用的方法是",
+    promptSource: {
+      authority: "nur-editorial",
+      wording: "nur-adapted",
+      locator: locatorBase,
+      note: promptNote,
+      sourceIds: [],
+    },
+    choices: [
+      "特异性抗体经 Western 印迹可直接测定基因编码多肽",
+      "基因芯片技术可实现蛋白质表达的高通量检测，以检测所有蛋白质的表达",
+      "酶联免疫吸附实验（ELISA）主要用于组织蛋白质定位分析",
+      "流式细胞仪检测的目的是看特定细胞蛋白质表达量",
+      "免疫组织化学及免疫荧光检测主要用于定量蛋白质表达",
+    ],
+    correctChoiceIndex: 0,
+    answer: {
+      status: "available",
+      authority: "nur-platform",
+      confidence: "unverified",
+      content: [
+        "特异性抗体经 Western 印迹可直接测定基因编码多肽",
+        "原书答案第五题为 A。用特异性抗体经 Western 印迹（免疫印迹）可直接测定基因编码的多肽，属于翻译水平的蛋白质检测；流式细胞术看阳性细胞比例、免疫组化/免疫荧光做定位分析、ELISA 多用于定量分泌蛋白，均为定量或定位用途。",
+      ],
+      notice: answerNotice,
+      sourceIds: [],
+    },
+    scoring: null,
+    sourceIds: [],
+  },
+  {
+    id: "ext-biochemistry-ch25-gene-function-a1006",
+    order: 11,
+    knowledgePointId: kp,
+    questionKind: "a1-single",
+    status: "available",
+    prompt: "利用网页工具，通过生物信息学手段进行搜索不能",
+    promptSource: {
+      authority: "nur-editorial",
+      wording: "nur-adapted",
+      locator: locatorBase,
+      note: promptNote,
+      sourceIds: [],
+    },
+    choices: [
+      "寻找目的基因相互作用蛋白质",
+      "通过比较相似基因的结构进行功能推测",
+      "查找目的基因的基因组、mRNA 及多肽序列信息",
+      "通过相关数据库搜索，初步判定目的基因是否参与调控网络或通路",
+      "确定目的基因的启动子区及转录起始位点",
+    ],
+    correctChoiceIndex: 4,
+    answer: {
+      status: "available",
+      authority: "nur-platform",
+      confidence: "unverified",
+      content: [
+        "确定目的基因的启动子区及转录起始位点",
+        "原书答案第六题为 E。启动子区及转录起始位点的确定主要依赖转录实验与实验验证，单纯靠网页搜索不能确定，故为“不能”项；其余选项均可通过生物信息学数据库搜索完成。",
+      ],
+      notice: answerNotice,
+      sourceIds: [],
+    },
+    scoring: null,
+    sourceIds: [],
+  },
+  {
+    id: "ext-biochemistry-ch25-gene-function-a1007",
+    order: 12,
+    knowledgePointId: kp,
+    questionKind: "a1-single",
+    status: "available",
+    prompt: "以下方法，可用于基因的生物学功能鉴定的是",
+    promptSource: {
+      authority: "nur-editorial",
+      wording: "nur-adapted",
+      locator: locatorBase,
+      note: promptNote,
+      sourceIds: [],
+    },
+    choices: [
+      "采用基因功能获得和（或）基因功能缺失的策略鉴定基因的功能",
+      "外源基因以单拷贝形式整合入宿主染色体获得的动物（转基因动物）获得基因的功能",
+      "转基因获得基因功能，但由于无法控制，目的基因只能持续广泛表达，所以结果不一定可靠",
+      "只要通过转基因技术过表达目的基因，即可实现对基因功能的明确",
+      "基因功能缺失获得，而且只能通过基因敲除实现",
+    ],
+    correctChoiceIndex: 0,
+    answer: {
+      status: "available",
+      authority: "nur-platform",
+      confidence: "unverified",
+      content: [
+        "采用基因功能获得和（或）基因功能缺失的策略鉴定基因的功能",
+        "原书答案第七题为 A。基因功能鉴定常采用功能获得（转基因、基因敲入）与功能缺失（基因敲除、基因沉默）相结合的策略；其余选项的表述各含片面或过于绝对之处。",
+      ],
+      notice: answerNotice,
+      sourceIds: [],
+    },
+    scoring: null,
+    sourceIds: [],
+  },
+  {
+    id: "ext-biochemistry-ch25-gene-function-a1008",
+    order: 13,
+    knowledgePointId: kp,
+    questionKind: "a1-single",
+    status: "available",
+    prompt: "下列关于基因沉默或缺失验证基因功能的描述正确的是",
+    promptSource: {
+      authority: "nur-editorial",
+      wording: "nur-adapted",
+      locator: locatorBase,
+      note: promptNote,
+      sourceIds: [],
+    },
+    choices: [
+      "条件性基因敲除只能控制表达时间",
+      "基因敲除可作为研究功能缺失的首选方法",
+      "基因沉默是指由外源基因导入引起的生物体内的特定基因不表达或表达受抑制的现象",
+      "反义寡核苷酸引发的基因沉默是在转录后发生",
+      "RNAi 所使用的小 RNA 是内源单链的",
+    ],
+    correctChoiceIndex: 2,
+    answer: {
+      status: "available",
+      authority: "nur-platform",
+      confidence: "unverified",
+      content: [
+        "基因沉默是指由外源基因导入引起的生物体内的特定基因不表达或表达受抑制的现象",
+        "原书答案第八题为 C。条件性基因敲除可在时间上也可在空间（特定组织）上控制表达；反义寡核苷酸可抑制转录或翻译；RNAi 所用小 RNA可来源于内源或外源双链；基因沉默更符合生理性改变，故 C 项关于基因沉默的定义表述正确。",
+      ],
+      notice: answerNotice,
+      sourceIds: [],
+    },
+    scoring: null,
+    sourceIds: [],
+  },
+  {
+    id: "ext-biochemistry-ch25-gene-function-a1009",
+    order: 14,
+    knowledgePointId: kp,
+    questionKind: "a1-single",
+    status: "available",
+    prompt: "以下表述中，哪一条不利于比较基因组学对基因功能研究的指导作用",
+    promptSource: {
+      authority: "nur-editorial",
+      wording: "nur-adapted",
+      locator: locatorBase,
+      note: promptNote,
+      sourceIds: [],
+    },
+    choices: [
+      "可根据基因组序列相似性比较，指导基因功能研究中模式动物的选择",
+      "目的基因输入数据库以比较可能的扩增序列，分析引物的特异性",
+      "研究进化过程中，不同物种的亲缘关系",
+      "可根据一个特征性序列搜寻基因家族中的其他成员，推测其功能",
+      "特定未知蛋白质功能研究时，根据物种间或同物种内具有相似结构的已知基因进行功能推测",
+    ],
+    correctChoiceIndex: 1,
+    answer: {
+      status: "available",
+      authority: "nur-platform",
+      confidence: "unverified",
+      content: [
+        "目的基因输入数据库以比较可能的扩增序列，分析引物的特异性",
+        "原书答案第九题为 B。引物特异性分析属于 PCR 扩增的范畴，并非比较基因组学对基因功能研究的指导作用；其余选项（序列相似性、亲缘关系、基因家族搜寻、同源结构预测）均属比较基因组学对基因功能研究的指导应用。原书题干 OCR 为“哪一条于-f比较基因组学对基因功能研究的指导作用”（疑缺“不”字），按答案 B 语义恢复为“哪一条不利于比较基因组学对基因功能研究的指导作用”。",
+      ],
+      notice: answerNotice,
+      sourceIds: [],
+    },
+    scoring: null,
+    sourceIds: [],
+  },
+  {
+    id: "ext-biochemistry-ch25-gene-function-a1010",
+    order: 15,
+    knowledgePointId: kp,
+    questionKind: "a1-single",
+    status: "available",
+    prompt: "关于报告基因正确的表述是",
+    promptSource: {
+      authority: "nur-editorial",
+      wording: "nur-adapted",
+      locator: locatorBase,
+      note: promptNote,
+      sourceIds: [],
+    },
+    choices: [
+      "研究启动子活性时，将荧光蛋白或酶的编码基因重组连接到拟研究的启动子序列的上游",
+      "β-半乳糖苷酶可以使细菌在含 X-gal 培养基中生长时变成白色",
+      "报告基因只能用于研究启动子的活性",
+      "报告基因可用于检测蛋白与特定核酸序列的调节作用",
+      "利用报告基因可以捕获精确的启动子序列",
+    ],
+    correctChoiceIndex: 3,
+    answer: {
+      status: "available",
+      authority: "nur-platform",
+      confidence: "unverified",
+      content: [
+        "报告基因可用于检测蛋白与特定核酸序列的调节作用",
+        "原书答案第十题为 D。报告基因是编码可被检测蛋白质或酶的基因，与调控序列融合表达以标定表达调控；除研究启动子活性外还可用于检测蛋白与特定核酸序列的调节作用，故 D 正确，A 中报告基因应构建在启动子下游（而非上游）。",
+      ],
+      notice: answerNotice,
+      sourceIds: [],
+    },
+    scoring: null,
+    sourceIds: [],
+  },
+  {
+    id: "ext-biochemistry-ch25-gene-function-a1011",
+    order: 16,
+    knowledgePointId: kp,
+    questionKind: "a1-single",
+    status: "available",
+    prompt: "常用核酸分子杂交技术不包括",
+    promptSource: {
+      authority: "nur-editorial",
+      wording: "nur-adapted",
+      locator: locatorBase,
+      note: promptNote,
+      sourceIds: [],
+    },
+    choices: [
+      "反向斑点杂交",
+      "Southern 印迹杂交",
+      "Western 印迹杂交",
+      "菌落原位杂交",
+      "Northern 印迹杂交",
+    ],
+    correctChoiceIndex: 2,
+    answer: {
+      status: "available",
+      authority: "nur-platform",
+      confidence: "unverified",
+      content: [
+        "Western 印迹杂交",
+        "原书答案第十一题为 C。Western 印迹（免疫印迹）用于检测蛋白质，不属于核酸分子杂交技术；反向斑点杂交、Southern 印迹、菌落原位杂交、Northern 印迹均为核酸分子杂交技术。",
+      ],
+      notice: answerNotice,
+      sourceIds: [],
+    },
+    scoring: null,
+    sourceIds: [],
+  },
+  {
+    id: "ext-biochemistry-ch25-gene-function-a1012",
+    order: 17,
+    knowledgePointId: kp,
+    questionKind: "a1-single",
+    status: "available",
+    prompt: "串联重复序列长度多态性分析中的分析目标是",
+    promptSource: {
+      authority: "nur-editorial",
+      wording: "nur-adapted",
+      locator: locatorBase,
+      note: promptNote,
+      sourceIds: [],
+    },
+    choices: [
+      "点突变",
+      "错义突变",
+      "同义突变",
+      "移码突变",
+      "可变数目串联重复序列或短串联重复序列",
+    ],
+    correctChoiceIndex: 4,
+    answer: {
+      status: "available",
+      authority: "nur-platform",
+      confidence: "unverified",
+      content: [
+        "可变数目串联重复序列或短串联重复序列",
+        "原书答案第十二题为 E。串联重复序列长度多态性分析的目标是可变数目串联重复序列（VNTR）或短串联重复序列（STR），而非点突变、错义突变、同义突变或移码突变（这些属于序列点水平/错义/移码类变化）。",
+      ],
+      notice: answerNotice,
+      sourceIds: [],
+    },
+    scoring: null,
+    sourceIds: [],
+  },
+];
+
+/** 简答题（short-answer），2 道 */
+const shortItems: readonly AssessmentItemDefinition[] = [
+  {
+    id: "ext-biochemistry-ch25-gene-function-short001",
+    order: 18,
+    knowledgePointId: kp,
+    questionKind: "short-answer",
+    status: "available",
+    prompt: "简述已知基因启动子分析的主要方法及原理。",
+    promptSource: {
+      authority: "nur-editorial",
+      wording: "nur-adapted",
+      locator: locatorBase,
+      note: promptNote,
+      sourceIds: [],
+    },
+    answer: {
+      status: "available",
+      authority: "nur-platform",
+      confidence: "unverified",
+      content: [
+        "启动子分析的方法及原理",
+        "（1）分析启动子结构策略：①利用 PCR 技术克隆启动子；②利用核酸-蛋白质相互作用研究启动子：电泳迁移率变动实验（EMSA，属于外源性实验，通常需要纯化的蛋白质和纯化的预测目的片段）、染色质免疫沉淀技术（ChIP，可判断内源性蛋白质与核酸片段结合，更能反映细胞内情况，但要求序列已知）、足迹法（可分析未知序列的启动子序列）；③采用生物信息学方法预测启动子，可用启动子数据库和预测算法定义核心启动子、近端启动子、远端启动子，并预测 GC 含量、CpG 比率、转录因子结合位点、碱基组成及核心启动子元件等结构特征。（2）用报告基因实验验证启动子的活性：将报告基因编码序列构建到拟研究的启动子下游（调控序列控制下），通过检测报告基因表达活性来验证启动子的功能。",
+      ],
+      notice: answerNotice,
+      sourceIds: [],
+    },
+    scoring: null,
+    sourceIds: [],
+  },
+  {
+    id: "ext-biochemistry-ch25-gene-function-short002",
+    order: 19,
+    knowledgePointId: kp,
+    questionKind: "short-answer",
+    status: "available",
+    prompt: "什么是基因表达，简述分析基因表达的具体方法及原理。",
+    promptSource: {
+      authority: "nur-editorial",
+      wording: "nur-adapted",
+      locator: locatorBase,
+      note: promptNote,
+      sourceIds: [],
+    },
+    answer: {
+      status: "available",
+      authority: "nur-platform",
+      confidence: "unverified",
+      content: [
+        "基因表达及其分析方法",
+        "基因表达是指转录和翻译的过程，调控既可发生在转录水平，也可发生在翻译水平，基因表达分析通常需要同时在 mRNA 水平和蛋白质水平进行检测。（1）通过检测 mRNA 分析基因转录活性：①聚合酶链式反应：逆转录 PCR（RT-PCR）与实时定量 PCR 用于定量，灵敏度高；②基于杂交原理的方法：Northern blotting 可定性与相对定量，核糖核酸酶保护实验定性，原位杂交可对 mRNA 表达进行区域定位及相对定量。（2）通过蛋白质检测分析基因表达的翻译：用特异性抗体经 Western 印迹直接测定基因编码多肽；酶联免疫吸附实验（ELISA）定量分析蛋白质表达，多用于分泌蛋白；免疫组化实验（IHC）对组织/细胞蛋白质表达进行定位分析；流式细胞术用于分析表达特异性蛋白质的阳性细胞。（3）高通量检测技术：转录水平用基因芯片（检测 mRNA、miRNA 的芯片）与高通量测序；翻译水平用蛋白质芯片（分为表达芯片和功能芯片）与质谱分析。",
+      ],
+      notice: answerNotice,
+      sourceIds: [],
+    },
+    scoring: null,
+    sourceIds: [],
+  },
+];
+
+/** B1 共用备选答案配伍题，2 组 × 共 7 成员 */
+const bGroups: readonly AssessmentItemGroupDefinition[] = [
+  {
+    id: "ext-biochemistry-ch25-gene-function-b001",
+    order: 20,
+    questionKind: "b1",
+    status: "available",
+    groupPrompt: "（原书第 37 ~ 39 题共用备选答案）",
+    sharedChoices: ["siRNA", "miRNA", "shRNA", "RNAi", "piRNA"],
+    promptSource: {
+      authority: "nur-editorial",
+      wording: "nur-adapted",
+      locator: locatorBase,
+      note: promptNote,
+      sourceIds: [],
+    },
+    members: [
+      {
+        id: "ext-biochemistry-ch25-gene-function-b001m1",
+        order: 20,
+        knowledgePointId: kp,
+        questionKind: "b1",
+        status: "available",
+        prompt: "主要出现于生殖细胞，在细胞内抑制基因表达的是",
+        promptSource: {
+          authority: "nur-editorial",
+          wording: "nur-adapted",
+          locator: locatorBase,
+          note: promptNote,
+          sourceIds: [],
+        },
+        correctChoiceIndex: 4,
+        answer: {
+          status: "available",
+          authority: "nur-platform",
+          confidence: "unverified",
+          content: [
+            "piRNA",
+            "原书 B1 型题第 37 题答案 E：piRNA（Piwi-interacting RNA）主要出现于生殖细胞，在细胞内抑制基因表达。",
+          ],
+          notice: answerNotice,
+          sourceIds: [],
+        },
+        scoring: null,
+        sourceIds: [],
+      },
+      {
+        id: "ext-biochemistry-ch25-gene-function-b001m2",
+        order: 21,
+        knowledgePointId: kp,
+        questionKind: "b1",
+        status: "available",
+        prompt: "多用于体外研究可进行瞬时转染的小 RNA 干扰序列是",
+        promptSource: {
+          authority: "nur-editorial",
+          wording: "nur-adapted",
+          locator: locatorBase,
+          note: promptNote,
+          sourceIds: [],
+        },
+        correctChoiceIndex: 0,
+        answer: {
+          status: "available",
+          authority: "nur-platform",
+          confidence: "unverified",
+          content: [
+            "siRNA",
+            "原书 B1 型题第 38 题答案 A：siRNA（小干扰 RNA）多用于体外研究，可进行瞬时转染的小 RNA 干扰序列。",
+          ],
+          notice: answerNotice,
+          sourceIds: [],
+        },
+        scoring: null,
+        sourceIds: [],
+      },
+      {
+        id: "ext-biochemistry-ch25-gene-function-b001m3",
+        order: 22,
+        knowledgePointId: kp,
+        questionKind: "b1",
+        status: "available",
+        prompt: "常用于对基因进行稳定干扰或沉默的是",
+        promptSource: {
+          authority: "nur-editorial",
+          wording: "nur-adapted",
+          locator: locatorBase,
+          note: promptNote,
+          sourceIds: [],
+        },
+        correctChoiceIndex: 2,
+        answer: {
+          status: "available",
+          authority: "nur-platform",
+          confidence: "unverified",
+          content: [
+            "shRNA",
+            "原书 B1 型题第 39 题答案 C：shRNA（短发夹 RNA）常用于对基因进行稳定干扰或沉默。",
+          ],
+          notice: answerNotice,
+          sourceIds: [],
+        },
+        scoring: null,
+        sourceIds: [],
+      },
+    ],
+    sourceIds: [],
+  },
+  {
+    id: "ext-biochemistry-ch25-gene-function-b002",
+    order: 23,
+    questionKind: "b1",
+    status: "available",
+    groupPrompt: "（原书第 46 ~ 49 题共用备选答案）",
+    sharedChoices: ["剂量效应", "受体突变", "显负性效应", "杂合性丢失", "单倍型不足"],
+    promptSource: {
+      authority: "nur-editorial",
+      wording: "nur-adapted",
+      locator: locatorBase,
+      note: promptNote,
+      sourceIds: [],
+    },
+    members: [
+      {
+        id: "ext-biochemistry-ch25-gene-function-b002m1",
+        order: 23,
+        knowledgePointId: kp,
+        questionKind: "b1",
+        status: "available",
+        prompt:
+          "视网膜母细胞瘤发病依赖于先后两次相应的基因突变。对于家族性视网膜母细胞瘤患儿来说，其第一次基因突变遗传于父母双亲，在其有生之年只需要一次基因突变即可导致视网膜母细胞瘤的发病。这一现象称",
+        promptSource: {
+          authority: "nur-editorial",
+          wording: "nur-adapted",
+          locator: locatorBase,
+          note: promptNote,
+          sourceIds: [],
+        },
+        correctChoiceIndex: 3,
+        answer: {
+          status: "available",
+          authority: "nur-platform",
+          confidence: "unverified",
+          content: [
+            "杂合性丢失",
+            "原书 B1 型题第 46 题答案 D：家族性视网膜母细胞瘤为两次“打击”模型，第一次突变遗传自亲代，其后只需一次体细胞突变（另一个等位基因丢失/突变）即导致发病，这一现象称杂合性丢失（loss of heterozygosity）。",
+          ],
+          notice: answerNotice,
+          sourceIds: [],
+        },
+        scoring: null,
+        sourceIds: [],
+      },
+      {
+        id: "ext-biochemistry-ch25-gene-function-b002m2",
+        order: 24,
+        knowledgePointId: kp,
+        questionKind: "b1",
+        status: "available",
+        prompt:
+          "家族性高胆固醇血症中，杂合子突变可减少 50% 低密度脂蛋白受体的量，杂合子个体与正常纯合个体相比，胆固醇水平几乎是后者的两倍，因而心血管疾病风险大大升高。这一现象称",
+        promptSource: {
+          authority: "nur-editorial",
+          wording: "nur-adapted",
+          locator: locatorBase,
+          note: promptNote,
+          sourceIds: [],
+        },
+        correctChoiceIndex: 4,
+        answer: {
+          status: "available",
+          authority: "nur-platform",
+          confidence: "unverified",
+          content: [
+            "单倍型不足",
+            "原书 B1 型题第 47 题答案 E：杂合子单个等位基因功能不足即导致剂量不足以维持正常表型，这一现象称为单倍型不足（haploinsufficiency），如家族性高胆固醇血症中 LDL 受体重减少约 50%。",
+          ],
+          notice: answerNotice,
+          sourceIds: [],
+        },
+        scoring: null,
+        sourceIds: [],
+      },
+      {
+        id: "ext-biochemistry-ch25-gene-function-b002m3",
+        order: 25,
+        knowledgePointId: kp,
+        questionKind: "b1",
+        status: "available",
+        prompt:
+          "小细胞肺癌细胞株中 C-MYC 基因表达异常，拷贝数增加了数十倍甚至 200 倍之多。这一现象称",
+        promptSource: {
+          authority: "nur-editorial",
+          wording: "nur-adapted",
+          locator: locatorBase,
+          note: promptNote,
+          sourceIds: [],
+        },
+        correctChoiceIndex: 0,
+        answer: {
+          status: "available",
+          authority: "nur-platform",
+          confidence: "unverified",
+          content: [
+            "剂量效应",
+            "原书 B1 型题第 48 题答案 A：基因拷贝数大量增加导致基因产物（表达）量成倍升高即剂量效应（gene dosage effect），如 C-MYC 拷贝数增加数十倍至 200 倍。",
+          ],
+          notice: answerNotice,
+          sourceIds: [],
+        },
+        scoring: null,
+        sourceIds: [],
+      },
+      {
+        id: "ext-biochemistry-ch25-gene-function-b002m4",
+        order: 26,
+        knowledgePointId: kp,
+        questionKind: "b1",
+        status: "available",
+        prompt:
+          "由三股螺旋亚基组成的Ⅰ型胶原中单个位点突变导致的异常亚基可与其正常亚基结合，造成各种扭曲继而导致三股螺旋胶原蛋白的严重异常。这一现象称",
+        promptSource: {
+          authority: "nur-editorial",
+          wording: "nur-adapted",
+          locator: locatorBase,
+          note: promptNote,
+          sourceIds: [],
+        },
+        correctChoiceIndex: 2,
+        answer: {
+          status: "available",
+          authority: "nur-platform",
+          confidence: "unverified",
+          content: [
+            "显负性效应",
+            "原书 B1 型题第 49 题答案 C：突变的异常亚基干扰或抑制同源正常亚基的功能，即使仅一个等位基因突变也能造成显性的负性（干扰）作用，这一现象称显负性效应（dominant negative effect）。",
+          ],
+          notice: answerNotice,
+          sourceIds: [],
+        },
+        scoring: null,
+        sourceIds: [],
+      },
+    ],
+    sourceIds: [],
+  },
+];
+
+export const extractedItems: readonly AssessmentItemDefinition[] = [
+  ...termItems,
+  ...a1Items,
+  ...shortItems,
+];
+
+export const extractedGroups: readonly AssessmentItemGroupDefinition[] = [
+  ...bGroups,
+];

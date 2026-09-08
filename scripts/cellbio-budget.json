@@ -1,0 +1,170 @@
+{
+ "budget": {
+  "ch01-绪论": 17,
+  "ch02-细胞的概念与分子基础": 30,
+  "ch03-细胞生物学的研究方法": 54,
+  "ch04-细胞膜与物质的穿膜运输": 40,
+  "ch05-细胞的内膜系统与囊泡转运": 41,
+  "ch06-线粒体与细胞的能量转换": 27,
+  "ch07-细胞骨架与细胞的运动": 34,
+  "ch08-细胞核": 34,
+  "ch09-细胞内遗传信息的传递及调控": 39,
+  "ch10-细胞连接与细胞黏附": 31,
+  "ch11-细胞微环境及其与细胞的相互作用": 29,
+  "ch12-细胞间信息传递": 46,
+  "ch13-细胞分裂与细胞周期": 43,
+  "ch14-生殖细胞与受精": 23,
+  "ch15-细胞分化": 30,
+  "ch16-细胞衰老与细胞死亡": 29,
+  "ch17-干细胞与组织的维持和再生": 35,
+  "ch18-细胞工程": 18
+ },
+ "total_ex": 90737,
+ "allocated": 600,
+ "summary": {
+  "ch01-绪论": {
+   "start": 103,
+   "end": 106,
+   "chars_total": 3327,
+   "has_习题": true,
+   "has_参考答案": true,
+   "ex_chars": 2592
+  },
+  "ch02-细胞的概念与分子基础": {
+   "start": 107,
+   "end": 112,
+   "chars_total": 5338,
+   "has_习题": true,
+   "has_参考答案": true,
+   "ex_chars": 4522
+  },
+  "ch03-细胞生物学的研究方法": {
+   "start": 113,
+   "end": 121,
+   "chars_total": 9120,
+   "has_习题": true,
+   "has_参考答案": true,
+   "ex_chars": 8231
+  },
+  "ch04-细胞膜与物质的穿膜运输": {
+   "start": 122,
+   "end": 129,
+   "chars_total": 7733,
+   "has_习题": true,
+   "has_参考答案": true,
+   "ex_chars": 6091
+  },
+  "ch05-细胞的内膜系统与囊泡转运": {
+   "start": 130,
+   "end": 137,
+   "chars_total": 7930,
+   "has_习题": true,
+   "has_参考答案": false,
+   "ex_chars": 6187
+  },
+  "ch06-线粒体与细胞的能量转换": {
+   "start": 138,
+   "end": 143,
+   "chars_total": 5784,
+   "has_习题": true,
+   "has_参考答案": true,
+   "ex_chars": 4073
+  },
+  "ch07-细胞骨架与细胞的运动": {
+   "start": 144,
+   "end": 151,
+   "chars_total": 6890,
+   "has_习题": true,
+   "has_参考答案": true,
+   "ex_chars": 5139
+  },
+  "ch08-细胞核": {
+   "start": 152,
+   "end": 159,
+   "chars_total": 6664,
+   "has_习题": true,
+   "has_参考答案": true,
+   "ex_chars": 5094
+  },
+  "ch09-细胞内遗传信息的传递及调控": {
+   "start": 160,
+   "end": 167,
+   "chars_total": 7600,
+   "has_习题": true,
+   "has_参考答案": true,
+   "ex_chars": 5834
+  },
+  "ch10-细胞连接与细胞黏附": {
+   "start": 168,
+   "end": 174,
+   "chars_total": 6378,
+   "has_习题": true,
+   "has_参考答案": true,
+   "ex_chars": 4722
+  },
+  "ch11-细胞微环境及其与细胞的相互作用": {
+   "start": 175,
+   "end": 180,
+   "chars_total": 5257,
+   "has_习题": true,
+   "has_参考答案": true,
+   "ex_chars": 4442
+  },
+  "ch12-细胞间信息传递": {
+   "start": 181,
+   "end": 188,
+   "chars_total": 7653,
+   "has_习题": true,
+   "has_参考答案": true,
+   "ex_chars": 6886
+  },
+  "ch13-细胞分裂与细胞周期": {
+   "start": 189,
+   "end": 196,
+   "chars_total": 7361,
+   "has_习题": true,
+   "has_参考答案": true,
+   "ex_chars": 6568
+  },
+  "ch14-生殖细胞与受精": {
+   "start": 197,
+   "end": 201,
+   "chars_total": 4171,
+   "has_习题": true,
+   "has_参考答案": true,
+   "ex_chars": 3425
+  },
+  "ch15-细胞分化": {
+   "start": 202,
+   "end": 208,
+   "chars_total": 6191,
+   "has_习题": true,
+   "has_参考答案": true,
+   "ex_chars": 4517
+  },
+  "ch16-细胞衰老与细胞死亡": {
+   "start": 209,
+   "end": 214,
+   "chars_total": 5126,
+   "has_习题": true,
+   "has_参考答案": true,
+   "ex_chars": 4387
+  },
+  "ch17-干细胞与组织的维持和再生": {
+   "start": 215,
+   "end": 221,
+   "chars_total": 6064,
+   "has_习题": true,
+   "has_参考答案": true,
+   "ex_chars": 5240
+  },
+  "ch18-细胞工程": {
+   "start": 222,
+   "end": 226,
+   "chars_total": 4785,
+   "has_习题": true,
+   "has_参考答案": true,
+   "ex_chars": 2787
+  }
+ }
+}

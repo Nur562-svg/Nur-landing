@@ -1,0 +1,950 @@
+import type {
+  AssessmentItemDefinition,
+  AssessmentItemGroupDefinition,
+} from "@/types/learning";
+
+/**
+ * 系统解剖学习题集（第2版）— 第十二章 感觉器总论 视器 题库提取（等比取样）
+ * 来源：《系统解剖学习题集》第2版（人民卫生出版社，以柏树令主编《系统解剖学》第8版为蓝本）
+ *
+ * == 统计报告（本文件题量 = 每教材 600、章节等比缩放预算）==
+ * - 名词解释：4 题
+ * - A1/A2/A3 型选择题（a1-single）：11 题
+ * - 填空题（fill）：5 题
+ * - 判断改错题 + 问答题（short-answer）：3 题
+ * - B1 配伍题：1 组、共 5 个成员
+ * - 独立记分题合计：28 题（含 B1 组成员；须等于本文件预算 28）
+ * - 缺失答案：0；无法可靠提取：0（或如实记录换题）
+ * - 说明：本章原书依序含 A1 型题 40、A2 型题 18、A3 型题 10（含 3 个共用病例/题干组）、
+ *   B1 共用备选答案配伍题（共 20 个小题、4 组）、填空题 15、名词解释 13、判断改错题 10、
+ *   问答题 13。本文件按 28 道预算在原书顺序中取材并改写（A1 取材 11、填空题 5、
+ *   名词解释 4、判断改错+问答题 3、B1 组第 11~15 题 5 个成员）。
+ *   A1/A2/A3 型均映射为 a1-single；B1 型按项目规约组织为 Group b1（组内成员各为一独立记分题）。
+ *   OCR 错字已按医学语义恢复（如「A，型题/Az型题」→A1/A2 型题、「Ag型题」→A3 型题、
+ *   「力/沩」→为、「睑/脸」→睑、「品状体」→晶状体、「洱器」→泪器、「所以/称力」→称等），
+ *   结构名、数值与单位（mm/浊/透明等）均按原文保留，未捏造。
+ * 解析内容位于 answer.content 数组的第二个元素。
+ */
+
+const topic = "human-anatomy-ch12-visual-organ";
+const locatorBase =
+  "《系统解剖学习题集》第2版 第十二章 感觉器总论 视器 复习思考题 习题（扫描版原书核对PDF 第170–182页）";
+const promptNote =
+  "题干改写；原题来自用户提供的扫描题集（OCR 已按医学语义恢复），未经第三方授权审核";
+const xMapNote =
+  "题干改写并映射为单选；原题为多选/共用题干，按项目规约映射为 a1-single，原题来自用户题集，未经第三方授权审核";
+const answerNotice =
+  "答案依据扫描题集整理并改写，未经权威教材交叉核对，OCR 错字已按医学语义恢复";
+
+const kp = `kp-${topic}`;
+
+/** 名词解释（term），4 道 */
+const termItems: readonly AssessmentItemDefinition[] = [
+  {
+    id: "ext-human-anatomy-ch12-visual-organ-term001",
+    order: 1,
+    knowledgePointId: kp,
+    questionKind: "term",
+    status: "available",
+    prompt: "名词解释：视轴",
+    promptSource: {
+      authority: "nur-editorial",
+      wording: "nur-adapted",
+      locator: locatorBase,
+      note: promptNote,
+      sourceIds: [],
+    },
+    answer: {
+      status: "available",
+      authority: "nur-platform",
+      confidence: "unverified",
+      content: [
+        "视轴",
+        "光线经瞳孔中央至视网膜黄斑中央凹的连线，称为视轴。",
+      ],
+      notice: answerNotice,
+      sourceIds: [],
+    },
+    scoring: null,
+    sourceIds: [],
+  },
+  {
+    id: "ext-human-anatomy-ch12-visual-organ-term002",
+    order: 2,
+    knowledgePointId: kp,
+    questionKind: "term",
+    status: "available",
+    prompt: "名词解释：巩膜静脉窦",
+    promptSource: {
+      authority: "nur-editorial",
+      wording: "nur-adapted",
+      locator: locatorBase,
+      note: promptNote,
+      sourceIds: [],
+    },
+    answer: {
+      status: "available",
+      authority: "nur-platform",
+      confidence: "unverified",
+      content: [
+        "巩膜静脉窦",
+        "巩膜静脉窦是靠近角膜缘处的巩膜实质内呈环形的静脉窦，是房水流出的通道。",
+      ],
+      notice: answerNotice,
+      sourceIds: [],
+    },
+    scoring: null,
+    sourceIds: [],
+  },
+  {
+    id: "ext-human-anatomy-ch12-visual-organ-term003",
+    order: 3,
+    knowledgePointId: kp,
+    questionKind: "term",
+    status: "available",
+    prompt: "名词解释：黄斑",
+    promptSource: {
+      authority: "nur-editorial",
+      wording: "nur-adapted",
+      locator: locatorBase,
+      note: promptNote,
+      sourceIds: [],
+    },
+    answer: {
+      status: "available",
+      authority: "nur-platform",
+      confidence: "unverified",
+      content: [
+        "黄斑",
+        "在活体上，视神经盘颞侧约3.5mm处稍偏下方，有一呈黄色或红褐色的小区，称为黄斑，由密集的视锥细胞构成，此区无血管，是感光最敏锐处。",
+      ],
+      notice: answerNotice,
+      sourceIds: [],
+    },
+    scoring: null,
+    sourceIds: [],
+  },
+  {
+    id: "ext-human-anatomy-ch12-visual-organ-term004",
+    order: 4,
+    knowledgePointId: kp,
+    questionKind: "term",
+    status: "available",
+    prompt: "名词解释：瞳孔",
+    promptSource: {
+      authority: "nur-editorial",
+      wording: "nur-adapted",
+      locator: locatorBase,
+      note: promptNote,
+      sourceIds: [],
+    },
+    answer: {
+      status: "available",
+      authority: "nur-platform",
+      confidence: "unverified",
+      content: [
+        "瞳孔",
+        "虹膜中央有圆形的孔，称为瞳孔，是光线进入眼球内的通道。瞳孔的大小可由虹膜内的瞳孔括约肌和瞳孔开大肌调节：瞳孔括约肌收缩使瞳孔缩小，瞳孔开大肌收缩使瞳孔开大；在弱光下或看远物时瞳孔开大，在强光下或看近物时瞳孔缩小。",
+      ],
+      notice: answerNotice,
+      sourceIds: [],
+    },
+    scoring: null,
+    sourceIds: [],
+  },
+];
+
+/** A1 型选择题（映射为 a1-single），11 道 */
+const a1Items: readonly AssessmentItemDefinition[] = [
+  {
+    id: "ext-human-anatomy-ch12-visual-organ-a1001",
+    order: 5,
+    knowledgePointId: kp,
+    questionKind: "a1-single",
+    status: "available",
+    prompt: "属于特殊感受器的是",
+    promptSource: {
+      authority: "nur-editorial",
+      wording: "nur-adapted",
+      locator: locatorBase,
+      note: promptNote,
+      sourceIds: [],
+    },
+    choices: [
+      "听觉感受器",
+      "温觉感受器",
+      "痛觉感受器",
+      "粗触觉感受器",
+      "精细触觉感受器",
+    ],
+    correctChoiceIndex: 0,
+    answer: {
+      status: "available",
+      authority: "nur-platform",
+      confidence: "unverified",
+      content: [
+        "听觉感受器",
+        "特殊感受器提供光、声、嗅、味、平衡等特殊感觉，听觉感受器属于特殊感受器；痛觉、温觉、粗触觉、精细触觉均为一般感受器。",
+      ],
+      notice: answerNotice,
+      sourceIds: [],
+    },
+    scoring: null,
+    sourceIds: [],
+  },
+  {
+    id: "ext-human-anatomy-ch12-visual-organ-a1002",
+    order: 6,
+    knowledgePointId: kp,
+    questionKind: "a1-single",
+    status: "available",
+    prompt: "下列关于感受器的叙述，正确的是",
+    promptSource: {
+      authority: "nur-editorial",
+      wording: "nur-adapted",
+      locator: locatorBase,
+      note: promptNote,
+      sourceIds: [],
+    },
+    choices: [
+      "接受外界刺激的感受器都位于皮肤",
+      "一种感受器仅能对某一适宜的刺激特别敏感",
+      "感受器的结构都非常简单",
+      "内感受器仅接受内环境的化学刺激",
+      "感受器也称为感觉器",
+    ],
+    correctChoiceIndex: 1,
+    answer: {
+      status: "available",
+      authority: "nur-platform",
+      confidence: "unverified",
+      content: [
+        "一种感受器仅能对某一适宜的刺激特别敏感",
+        "感受器能把刺激转换为神经冲动，一种感受器通常只对某种适宜的刺激特别敏感，故又称相应感觉的感受器。",
+      ],
+      notice: answerNotice,
+      sourceIds: [],
+    },
+    scoring: null,
+    sourceIds: [],
+  },
+  {
+    id: "ext-human-anatomy-ch12-visual-organ-a1003",
+    order: 7,
+    knowledgePointId: kp,
+    questionKind: "a1-single",
+    status: "available",
+    prompt: "眼球壁三层结构，由外向内依次为",
+    promptSource: {
+      authority: "nur-editorial",
+      wording: "nur-adapted",
+      locator: locatorBase,
+      note: promptNote,
+      sourceIds: [],
+    },
+    choices: [
+      "纤维膜、血管膜、视网膜",
+      "角膜、血管膜、视网膜",
+      "虹膜、血管膜、视网膜",
+      "角膜、巩膜、视网膜",
+      "纤维膜、角膜、视网膜",
+    ],
+    correctChoiceIndex: 0,
+    answer: {
+      status: "available",
+      authority: "nur-platform",
+      confidence: "unverified",
+      content: [
+        "纤维膜、血管膜、视网膜",
+        "眼球壁由外向内依次为纤维膜（外膜，含角膜和巩膜）、血管膜（中膜/葡萄膜）和视网膜（内膜/神经层）。",
+      ],
+      notice: answerNotice,
+      sourceIds: [],
+    },
+    scoring: null,
+    sourceIds: [],
+  },
+  {
+    id: "ext-human-anatomy-ch12-visual-organ-a1004",
+    order: 8,
+    knowledgePointId: kp,
+    questionKind: "a1-single",
+    status: "available",
+    prompt: "眼轴是指",
+    promptSource: {
+      authority: "nur-editorial",
+      wording: "nur-adapted",
+      locator: locatorBase,
+      note: promptNote,
+      sourceIds: [],
+    },
+    choices: [
+      "眼眶中点与中央凹的连线",
+      "通过眼球前、后极的连线",
+      "瞳孔中央到视神经盘的连线",
+      "瞳孔中央至中央凹的连线",
+      "眼眶中点与视神经盘的连线",
+    ],
+    correctChoiceIndex: 1,
+    answer: {
+      status: "available",
+      authority: "nur-platform",
+      confidence: "unverified",
+      content: [
+        "通过眼球前、后极的连线",
+        "眼轴为通过眼球前面与后面（即前极与后极）连线的距离，用于反映眼球的径线长度。",
+      ],
+      notice: answerNotice,
+      sourceIds: [],
+    },
+    scoring: null,
+    sourceIds: [],
+  },
+  {
+    id: "ext-human-anatomy-ch12-visual-organ-a1005",
+    order: 9,
+    knowledgePointId: kp,
+    questionKind: "a1-single",
+    status: "available",
+    prompt: "下列关于虹膜的叙述，正确的是",
+    promptSource: {
+      authority: "nur-editorial",
+      wording: "nur-adapted",
+      locator: locatorBase,
+      note: promptNote,
+      sourceIds: [],
+    },
+    choices: [
+      "虹膜内含有瞳孔括约肌，由交感神经支配",
+      "虹膜是纤维膜前部的圆盘形薄膜",
+      "虹膜中央有圆形的瞳孔",
+      "营养的获得完全由房水供应",
+      "人虹膜的颜色取决于色素的多少，没有种族差异",
+    ],
+    correctChoiceIndex: 2,
+    answer: {
+      status: "available",
+      authority: "nur-platform",
+      confidence: "unverified",
+      content: [
+        "虹膜中央有圆形的瞳孔",
+        "虹膜是血管膜的最前部，中央有圆形的瞳孔。瞳孔括约肌由动眼神经内的副交感神经支配（可缩小瞳孔），瞳孔开大肌由交感神经支配。",
+      ],
+      notice: answerNotice,
+      sourceIds: [],
+    },
+    scoring: null,
+    sourceIds: [],
+  },
+  {
+    id: "ext-human-anatomy-ch12-visual-organ-a1006",
+    order: 10,
+    knowledgePointId: kp,
+    questionKind: "a1-single",
+    status: "available",
+    prompt: "下列关于黄斑的叙述，正确的是",
+    promptSource: {
+      authority: "nur-editorial",
+      wording: "nur-adapted",
+      locator: locatorBase,
+      note: promptNote,
+      sourceIds: [],
+    },
+    choices: [
+      "位于视神经盘的鼻侧约3.5mm稍下方",
+      "由密集的视杆细胞构成",
+      "是感光最敏锐处",
+      "位于视网膜脉络膜部",
+      "黄斑中央凹0.5mm范围内有丰富的血液供应",
+    ],
+    correctChoiceIndex: 2,
+    answer: {
+      status: "available",
+      authority: "nur-platform",
+      confidence: "unverified",
+      content: [
+        "是感光最敏锐处",
+        "黄斑位于视神经盘颞侧稍下方约3.5mm处，由密集的视锥细胞构成，其中央凹陷称中央凹，此区无血管，是感光最敏锐处。",
+      ],
+      notice: answerNotice,
+      sourceIds: [],
+    },
+    scoring: null,
+    sourceIds: [],
+  },
+  {
+    id: "ext-human-anatomy-ch12-visual-organ-a1007",
+    order: 11,
+    knowledgePointId: kp,
+    questionKind: "a1-single",
+    status: "available",
+    prompt: "房水回流入",
+    promptSource: {
+      authority: "nur-editorial",
+      wording: "nur-adapted",
+      locator: locatorBase,
+      note: promptNote,
+      sourceIds: [],
+    },
+    choices: ["面静脉", "上颌静脉", "眼静脉", "下颌静脉", "内眦静脉"],
+    correctChoiceIndex: 2,
+    answer: {
+      status: "available",
+      authority: "nur-platform",
+      confidence: "unverified",
+      content: [
+        "眼静脉",
+        "房水由睫状体产生，经虹膜角膜角进入巩膜静脉窦，借睫前静脉汇入眼上、下静脉，眼静脉注入海绵窦，故房水回流入眼静脉。",
+      ],
+      notice: answerNotice,
+      sourceIds: [],
+    },
+    scoring: null,
+    sourceIds: [],
+  },
+  {
+    id: "ext-human-anatomy-ch12-visual-organ-a1008",
+    order: 12,
+    knowledgePointId: kp,
+    questionKind: "a1-single",
+    status: "available",
+    prompt: "眼球呈内斜视，可能是下列哪块肌瘫痪",
+    promptSource: {
+      authority: "nur-editorial",
+      wording: "nur-adapted",
+      locator: locatorBase,
+      note: promptNote,
+      sourceIds: [],
+    },
+    choices: ["内直肌", "上斜肌", "外直肌", "下斜肌", "下直肌"],
+    correctChoiceIndex: 2,
+    answer: {
+      status: "available",
+      authority: "nur-platform",
+      confidence: "unverified",
+      content: [
+        "外直肌",
+        "外直肌收缩使瞳孔转向外侧，由展神经支配；外直肌瘫痪时眼球不能外展，为内斜视。",
+      ],
+      notice: answerNotice,
+      sourceIds: [],
+    },
+    scoring: null,
+    sourceIds: [],
+  },
+  {
+    id: "ext-human-anatomy-ch12-visual-organ-a1009",
+    order: 13,
+    knowledgePointId: kp,
+    questionKind: "a1-single",
+    status: "available",
+    prompt: "下列关于近视的叙述，正确的是",
+    promptSource: {
+      authority: "nur-editorial",
+      wording: "nur-adapted",
+      locator: locatorBase,
+      note: promptNote,
+      sourceIds: [],
+    },
+    choices: [
+      "眼轴较短或屈光率过弱，物像落在视网膜后",
+      "物像落在视网膜睫状体部",
+      "眼轴较长或屈光率过强，物像落在视网膜前",
+      "物像落在视网膜虹膜部",
+      "物像落在视网膜的视神经乳头",
+    ],
+    correctChoiceIndex: 2,
+    answer: {
+      status: "available",
+      authority: "nur-platform",
+      confidence: "unverified",
+      content: [
+        "眼轴较长或屈光率过强，物像落在视网膜前",
+        "近视系眼轴较长或屈光装置屈光率过强（折光能力增强），使平行光线聚焦于视网膜之前，需用凹透镜矫正。",
+      ],
+      notice: answerNotice,
+      sourceIds: [],
+    },
+    scoring: null,
+    sourceIds: [],
+  },
+  {
+    id: "ext-human-anatomy-ch12-visual-organ-a1010",
+    order: 14,
+    knowledgePointId: kp,
+    questionKind: "a1-single",
+    status: "available",
+    prompt: "视神经是哪种细胞突起形成的",
+    promptSource: {
+      authority: "nur-editorial",
+      wording: "nur-adapted",
+      locator: locatorBase,
+      note: promptNote,
+      sourceIds: [],
+    },
+    choices: ["视锥细胞", "双极细胞", "节细胞", "视杆细胞", "色素上皮细胞"],
+    correctChoiceIndex: 2,
+    answer: {
+      status: "available",
+      authority: "nur-platform",
+      confidence: "unverified",
+      content: [
+        "节细胞",
+        "视神经由视网膜节细胞的轴突汇集形成，节细胞轴突在视神经盘处穿出眼球构成视神经。",
+      ],
+      notice: answerNotice,
+      sourceIds: [],
+    },
+    scoring: null,
+    sourceIds: [],
+  },
+  {
+    id: "ext-human-anatomy-ch12-visual-organ-a1011",
+    order: 15,
+    knowledgePointId: kp,
+    questionKind: "a1-single",
+    status: "available",
+    prompt: "下列关于感光细胞的叙述，正确的是",
+    promptSource: {
+      authority: "nur-editorial",
+      wording: "nur-adapted",
+      locator: locatorBase,
+      note: promptNote,
+      sourceIds: [],
+    },
+    choices: [
+      "视锥细胞主要分布于视网膜周边部",
+      "视杆细胞主要分布于视网膜中央部",
+      "视锥细胞在中央凹处最密集",
+      "视杆细胞感受弱光且能辨色",
+      "视锥细胞可感受强光，但不能辨色",
+    ],
+    correctChoiceIndex: 2,
+    answer: {
+      status: "available",
+      authority: "nur-platform",
+      confidence: "unverified",
+      content: [
+        "视锥细胞在中央凹处最密集",
+        "视锥细胞在中央凹处最密集（感受强光并能辨色），由中央凹向周边逐渐减少；视杆细胞分布于视网膜周边部，感受弱光但无色觉。",
+      ],
+      notice: answerNotice,
+      sourceIds: [],
+    },
+    scoring: null,
+    sourceIds: [],
+  },
+];
+
+/** 填空题（fill），5 道 */
+const fillItems: readonly AssessmentItemDefinition[] = [
+  {
+    id: "ext-human-anatomy-ch12-visual-organ-fill001",
+    order: 16,
+    knowledgePointId: kp,
+    questionKind: "fill",
+    status: "available",
+    prompt: "眼球内容物包括____、____和____。",
+    promptSource: {
+      authority: "nur-editorial",
+      wording: "nur-adapted",
+      locator: locatorBase,
+      note: promptNote,
+      sourceIds: [],
+    },
+    answer: {
+      status: "available",
+      authority: "nur-platform",
+      confidence: "unverified",
+      content: [
+        "①房水 ②晶状体 ③玻璃体",
+        "眼球内容物包括房水、晶状体和玻璃体，均为无血管的透明体，具有屈光作用。",
+      ],
+      notice: answerNotice,
+      sourceIds: [],
+    },
+    scoring: null,
+    sourceIds: [],
+  },
+  {
+    id: "ext-human-anatomy-ch12-visual-organ-fill002",
+    order: 17,
+    knowledgePointId: kp,
+    questionKind: "fill",
+    status: "available",
+    prompt: "眼的折光装置由前到后包括____、____、____和____。",
+    promptSource: {
+      authority: "nur-editorial",
+      wording: "nur-adapted",
+      locator: locatorBase,
+      note: promptNote,
+      sourceIds: [],
+    },
+    answer: {
+      status: "available",
+      authority: "nur-platform",
+      confidence: "unverified",
+      content: [
+        "①角膜 ②房水 ③晶状体 ④玻璃体",
+        "角膜、房水、晶状体和玻璃体透明而无血管，具有屈光作用，由前向后构成眼的屈光装置，其中晶状体是主要的屈光装置。",
+      ],
+      notice: answerNotice,
+      sourceIds: [],
+    },
+    scoring: null,
+    sourceIds: [],
+  },
+  {
+    id: "ext-human-anatomy-ch12-visual-organ-fill003",
+    order: 18,
+    knowledgePointId: kp,
+    questionKind: "fill",
+    status: "available",
+    prompt:
+      "在视神经盘颞侧约3.5mm处有一黄色区称____，其中央凹陷称为____，是感光最敏锐处。",
+    promptSource: {
+      authority: "nur-editorial",
+      wording: "nur-adapted",
+      locator: locatorBase,
+      note: promptNote,
+      sourceIds: [],
+    },
+    answer: {
+      status: "available",
+      authority: "nur-platform",
+      confidence: "unverified",
+      content: [
+        "①黄斑区 ②中央凹",
+        "黄斑由密集的视锥细胞构成、无血管，其中央凹陷称中央凹，是感光最敏锐处。",
+      ],
+      notice: answerNotice,
+      sourceIds: [],
+    },
+    scoring: null,
+    sourceIds: [],
+  },
+  {
+    id: "ext-human-anatomy-ch12-visual-organ-fill004",
+    order: 19,
+    knowledgePointId: kp,
+    questionKind: "fill",
+    status: "available",
+    prompt: "瞳孔括约肌受____支配，瞳孔开大肌由____支配。",
+    promptSource: {
+      authority: "nur-editorial",
+      wording: "nur-adapted",
+      locator: locatorBase,
+      note: promptNote,
+      sourceIds: [],
+    },
+    answer: {
+      status: "available",
+      authority: "nur-platform",
+      confidence: "unverified",
+      content: [
+        "①副交感神经 ②交感神经",
+        "瞳孔括约肌可缩小瞳孔，由动眼神经内的副交感神经支配；瞳孔开大肌可开大瞳孔，由交感神经支配。",
+      ],
+      notice: answerNotice,
+      sourceIds: [],
+    },
+    scoring: null,
+    sourceIds: [],
+  },
+  {
+    id: "ext-human-anatomy-ch12-visual-organ-fill005",
+    order: 20,
+    knowledgePointId: kp,
+    questionKind: "fill",
+    status: "available",
+    prompt: "展神经受损，导致____瘫痪，瞳孔不能转向____。",
+    promptSource: {
+      authority: "nur-editorial",
+      wording: "nur-adapted",
+      locator: locatorBase,
+      note: promptNote,
+      sourceIds: [],
+    },
+    answer: {
+      status: "available",
+      authority: "nur-platform",
+      confidence: "unverified",
+      content: [
+        "①外直肌 ②外侧",
+        "展神经支配外直肌，展神经受损则外直肌瘫痪，瞳孔不能转向外侧（呈内斜视）。",
+      ],
+      notice: answerNotice,
+      sourceIds: [],
+    },
+    scoring: null,
+    sourceIds: [],
+  },
+];
+
+/** 判断改错题 + 问答题（short-answer），3 道 */
+const shortItems: readonly AssessmentItemDefinition[] = [
+  {
+    id: "ext-human-anatomy-ch12-visual-organ-short001",
+    order: 21,
+    knowledgePointId: kp,
+    questionKind: "short-answer",
+    status: "available",
+    prompt:
+      "判断题（叙述正确者打“对”，错误者改正）：上斜肌收缩，使眼球转向下外侧，下斜肌收缩，使眼球转向上外侧。",
+    promptSource: {
+      authority: "nur-editorial",
+      wording: "nur-adapted",
+      locator: locatorBase,
+      note: promptNote,
+      sourceIds: [],
+    },
+    answer: {
+      status: "available",
+      authority: "nur-platform",
+      confidence: "unverified",
+      content: [
+        "正确",
+        "上斜肌收缩使瞳孔转向下外侧，下斜肌收缩使瞳孔转向上外侧，叙述正确。",
+      ],
+      notice: answerNotice,
+      sourceIds: [],
+    },
+    scoring: null,
+    sourceIds: [],
+  },
+  {
+    id: "ext-human-anatomy-ch12-visual-organ-short002",
+    order: 22,
+    knowledgePointId: kp,
+    questionKind: "short-answer",
+    status: "available",
+    prompt:
+      "判断题（叙述正确者打“对”，错误者改正）：巩膜是富含血管的薄膜，可以吸收眼内散在的光线，以免扰乱视觉。",
+    promptSource: {
+      authority: "nur-editorial",
+      wording: "nur-adapted",
+      locator: locatorBase,
+      note: promptNote,
+      sourceIds: [],
+    },
+    answer: {
+      status: "available",
+      authority: "nur-platform",
+      confidence: "unverified",
+      content: [
+        "错误；应将“巩膜”改为“脉络膜”",
+        "脉络膜是富含血管和色素细胞的棕黑色薄膜，能营养眼球内组织并吸收眼内分散光线以免扰乱视觉；巩膜则为乳白色不透明的纤维膜，故做此改正。",
+      ],
+      notice: answerNotice,
+      sourceIds: [],
+    },
+    scoring: null,
+    sourceIds: [],
+  },
+  {
+    id: "ext-human-anatomy-ch12-visual-organ-short003",
+    order: 23,
+    knowledgePointId: kp,
+    questionKind: "short-answer",
+    status: "available",
+    prompt: "试述眼球壁各层的结构和作用。",
+    promptSource: {
+      authority: "nur-editorial",
+      wording: "nur-adapted",
+      locator: locatorBase,
+      note: promptNote,
+      sourceIds: [],
+    },
+    answer: {
+      status: "available",
+      authority: "nur-platform",
+      confidence: "unverified",
+      content: [
+        "眼球壁各层的结构与作用",
+        "眼球壁由外向内依次为纤维膜、血管膜和视网膜三层。（1）纤维膜：由强韧纤维结缔组织构成，有支持和保护作用，分为角膜（占前1/6，无色透明、无血管、富有感觉神经末梢、有屈光作用）和巩膜（占后5/6，乳白色不透明、厚而坚韧，有巩膜静脉窦为房水流出通道）。（2）血管膜/中膜：富有血管和色素细胞，呈棕黑色，具营养眼球内组织和遮光作用，自前向后分为虹膜（含瞳孔括约肌和瞳孔开大肌）、睫状体（可调节晶状体曲度并产生房水）和脉络膜（占中膜后2/3，供营养并吸收分散光线）。（3）视网膜：为中膜内面，分为视网膜脉络膜部、睫状体部和虹膜部，其中视网膜视部最大最厚，为视器接受光线刺激并转变为神经冲动的部分。",
+      ],
+      notice: answerNotice,
+      sourceIds: [],
+    },
+    scoring: null,
+    sourceIds: [],
+  },
+];
+
+/** B1 共用备选答案配伍题，1 组 × 5 成员 */
+const bGroups: readonly AssessmentItemGroupDefinition[] = [
+  {
+    id: "ext-human-anatomy-ch12-visual-organ-b001",
+    order: 24,
+    questionKind: "b1",
+    status: "available",
+    groupPrompt: null,
+    sharedChoices: ["睫状肌", "瞳孔括约肌", "内直肌", "外直肌", "上睑提肌"],
+    promptSource: {
+      authority: "nur-editorial",
+      wording: "nur-adapted",
+      locator: locatorBase,
+      note: promptNote,
+      sourceIds: [],
+    },
+    members: [
+      {
+        id: "ext-human-anatomy-ch12-visual-organ-b001m1",
+        order: 24,
+        knowledgePointId: kp,
+        questionKind: "b1",
+        status: "available",
+        prompt: "收缩时使瞳孔缩小的是",
+        promptSource: {
+          authority: "nur-editorial",
+          wording: "nur-adapted",
+          locator: locatorBase,
+          note: promptNote,
+          sourceIds: [],
+        },
+        correctChoiceIndex: 1,
+        answer: {
+          status: "available",
+          authority: "nur-platform",
+          confidence: "unverified",
+          content: [
+            "瞳孔括约肌",
+            "瞳孔括约肌环绕瞳孔周缘，收缩时使瞳孔缩小，由动眼神经内的副交感神经支配。",
+          ],
+          notice: answerNotice,
+          sourceIds: [],
+        },
+        scoring: null,
+        sourceIds: [],
+      },
+      {
+        id: "ext-human-anatomy-ch12-visual-organ-b001m2",
+        order: 25,
+        knowledgePointId: kp,
+        questionKind: "b1",
+        status: "available",
+        prompt: "使瞳孔转向内侧的是",
+        promptSource: {
+          authority: "nur-editorial",
+          wording: "nur-adapted",
+          locator: locatorBase,
+          note: promptNote,
+          sourceIds: [],
+        },
+        correctChoiceIndex: 2,
+        answer: {
+          status: "available",
+          authority: "nur-platform",
+          confidence: "unverified",
+          content: [
+            "内直肌",
+            "内直肌收缩使瞳孔（眼球）转向内侧，由动眼神经支配。",
+          ],
+          notice: answerNotice,
+          sourceIds: [],
+        },
+        scoring: null,
+        sourceIds: [],
+      },
+      {
+        id: "ext-human-anatomy-ch12-visual-organ-b001m3",
+        order: 26,
+        knowledgePointId: kp,
+        questionKind: "b1",
+        status: "available",
+        prompt: "收缩时使睫状体前移的是",
+        promptSource: {
+          authority: "nur-editorial",
+          wording: "nur-adapted",
+          locator: locatorBase,
+          note: promptNote,
+          sourceIds: [],
+        },
+        correctChoiceIndex: 0,
+        answer: {
+          status: "available",
+          authority: "nur-platform",
+          confidence: "unverified",
+          content: [
+            "睫状肌",
+            "睫状肌收缩时睫状突前移、睫状小带松弛，晶状体变凸以调节其曲度（视近物时）。",
+          ],
+          notice: answerNotice,
+          sourceIds: [],
+        },
+        scoring: null,
+        sourceIds: [],
+      },
+      {
+        id: "ext-human-anatomy-ch12-visual-organ-b001m4",
+        order: 27,
+        knowledgePointId: kp,
+        questionKind: "b1",
+        status: "available",
+        prompt: "使瞳孔转向外侧的是",
+        promptSource: {
+          authority: "nur-editorial",
+          wording: "nur-adapted",
+          locator: locatorBase,
+          note: promptNote,
+          sourceIds: [],
+        },
+        correctChoiceIndex: 3,
+        answer: {
+          status: "available",
+          authority: "nur-platform",
+          confidence: "unverified",
+          content: [
+            "外直肌",
+            "外直肌收缩使瞳孔（眼球）转向外侧，由展神经支配。",
+          ],
+          notice: answerNotice,
+          sourceIds: [],
+        },
+        scoring: null,
+        sourceIds: [],
+      },
+      {
+        id: "ext-human-anatomy-ch12-visual-organ-b001m5",
+        order: 28,
+        knowledgePointId: kp,
+        questionKind: "b1",
+        status: "available",
+        prompt: "可上提眼睑的肌",
+        promptSource: {
+          authority: "nur-editorial",
+          wording: "nur-adapted",
+          locator: locatorBase,
+          note: promptNote,
+          sourceIds: [],
+        },
+        correctChoiceIndex: 4,
+        answer: {
+          status: "available",
+          authority: "nur-platform",
+          confidence: "unverified",
+          content: [
+            "上睑提肌",
+            "上睑提肌收缩可上提上睑、开大睑裂，其瘫痪则上睑下垂，由动眼神经支配。",
+          ],
+          notice: answerNotice,
+          sourceIds: [],
+        },
+        scoring: null,
+        sourceIds: [],
+      },
+    ],
+    sourceIds: [],
+  },
+];
+
+export const extractedItems: readonly AssessmentItemDefinition[] = [
+  ...termItems,
+  ...a1Items,
+  ...fillItems,
+  ...shortItems,
+];
+
+export const extractedGroups: readonly AssessmentItemGroupDefinition[] = [
+  ...bGroups,
+];
