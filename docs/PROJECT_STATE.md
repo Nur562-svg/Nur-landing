@@ -1,6 +1,6 @@
 # NUR LEARN — Canonical Project State
 
-Last updated: 2026-08-17 (Asia/Shanghai) — 脉诊「常见病脉」与脏腑「脾胃病辨证」升级为**标准层**（非第5/第6完整闭环）；错题中心次要文案对比度与表里第4闭环仍有效；next priority: design-qa 浏览器补强 / 下一知识点或 M5 部署
+Last updated: 2026-09-09 (Asia/Shanghai) — 15 科题库课程全部接入（10,586 道可答题）、通用课程落地页与模考练习卷回退；next priority: Trae 传染病学提取（契约纠偏）/ 其余教材题库接入 / 产品侧设计-qa 浏览器补强
 
 This file is the durable source of truth for continuing NUR LEARN when conversation history is unavailable. Update it after material product decisions, completed milestones, verification changes, or priority changes.
 
@@ -613,6 +613,15 @@ After the browser-local learning-memory and bounded Agent milestones on 2026-07-
 - writing and case UI showed the four-step trace, deterministic/model-assist status, waiting/completed stop state, one next action, sources and authority; 390 × 844 inspection found no Agent overflow;
 - final screenshots include `subjective-writing-learning-assistance.png`, `subjective-writing-confirmed-history.png`, `subjective-writing-confirmed-history-mobile.png`, `case-reasoning-learning-memory-accepted.png`, `nur-agent-local-runtime.png`, and `nur-agent-local-runtime-mobile.png`;
 - final `npm run check` passed ESLint, strict TypeScript, and the Next.js 16.2.1 production build. The six product routes remain static or statically generated; `/api/nur-agent` is the only new dynamic server route.
+
+### `/courses/{slug}` 题库课程体系（2026-09-09）
+
+- 15 门题库课程（`src/content/courses/*-qb.ts`，AUTO-GENERATED）接入课程注册表：合计 **10,586 道可答题**；诊断学 2378（全量底稿）、中医诊断学 410（源题不足 600、缺口 190 如实登记）、其余 13 科各 599–600
+- 生成器 `scripts/generate-qb-course.ts` + 共享边界转换 `src/lib/qb-course-transform.ts`：**不修改 336 个 extracted 底稿**；来源补充（sourceIds）、知识点内 order 重排（多文件 KP）、B1 共用题干并入成员 prompt、>4 成员 B1 组均匀拆分
+- 通用课程落地页 `/courses/[courseSlug]`：章节题库网格 / 模考入口 / 材料来源 / 考纲状态；修复题库首页对无学习者状态课程的 404（新增 `selectQuestionBankChapterViews` 轻量视图，题库浏览不再依赖学习者状态）；`tcm-diagnostics` 专属工作台不受影响
+- mock-exam：**蓝图 pending（rows 为空）时回退题库随机练习卷**——按题型可用量等比例分配 100 题×1 分（最大余数法 + 广度优先取题），诚实标注「非官方卷面结构」；导入考纲后自动按蓝图组卷
+- 验证：tsc ✅（Trae 传染病学进行中文件除外）、注册表校验 17 门 ✅、npm test **219** ✅、路由冒烟全绿（含 `/courses/nonexistent` 404）
+- 新 Trae 账号（2026-09-09 起）已开工传染病学提取（`infectious-diseases/` 未提交）；其首批底稿存在契约偏差（`scoring` 误放 answer 内），已反馈，未入库
 
 ## 6. Verified Course Facts, Demonstration Data, and Remaining Gaps
 
