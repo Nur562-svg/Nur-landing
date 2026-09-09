@@ -463,7 +463,9 @@ export function MockExamRoom({ course }: MockExamRoomProps) {
         </Link>
         <h1 className={styles.title}>{course.title} · 模考 <SyncStatusBadge /></h1>
         <p className={styles.subtitle}>
-          按课程已核实考试蓝图组卷；题库不足的部分如实说明，不伪造题目。
+          {course.examBlueprint.rows.length === 0
+            ? "本课程正式考纲尚未导入：当前为题库随机练习卷（每题 1 分），非官方卷面结构；导入考纲后按蓝图组卷。"
+            : "按课程已核实考试蓝图组卷；题库不足的部分如实说明，不伪造题目。"}
         </p>
       </header>
 
@@ -488,7 +490,12 @@ export function MockExamRoom({ course }: MockExamRoomProps) {
             </div>
           ))}
         </div>
-        {course.examBlueprint.priorityNotice ? (
+        {course.examBlueprint.rows.length === 0 ? (
+          <p className={styles.priorityNotice}>
+            <strong>{course.examBlueprint.missingLabel ?? "正式考纲待导入"}</strong>{" "}
+            当前模考为题库随机练习卷（每题 1 分），非官方卷面结构。
+          </p>
+        ) : course.examBlueprint.priorityNotice ? (
           <p className={styles.priorityNotice}>
             <strong>{course.examBlueprint.priorityNotice.lead}</strong>{" "}
             {course.examBlueprint.priorityNotice.questionKinds.join("、")}；{course.examBlueprint.priorityNotice.guidance}

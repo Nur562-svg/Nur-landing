@@ -212,6 +212,17 @@ export function selectVisibleChapterViews(
     });
 }
 
+/**
+ * 题库浏览用轻量章节视图（不依赖学习者状态）。
+ * 题库课程没有学习路径/学习者状态（defaultRouteId 校验要求 routes 非空），
+ * 题库首页等纯浏览场景应使用本选择器而非 selectVisibleChapterViews。
+ */
+export function selectQuestionBankChapterViews(
+  course: CourseDefinition,
+): readonly ChapterDefinition[] {
+  return orderByOrder(course.chapters);
+}
+
 export function selectFirstIncompleteKnowledgePoint(
   chapter: ChapterWorkspaceView,
 ): KnowledgePointWorkspaceView | undefined {

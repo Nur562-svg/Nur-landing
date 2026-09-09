@@ -5,7 +5,7 @@ import Link from "next/link";
 import { ArrowLeft, ArrowRight } from "lucide-react";
 import {
   selectAssessmentItemsForChapter,
-  selectVisibleChapterViews,
+  selectQuestionBankChapterViews,
 } from "@/lib/course-selectors";
 import {
   getQBProgress,
@@ -13,7 +13,6 @@ import {
 } from "@/lib/question-bank-store";
 import type {
   CourseDefinition,
-  LearnerCourseState,
   QuestionKind,
 } from "@/types/learning";
 import { QUESTION_KIND_OPTIONS } from "@/lib/question-kind-labels";
@@ -22,17 +21,16 @@ import { SyncStatusBadge } from "./sync-status-badge";
 
 type QuestionBankHomeProps = {
   course: CourseDefinition;
-  learnerState: LearnerCourseState;
 };
 
-export function QuestionBankHome({ course, learnerState }: QuestionBankHomeProps) {
+export function QuestionBankHome({ course }: QuestionBankHomeProps) {
   const [search, setSearch] = useState("");
   const [selectedKinds, setSelectedKinds] = useState<Set<QuestionKind>>(new Set());
   const [progressStore] = useState(() => getQBProgress(course.id));
 
   const chapters = useMemo(
-    () => selectVisibleChapterViews(course, learnerState, "all"),
-    [course, learnerState],
+    () => selectQuestionBankChapterViews(course),
+    [course],
   );
 
   function toggleKind(kind: QuestionKind) {

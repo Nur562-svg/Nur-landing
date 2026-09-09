@@ -13,6 +13,7 @@ import type {
   AssessmentItemDefinition,
   CourseDefinition,
   ExamBlueprint,
+  QuestionKind,
 } from "@/types/learning";
 
 /**
@@ -105,6 +106,31 @@ type GroupMemberCandidate = {
   group?: { groupId: string; groupPrompt: string | null; sharedChoices: readonly string[] | null };
 };
 
+/** 按知识点广度优先排序：先不同知识点各取一题，再按需回填（章节覆盖面最大化）。 */
+function breadthFirstByKnowledgePoint(
+  candidates: GroupMemberCandidate[],
+): GroupMemberCandidate[] {
+  const byKnowledgePoint = new Map<string, GroupMemberCandidate[]>();
+  for (const candidate of candidates) {
+    const group = byKnowledgePoint.get(candidate.item.knowledgePointId) ?? [];
+    group.push(candidate);
+    byKnowledgePoint.set(candidate.item.knowledgePointId, group);
+  }
+  const knowledgePointIds = Array.from(byKnowledgePoint.keys());
+  const breadthFirst: GroupMemberCandidate[] = [];
+  let cursor = 0;
+  while (breadthFirst.length < candidates.length) {
+    for (const kpId of knowledgePointIds) {
+      const group = byKnowledgePoint.get(kpId) ?? [];
+      if (cursor < group.length) {
+        breadthFirst.push(group[cursor]);
+      }
+    }
+    cursor += 1;
+  }
+  return breadthFirst;
+}
+
 function buildCandidatesForKind(
   course: CourseDefinition,
   kind: string,
@@ -130,12 +156,17 @@ function buildCandidatesForKind(
 /**
  * 按 blueprint 从课程题库组卷。
  * 每行按 order 取题；行内题目按知识点广度优先（先不同知识点，再剩余同知识点）。
+ * 蓝图未导入（rows 为空）时回退为题库随机练习卷，见 createPracticePaper。
  */
 export function createMockExamPaper(
   course: CourseDefinition,
   durationMinutes = 120,
 ): MockExamPaper {
   const blueprint = course.examBlueprint;
+  if (blueprint.rows.length === 0) {
+    return createPracticePaper(course, durationMinutes);
+  }
+
   const candidatesByKind = new Map<string, GroupMemberCandidate[]>();
   for (const row of blueprint.rows) {
     if (!candidatesByKind.has(row.kind)) {
@@ -153,24 +184,7 @@ export function createMockExamPaper(
     rowPlans.push(buildRowPlan(row, availableCount));
 
     // 按知识点广度优先：同一知识点至多取一题，再按需回填。
-    const byKnowledgePoint = new Map<string, GroupMemberCandidate[]>();
-    for (const candidate of candidates) {
-      const group = byKnowledgePoint.get(candidate.item.knowledgePointId) ?? [];
-      group.push(candidate);
-      byKnowledgePoint.set(candidate.item.knowledgePointId, group);
-    }
-    const breadthFirst: GroupMemberCandidate[] = [];
-    const knowledgePointIds = Array.from(byKnowledgePoint.keys());
-    let cursor = 0;
-    while (breadthFirst.length < candidates.length) {
-      for (const kpId of knowledgePointIds) {
-        const group = byKnowledgePoint.get(kpId) ?? [];
-        if (cursor < group.length) {
-          breadthFirst.push(group[cursor]);
-        }
-      }
-      cursor += 1;
-    }
+    const breadthFirst = breadthFirstByKnowledgePoint(candidates);
 
     for (const candidate of breadthFirst.slice(0, row.count)) {
       paperItems.push(toPaperItem(candidate.item, row.id, order, row.pointsEach, candidate.group));
@@ -202,6 +216,135 @@ export function createMockExamPaper(
     complete,
     shortfalls,
     notice,
+  };
+}
+
+/**
+ * 练习卷回退：课程正式考纲未导入（examBlueprint.rows 为空）时的模考替代。
+ * 按题型可用量等比例分配 100 题（最大余数法），每题 1 分，广度优先取题；
+ * 诚实标注「题库随机练习卷、非官方卷面结构」，导入考纲后自动切换蓝图组卷。
+ */
+export function createPracticePaper(
+  course: CourseDefinition,
+  durationMinutes = 120,
+): MockExamPaper {
+  const PRACTICE_KIND_ORDER: readonly QuestionKind[] = [
+    "a1-single",
+    "b1",
+    "b2",
+    "fill",
+    "term",
+    "short-answer",
+    "case",
+  ];
+  const KIND_LABELS: Record<string, string> = {
+    "a1-single": "单选题",
+    b1: "B 型配伍题",
+    b2: "B2 型配伍题",
+    fill: "填空题",
+    term: "名词解释",
+    "short-answer": "简答/问答题",
+    case: "病例分析题",
+  };
+
+  const available = PRACTICE_KIND_ORDER
+    .map((kind) => ({ kind, candidates: buildCandidatesForKind(course, kind) }))
+    .filter((entry) => entry.candidates.length > 0);
+  const totalAvailable = available.reduce((sum, entry) => sum + entry.candidates.length, 0);
+
+  // 题库为空（不应发生）时给出空卷与诚实说明
+  if (totalAvailable === 0) {
+    return {
+      version: 1,
+      sessionId: `mock-exam-${globalThis.crypto.randomUUID()}`,
+      courseId: course.id,
+      courseTitle: course.title,
+      blueprintId: "practice-empty",
+      blueprintTitle: "题库随机练习卷（非官方卷面结构）",
+      createdAt: new Date().toISOString(),
+      durationMinutes,
+      rows: [],
+      items: [],
+      totalPoints: 0,
+      blueprintTotalPoints: 100,
+      complete: false,
+      shortfalls: [],
+      notice: "本课程题库当前为空，无法组卷。",
+    };
+  }
+
+  const TARGET = 100;
+  const raw = available.map((entry) => {
+    const quota = (TARGET * entry.candidates.length) / totalAvailable;
+    return {
+      kind: entry.kind,
+      count: entry.candidates.length,
+      floor: Math.floor(quota),
+      frac: quota - Math.floor(quota),
+    };
+  });
+
+  // 最大余数法：先取整数部分，余数按小数部分从大到小补齐
+  const allocations = new Map<string, number>(raw.map((r) => [r.kind, r.floor]));
+  let assigned = raw.reduce((sum, r) => sum + r.floor, 0);
+  let remainder = TARGET - assigned;
+  for (const r of [...raw].sort((a, b) => b.frac - a.frac)) {
+    if (remainder <= 0) break;
+    const current = allocations.get(r.kind) ?? 0;
+    if (current < r.count) {
+      allocations.set(r.kind, current + 1);
+      remainder -= 1;
+    }
+  }
+  // 极端钳制：仍有余数但全部题型触顶时，接受少于 100 题（诚实结果）
+  assigned = TARGET - remainder;
+
+  const rowPlans: MockExamRowPlan[] = [];
+  const paperItems: MockExamPaperItem[] = [];
+  let order = 1;
+  let rowOrder = 1;
+  for (const entry of available) {
+    const count = allocations.get(entry.kind) ?? 0;
+    if (count <= 0) continue;
+    const candidates = breadthFirstByKnowledgePoint(entry.candidates).slice(0, count);
+    rowPlans.push({
+      rowId: `practice-${entry.kind}`,
+      kind: entry.kind,
+      label: KIND_LABELS[entry.kind] ?? entry.kind,
+      order: rowOrder,
+      requiredCount: count,
+      availableCount: entry.candidates.length,
+      includedCount: candidates.length,
+      pointsEach: 1,
+      includedPoints: candidates.length,
+      requiredPoints: count,
+      status: "complete",
+    });
+    rowOrder += 1;
+    for (const candidate of candidates) {
+      paperItems.push(
+        toPaperItem(candidate.item, `practice-${entry.kind}`, order, 1, candidate.group),
+      );
+      order += 1;
+    }
+  }
+
+  return {
+    version: 1,
+    sessionId: `mock-exam-${globalThis.crypto.randomUUID()}`,
+    courseId: course.id,
+    courseTitle: course.title,
+    blueprintId: "practice-random",
+    blueprintTitle: "题库随机练习卷（非官方卷面结构）",
+    createdAt: new Date().toISOString(),
+    durationMinutes,
+    rows: rowPlans,
+    items: paperItems,
+    totalPoints: paperItems.length,
+    blueprintTotalPoints: TARGET,
+    complete: true,
+    shortfalls: [],
+    notice: `本课程正式考纲尚未导入：本次为题库随机练习卷（${paperItems.length} 题、每题 1 分、${assigned} 分），按题型可用量等比例取样，非官方卷面结构；导入考纲后将按蓝图组卷。`,
   };
 }
 

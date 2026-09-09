@@ -2,8 +2,6 @@ import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { QuestionBankHome } from "@/components/question-bank-home";
 import { getCourseBySlug, registeredCourses } from "@/content/courses";
-import { getDemoLearnerStateByCourseId } from "@/content/demo";
-import { assertValidLearnerCourseState } from "@/lib/course-validation";
 
 type QuestionBankPageProps = {
   params: Promise<{
@@ -44,17 +42,7 @@ export default async function QuestionBankPage({
     notFound();
   }
 
-  const learnerState = getDemoLearnerStateByCourseId(course.id);
-  if (!learnerState) {
-    notFound();
-  }
-
-  assertValidLearnerCourseState(course, learnerState);
-
   return (
-    <QuestionBankHome
-      course={course}
-      learnerState={learnerState}
-    />
+    <QuestionBankHome course={course} />
   );
 }

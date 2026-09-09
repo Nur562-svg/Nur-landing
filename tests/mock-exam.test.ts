@@ -160,3 +160,54 @@ describe("mock exam answering and reporting", () => {
     assert.ok(!report.notice.includes("题库不足"));
   });
 });
+
+describe("createMockExamPaper — pending blueprint practice fallback", () => {
+  const qbCourse = registeredCourses.find((course) => course.slug === "physiology-qb");
+
+  it("composes a 100-question practice paper when the blueprint is pending", () => {
+    assert.ok(qbCourse);
+    // 前置条件：题库课程考纲 pending（rows 为空）
+    assert.strictEqual(qbCourse.examBlueprint.rows.length, 0);
+
+    const paper = createMockExamPaper(qbCourse);
+    assert.strictEqual(paper.blueprintId, "practice-random");
+    assert.strictEqual(paper.blueprintTitle, "题库随机练习卷（非官方卷面结构）");
+    assert.strictEqual(paper.complete, true);
+    assert.deepStrictEqual(paper.shortfalls, []);
+    assert.ok(paper.items.length > 0);
+    assert.ok(paper.items.length <= 100);
+
+    // 每题 1 分，总分 = 题数
+    assert.ok(paper.items.every((item) => item.points === 1));
+    assert.strictEqual(paper.totalPoints, paper.items.length);
+
+    // 所有题目均来自课程题库（顶层或 B1/B2 组成员）
+    const knownIds = new Set([
+      ...qbCourse.assessmentItems.map((item) => item.id),
+      ...qbCourse.assessmentGroups.flatMap((group) => group.members.map((member) => member.id)),
+    ]);
+    assert.ok(paper.items.every((item) => knownIds.has(item.itemId)));
+
+    // 行 plan 完整、顺序递增、每题 1 分
+    const rowOrders = paper.rows.map((row) => row.order);
+    assert.deepStrictEqual(rowOrders, [...rowOrders].sort((a, b) => a - b));
+    assert.ok(paper.rows.every((row) => row.status === "complete" && row.pointsEach === 1));
+
+    // 诚实标注：非官方卷面结构
+    assert.match(paper.notice, /正式考纲尚未导入/);
+    assert.match(paper.notice, /非官方卷面结构/);
+  });
+
+  it("keeps B1 group context on practice paper items", () => {
+    assert.ok(qbCourse);
+    const paper = createMockExamPaper(qbCourse);
+    const b1Items = paper.items.filter((item) => item.questionKind === "b1");
+    assert.ok(b1Items.length > 0);
+    for (const item of b1Items) {
+      assert.ok(item.groupId);
+      assert.ok(item.sharedChoices && item.sharedChoices.length >= 2);
+      assert.strictEqual(item.automaticallyScored, true);
+      assert.strictEqual(item.choices.length, item.sharedChoices!.length);
+    }
+  });
+});
