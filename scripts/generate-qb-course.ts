@@ -21,6 +21,7 @@ import type {
 
 type SubjectCfg = {
   key: string; // 科目目录名（= extracted 前缀），如 physiology
+  exportBase: string; // index.ts 实际导出前缀（camelCase），如 cellBio
   slug: string; // 课程 slug，如 physiology-qb
   title: string;
   catalogLabel: string;
@@ -32,23 +33,159 @@ type SubjectCfg = {
   versionMissingLabel: string;
   textbookLabel: string;
   textbookEdition: string | null;
+  titleOverrides?: Record<string, string>; // topic → 章节标题（优先于 locator 解析）
 };
 
 const SUBJECTS: Record<string, SubjectCfg> = {
   physiology: {
-    key: "physiology",
-    slug: "physiology-qb",
-    title: "生理学 · 题库",
-    catalogLabel: "生理学题库",
-    classification: "西医基础医学",
-    description:
-      "《生理学学习指导与习题集》第3版（人民卫生出版社）题库底稿：12 章约 600 道独立记分题（名词解释/A1单选/简答/B1配伍），经 OCR 语义恢复与等比取样，答案未与权威教材交叉核对。",
-    ghostWordmark: "PHYSIOLOGY",
-    curriculumMode: "western-primary",
+    key: "physiology", exportBase: "physiology", slug: "physiology-qb",
+    title: "生理学 · 题库", catalogLabel: "生理学题库", classification: "西医基础医学",
+    description: "《生理学学习指导与习题集》第3版（人民卫生出版社）题库底稿：12 章约 600 道独立记分题（名词解释/A1单选/简答/B1配伍），OCR 语义恢复 + 等比取样，答案未与权威教材交叉核对。",
+    ghostWordmark: "PHYSIOLOGY", curriculumMode: "western-primary",
     examBlueprintMissingLabel: "生理学正式考纲/试卷结构待导入",
     versionMissingLabel: "生理学教材版本信息待核验",
-    textbookLabel: "《生理学学习指导与习题集》第3版（人民卫生出版社）",
-    textbookEdition: "第3版",
+    textbookLabel: "《生理学学习指导与习题集》第3版（人民卫生出版社）", textbookEdition: "第3版",
+  },
+  diagnostics: {
+    key: "diagnostics", exportBase: "diagnostics", slug: "diagnostics-qb",
+    title: "西医诊断学 · 题库", catalogLabel: "西医诊断学题库", classification: "西医临床医学",
+    description: "《诊断学学习指导与习题集》第4版全量底稿：1602 道独立记分题（含 B 型配伍 200 组），覆盖问诊/症状/体格检查/实验室检查，答案未与权威教材交叉核对。",
+    ghostWordmark: "DIAGNOSTICS", curriculumMode: "western-primary",
+    examBlueprintMissingLabel: "诊断学正式考纲/试卷结构待导入",
+    versionMissingLabel: "诊断学教材版本信息待核验",
+    textbookLabel: "《诊断学学习指导与习题集》第4版", textbookEdition: "第4版",
+  },
+  "medical-genetics": {
+    key: "medical-genetics", exportBase: "medicalGenetics", slug: "medical-genetics-qb",
+    title: "医学遗传学 · 题库", catalogLabel: "医学遗传学题库", classification: "西医基础医学",
+    description: "《医学遗传学学习指导与习题集》第4版题库底稿：绪论+20 章 599 道独立记分题，答案未与权威教材交叉核对。",
+    ghostWordmark: "MEDICAL GENETICS", curriculumMode: "western-primary",
+    examBlueprintMissingLabel: "医学遗传学正式考纲/试卷结构待导入",
+    versionMissingLabel: "医学遗传学教材版本信息待核验",
+    textbookLabel: "《医学遗传学学习指导与习题集》第4版", textbookEdition: "第4版",
+  },
+  "human-anatomy": {
+    key: "human-anatomy", exportBase: "humanAnatomy", slug: "human-anatomy-qb",
+    title: "系统解剖学 · 题库", catalogLabel: "系统解剖学题库", classification: "西医基础医学",
+    description: "《系统解剖学习题集》第2版题库底稿（扫描件 OCR 提取）：18 章恰好 600 道独立记分题，错字按解剖学语义恢复，答案未与权威教材交叉核对。",
+    ghostWordmark: "HUMAN ANATOMY", curriculumMode: "western-primary",
+    examBlueprintMissingLabel: "系统解剖学正式考纲/试卷结构待导入",
+    versionMissingLabel: "系统解剖学教材版本信息待核验",
+    textbookLabel: "《系统解剖学习题集》第2版（人民卫生出版社）", textbookEdition: "第2版",
+  },
+  biochemistry: {
+    key: "biochemistry", exportBase: "biochemistry", slug: "biochemistry-qb",
+    title: "生物化学与分子生物学 · 题库", catalogLabel: "生物化学与分子生物学题库", classification: "西医基础医学",
+    description: "《生物化学与分子生物学学习指导与习题集》题库底稿：27 章恰好 600 道独立记分题，答案未与权威教材交叉核对。",
+    ghostWordmark: "BIOCHEMISTRY", curriculumMode: "western-primary",
+    examBlueprintMissingLabel: "生物化学正式考纲/试卷结构待导入",
+    versionMissingLabel: "生物化学教材版本信息待核验",
+    textbookLabel: "《生物化学与分子生物学学习指导与习题集》", textbookEdition: null,
+  },
+  "histology-embryology": {
+    key: "histology-embryology", exportBase: "histologyEmbryology", slug: "histology-embryology-qb",
+    title: "组织学与胚胎学 · 题库", catalogLabel: "组织学与胚胎学题库", classification: "西医基础医学",
+    description: "《组织学与胚胎学学习指导与习题集》第4版题库底稿：28 章（组织学+胚胎学）恰好 600 道独立记分题，答案未与权威教材交叉核对。",
+    ghostWordmark: "HISTOLOGY & EMBRYOLOGY", curriculumMode: "western-primary",
+    examBlueprintMissingLabel: "组织学与胚胎学正式考纲/试卷结构待导入",
+    versionMissingLabel: "组织学与胚胎学教材版本信息待核验",
+    textbookLabel: "《组织学与胚胎学学习指导与习题集》第4版", textbookEdition: "第4版",
+  },
+  "cell-biology": {
+    key: "cell-biology", exportBase: "cellBio", slug: "cell-biology-qb",
+    title: "医学细胞生物学 · 题库", catalogLabel: "医学细胞生物学题库", classification: "西医基础医学",
+    description: "《医学细胞生物学实验指导与习题集》第4版题库底稿（只取第二部分习题集 18 章）：恰好 600 道独立记分题，答案未与权威教材交叉核对。",
+    ghostWordmark: "CELL BIOLOGY", curriculumMode: "western-primary",
+    examBlueprintMissingLabel: "医学细胞生物学正式考纲/试卷结构待导入",
+    versionMissingLabel: "医学细胞生物学教材版本信息待核验",
+    textbookLabel: "《医学细胞生物学实验指导与习题集》第4版", textbookEdition: "第4版",
+  },
+  immunology: {
+    key: "immunology", exportBase: "immunology", slug: "immunology-qb",
+    title: "医学免疫学 · 题库", catalogLabel: "医学免疫学题库", classification: "西医基础医学",
+    description: "《医学免疫学学习指导与习题集》第3版题库底稿（扫描件 OCR 提取）：25 章恰好 600 道独立记分题，答案未与权威教材交叉核对。",
+    ghostWordmark: "IMMUNOLOGY", curriculumMode: "western-primary",
+    examBlueprintMissingLabel: "医学免疫学正式考纲/试卷结构待导入",
+    versionMissingLabel: "医学免疫学教材版本信息待核验",
+    textbookLabel: "《医学免疫学学习指导与习题集》第3版", textbookEdition: "第3版",
+  },
+  microbiology: {
+    key: "microbiology", exportBase: "microbiology", slug: "microbiology-qb",
+    title: "医学微生物学 · 题库", catalogLabel: "医学微生物学题库", classification: "西医基础医学",
+    description: "《医学微生物学学习指导与习题集》第2版题库底稿（扫描件 OCR 提取）：绪论+36 章恰好 600 道独立记分题（含 32 组 B1 配伍），答案未与权威教材交叉核对。",
+    ghostWordmark: "MICROBIOLOGY", curriculumMode: "western-primary",
+    examBlueprintMissingLabel: "医学微生物学正式考纲/试卷结构待导入",
+    versionMissingLabel: "医学微生物学教材版本信息待核验",
+    textbookLabel: "《医学微生物学学习指导与习题集》第2版", textbookEdition: "第2版",
+  },
+  neurology: {
+    key: "neurology", exportBase: "neurology", slug: "neurology-qb",
+    title: "神经病学 · 题库", catalogLabel: "神经病学题库", classification: "西医临床医学",
+    description: "《神经病学学习指导与习题集》第3版题库底稿（扫描件 OCR 提取）：23 章恰好 600 道独立记分题（含 34 组 B1 配伍），答案未与权威教材交叉核对。",
+    ghostWordmark: "NEUROLOGY", curriculumMode: "western-primary",
+    examBlueprintMissingLabel: "神经病学正式考纲/试卷结构待导入",
+    versionMissingLabel: "神经病学教材版本信息待核验",
+    textbookLabel: "《神经病学学习指导与习题集》第3版", textbookEdition: "第3版",
+  },
+  pharmacology: {
+    key: "pharmacology", exportBase: "pharmacology", slug: "pharmacology-qb",
+    title: "药理学 · 题库", catalogLabel: "药理学题库", classification: "西医基础医学",
+    description: "《药理学学习指导与习题集》第4版题库底稿（扫描件 OCR 提取）：49 章恰好 600 道独立记分题（含 35 组 B1 配伍），答案未与权威教材交叉核对。",
+    ghostWordmark: "PHARMACOLOGY", curriculumMode: "western-primary",
+    examBlueprintMissingLabel: "药理学正式考纲/试卷结构待导入",
+    versionMissingLabel: "药理学教材版本信息待核验",
+    textbookLabel: "《药理学学习指导与习题集》第4版", textbookEdition: "第4版",
+  },
+  "topographic-anatomy": {
+    key: "topographic-anatomy", exportBase: "topographicAnatomy", slug: "topographic-anatomy-qb",
+    title: "局部解剖学 · 题库", catalogLabel: "局部解剖学题库", classification: "西医基础医学",
+    description: "《局部解剖学学习指导与习题集》题库底稿（扫描件 OCR 提取）：绪论+8 章恰好 600 道独立记分题（含 42 组 B1 配伍），答案未与权威教材交叉核对。",
+    ghostWordmark: "TOPGRAPHIC ANATOMY", curriculumMode: "western-primary",
+    examBlueprintMissingLabel: "局部解剖学正式考纲/试卷结构待导入",
+    versionMissingLabel: "局部解剖学教材版本信息待核验",
+    textbookLabel: "《局部解剖学学习指导与习题集》", textbookEdition: null,
+  },
+  pathology: {
+    key: "pathology", exportBase: "pathology", slug: "pathology-qb",
+    title: "病理学 · 题库", catalogLabel: "病理学题库", classification: "西医基础医学",
+    description: "《病理学学习指导与习题集》题库底稿（扫描件 OCR 提取）：18 章恰好 600 道独立记分题（名词/单选/判断+问答），答案未与权威教材交叉核对。",
+    ghostWordmark: "PATHOLOGY", curriculumMode: "western-primary",
+    examBlueprintMissingLabel: "病理学正式考纲/试卷结构待导入",
+    versionMissingLabel: "病理学教材版本信息待核验",
+    textbookLabel: "《病理学学习指导与习题集》", textbookEdition: null,
+  },
+  "tcm-diagnostics-bank": {
+    key: "tcm-diagnostics-bank", exportBase: "tcmDiagnosticsBank", slug: "tcm-diagnostics-qb",
+    title: "中医诊断学 · 题库", catalogLabel: "中医诊断学题库", classification: "中医基础医学",
+    description: "中医诊断学学生整理带答案材料（非编号学习指导）：12 个知识单元全取 410 道独立记分题（源题不足 600，缺口 190 如实登记），答案未与权威教材交叉核对。",
+    ghostWordmark: "TCM DIAGNOSTICS", curriculumMode: "tcm-primary",
+    examBlueprintMissingLabel: "中医诊断学正式考纲/试卷结构待导入",
+    versionMissingLabel: "中医诊断学教材版本信息待核验",
+    textbookLabel: "中医诊断学学生整理带答案材料（非编号学习指导）", textbookEdition: null,
+    // 知识单元名按拼音 topic 显式覆盖（locator 无「第X章」，首题 locator 常指向小节而非单元）
+    titleOverrides: {
+      "tcm-diagnostics-bank-ch01-gulun": "绪论",
+      "tcm-diagnostics-bank-ch02-wangzhen": "望诊",
+      "tcm-diagnostics-bank-ch03-shezhen": "舌诊",
+      "tcm-diagnostics-bank-ch04-wenzhen": "闻诊",
+      "tcm-diagnostics-bank-ch05-wenzhen-wen": "问诊",
+      "tcm-diagnostics-bank-ch06-maizhen": "脉诊",
+      "tcm-diagnostics-bank-ch07-anzhen": "按诊",
+      "tcm-diagnostics-bank-ch08-bagang": "八纲辨证",
+      "tcm-diagnostics-bank-ch09-bingxing": "病性辨证",
+      "tcm-diagnostics-bank-ch10-zangfu-bianzheng": "脏腑辨证",
+      "tcm-diagnostics-bank-ch11-qita": "其他辨证",
+      "tcm-diagnostics-bank-ch12-bingli-xiezuo": "病历书写与诊断",
+    },
+  },
+  "radiology-bank": {
+    key: "radiology-bank", exportBase: "radiologyBank", slug: "radiology-qb",
+    title: "医学影像学 · 题库", catalogLabel: "医学影像学题库", classification: "西医临床医学",
+    description: "《医学影像学学习指导与习题集》第3版题库底稿（扫描件 OCR 提取）：15 章恰好 600 道独立记分题（含 23 组 B1 配伍），答案未与权威教材交叉核对。",
+    ghostWordmark: "RADIOLOGY", curriculumMode: "western-primary",
+    examBlueprintMissingLabel: "医学影像学正式考纲/试卷结构待导入",
+    versionMissingLabel: "医学影像学教材版本信息待核验",
+    textbookLabel: "《医学影像学学习指导与习题集》第3版", textbookEdition: "第3版",
   },
 };
 
@@ -56,11 +193,28 @@ function err(msg: string): never {
   throw new Error(`[generate-qb-course] ${msg}`);
 }
 
+const CN = "零一二三四五六七八九";
+function cnToNum(s: string): number | null {
+  if (/^\d+$/.test(s)) return Number(s);
+  if (s === "十") return 10;
+  if (s.startsWith("十")) return 10 + CN.indexOf(s[1]);
+  if (s.endsWith("十")) return CN.indexOf(s[0]) * 10;
+  if (s.includes("十")) return CN.indexOf(s[0]) * 10 + CN.indexOf(s[2]);
+  if (s.length === 1) return CN.indexOf(s);
+  return null;
+}
 function chapterTitleFromLocator(locator: string | undefined, fallback: string): string {
   if (!locator) return fallback;
-  // "《…》第3版 第五章 呼吸 复习思考题 习题（PDF …）" → "第五章 呼吸"
-  const m = locator.match(/第[一二三四五六七八九十百\d]+章\s*[^\s（(，。；]*/);
-  if (m) return m[0].trim();
+  // 1) "《…》第3版 第五章 呼吸 复习思考题…" / "第01章 细菌的形态与结构…" → "第5章 呼吸"
+  let m = locator.match(/第([一二三四五六七八九十百\d]+)章\s*([^\s（(，。；]*)/);
+  if (m) {
+    const n = cnToNum(m[1]);
+    const num = n !== null ? `第${n}章` : `第${m[1]}章`;
+    return m[2] ? `${num} ${m[2]}` : num;
+  }
+  // 2) "…·单元名（项目整理标准答案）"（如中医诊断学知识单元：·绪论 / ·问诊·问寒热）
+  m = locator.match(/·([^（(；\s][^（(；]*?)(?=（|$)/);
+  if (m) return m[1].trim();
   return fallback;
 }
 
@@ -82,9 +236,9 @@ async function generate(cfg: SubjectCfg): Promise<void> {
   // 模块解析优先文件，必须显式导入 {key}/index
   const mod = await import(`../src/content/courses/${cfg.key}/index`);
   const items: AssessmentItemDefinition[] =
-    mod[`${cfg.key}ExtractedItems`] ?? err(`${cfg.key}ExtractedItems 未导出`);
+    mod[`${cfg.exportBase}ExtractedItems`] ?? err(`${cfg.exportBase}ExtractedItems 未导出`);
   const groups: AssessmentItemGroupDefinition[] =
-    mod[`${cfg.key}ExtractedGroups`] ?? [];
+    mod[`${cfg.exportBase}ExtractedGroups`] ?? [];
 
   if (items.length === 0 && groups.length === 0) {
     err(`${cfg.key}：无任何题目`);
@@ -119,8 +273,10 @@ async function generate(cfg: SubjectCfg): Promise<void> {
     const first = chapterItems[0];
     const locator = first?.promptSource?.locator;
     const fallbackTitle = topic;
-    const title = chapterTitleFromLocator(locator, fallbackTitle);
     const indexLabel = toIndexLabel(topic);
+    // 覆盖表 > 绪论特判 > locator 解析 > topic 回退
+    const title = cfg.titleOverrides?.[topic]
+      ?? (indexLabel === "绪论" ? "绪论" : chapterTitleFromLocator(locator, fallbackTitle));
 
     const chapterId = `chapter-${cfg.slug}-${topic}`;
     chapters.push({
@@ -156,9 +312,10 @@ async function generate(cfg: SubjectCfg): Promise<void> {
   const courseId = `course-${cfg.slug}`;
   const out = `// AUTO-GENERATED by scripts/generate-qb-course.ts — 请勿手改。改动请重跑生成器。
 import type { CourseDefinition } from "@/types/learning";
+import { buildQbCourseAssessmentData } from "@/lib/qb-course-transform";
 import {
-  ${cfg.key}ExtractedItems,
-  ${cfg.key}ExtractedGroups,
+  ${cfg.exportBase}ExtractedItems,
+  ${cfg.exportBase}ExtractedGroups,
 } from "./${cfg.key}/index"; // 注意：{subject}.ts（现有课程）与 {subject}/（提取目录）同名，显式指向 index
 
 const chapters = ${JSON.stringify(chapters, null, 2)} as const;
@@ -187,24 +344,14 @@ const qbSource = {
   verifiedAt: null,
 } as const;
 
-// 课程边界映射：extracted 底稿按契约 sourceIds 为空，课程校验要求非空——不修改底稿，
-// 在课程定义层统一补充来源引用。
-const withQbSource = <T extends { promptSource: { sourceIds: readonly string[] } }>(input: readonly T[]) =>
-  input.map((item) => ({
-    ...item,
-    promptSource: { ...item.promptSource, sourceIds: [QB_SOURCE_ID] },
-  }));
-const withQbSourceAndAnswer = (
-  item: (typeof ${cfg.key}ExtractedItems)[number],
-) => ({
-  ...item,
-  promptSource: { ...item.promptSource, sourceIds: [QB_SOURCE_ID] },
-  answer: item.answer.status === "available"
-    ? { ...item.answer, sourceIds: [QB_SOURCE_ID] }
-    : item.answer,
-});
+// 边界转换：来源补充 + 知识点内 order 重排 + B1 题干并入成员 + 大组拆分（不修改底稿）
+const { items: qbItems, groups: qbGroups } = buildQbCourseAssessmentData(
+  ${cfg.exportBase}ExtractedItems,
+  ${cfg.exportBase}ExtractedGroups,
+  QB_SOURCE_ID,
+);
 
-export const ${cfg.key}QbCourse: CourseDefinition = {
+export const ${cfg.exportBase}QbCourse: CourseDefinition = {
   id: ${JSON.stringify(courseId)},
   slug: ${JSON.stringify(cfg.slug)},
   title: ${JSON.stringify(cfg.title)},
@@ -251,15 +398,12 @@ export const ${cfg.key}QbCourse: CourseDefinition = {
   chapters,
   knowledgePoints,
   learningTasks: [],
-  assessmentItems: ${cfg.key}ExtractedItems.map(withQbSourceAndAnswer),
-  assessmentGroups: withQbSource(${cfg.key}ExtractedGroups).map((group) => ({
-    ...group,
-    members: group.members.map(withQbSourceAndAnswer),
-  })),
+  assessmentItems: qbItems,
+  assessmentGroups: qbGroups,
   cases: [],
 };
 
-export default ${cfg.key}QbCourse;
+export default ${cfg.exportBase}QbCourse;
 `;
 
   const target = join(process.cwd(), "src", "content", "courses", `${cfg.slug}.ts`);
