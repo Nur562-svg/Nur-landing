@@ -1,6 +1,6 @@
 # NUR LEARN — Canonical Project State
 
-Last updated: 2026-09-10 (Asia/Shanghai) — 私人导入支持 PDF 文字层（无 OCR）
+Last updated: 2026-09-10 (Asia/Shanghai) — 私人练习可收藏/确认进学习记忆
 
 This file is the durable source of truth for continuing NUR LEARN when conversation history is unavailable. Update it after material product decisions, completed milestones, verification changes, or priority changes.
 
@@ -683,6 +683,7 @@ After the browser-local learning-memory and bounded Agent milestones on 2026-07-
 - 不注册 `CourseDefinition`，不进 `/courses` 目录；官方闭环不做
 - `/learn` 导航增加「导入」
 - PDF 文字层（pdfjs，`enableScripting:false`）可解析进同一练习链；扫描件标 `scan-or-empty-text-layer`，不做 OCR
+- 练习页支持收藏筛选、确认写入浏览器学习记忆、复习提案与会话恢复
 
 ### 运维窄修（2026-09-10）
 

@@ -247,7 +247,7 @@ export function PrivateMaterialsStudio() {
             {result.coverage.summary} 覆盖 {result.coverage.status} · 完整课程 {result.coverage.compilationReadiness}。
           </p>
           {result.learningUnit.questions.length > 0 ? (
-            <PrivatePracticeRoom questions={result.learningUnit.questions} />
+            <PrivatePracticeRoom analysisResult={result} />
           ) : (
             <p className={styles.hint}>这次没有映射出可练习题目，材料被标为 unmapped。可以改摘录后重新授权。</p>
           )}
