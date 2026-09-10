@@ -17,15 +17,21 @@ function CourseCard({ course }: { course: CourseDefinition }) {
     : `${course.classification} · ${itemCount} 题`;
 
   return (
-    <Link className={styles.card} href={href}>
-      <span className={styles.cardKicker}>{loop ? "学习闭环" : "题库"}</span>
-      <h3 className={styles.cardTitle}>{course.title}</h3>
-      <p className={styles.cardMeta}>{meta}</p>
-      <span className={styles.cardAction}>
-        {loop ? "进入工作台" : "进入题库课"}
-        <ArrowRight size={16} />
-      </span>
-    </Link>
+    <article className={styles.card}>
+      <Link className={styles.cardMain} href={href}>
+        <span className={styles.cardKicker}>{loop ? "学习闭环" : "题库"}</span>
+        <h3 className={styles.cardTitle}>{course.title}</h3>
+        <p className={styles.cardMeta}>{meta}</p>
+        <span className={styles.cardAction}>
+          {loop ? "进入工作台" : "进入题库课"}
+          <ArrowRight size={16} />
+        </span>
+      </Link>
+      <div className={styles.cardLinks}>
+        <Link href={`/courses/${course.slug}/question-bank`}>刷题</Link>
+        <Link href={`/courses/${course.slug}/mock-exam`}>模考</Link>
+      </div>
+    </article>
   );
 }
 
@@ -47,7 +53,7 @@ export function CourseCatalog({ courses }: CourseCatalogProps) {
       </header>
 
       {loopCourses.length > 0 ? (
-        <section className={styles.section}>
+        <section className={styles.section} id="learning-loops">
           <h2 className={styles.sectionTitle}>学习闭环</h2>
           <div className={styles.grid}>
             {loopCourses.map((course) => (
@@ -58,7 +64,7 @@ export function CourseCatalog({ courses }: CourseCatalogProps) {
       ) : null}
 
       {bankCourses.length > 0 ? (
-        <section className={styles.section}>
+        <section className={styles.section} id="question-banks">
           <h2 className={styles.sectionTitle}>题库课程</h2>
           <div className={styles.grid}>
             {bankCourses.map((course) => (

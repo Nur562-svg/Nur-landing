@@ -645,8 +645,8 @@ After the browser-local learning-memory and bounded Agent milestones on 2026-07-
 
 ### 课程目录 `/courses`（2026-09-10）
 
-- `/learn` 主导航「课程」进入目录，不再直达第一门中诊工作台
-- 目录分「学习闭环」与「题库课程」；卡片进 `/courses/{slug}`
+- `/learn` 主导航「课程」进入目录，「题库」锚到题库分区
+- 目录分「学习闭环」与「题库课程」；卡片进工作台，并提供刷题/模考直达
 - 落地页返回链改为课程目录
 
 ## 6. Verified Course Facts, Demonstration Data, and Remaining Gaps

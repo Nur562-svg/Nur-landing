@@ -391,7 +391,7 @@ export function LearningDashboard({ courses }: LearningDashboardProps) {
           <Link href="/learn/course-builder">
             建课
           </Link>
-          <Link href="/question-bank">
+          <Link href="/courses#question-banks">
             题库
           </Link>
           <Link href="/wrong-questions">
