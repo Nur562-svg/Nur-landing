@@ -9,8 +9,7 @@ import {
   getConfiguredNurAgentProvider,
   runNurAgent,
 } from "@/lib/nur-agent/service";
-import { getCurrentSession } from "@/lib/auth/session";
-import { recordServerUsage, checkAndEnforceQuota } from "@/lib/quotas-server";
+import { enforceLoggedInModelQuota } from "@/lib/quota-gate";
 import type { NurAgentErrorResponse } from "@/types/nur-agent";
 
 export const runtime = "nodejs";
@@ -58,19 +57,13 @@ export async function POST(request: Request): Promise<Response> {
     const agentRequest = parseNurAgentRequest(value);
     const context = resolveNurAgentContext(agentRequest);
 
-    // M3 更多门控: 免费用户超限返回 429，不执行模型调用
-    try {
-      const { prisma } = await import("@/lib/prisma");
-      const session = await getCurrentSession();
-      if (session) {
-        const dbUser = await prisma.user.findUnique({ where: { email: session.email }, select: { id: true } });
-        if (dbUser) {
-          const gate = await checkAndEnforceQuota(dbUser.id, "agentCalls");
-          if (gate) return Response.json(gate.body, { status: gate.status });
-          await recordServerUsage(dbUser.id, "agentCalls");
-        }
-      }
-    } catch {}
+    const quota = await enforceLoggedInModelQuota("agentCalls");
+    if (quota.status === "blocked") {
+      return Response.json(quota.body, { status: quota.httpStatus });
+    }
+    if (quota.status === "unavailable") {
+      return errorResponse("runtime-failed", quota.message, 503);
+    }
     const provider = getConfiguredNurAgentProvider();
     return Response.json(await runNurAgent(context, provider));
   } catch (error) {

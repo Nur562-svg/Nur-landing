@@ -5,9 +5,7 @@ import {
   runPrivateMaterialAnalysis,
 } from "@/lib/course-builder/service";
 import { listCourseBuildPacks } from "@/lib/course-builder/packs";
-import { getCurrentSession } from "@/lib/auth/session";
-import { recordServerUsage, checkAndEnforceQuota } from "@/lib/quotas-server";
-import { prisma } from "@/lib/prisma";
+import { enforceLoggedInModelQuota } from "@/lib/quota-gate";
 import {
   CourseBuildRequestError,
   parseCourseBuilderApiRequest,
@@ -73,34 +71,19 @@ export async function POST(request: Request): Promise<Response> {
     const buildRequest = parseCourseBuilderApiRequest(value);
     const provider = getConfiguredCourseBuilderProvider();
 
+    const quota = await enforceLoggedInModelQuota("courseBuilds");
+    if (quota.status === "blocked") {
+      return Response.json(quota.body, { status: quota.httpStatus });
+    }
+    if (quota.status === "unavailable") {
+      return errorResponse("runtime-failed", quota.message, 503, false);
+    }
+
     if (isPrivateMaterialAnalysisRequest(buildRequest)) {
-      const session = await getCurrentSession();
-      if (session) {
-        try {
-          const dbUser = await prisma.user.findUnique({ where: { email: session.email }, select: { id: true } });
-          if (dbUser) {
-            const gate = await checkAndEnforceQuota(dbUser.id, "courseBuilds");
-            if (gate) return Response.json(gate.body, { status: gate.status });
-            await recordServerUsage(dbUser.id, "courseBuilds");
-          }
-        } catch {}
-      }
       const result = await runPrivateMaterialAnalysis(buildRequest, provider);
       return Response.json(result);
     }
 
-    // normal/official pack build
-    const sessionNormal = await getCurrentSession();
-    if (sessionNormal) {
-      try {
-        const dbUser = await prisma.user.findUnique({ where: { email: sessionNormal.email }, select: { id: true } });
-        if (dbUser) {
-          const gate = await checkAndEnforceQuota(dbUser.id, "courseBuilds");
-          if (gate) return Response.json(gate.body, { status: gate.status });
-          await recordServerUsage(dbUser.id, "courseBuilds");
-        }
-      } catch {}
-    }
     const result = await runCourseBuild(buildRequest, provider);
     if (!result) {
       return errorResponse("unknown-material-pack", "材料包不存在或未获准进入构建器。", 404);

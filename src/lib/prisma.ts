@@ -2,19 +2,17 @@ import path from "node:path";
 import { PrismaClient } from "@prisma/client";
 import { PrismaD1 } from "@prisma/adapter-d1";
 import { PrismaBetterSqlite3 } from "@prisma/adapter-better-sqlite3";
+import { PrismaPg } from "@prisma/adapter-pg";
 import { getCloudflareContext } from "@opennextjs/cloudflare";
+import { assertNodeRuntimeDatabaseUrl, isPostgresConnectionString } from "@/lib/database-url";
 
 /**
  * Prisma 单例：避免开发热重载时创建多个连接。
  *
- * 运行环境自适应（OpenNext 官方推荐方式）：
- * - Cloudflare Workers / 本地 workerd（OpenNext preview）/ next dev（经 initOpenNextCloudflareForDev）：
- *   通过 getCloudflareContext() 拿到 **可用的** D1 binding，使用 PrismaD1 driver adapter。
- * - 纯 Node 环境，或 CF context 存在但 DB binding 未配/无效：回退 better-sqlite3 连接本地 SQLite。
- *
- * 注意：
- * - @prisma/client 保持默认输出（不自定义 output 目录），由 OpenNext 在构建时 patch。
- * - better-sqlite3 配置在 serverExternalPackages 中，Cloudflare bundle 不会打入该原生模块。
+ * - Cloudflare / OpenNext：可用 D1 binding → PrismaD1
+ * - DATABASE_URL 为 postgres → PrismaPg（生产 Docker 路径）
+ * - 其余本地开发 → better-sqlite3
+ * - NODE_ENV=production 且没有 D1 / Postgres → 直接失败，禁止静默落到 sqlite
  */
 const globalForPrisma = globalThis as unknown as { prisma?: PrismaClient };
 
@@ -27,7 +25,6 @@ function isUsableD1(db: unknown): db is { prepare: (query: string) => unknown } 
 }
 
 function createLocalSqliteClient(): PrismaClient {
-  // Absolute file URL: relative `file:./prisma/dev.db` breaks when cwd ≠ project root.
   const dbPath = path.join(process.cwd(), "prisma", "dev.db");
   const url = `file:${dbPath}`;
   return new PrismaClient({
@@ -35,20 +32,36 @@ function createLocalSqliteClient(): PrismaClient {
   });
 }
 
+function createPostgresClient(connectionString: string): PrismaClient {
+  return new PrismaClient({
+    adapter: new PrismaPg(connectionString),
+  });
+}
+
 function createPrismaClient(): PrismaClient {
+  let d1Available = false;
   try {
     const ctx = getCloudflareContext({ async: false });
-    // OpenNext dev may provide a Cloudflare context shell without a real D1 binding
-    // (e.g. missing wrangler.toml d1_databases). Using PrismaD1(undefined) yields:
-    //   TypeError: Cannot read properties of undefined (reading 'prepare')
+    // OpenNext dev may provide a Cloudflare context shell without a real D1 binding.
     // @ts-expect-error Cloudflare D1 binding (DB) via wrangler types / cloudflare-env.d.ts
     const db = ctx?.env?.DB;
     if (isUsableD1(db)) {
-      // Narrowed only on prepare(); full D1Database surface exists at CF runtime.
+      d1Available = true;
       return new PrismaClient({ adapter: new PrismaD1(db as ConstructorParameters<typeof PrismaD1>[0]) });
     }
   } catch {
     // getCloudflareContext throws outside CF / OpenNext-dev bindings — fall through.
+  }
+
+  const databaseUrl = process.env.DATABASE_URL?.trim() ?? "";
+  assertNodeRuntimeDatabaseUrl({
+    nodeEnv: process.env.NODE_ENV,
+    databaseUrl,
+    d1Available,
+  });
+
+  if (isPostgresConnectionString(databaseUrl)) {
+    return createPostgresClient(databaseUrl);
   }
   return createLocalSqliteClient();
 }
@@ -60,7 +73,6 @@ function getOrCreateClient(): PrismaClient {
   return globalForPrisma.prisma;
 }
 
-// Proxy 惰性代理：首次访问属性/方法时才真正初始化 PrismaClient
 export const prisma: PrismaClient = new Proxy({} as PrismaClient, {
   get(_target, prop) {
     const client = getOrCreateClient();

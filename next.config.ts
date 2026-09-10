@@ -23,6 +23,8 @@ const nextConfig: NextConfig = {
     ".prisma/client",
     "@prisma/adapter-better-sqlite3",
     "better-sqlite3",
+    "pg",
+    "@prisma/adapter-pg",
   ],
   async headers() {
     return [

@@ -49,6 +49,9 @@ COPY --from=dependencies /app/node_modules ./node_modules
 # Copy application source code
 COPY . .
 
+# 生产镜像锁定 Postgres client，禁止把仓库默认 sqlite schema 打进 standalone
+RUN node scripts/set-prisma-provider.mjs postgresql && npx prisma generate
+
 ENV NODE_ENV=production
 
 # Next.js collects completely anonymous telemetry data about general usage.

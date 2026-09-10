@@ -63,7 +63,8 @@ NUR_COURSE_BUILDER_MODEL=qwen3.7-plus
 # - .env.local 中的 DATABASE_URL 必须是完整 postgres 串
 # - docker-compose 不再硬编码损坏的 DATABASE_URL（依赖 env_file）
 # - 健康检查依赖 wget（Dockerfile 已安装）
-# - prisma runtime 支持 postgres（src/lib/prisma.ts）
+# - 生产 NODE_ENV=production 且无 D1 时，prisma.ts 拒绝 sqlite，必须 postgresql://
+# - Docker 构建会切 prisma provider 为 postgresql 再 generate
 # - 构建会运行 postinstall: prisma generate
 ```
 

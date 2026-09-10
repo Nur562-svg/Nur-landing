@@ -1,6 +1,6 @@
 # NUR LEARN — Canonical Project State
 
-Last updated: 2026-09-10 (Asia/Shanghai) — `/learn/my-materials` 私人 Word 导入练习；闭环/题库目录仍在 `/courses`
+Last updated: 2026-09-10 (Asia/Shanghai) — 配额失败不再静默放行；生产无 D1 时禁止 sqlite
 
 This file is the durable source of truth for continuing NUR LEARN when conversation history is unavailable. Update it after material product decisions, completed milestones, verification changes, or priority changes.
 
@@ -682,6 +682,12 @@ After the browser-local learning-memory and bounded Agent milestones on 2026-07-
 - 题型扩展：`a1-single` / `fill` / 原主观题；单选与填空可参考判定（来源候选或 Qwen 参考，不是教师分）
 - 不注册 `CourseDefinition`，不进 `/courses` 目录；PDF 与官方闭环不做
 - `/learn` 导航增加「导入」
+
+### 运维窄修（2026-09-10）
+
+- 登录用户的 Course Builder / NUR Agent / Agent chat 配额失败改为 503 中止，不再 `catch {}` 后继续打模型
+- 生产 `NODE_ENV=production` 且无可用 D1 时，必须 `postgresql://` DATABASE_URL，禁止落到 sqlite
+- Docker 构建切 prisma provider 为 postgresql；未上 Uptime/OpenAPI/MinIO
 
 ## 6. Verified Course Facts, Demonstration Data, and Remaining Gaps
 

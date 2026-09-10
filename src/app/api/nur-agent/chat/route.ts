@@ -4,8 +4,7 @@ import { streamText, tool, convertToModelMessages } from "ai";
 import { createOpenAI } from "@ai-sdk/openai";
 import { z } from "zod/v4";
 import { getRequiredCourseBySlug } from "@/content/courses";
-import { getCurrentSession } from "@/lib/auth/session";
-import { recordServerUsage, checkAndEnforceQuota } from "@/lib/quotas-server";
+import { enforceLoggedInModelQuota } from "@/lib/quota-gate";
 import { selectKnowledgePointById } from "@/lib/course-selectors";
 import { buildChatContext } from "@/lib/nur-agent/chat-context";
 import { buildChatSystemPrompt } from "@/lib/nur-agent/chat-prompt";
@@ -130,6 +129,14 @@ export async function POST(request: Request): Promise<Response> {
     );
   }
 
+  const quota = await enforceLoggedInModelQuota("agentCalls");
+  if (quota.status === "blocked") {
+    return Response.json(quota.body, { status: quota.httpStatus });
+  }
+  if (quota.status === "unavailable") {
+    return Response.json({ error: quota.message }, { status: 503 });
+  }
+
   // M3 更多门控 + server persist for agent
   let chatContext: ReturnType<typeof buildChatContext> | null = null;
   if (courseSlug && knowledgePointId) {
@@ -192,7 +199,8 @@ export async function POST(request: Request): Promise<Response> {
               reviewProposals: result.reviewProposals ?? [],
               sources: result.sources,
             };
-          } catch {
+          } catch (error) {
+            console.error("[nur-agent/chat] structural analysis failed", error);
             return {
               error: "结构分析暂时不可用，请使用结构分析标签页进行独立检查。",
             };
@@ -215,7 +223,8 @@ export async function POST(request: Request): Promise<Response> {
     });
 
     return result.toUIMessageStreamResponse();
-  } catch {
+  } catch (error) {
+    console.error("[nur-agent/chat] stream failed", error);
     return Response.json(
       { error: "流式响应启动失败" },
       { status: 502 },
