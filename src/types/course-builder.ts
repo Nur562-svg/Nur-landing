@@ -44,9 +44,10 @@ export type CourseBuildPrivateOverlayExcerpt = {
   kind: "heading" | "paragraph" | "list-item" | "table-cell";
   text: string;
   locator: {
-    kind: "docx-semantic-block";
+    kind: "docx-semantic-block" | "pdf-text-block";
     label: string;
     blockIndex: number;
+    pageNumber: number | null;
   };
 };
 

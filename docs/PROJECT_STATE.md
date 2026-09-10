@@ -1,6 +1,6 @@
 # NUR LEARN — Canonical Project State
 
-Last updated: 2026-09-10 (Asia/Shanghai) — 配额失败不再静默放行；生产无 D1 时禁止 sqlite
+Last updated: 2026-09-10 (Asia/Shanghai) — 私人导入支持 PDF 文字层（无 OCR）
 
 This file is the durable source of truth for continuing NUR LEARN when conversation history is unavailable. Update it after material product decisions, completed milestones, verification changes, or priority changes.
 
@@ -661,7 +661,7 @@ After the browser-local learning-memory and bounded Agent milestones on 2026-07-
 
 **不得把题库课对外宣传成闭环课。** 用户 2026-09-10 已裁定：官方闭环课由团队后做，不在当前自动生成。当前要核实/跑通的是：**学习者自有 DOCX/PDF（选择/填空/简答等）→ NUR LEARN 形式的练习流程**，不编译成官方课。
 
-现状（切片后）：Word 可走 `/learn/my-materials` 私人练习；PDF 仍只收指纹不拆题；官方闭环仍由团队后写。
+现状（切片后）：Word 与有文字层的 PDF 可走 `/learn/my-materials` 私人练习；扫描件不做 OCR；官方闭环仍由团队后写。
 
 ### GitHub 调研（2026-09-10，确认执行前）
 
@@ -680,8 +680,9 @@ After the browser-local learning-memory and bounded Agent milestones on 2026-07-
 - `/learn/my-materials`：Word（.docx）导入 → 接纳摘录 → 一次授权 Qwen → 私人练习页
 - 分析目标可为 `course-private-workspace / kp-imported-materials`，不必挂已注册课知识点
 - 题型扩展：`a1-single` / `fill` / 原主观题；单选与填空可参考判定（来源候选或 Qwen 参考，不是教师分）
-- 不注册 `CourseDefinition`，不进 `/courses` 目录；PDF 与官方闭环不做
+- 不注册 `CourseDefinition`，不进 `/courses` 目录；官方闭环不做
 - `/learn` 导航增加「导入」
+- PDF 文字层（pdfjs，`enableScripting:false`）可解析进同一练习链；扫描件标 `scan-or-empty-text-layer`，不做 OCR
 
 ### 运维窄修（2026-09-10）
 

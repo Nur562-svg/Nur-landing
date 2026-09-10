@@ -36,7 +36,7 @@ const overlay: CourseBuildPrivateOverlayInput = {
     sectionTitle: "练习",
     kind: "paragraph",
     text: "1. 正常成人静息心率约为 A. 40 次 B. 75 次 答案：B",
-    locator: { kind: "docx-semantic-block", label: "DOCX 语义块 001", blockIndex: 1 },
+    locator: { kind: "docx-semantic-block", label: "DOCX 语义块 001", blockIndex: 1, pageNumber: null },
   }],
 };
 

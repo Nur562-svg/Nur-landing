@@ -45,9 +45,10 @@ export type DocxSemanticBlock = {
   text: string;
   editedText: string;
   locator: {
-    kind: "docx-semantic-block";
+    kind: "docx-semantic-block" | "pdf-text-block";
     label: string;
     blockIndex: number;
+    pageNumber: number | null;
   };
   decision: DocxSemanticBlockDecision;
 };
@@ -62,19 +63,21 @@ export type MaterialParsingIssue = {
     | "block-limit"
     | "revision-state-pending"
     | "unsupported-file"
-    | "identity-mismatch";
+    | "identity-mismatch"
+    | "scan-or-empty-text-layer";
   message: string;
 };
 
 export type MaterialDocxParseResult = {
   parser: {
-    id: "browser-docx-semantic-v1";
-    library: "mammoth";
-    libraryVersion: "1.12.0";
+    id: "browser-docx-semantic-v1" | "browser-pdf-text-v1";
+    library: "mammoth" | "pdfjs";
+    libraryVersion: string;
   };
   blockCount: number;
   characterCount: number;
   ignoredImageCount: number;
+  pageCount?: number;
   blocks: readonly DocxSemanticBlock[];
   issues: readonly MaterialParsingIssue[];
 };
@@ -109,7 +112,7 @@ export type MaterialDocxParsingDraft = {
   sha256: string;
   authorization: {
     status: "explicit";
-    scope: "browser-local-docx-structure-only";
+    scope: "browser-local-docx-structure-only" | "browser-local-pdf-text-only";
     authorizedAt: string;
     modelTransfer: "not-authorized";
     persistence: "memory-only";

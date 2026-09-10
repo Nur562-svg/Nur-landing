@@ -23,6 +23,7 @@ import {
   createReviewedMaterialOverlayDraft,
   parseDocxLocally,
 } from "@/lib/docx-local-parser";
+import { parsePdfLocally } from "@/lib/pdf-local-parser";
 import type {
   MaterialIntakeDraft,
   MaterialIntakeFileCandidate,
@@ -231,20 +232,23 @@ export function DocxParsingReview({
     setReauthorizing(false);
   }
 
-  async function parseSelectedDocx() {
+  async function parseSelectedDocument() {
     if (!selectedCandidate || !authorizationConfirmed || parsing) {
       return;
     }
     const file = sessionFiles.get(selectedCandidate.id);
     if (!file) {
-      setNotice("请先重新选择与 SHA 身份一致的 DOCX 原件。");
+      setNotice("请先重新选择与 SHA 身份一致的原件（.docx 或 .pdf）。");
       return;
     }
     setParsing(true);
     setNotice(null);
     setOverlayApprovalConfirmed(false);
     try {
-      const parseResult = await parseDocxLocally(file);
+      const lower = file.name.toLowerCase();
+      const parseResult = lower.endsWith(".pdf")
+        ? await parsePdfLocally(file)
+        : await parseDocxLocally(file);
       setParsingDraft(createMaterialDocxParsingDraft(intakeDraft, selectedCandidate, parseResult));
       setNotice(
         parseResult.blockCount > 0
@@ -253,7 +257,7 @@ export function DocxParsingReview({
       );
     } catch {
       setParsingDraft(null);
-      setNotice("DOCX 本地解析失败；原件未上传，课程数据没有变化。");
+      setNotice("本地解析失败；原件未上传，课程数据没有变化。");
     } finally {
       setParsing(false);
     }
@@ -375,9 +379,9 @@ export function DocxParsingReview({
       <section className={styles.emptyState} aria-labelledby="docx-parser-title">
         <FileLock2 aria-hidden="true" size={24} />
         <div>
-          <p>DOCX LOCAL PARSING · V1</p>
-          <h3 id="docx-parser-title">本批没有可进入试点的 DOCX</h3>
-          <span>PDF、旧版 .doc、PPT 和图片继续保持待解析；不会假装已经读取。</span>
+          <p>LOCAL PARSING · DOCX / PDF</p>
+          <h3 id="docx-parser-title">本批没有可进入试点的文件</h3>
+          <span>仅 .docx 与有文字层的 .pdf 可解析；扫描件不做 OCR，旧版 .doc / PPT / 图片保持待解析。</span>
         </div>
       </section>
     );
@@ -390,9 +394,9 @@ export function DocxParsingReview({
       <div className={styles.heading}>
         <div className={styles.index}>02</div>
         <div>
-          <p>DOCX LOCAL PARSING · VERSION 1</p>
+          <p>LOCAL PARSING · DOCX / PDF TEXT</p>
           <h3 id="docx-parser-title">先按章节审核，再处理少数例外</h3>
-          <span>标题自动组成章节；章节可批量接纳、排除或恢复，逐段编辑只在展开后出现。</span>
+          <span>标题自动组成章节；PDF 按页分节。章节可批量接纳、排除或恢复，逐段编辑只在展开后出现。</span>
         </div>
         <div className={styles.zeroTransfer}><ShieldCheck aria-hidden="true" size={18} /><span>0 B 模型传输<br />0 次课程写入</span></div>
       </div>
@@ -400,7 +404,7 @@ export function DocxParsingReview({
       <div className={styles.gateGrid}>
         <div className={styles.fileGate}>
           <label>
-            <span>选择已通过身份审核的 DOCX</span>
+            <span>选择已通过身份审核的 DOCX / PDF</span>
             <span className={styles.selectWrap}>
               <select value={selectedCandidate.id} onChange={(event) => changeCandidate(event.target.value)}>
                 {candidates.map((candidate) => <option key={candidate.id} value={candidate.id}>{candidate.name}</option>)}
@@ -417,7 +421,7 @@ export function DocxParsingReview({
           </div>
           <div className={styles.reauthorize}>
             <input
-              accept=".docx,application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+              accept=".docx,.pdf,application/vnd.openxmlformats-officedocument.wordprocessingml.document,application/pdf"
               id="docx-reauthorization-file"
               onChange={(event) => {
                 void reauthorize(event.currentTarget.files);
@@ -441,13 +445,13 @@ export function DocxParsingReview({
               onChange={(event) => setAuthorizationConfirmed(event.target.checked)}
               type="checkbox"
             />
-            <span>我授权仅在当前浏览器会话解析这个 DOCX 的结构与文字；不发送模型、不持久化正文、不自动进入课程。</span>
+            <span>我授权仅在当前浏览器会话解析这个文件的结构与文字；不发送模型、不持久化正文、不自动进入课程。PDF 只读文字层，扫描件不做 OCR。</span>
           </label>
-          <button disabled={!fileAvailable || !authorizationConfirmed || parsing} onClick={() => void parseSelectedDocx()} type="button">
+          <button disabled={!fileAvailable || !authorizationConfirmed || parsing} onClick={() => void parseSelectedDocument()} type="button">
             {parsing ? <LoaderCircle className={styles.spinner} aria-hidden="true" size={16} /> : <FileLock2 aria-hidden="true" size={16} />}
             {parsing ? "浏览器本地解析中" : "开始本地解析"}
           </button>
-          <small>授权范围：browser-local-docx-structure-only · persistence: memory-only</small>
+          <small>授权范围：browser-local-docx/pdf-text · persistence: memory-only</small>
         </div>
       </div>
 

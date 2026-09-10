@@ -502,8 +502,8 @@ export function MaterialIntakeReview({
       next.delete(candidate.id);
       return next;
     });
-    if (fileExtension(file.name) !== ".docx") {
-      return { ok: false, message: "重新授权失败：当前解析试点只接受 .docx 原件。" };
+    if (fileExtension(file.name) !== ".docx" && fileExtension(file.name) !== ".pdf") {
+      return { ok: false, message: "重新授权失败：当前解析试点只接受 .docx 或 .pdf 原件。" };
     }
     if (file.size !== candidate.byteSize) {
       return { ok: false, message: "重新授权失败：文件大小与已审核身份不一致，未读取正文。" };
@@ -526,8 +526,9 @@ export function MaterialIntakeReview({
 
   const duplicateCount = draft.batch?.files.filter((file) => file.duplicate.kind !== "none").length ?? 0;
   const acceptedCount = draft.batch?.files.filter((file) => file.duplicate.kind === "none").length ?? 0;
-  const docxCandidates = draft.batch?.files.filter((file) => (
-    file.duplicate.kind === "none" && file.extension === ".docx"
+  const parseCandidates = draft.batch?.files.filter((file) => (
+    file.duplicate.kind === "none"
+    && (file.extension === ".docx" || file.extension === ".pdf")
   )) ?? [];
   const missingSessionFileCount = draft.batch?.files.filter((file) => !sessionFiles.has(file.id)).length ?? 0;
   const identityComplete = acceptedCount > 0
@@ -555,7 +556,7 @@ export function MaterialIntakeReview({
     },
     {
       detail: draft.status === "eligible-for-course-builder"
-        ? docxCandidates.length > 0 ? "DOCX 可授权试点" : "仅支持 DOCX 试点"
+        ? parseCandidates.length > 0 ? "DOCX/PDF 可授权试点" : "仅支持 DOCX/PDF 试点"
         : "通过审核后才可授权",
       done: false,
       title: "内容解析",
@@ -842,7 +843,7 @@ export function MaterialIntakeReview({
       {draft.status === "eligible-for-course-builder" ? (
         <DocxParsingReview
           approvedOverlayIds={approvedOverlayIds}
-          candidates={docxCandidates}
+          candidates={parseCandidates}
           courseOptions={parsingCourseOptions}
           intakeDraft={draft}
           onApproveOverlay={onApproveOverlay}

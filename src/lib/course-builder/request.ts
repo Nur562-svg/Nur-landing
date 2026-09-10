@@ -92,11 +92,15 @@ function parsePrivateExcerpt(value: unknown): CourseBuildPrivateOverlayExcerpt {
     || !["heading", "paragraph", "list-item", "table-cell"].includes(String(value.kind))
     || !isBoundedString(value.text, maximumPrivateOverlayCharacterCount)
     || !isRecord(value.locator)
-    || !hasOnlyKeys(value.locator, ["kind", "label", "blockIndex"])
-    || value.locator.kind !== "docx-semantic-block"
+    || !hasOnlyKeys(value.locator, ["kind", "label", "blockIndex", "pageNumber"])
+    || (value.locator.kind !== "docx-semantic-block" && value.locator.kind !== "pdf-text-block")
     || !isBoundedString(value.locator.label, 160)
     || !Number.isInteger(value.locator.blockIndex)
     || Number(value.locator.blockIndex) < 1
+    || (value.locator.pageNumber !== null
+      && (!Number.isInteger(value.locator.pageNumber) || Number(value.locator.pageNumber) < 1))
+    || (value.locator.kind === "pdf-text-block" && value.locator.pageNumber === null)
+    || (value.locator.kind === "docx-semantic-block" && value.locator.pageNumber !== null)
   ) {
     throw new CourseBuildRequestError("Invalid private overlay excerpt");
   }
@@ -107,9 +111,10 @@ function parsePrivateExcerpt(value: unknown): CourseBuildPrivateOverlayExcerpt {
     kind: value.kind as CourseBuildPrivateOverlayExcerpt["kind"],
     text: value.text,
     locator: {
-      kind: "docx-semantic-block",
+      kind: value.locator.kind,
       label: value.locator.label,
       blockIndex: Number(value.locator.blockIndex),
+      pageNumber: value.locator.pageNumber === null ? null : Number(value.locator.pageNumber),
     },
   };
 }

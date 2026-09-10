@@ -173,9 +173,9 @@ export function PrivateMaterialsStudio() {
           <ArrowLeft size={16} /> 返回学习首页
         </Link>
         <p className={styles.kicker}>我的资料</p>
-        <h1 className={styles.title}>导入 Word，生成练习</h1>
+        <h1 className={styles.title}>导入 Word / PDF，生成练习</h1>
         <p className={styles.subtitle}>
-          只接受 .docx。文件留在此浏览器，分析只发送你接纳的摘录。不会注册成官方课，也不会进入课程目录。PDF 与完整闭环稍后另做。
+          接受 .docx 与有文字层的 .pdf。文件留在此浏览器，分析只发送你接纳的摘录。不会注册成官方课，也不会进入课程目录。扫描件不做 OCR。
         </p>
       </header>
 

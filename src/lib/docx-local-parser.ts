@@ -75,6 +75,7 @@ function extractSemanticBlocks(html: string) {
         kind: "docx-semantic-block",
         label: `DOCX 语义块 ${String(order).padStart(3, "0")}`,
         blockIndex: order,
+        pageNumber: null,
       },
       decision: "pending-review",
     });
@@ -217,7 +218,9 @@ export function createMaterialDocxParsingDraft(
     sha256: candidate.sha256,
     authorization: {
       status: "explicit",
-      scope: "browser-local-docx-structure-only",
+      scope: candidate.name.toLowerCase().endsWith(".pdf")
+        ? "browser-local-pdf-text-only"
+        : "browser-local-docx-structure-only",
       authorizedAt: now,
       modelTransfer: "not-authorized",
       persistence: "memory-only",
