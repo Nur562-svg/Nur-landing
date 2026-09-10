@@ -359,7 +359,9 @@ export type PrivateMaterialAnalysisCompilationReadiness =
 export type PrivateMaterialQuestionKind =
   | "short-answer"
   | "term-explanation"
-  | "other-subjective";
+  | "other-subjective"
+  | "a1-single"
+  | "fill";
 
 export type PrivateMaterialSourceAnswerStatus =
   | "missing"
@@ -379,6 +381,8 @@ export type PrivateMaterialAnalysisQuestionPlan = {
   normalizedPrompt: string;
   questionKind: PrivateMaterialQuestionKind;
   sourceAnswerStatus: PrivateMaterialSourceAnswerStatus;
+  choices: readonly string[];
+  correctChoiceIndex: number | null;
   answerDraft: {
     referenceAnswer: string;
     structurePoints: readonly string[];
@@ -421,6 +425,8 @@ export type PrivateMaterialLearningQuestion = {
   }[];
   normalizedPrompt: string;
   questionKind: PrivateMaterialQuestionKind;
+  choices: readonly string[];
+  correctChoiceIndex: number | null;
   promptAuthority: {
     layer: "learner-private";
     status: "pending-review";

@@ -257,9 +257,11 @@ function buildPrivateMaterialAnalysisPrompt(
       id: "question-001",
       topicId: "topic-001",
       sourceExcerptIds: [overlay.excerpts[0]?.id ?? "excerpt-id"],
-      normalizedPrompt: "标准化后的主观题题干",
+      normalizedPrompt: "标准化后的题干",
       questionKind: "short-answer",
       sourceAnswerStatus: "missing",
+      choices: [],
+      correctChoiceIndex: null,
       answerDraft: {
         referenceAnswer: "结构完整、适合考试书写的参考答案草稿",
         structurePoints: ["结构要点"],
@@ -291,12 +293,13 @@ function buildPrivateMaterialAnalysisPrompt(
     requiredOutputShape,
   };
   return [
-    "你是 NUR LEARN 的受限私人材料分析器。请把已明确授权的摘录标准化、去重、分组为候选主题与主观题，并为每道去重后的题生成一份结构完整、适合考试书写的 NUR/Qwen 参考答案草稿。",
+    "你是 NUR LEARN 的受限私人材料分析器。请把已明确授权的摘录标准化、去重、分组为候选主题与可练习题目（a1-single 单选、fill 填空、short-answer 简答、term-explanation 名词解释），并为每道去重后的题生成一份 NUR/Qwen 参考答案草稿。",
     "每个输入 excerptId 必须且只能进入一个 question.sourceExcerptIds 或 unmapped；去重题可合并多个 excerptId。每个已映射 excerptId 还必须且只能进入一个 topic.excerptIds。不得新增未知 excerptId。",
     "topic 只是私人候选分组，不是官方章节。不得修改 courseId、knowledgePointId、overlayId，不得创建学校答案、教材标准答案、教师 rubric、当前教师采分点、来源页码、课程发布状态或其他权威升级。",
     "若摘录只有题干，sourceAnswerStatus 必须为 missing。即使摘录疑似同时包含答案，也只能标 candidate-present-pending-review。所有 answerDraft 都只是生成草稿，不能在文本中冒充来源答案。",
-    "纯文档标题、章节标题或不能独立成为题目的摘录应进入 unmapped，不得为它生成问题或参考答案。每道 referenceAnswer 控制在 60–180 个中文字符，structurePoints 只保留 3–5 个短要点，以确保 20 题场景返回完整 JSON。",
-    "嵌套项也必须严格遵循这些字段：coverage={status,compilationReadiness,summary}；topic={id,label,rationale,excerptIds}；question={id,topicId,sourceExcerptIds,normalizedPrompt,questionKind,sourceAnswerStatus,answerDraft}；answerDraft={referenceAnswer,structurePoints,uncertaintyNote}；unmapped 项={excerptId,reason}；conflict 项={excerptIds,description}；missingFacts 只能是字符串数组。不得给任何对象增加 title、text、status、confidence 等额外字段。",
+    "a1-single 必须给出 2–6 个 choices，correctChoiceIndex 仅在能从摘录读出选项答案时填写 0 起下标，否则为 null。fill / short-answer / term-explanation / other-subjective 的 choices 必须是空数组，correctChoiceIndex 必须为 null。",
+    "纯文档标题、章节标题或不能独立成为题目的摘录应进入 unmapped，不得为它生成问题或参考答案。每道 referenceAnswer 控制在 60–180 个中文字符（填空可更短），structurePoints 只保留 3–5 个短要点，以确保 20 题场景返回完整 JSON。",
+    "嵌套项也必须严格遵循这些字段：coverage={status,compilationReadiness,summary}；topic={id,label,rationale,excerptIds}；question={id,topicId,sourceExcerptIds,normalizedPrompt,questionKind,sourceAnswerStatus,choices,correctChoiceIndex,answerDraft}；answerDraft={referenceAnswer,structurePoints,uncertaintyNote}；unmapped 项={excerptId,reason}；conflict 项={excerptIds,description}；missingFacts 只能是字符串数组。不得给任何对象增加 title、text、status、confidence 等额外字段。",
     "coverage 有可学习题目时默认 partial / insufficient-for-full-course；没有任何可可靠映射的题目时才使用 unmapped。材料不足是结果，不是失败。",
     "referenceAnswer 应紧扣题干、控制在必要长度，避免重复扩写；structurePoints 提供可用于本地精简/展开视图的结构。所有根字段和嵌套字段必须与 requiredOutputShape 完全一致；可增加数组项目但不可增加字段。只返回 JSON，不要 Markdown、解释或代码围栏。",
     `最小传输上下文：${JSON.stringify(context)}`,
@@ -388,6 +391,8 @@ function buildPrivateMaterialAnalysisSchema(
             "normalizedPrompt",
             "questionKind",
             "sourceAnswerStatus",
+            "choices",
+            "correctChoiceIndex",
             "answerDraft",
           ],
           properties: {
@@ -403,12 +408,18 @@ function buildPrivateMaterialAnalysisSchema(
             normalizedPrompt: { type: "string", minLength: 1, maxLength: 800 },
             questionKind: {
               type: "string",
-              enum: ["short-answer", "term-explanation", "other-subjective"],
+              enum: ["short-answer", "term-explanation", "other-subjective", "a1-single", "fill"],
             },
             sourceAnswerStatus: {
               type: "string",
               enum: ["missing", "candidate-present-pending-review"],
             },
+            choices: {
+              type: "array",
+              maxItems: 6,
+              items: { type: "string", minLength: 1, maxLength: 240 },
+            },
+            correctChoiceIndex: { type: ["integer", "null"], minimum: 0, maximum: 5 },
             answerDraft: {
               type: "object",
               additionalProperties: false,

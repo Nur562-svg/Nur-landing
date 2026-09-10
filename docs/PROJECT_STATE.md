@@ -1,6 +1,6 @@
 # NUR LEARN — Canonical Project State
 
-Last updated: 2026-09-10 (Asia/Shanghai) — `/courses` 课程目录（闭环/题库分区）；题库课默认全开、练习页动态渲染；P0 字体/探活/安全头
+Last updated: 2026-09-10 (Asia/Shanghai) — `/learn/my-materials` 私人 Word 导入练习；闭环/题库目录仍在 `/courses`
 
 This file is the durable source of truth for continuing NUR LEARN when conversation history is unavailable. Update it after material product decisions, completed milestones, verification changes, or priority changes.
 
@@ -648,6 +648,40 @@ After the browser-local learning-memory and bounded Agent milestones on 2026-07-
 - `/learn` 主导航「课程」进入目录，「题库」锚到题库分区
 - 目录分「学习闭环」与「题库课程」；卡片进工作台，并提供刷题/模考直达
 - 落地页返回链改为课程目录
+
+### 执行流待决（2026-09-10 用户加入）：闭环生成 vs 私人资料学习
+
+用户原问：现在有大量教材题库与教材内容，闭环生成是否真能生成其他课程内容；用户自带资料想用 NUR LEARN 学习、自测，这些功能是否真实存在。
+
+**核实结论（对照代码，不是愿望）：**
+
+1. **学习闭环引擎是通用的，内容不是自动长出来的。** 知识点课时、主观写作室、案例推理室可以挂到任意已注册课。真正写了 `lesson` 的只有《中医诊断学》若干知识点（问饮食口味、寒热、舌苔、表里、常见病脉标准层、脾胃标准层）和生理学「内环境与稳态」一条。15 门题库课 `lesson` 全为 `null`，只能刷题/模考/错题，没有理解—写作—案例闭环。
+2. **Course Builder 不能从题库生成一门新闭环课。** `compileCourse()` 只改已有材料包课程的标题/focus/note/emphasis，不写 lesson、不写写作室、不写案例。官方包编译只服务中诊 allow-list，并保护那 6 条已写闭环。私人分析的 `compilationReadiness` 固定为 `insufficient-for-full-course`，且明确不注册第二门 `CourseDefinition`。
+3. **用户自带资料：半真。** `/learn/course-builder` 可导入 DOCX → 准入摘录 → 一次性授权 Qwen 拆成私人学习单元（分组、参考答案、草稿、收藏、确认进学习记忆、重做、48h 复习提案）。这是真实通路，但：必须挂到**已注册课的某个知识点**上；只在当前浏览器会话；不进 `/courses` 目录；没有独立写作室/案例室；没有从题库课一键生成闭环。合成 DOCX 压测过；真实学生讲义未作为日常入口验收。
+
+**不得把题库课对外宣传成闭环课。** 用户 2026-09-10 已裁定：官方闭环课由团队后做，不在当前自动生成。当前要核实/跑通的是：**学习者自有 DOCX/PDF（选择/填空/简答等）→ NUR LEARN 形式的练习流程**，不编译成官方课。
+
+现状（切片后）：Word 可走 `/learn/my-materials` 私人练习；PDF 仍只收指纹不拆题；官方闭环仍由团队后写。
+
+### GitHub 调研（2026-09-10，确认执行前）
+
+不搬整套开源产品。分层沿用：浏览器抽字 → 闭式 JSON → 本地校验 → 现有练习 UI。
+
+- **已有、继续用：** `mammoth`（`mwilliamson/mammoth.js`）本地 DOCX→HTML，已在 `docx-local-parser.ts`。
+- **PDF 二期再加：** `mozilla/pdf.js` / npm `pdfjs-dist`。只抽文字层；扫描件不 OCR。必须 `enableScripting: false`（CVE-2026-16633）。
+- **产品形态可参考、不要 fork：** Rankify-PDF2CBT、pdf2cbt（PDF→本地 CBT；后者 AGPL）。我们要的是 NUR 练习页，不是另一套模考壳。
+- **不要引进：** `file2quiz`（Python/Windows Word）、`office-parser`（Go）、`tiku_data_generator`（死规则吃中文试卷，格式一变就碎）、浏览器 WebLLM、Dexie（一期 sessionStorage 够用）。
+- **模型层：** 仓库已有 Vercel AI SDK，但 Course Builder 已用 DashScope Function Calling + 本地闭式校验。一期不换栈。
+
+高效路径：几乎不加依赖。打开学习首页入口、分析目标改为私人工作区、扩展题型到 A1/填空/简答、分析结果接到现有练习/主观草稿契约。
+
+### 私人导入练习（2026-09-10 切片已执行）
+
+- `/learn/my-materials`：Word（.docx）导入 → 接纳摘录 → 一次授权 Qwen → 私人练习页
+- 分析目标可为 `course-private-workspace / kp-imported-materials`，不必挂已注册课知识点
+- 题型扩展：`a1-single` / `fill` / 原主观题；单选与填空可参考判定（来源候选或 Qwen 参考，不是教师分）
+- 不注册 `CourseDefinition`，不进 `/courses` 目录；PDF 与官方闭环不做
+- `/learn` 导航增加「导入」
 
 ## 6. Verified Course Facts, Demonstration Data, and Remaining Gaps
 

@@ -1,0 +1,150 @@
+.room {
+  --ink: #10100f;
+  --paper: #f7f4ee;
+  --muted: #6c6a66;
+  --line: rgb(16 16 15 / 36%);
+  --soft-line: rgb(16 16 15 / 14%);
+  --red: #bf2118;
+  --blue: #17659a;
+  color: var(--ink);
+}
+
+.header {
+  border-bottom: 1px solid var(--line);
+  margin-bottom: 24px;
+  padding-bottom: 16px;
+}
+
+.kicker {
+  color: var(--blue);
+  font-size: 12px;
+  letter-spacing: 0.12em;
+  margin: 0 0 6px;
+}
+
+.header h2 {
+  font-family: var(--font-serif), "Times New Roman", serif;
+  font-size: 24px;
+  margin: 0 0 8px;
+}
+
+.meta {
+  color: var(--muted);
+  font-size: 14px;
+  line-height: 1.6;
+  margin: 0;
+}
+
+.list {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.item {
+  border: 1px solid var(--line);
+  padding: 18px 20px;
+}
+
+.itemHeader {
+  color: var(--muted);
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 16px;
+  font-size: 12px;
+  margin-bottom: 8px;
+}
+
+.prompt {
+  font-size: 16px;
+  font-weight: 600;
+  line-height: 1.6;
+  margin: 0 0 12px;
+}
+
+.choices {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.choice {
+  align-items: flex-start;
+  display: flex;
+  gap: 8px;
+  min-height: 44px;
+  padding: 8px 0;
+}
+
+.choice input {
+  margin-top: 4px;
+}
+
+.draft {
+  border: 1px solid var(--line);
+  font: inherit;
+  min-height: 44px;
+  padding: 10px 12px;
+  width: 100%;
+}
+
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-top: 12px;
+}
+
+.actions button {
+  background: var(--paper);
+  border: 1px solid var(--line);
+  min-height: 44px;
+  padding: 0 16px;
+}
+
+.actions button:hover:not(:disabled) {
+  border-color: var(--red);
+  color: var(--red);
+}
+
+.actions button:disabled {
+  opacity: 0.45;
+}
+
+.reveal {
+  border-top: 1px solid var(--soft-line);
+  margin-top: 16px;
+  padding-top: 12px;
+}
+
+.pass,
+.fail,
+.note,
+.answer {
+  line-height: 1.6;
+  margin: 0 0 8px;
+}
+
+.pass {
+  color: var(--blue);
+}
+
+.fail {
+  color: var(--red);
+}
+
+.answer {
+  white-space: pre-wrap;
+}
+
+.reveal ul {
+  margin: 0 0 8px;
+  padding-left: 1.2em;
+}
+
+.reveal small {
+  color: var(--muted);
+}

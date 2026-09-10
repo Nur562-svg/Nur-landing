@@ -55,6 +55,13 @@ function parseQuestion(
   value: unknown,
   maximumExcerptCount: number,
 ): PrivateMaterialAnalysisQuestionPlan {
+  const allowedKinds = [
+    "short-answer",
+    "term-explanation",
+    "other-subjective",
+    "a1-single",
+    "fill",
+  ];
   if (!isRecord(value)
     || !hasOnlyKeys(value, [
       "id",
@@ -63,6 +70,8 @@ function parseQuestion(
       "normalizedPrompt",
       "questionKind",
       "sourceAnswerStatus",
+      "choices",
+      "correctChoiceIndex",
       "answerDraft",
     ])
     || typeof value.id !== "string"
@@ -70,8 +79,15 @@ function parseQuestion(
     || typeof value.topicId !== "string"
     || !stableIdPattern.test(value.topicId)
     || !isText(value.normalizedPrompt, 800)
-    || !["short-answer", "term-explanation", "other-subjective"].includes(String(value.questionKind))
+    || !allowedKinds.includes(String(value.questionKind))
     || !["missing", "candidate-present-pending-review"].includes(String(value.sourceAnswerStatus))
+    || !Array.isArray(value.choices)
+    || value.choices.length > 6
+    || !value.choices.every((item) => isText(item, 240))
+    || (value.correctChoiceIndex !== null
+      && (!Number.isInteger(value.correctChoiceIndex)
+        || Number(value.correctChoiceIndex) < 0
+        || Number(value.correctChoiceIndex) >= value.choices.length))
     || !isRecord(value.answerDraft)
     || !hasOnlyKeys(value.answerDraft, [
       "referenceAnswer",
@@ -87,13 +103,23 @@ function parseQuestion(
   ) {
     throw new Error("Private material analysis returned an invalid question candidate");
   }
+  const questionKind = value.questionKind as PrivateMaterialAnalysisQuestionPlan["questionKind"];
+  if (questionKind === "a1-single") {
+    if (value.choices.length < 2) {
+      throw new Error("Private material analysis returned an invalid question candidate");
+    }
+  } else if (value.choices.length > 0 || value.correctChoiceIndex !== null) {
+    throw new Error("Private material analysis returned an invalid question candidate");
+  }
   return {
     id: value.id,
     topicId: value.topicId,
     sourceExcerptIds: parseIdList(value.sourceExcerptIds, maximumExcerptCount),
     normalizedPrompt: value.normalizedPrompt,
-    questionKind: value.questionKind as PrivateMaterialAnalysisQuestionPlan["questionKind"],
+    questionKind,
     sourceAnswerStatus: value.sourceAnswerStatus as PrivateMaterialAnalysisQuestionPlan["sourceAnswerStatus"],
+    choices: [...value.choices] as string[],
+    correctChoiceIndex: value.correctChoiceIndex === null ? null : Number(value.correctChoiceIndex),
     answerDraft: {
       referenceAnswer: value.answerDraft.referenceAnswer,
       structurePoints: [...value.answerDraft.structurePoints] as string[],

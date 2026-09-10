@@ -1,0 +1,135 @@
+.container {
+  --ink: #10100f;
+  --paper: #f7f4ee;
+  --muted: #6c6a66;
+  --line: rgb(16 16 15 / 36%);
+  --red: #bf2118;
+  --blue: #17659a;
+  background: var(--paper);
+  color: var(--ink);
+  margin: 0 auto;
+  max-width: 1280px;
+  min-height: 100dvh;
+  padding: 48px 64px 96px;
+}
+
+.header {
+  border-bottom: 1px solid var(--line);
+  margin-bottom: 40px;
+  padding-bottom: 32px;
+}
+
+.backLink {
+  align-items: center;
+  color: var(--ink);
+  display: inline-flex;
+  gap: 6px;
+  font-size: 15px;
+  margin-bottom: 16px;
+  min-height: 44px;
+}
+
+.backLink:hover {
+  color: var(--red);
+}
+
+.kicker {
+  color: var(--blue);
+  font-size: 13px;
+  letter-spacing: 0.12em;
+  margin: 0 0 8px;
+}
+
+.title {
+  font-family: var(--font-serif), "Times New Roman", serif;
+  font-size: 40px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  margin: 0 0 12px;
+}
+
+.subtitle,
+.hint {
+  color: var(--muted);
+  font-size: 15px;
+  line-height: 1.7;
+  margin: 0;
+  max-width: 720px;
+}
+
+.section {
+  margin-bottom: 40px;
+}
+
+.sectionTitle {
+  font-family: var(--font-serif), "Times New Roman", serif;
+  font-size: 22px;
+  font-weight: 700;
+  margin: 0 0 12px;
+}
+
+.hint {
+  margin-bottom: 16px;
+}
+
+.panel {
+  border: 1px solid var(--line);
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 18px 20px;
+}
+
+.confirm {
+  align-items: flex-start;
+  display: flex;
+  gap: 10px;
+  min-height: 44px;
+}
+
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.actions button {
+  background: var(--paper);
+  border: 1px solid var(--line);
+  min-height: 44px;
+  padding: 0 16px;
+}
+
+.actions button:hover:not(:disabled) {
+  border-color: var(--red);
+  color: var(--red);
+}
+
+.actions button:disabled {
+  opacity: 0.45;
+}
+
+.error {
+  color: var(--red);
+  margin: 12px 0;
+}
+
+.spin {
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@media (max-width: 640px) {
+  .container {
+    padding: 32px 20px 64px;
+  }
+
+  .title {
+    font-size: 30px;
+  }
+}

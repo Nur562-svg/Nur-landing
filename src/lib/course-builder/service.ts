@@ -48,6 +48,7 @@ import {
   createOfficialPackBatchCompileRequest,
 } from "./official-pack";
 import { assertValidPrivateMaterialAnalysisProviderPlan } from "./private-analysis-validation";
+import { resolvePrivateMaterialAnalysisTarget } from "@/lib/private-workspace";
 
 export class CourseBuildExecutionError extends Error {
   constructor(
@@ -454,18 +455,14 @@ async function assertPrivateMaterialAnalysisBoundary(
   knowledgePointTitle: string;
 }> {
   const { privateOverlay, authorization } = request;
-  const course = registeredCourses.find((candidate) => candidate.id === privateOverlay.courseId);
-  const knowledgePoint = course?.knowledgePoints.find((candidate) => (
-    candidate.id === privateOverlay.knowledgePointId
-  ));
+  const target = resolvePrivateMaterialAnalysisTarget(privateOverlay, registeredCourses);
   const characterCount = countPrivateOverlayCharacters(privateOverlay);
   const excerptIds = privateOverlay.excerpts.map((excerpt) => excerpt.id);
   const locatorIndexes = privateOverlay.excerpts.map((excerpt) => (
     excerpt.locator.blockIndex
   ));
 
-  if (!course
-    || !knowledgePoint
+  if (!target
     || privateOverlay.source.layer !== "learner-private"
     || privateOverlay.source.authorityReviewStatus !== "pending-review"
     || privateOverlay.privacy.declaration !== "none-observed"
@@ -508,8 +505,8 @@ async function assertPrivateMaterialAnalysisBoundary(
   }
 
   return {
-    courseTitle: course.title,
-    knowledgePointTitle: knowledgePoint.title,
+    courseTitle: target.courseTitle,
+    knowledgePointTitle: target.knowledgePointTitle,
   };
 }
 
@@ -611,6 +608,8 @@ export async function runPrivateMaterialAnalysis(
         }),
         normalizedPrompt: question.normalizedPrompt,
         questionKind: question.questionKind,
+        choices: question.choices,
+        correctChoiceIndex: question.correctChoiceIndex,
         promptAuthority: {
           layer: "learner-private",
           status: "pending-review",
