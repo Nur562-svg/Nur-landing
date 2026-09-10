@@ -35,8 +35,8 @@ export function CourseLanding({ course }: CourseLandingProps) {
   return (
     <div className={styles.container}>
       <header className={styles.header}>
-        <Link className={styles.backLink} href="/learn">
-          <ArrowLeft size={16} /> 返回学习首页
+        <Link className={styles.backLink} href="/courses">
+          <ArrowLeft size={16} /> 返回课程目录
         </Link>
         <p className={styles.kicker}>
           {course.curriculumMode

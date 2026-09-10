@@ -385,7 +385,7 @@ export function LearningDashboard({ courses }: LearningDashboardProps) {
           <button className={styles.navActive} type="button" onClick={() => jumpTo("workspace")}>
             本周
           </button>
-          <Link href={`/courses/${firstCourseSlug}`}>
+          <Link href="/courses">
             课程
           </Link>
           <Link href="/learn/course-builder">

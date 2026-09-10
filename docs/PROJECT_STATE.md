@@ -1,6 +1,6 @@
 # NUR LEARN — Canonical Project State
 
-Last updated: 2026-09-10 (Asia/Shanghai) — 题库课默认全开（内测）、练习页改为动态渲染；P0：切断 Google Fonts、/api/health、安全头、Prisma provider 脚本；传染病学 A16 不进本次发布
+Last updated: 2026-09-10 (Asia/Shanghai) — `/courses` 课程目录（闭环/题库分区）；题库课默认全开、练习页动态渲染；P0 字体/探活/安全头
 
 This file is the durable source of truth for continuing NUR LEARN when conversation history is unavailable. Update it after material product decisions, completed milestones, verification changes, or priority changes.
 
@@ -642,6 +642,12 @@ After the browser-local learning-memory and bounded Agent milestones on 2026-07-
 - `npm run prisma:provider postgresql|sqlite`：部署时切换 datasource，仓库默认保持 sqlite
 - 传染病学 A16 extracted **明确不进本次发布**（不注册、不提交）
 - 题库版权：无授权前不得对公售卖 15 科习题集
+
+### 课程目录 `/courses`（2026-09-10）
+
+- `/learn` 主导航「课程」进入目录，不再直达第一门中诊工作台
+- 目录分「学习闭环」与「题库课程」；卡片进 `/courses/{slug}`
+- 落地页返回链改为课程目录
 
 ## 6. Verified Course Facts, Demonstration Data, and Remaining Gaps
 

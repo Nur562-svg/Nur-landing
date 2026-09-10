@@ -353,3 +353,8 @@ export function selectQuestionById(
 ): AssessmentItemDefinition | undefined {
   return findAssessmentItemWithGroup(course, questionId)?.item;
 }
+
+/** 是否有已写课时（闭环课）；题库课知识点 lesson 全为 null。 */
+export function courseHasAuthoredLesson(course: CourseDefinition): boolean {
+  return course.knowledgePoints.some((point) => point.lesson !== null);
+}

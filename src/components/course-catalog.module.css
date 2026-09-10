@@ -1,0 +1,133 @@
+.container {
+  --ink: #10100f;
+  --paper: #f7f4ee;
+  --muted: #6c6a66;
+  --line: rgb(16 16 15 / 36%);
+  --soft-line: rgb(16 16 15 / 14%);
+  --red: #bf2118;
+  --blue: #17659a;
+  background: var(--paper);
+  color: var(--ink);
+  min-height: 100dvh;
+  padding: 48px 64px 96px;
+  max-width: 1280px;
+  margin: 0 auto;
+}
+
+.header {
+  border-bottom: 1px solid var(--line);
+  margin-bottom: 40px;
+  padding-bottom: 32px;
+}
+
+.backLink {
+  color: var(--ink);
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 15px;
+  margin-bottom: 16px;
+  min-height: 44px;
+}
+
+.backLink:hover {
+  color: var(--red);
+}
+
+.kicker {
+  color: var(--blue);
+  font-size: 13px;
+  letter-spacing: 0.12em;
+  margin: 0 0 8px;
+}
+
+.title {
+  font-family: var(--font-serif), "Times New Roman", serif;
+  font-size: 40px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  margin: 0 0 12px;
+}
+
+.subtitle {
+  color: var(--muted);
+  font-size: 15px;
+  line-height: 1.7;
+  margin: 0;
+  max-width: 720px;
+}
+
+.section {
+  margin-bottom: 40px;
+}
+
+.sectionTitle {
+  font-family: var(--font-serif), "Times New Roman", serif;
+  font-size: 22px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  margin: 0 0 16px;
+}
+
+.grid {
+  display: grid;
+  gap: 12px;
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+}
+
+.card {
+  border: 1px solid var(--line);
+  color: var(--ink);
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  min-height: 44px;
+  padding: 18px 20px;
+  text-decoration: none;
+}
+
+.card:hover {
+  border-color: var(--red);
+  color: var(--red);
+}
+
+.cardKicker {
+  color: var(--muted);
+  font-size: 11px;
+  letter-spacing: 0.14em;
+}
+
+.cardTitle {
+  font-family: var(--font-serif), "Times New Roman", serif;
+  font-size: 18px;
+  font-weight: 600;
+  margin: 0;
+}
+
+.cardMeta {
+  color: var(--muted);
+  font-size: 13px;
+  margin: 0;
+}
+
+.cardAction {
+  align-items: center;
+  display: inline-flex;
+  font-size: 14px;
+  gap: 6px;
+  margin-top: 8px;
+}
+
+@media (max-width: 640px) {
+  .container {
+    padding: 32px 20px 64px;
+  }
+
+  .title {
+    font-size: 30px;
+  }
+
+  .grid {
+    grid-template-columns: 1fr;
+  }
+}
