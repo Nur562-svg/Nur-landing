@@ -6,7 +6,13 @@ import { ArrowLeft, ArrowRight, CircleX, BookOpen } from "lucide-react";
 import type { CourseDefinition, FsrsCriterionState } from "@/types/learning";
 import { useWrongQuestionCenter } from "@/hooks/use-wrong-questions";
 import { repeatedOmissionThreshold } from "@/lib/learning-memory";
-import type { FsrsHighRiskItem, StructuralWeakness } from "@/lib/wrong-questions";
+import {
+  selectWeakKnowledgePointHref,
+  selectWrongQuestionRedoHref,
+  selectWrongQuestionRedoLabel,
+  type FsrsHighRiskItem,
+  type StructuralWeakness,
+} from "@/lib/wrong-questions";
 import { QUESTION_KIND_OPTIONS } from "@/lib/question-kind-labels";
 import styles from "./wrong-question-center.module.css";
 import { SyncStatusBadge } from "./sync-status-badge";
@@ -149,9 +155,7 @@ export function WrongQuestionCenter({ courses }: WrongQuestionCenterProps) {
                   <div className={styles.weakKpGrid}>
                     {data.weakKnowledgePoints.map((kp) => {
                       const ratioPercent = Math.round(kp.wrongRatio * 100);
-                      const kpHref = kp.hasLesson
-                        ? `/courses/${kp.courseSlug}/knowledge-points/${kp.knowledgePointSlug}`
-                        : `/courses/${kp.courseSlug}/question-bank`;
+                      const kpHref = selectWeakKnowledgePointHref(kp);
                       return (
                         <Link
                           key={`${kp.courseId}:${kp.knowledgePointId}`}
@@ -214,16 +218,8 @@ export function WrongQuestionCenter({ courses }: WrongQuestionCenterProps) {
                 </div>
                 <div className={styles.wrongList}>
                   {data.wrongQuestions.map((q, idx) => {
-                    const redoHref = q.canRedo
-                      ? `/courses/${q.courseSlug}/question-bank/${q.chapterSlug}/${q.questionId}`
-                      : q.hasWritingRoom
-                        ? `/courses/${q.courseSlug}/knowledge-points/${q.knowledgePointSlug}/subjective-writing`
-                        : `/courses/${q.courseSlug}/knowledge-points/${q.knowledgePointSlug}`;
-                    const actionLabel = q.canRedo
-                      ? "重做"
-                      : q.hasWritingRoom
-                        ? "去写作"
-                        : "查看";
+                    const redoHref = selectWrongQuestionRedoHref(q);
+                    const actionLabel = selectWrongQuestionRedoLabel(q);
                     return (
                       <Link
                         key={q.questionId}
@@ -231,10 +227,13 @@ export function WrongQuestionCenter({ courses }: WrongQuestionCenterProps) {
                         className={styles.wrongItem}
                       >
                         <span className={styles.wrongItemIndex}>{idx + 1}</span>
-                        <span className={styles.wrongItemPrompt}>
-                          {q.prompt.length > 80
-                            ? q.prompt.slice(0, 77) + "..."
-                            : q.prompt}
+                        <span className={styles.wrongItemMain}>
+                          <span className={styles.wrongItemPrompt}>
+                            {q.prompt.length > 80
+                              ? q.prompt.slice(0, 77) + "..."
+                              : q.prompt}
+                          </span>
+                          <span className={styles.wrongItemCourse}>{q.courseTitle}</span>
                         </span>
                         <span className={styles.wrongItemKind}>
                           {getKindLabel(q.questionKind)}

@@ -9,8 +9,13 @@ import type {
 import {
   selectFsrsHighRiskItems,
   selectStructuralWeaknesses,
+  selectWeakKnowledgePointHref,
   selectWrongQuestionCenter,
+  selectWrongQuestionRedoHref,
+  selectWrongQuestionRedoLabel,
 } from "@/lib/wrong-questions";
+import { flattenCourseAssessmentItems } from "@/lib/course-selectors";
+import { registeredCourses } from "@/content/courses";
 import { createDefaultLearningMemoryState } from "@/lib/learning-memory";
 
 function makeCourse(): CourseDefinition {
@@ -338,5 +343,85 @@ describe("selectWrongQuestionCenter three-layer compatibility", () => {
     assert.strictEqual(data.hasFsrsMemory, true);
     // 同一准则可同时出现在结构薄弱与临遗忘两层，互不排斥
     assert.strictEqual(data.structuralWeaknesses[0]?.criterionId, data.fsrsHighRisk[0]?.criterionId);
+  });
+});
+
+describe("wrong-question hrefs for question-bank courses", () => {
+  it("lets B1 members redo via the practice route even without item.choices", () => {
+    const qb = registeredCourses.find((c) => c.slug === "physiology-qb");
+    assert.ok(qb);
+    const b1 = flattenCourseAssessmentItems(qb).find((item) => item.questionKind === "b1");
+    assert.ok(b1);
+    assert.ok(!b1.choices || b1.choices.length === 0);
+
+    const data = selectWrongQuestionCenter([qb], {
+      [b1.id]: [{
+        questionId: b1.id,
+        selectedIndex: 0,
+        isCorrect: false,
+        attemptedAt: "2026-09-10T10:00:00.000Z",
+      }],
+    });
+    assert.strictEqual(data.totalWrong, 1);
+    const question = data.wrongQuestions[0];
+    assert.ok(question);
+    assert.strictEqual(question.canRedo, true);
+    assert.strictEqual(question.hasWritingRoom, false);
+    const href = selectWrongQuestionRedoHref(question);
+    assert.ok(!href.includes("knowledge-points"));
+    assert.ok(href.includes(`/question-bank/${question.chapterSlug}/${b1.id}`));
+    assert.strictEqual(selectWrongQuestionRedoLabel(question), "重做");
+
+    const weak = data.weakKnowledgePoints[0];
+    assert.ok(weak);
+    assert.strictEqual(weak.hasLesson, false);
+    const weakHref = selectWeakKnowledgePointHref(weak);
+    assert.ok(!weakHref.includes("knowledge-points"));
+    assert.ok(weakHref.includes(`/question-bank/${weak.chapterSlug}`));
+  });
+
+  it("sends term items without scoring to the chapter question-bank, not a knowledge-point page", () => {
+    const qb = registeredCourses.find((c) => c.slug === "physiology-qb");
+    assert.ok(qb);
+    const term = flattenCourseAssessmentItems(qb).find((item) => item.questionKind === "term");
+    assert.ok(term);
+    assert.strictEqual(term.scoring, null);
+
+    const data = selectWrongQuestionCenter([qb], {
+      [term.id]: [{
+        questionId: term.id,
+        selectedIndex: 0,
+        isCorrect: false,
+        attemptedAt: "2026-09-10T10:00:00.000Z",
+      }],
+    });
+    const question = data.wrongQuestions[0];
+    assert.ok(question);
+    assert.strictEqual(question.canRedo, false);
+    assert.strictEqual(question.hasWritingRoom, false);
+    const href = selectWrongQuestionRedoHref(question);
+    assert.ok(!href.includes("knowledge-points"));
+    assert.ok(href.endsWith(`/question-bank/${question.chapterSlug}`));
+    assert.strictEqual(selectWrongQuestionRedoLabel(question), "去做题");
+  });
+
+  it("keeps writing-room hrefs for authored courses with scoring", () => {
+    const course = makeCourse();
+    const data = selectWrongQuestionCenter([course], {
+      "assessment-1": [{
+        questionId: "assessment-1",
+        selectedIndex: 0,
+        isCorrect: false,
+        attemptedAt: "2026-08-10T10:00:00.000Z",
+      }],
+    });
+    const question = data.wrongQuestions[0];
+    assert.ok(question);
+    assert.strictEqual(question.hasWritingRoom, true);
+    assert.strictEqual(
+      selectWrongQuestionRedoHref(question),
+      "/courses/course-one/knowledge-points/kp-one/subjective-writing",
+    );
+    assert.strictEqual(selectWrongQuestionRedoLabel(question), "去写作");
   });
 });

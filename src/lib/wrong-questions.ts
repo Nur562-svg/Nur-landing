@@ -47,11 +47,51 @@ export type WrongQuestionSummary = {
   totalAttempts: number;
   lastWrongAt: string;
   hasChoices: boolean;
-  /** 是否可在题库重做（仅选择题） */
+  /** 是否可进入题库练习页（A1 有选项，或 B1/B2 组成员） */
   canRedo: boolean;
   /** 主观题是否有写作训练室 */
   hasWritingRoom: boolean;
 };
+
+/** 与题库练习页 generateStaticParams 一致：有独立选项或 B1/B2 组成员。 */
+export function isQuestionBankPracticeItem(item: {
+  questionKind: string;
+  choices?: readonly string[];
+}): boolean {
+  if (item.questionKind === "b1" || item.questionKind === "b2") return true;
+  return Boolean(item.choices && item.choices.length > 0);
+}
+
+/** 错题「重做 / 去写作 / 去做题」入口：题库课程没有知识点页，禁止链到 404。 */
+export function selectWrongQuestionRedoHref(question: WrongQuestionSummary): string {
+  if (question.canRedo && question.chapterSlug) {
+    return `/courses/${question.courseSlug}/question-bank/${question.chapterSlug}/${question.questionId}`;
+  }
+  if (question.hasWritingRoom && question.knowledgePointSlug) {
+    return `/courses/${question.courseSlug}/knowledge-points/${question.knowledgePointSlug}/subjective-writing`;
+  }
+  if (question.chapterSlug) {
+    return `/courses/${question.courseSlug}/question-bank/${question.chapterSlug}`;
+  }
+  return `/courses/${question.courseSlug}/question-bank`;
+}
+
+export function selectWrongQuestionRedoLabel(question: WrongQuestionSummary): string {
+  if (question.canRedo) return "重做";
+  if (question.hasWritingRoom) return "去写作";
+  return "去做题";
+}
+
+/** 弱项知识点入口：有课时去学习，否则落到本章题库（不是课程题库首页）。 */
+export function selectWeakKnowledgePointHref(kp: WeakKnowledgePoint): string {
+  if (kp.hasLesson && kp.knowledgePointSlug) {
+    return `/courses/${kp.courseSlug}/knowledge-points/${kp.knowledgePointSlug}`;
+  }
+  if (kp.chapterSlug) {
+    return `/courses/${kp.courseSlug}/question-bank/${kp.chapterSlug}`;
+  }
+  return `/courses/${kp.courseSlug}/question-bank`;
+}
 
 /** 一个弱项知识点的聚合统计。 */
 export type WeakKnowledgePoint = {
@@ -347,7 +387,7 @@ export function selectWrongQuestionCenter(
       totalAttempts,
       lastWrongAt,
       hasChoices,
-      canRedo: hasChoices,
+      canRedo: isQuestionBankPracticeItem(item),
       hasWritingRoom,
     });
 

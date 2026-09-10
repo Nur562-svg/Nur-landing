@@ -549,4 +549,21 @@ On 2026-08-16, the NUR Agent's rewrite proposals became one-click applicable in 
 
 - /learn 账户面板（登录/访客）「导出学习数据」：克制说明 + 全宽次要按钮（min-height 44px）。
 - JSON 文件名 `nur-learn-data-YYYY-MM-DD.json`；文案标明非官方成绩单。
-- 390 账户面板 max-width 100%，无新增横向溢出预期。
+
+## 题库课程落地页 / 模考 / 错题中心（2026-09-10）
+
+Playwright Chromium，视口 **1440×1000** 与 **390×844（isMobile）**，对象：`/courses/physiology-qb`、题库首页、模考、A1 练习页、`/wrong-questions`（注入生理学 B1 错答）。
+
+- 落地页/题库/模考/练习：两视口 HTTP 200，页面文案不含「页面未找到」，`scrollWidth === clientWidth`。
+- 错题中心：注入 `ext-physiology-ch5-respiration-b001m1` 错答后，客观层显示 1 题；390 初测溢出 406→390，隐藏 `.wrongItemStats` 后复测 `390 === 390`。
+- B1 重做链接（无 `item.choices`）：`/courses/physiology-qb/question-bank/physiology-ch5-respiration/ext-physiology-ch5-respiration-b001m1`，不再指向 knowledge-points。
+- 控制台：落地页 390 无 pageerror / console.error。
+- 证据：
+  - `docs/design-references/qb-course-landing-desktop-2026-09-10.png`
+  - `docs/design-references/qb-course-landing-mobile-2026-09-10.png`
+  - `docs/design-references/qb-course-home-desktop-2026-09-10.png`
+  - `docs/design-references/qb-course-home-mobile-2026-09-10.png`
+  - `docs/design-references/qb-mock-exam-desktop-2026-09-10.png`
+  - `docs/design-references/qb-mock-exam-mobile-2026-09-10.png`
+  - `docs/design-references/wrong-question-center-qb-desktop-2026-09-10.png`
+  - `docs/design-references/wrong-question-center-qb-mobile-2026-09-10.png`

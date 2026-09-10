@@ -16,6 +16,7 @@ import {
 import type { CourseDefinition, FsrsCriterionState, LearnerAttemptRecord } from "@/types/learning";
 import { useLearningMemory } from "@/hooks/use-learning-memory";
 import { useWrongQuestionCenter } from "@/hooks/use-wrong-questions";
+import { selectWeakKnowledgePointHref } from "@/lib/wrong-questions";
 import {
   clearResolvedConflicts,
   resolveAllSyncConflicts,
@@ -838,9 +839,7 @@ export function LearningDashboard({ courses }: LearningDashboardProps) {
               <div className={styles.weakKpList}>
                 {wrongQuestionData.weakKnowledgePoints.slice(0, 3).map((kp) => {
                   const ratioPercent = Math.round(kp.wrongRatio * 100);
-                  const href = kp.hasLesson
-                    ? `/courses/${kp.courseSlug}/knowledge-points/${kp.knowledgePointSlug}`
-                    : `/courses/${kp.courseSlug}/question-bank`;
+                  const href = selectWeakKnowledgePointHref(kp);
                   return (
                     <Link key={`${kp.courseId}:${kp.knowledgePointId}`} href={href} className={styles.weakKpChip}>
                       <span className={styles.weakKpChipTitle}>{kp.knowledgePointTitle}</span>
