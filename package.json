@@ -30,6 +30,7 @@
     "start": "next start",
     "lint": "eslint",
     "typecheck": "tsc --noEmit",
+    "prisma:provider": "node scripts/set-prisma-provider.mjs",
     "check": "npm run lint && npm run typecheck && npm run build",
     "preview": "opennextjs-cloudflare build && node scripts/clean-opennext.mjs && opennextjs-cloudflare preview",
     "deploy": "opennextjs-cloudflare build && node scripts/clean-opennext.mjs && opennextjs-cloudflare deploy",

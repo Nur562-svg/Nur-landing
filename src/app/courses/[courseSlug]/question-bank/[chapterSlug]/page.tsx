@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { QuestionBankChapter } from "@/components/question-bank-chapter";
-import { getCourseBySlug, registeredCourses } from "@/content/courses";
+import { getPublishedCourseBySlug, publishedCourses } from "@/content/courses";
 import {
   selectAssessmentItemsForChapter,
   selectChapterBySlug,
@@ -17,7 +17,7 @@ type QuestionBankChapterPageProps = {
 export const dynamicParams = false;
 
 export function generateStaticParams() {
-  return registeredCourses.flatMap((course) =>
+  return publishedCourses.flatMap((course) =>
     course.chapters.map((chapter) => ({
       courseSlug: course.slug,
       chapterSlug: chapter.slug,
@@ -29,7 +29,7 @@ export async function generateMetadata({
   params,
 }: QuestionBankChapterPageProps): Promise<Metadata> {
   const { courseSlug, chapterSlug } = await params;
-  const course = getCourseBySlug(courseSlug);
+  const course = getPublishedCourseBySlug(courseSlug);
 
   if (!course) {
     return { title: "题库章节未找到｜NUR LEARN" };
@@ -50,7 +50,7 @@ export default async function QuestionBankChapterPage({
   params,
 }: QuestionBankChapterPageProps) {
   const { courseSlug, chapterSlug } = await params;
-  const course = getCourseBySlug(courseSlug);
+  const course = getPublishedCourseBySlug(courseSlug);
   if (!course) {
     notFound();
   }

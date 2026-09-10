@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { SubjectiveWritingRoom } from "@/components/subjective-writing-room";
-import { getCourseBySlug, registeredCourses } from "@/content/courses";
+import { getPublishedCourseBySlug, publishedCourses } from "@/content/courses";
 import { getDemoLearnerStateByCourseId } from "@/content/demo";
 import { assertValidLearnerCourseState } from "@/lib/course-validation";
 import {
@@ -22,7 +22,7 @@ type SubjectiveWritingPageProps = {
 export const dynamicParams = false;
 
 export function generateStaticParams() {
-  return registeredCourses.flatMap((course) => (
+  return publishedCourses.flatMap((course) => (
     course.knowledgePoints
       .filter((knowledgePoint) => (
         selectSubjectiveWritingItems(course, knowledgePoint.id).length > 0
@@ -38,7 +38,7 @@ export async function generateMetadata({
   params,
 }: SubjectiveWritingPageProps): Promise<Metadata> {
   const { courseSlug, knowledgePointSlug } = await params;
-  const course = getCourseBySlug(courseSlug);
+  const course = getPublishedCourseBySlug(courseSlug);
   const knowledgePoint = course
     ? selectKnowledgePointBySlug(course, knowledgePointSlug)
     : undefined;
@@ -57,7 +57,7 @@ export default async function SubjectiveWritingPage({
   params,
 }: SubjectiveWritingPageProps) {
   const { courseSlug, knowledgePointSlug } = await params;
-  const course = getCourseBySlug(courseSlug);
+  const course = getPublishedCourseBySlug(courseSlug);
   if (!course) {
     notFound();
   }

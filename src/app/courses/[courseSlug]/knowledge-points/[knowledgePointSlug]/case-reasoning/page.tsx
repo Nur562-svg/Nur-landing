@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { CaseReasoningRoom } from "@/components/case-reasoning-room";
-import { getCourseBySlug, registeredCourses } from "@/content/courses";
+import { getPublishedCourseBySlug, publishedCourses } from "@/content/courses";
 import { getDemoLearnerStateByCourseId } from "@/content/demo";
 import { assertValidLearnerCourseState } from "@/lib/course-validation";
 import {
@@ -21,7 +21,7 @@ type CaseReasoningPageProps = {
 export const dynamicParams = false;
 
 export function generateStaticParams() {
-  return registeredCourses.flatMap((course) => (
+  return publishedCourses.flatMap((course) => (
     course.knowledgePoints
       .filter((knowledgePoint) => (
         selectPrimaryCaseForKnowledgePoint(course, knowledgePoint.id) !== undefined
@@ -37,7 +37,7 @@ export async function generateMetadata({
   params,
 }: CaseReasoningPageProps): Promise<Metadata> {
   const { courseSlug, knowledgePointSlug } = await params;
-  const course = getCourseBySlug(courseSlug);
+  const course = getPublishedCourseBySlug(courseSlug);
   const knowledgePoint = course
     ? selectKnowledgePointBySlug(course, knowledgePointSlug)
     : undefined;
@@ -59,7 +59,7 @@ export default async function CaseReasoningPage({
   params,
 }: CaseReasoningPageProps) {
   const { courseSlug, knowledgePointSlug } = await params;
-  const course = getCourseBySlug(courseSlug);
+  const course = getPublishedCourseBySlug(courseSlug);
   if (!course) {
     notFound();
   }

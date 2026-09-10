@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { CourseLanding } from "@/components/course-landing";
-import { getCourseBySlug, registeredCourses } from "@/content/courses";
+import { getPublishedCourseBySlug, publishedCourses } from "@/content/courses";
 
 type CourseLandingPageProps = {
   params: Promise<{
@@ -13,7 +13,7 @@ export const dynamicParams = false;
 
 export function generateStaticParams() {
   // 有专属工作台页面的课程（tcm-diagnostics）由静态路由优先渲染，不在此生成
-  return registeredCourses
+  return publishedCourses
     .filter((course) => course.slug !== "tcm-diagnostics")
     .map((course) => ({
       courseSlug: course.slug,
@@ -24,7 +24,7 @@ export async function generateMetadata({
   params,
 }: CourseLandingPageProps): Promise<Metadata> {
   const { courseSlug } = await params;
-  const course = getCourseBySlug(courseSlug);
+  const course = getPublishedCourseBySlug(courseSlug);
 
   if (!course) {
     return { title: "课程未找到｜NUR LEARN" };
@@ -40,7 +40,7 @@ export default async function CourseLandingPage({
   params,
 }: CourseLandingPageProps) {
   const { courseSlug } = await params;
-  const course = getCourseBySlug(courseSlug);
+  const course = getPublishedCourseBySlug(courseSlug);
   if (!course) {
     notFound();
   }

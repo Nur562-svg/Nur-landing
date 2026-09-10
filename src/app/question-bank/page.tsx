@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import { QuestionBankGlobal } from "@/components/question-bank-global";
-import { registeredCourses } from "@/content/courses";
+import { publishedCourses } from "@/content/courses";
 
 export const metadata: Metadata = {
   title: "题库｜NUR LEARN",
@@ -8,5 +8,5 @@ export const metadata: Metadata = {
 };
 
 export default function GlobalQuestionBankPage() {
-  return <QuestionBankGlobal courses={registeredCourses} />;
+  return <QuestionBankGlobal courses={publishedCourses} />;
 }

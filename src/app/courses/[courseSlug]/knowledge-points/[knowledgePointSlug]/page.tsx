@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { KnowledgePointLesson } from "@/components/knowledge-point-lesson";
-import { getCourseBySlug, registeredCourses } from "@/content/courses";
+import { getPublishedCourseBySlug, publishedCourses } from "@/content/courses";
 import { getDemoLearnerStateByCourseId } from "@/content/demo";
 import { assertValidLearnerCourseState } from "@/lib/course-validation";
 import {
@@ -21,7 +21,7 @@ type KnowledgePointPageProps = {
 export const dynamicParams = false;
 
 export function generateStaticParams() {
-  return registeredCourses.flatMap((course) => (
+  return publishedCourses.flatMap((course) => (
     course.knowledgePoints
       .filter((knowledgePoint) => knowledgePoint.lesson !== null)
       .map((knowledgePoint) => ({
@@ -35,7 +35,7 @@ export async function generateMetadata({
   params,
 }: KnowledgePointPageProps): Promise<Metadata> {
   const { courseSlug, knowledgePointSlug } = await params;
-  const course = getCourseBySlug(courseSlug);
+  const course = getPublishedCourseBySlug(courseSlug);
   const knowledgePoint = course
     ? selectKnowledgePointBySlug(course, knowledgePointSlug)
     : undefined;
@@ -54,7 +54,7 @@ export default async function KnowledgePointPage({
   params,
 }: KnowledgePointPageProps) {
   const { courseSlug, knowledgePointSlug } = await params;
-  const course = getCourseBySlug(courseSlug);
+  const course = getPublishedCourseBySlug(courseSlug);
   if (!course) {
     notFound();
   }

@@ -1,6 +1,6 @@
 # NUR LEARN 知径上线准备 — 可执行检查清单
 
-**最后更新**：2026-08-17（基于实际代码与配置）
+**最后更新**：2026-09-10（P0 加固：系统字体、/api/health、安全头、课程发布白名单、Prisma provider 脚本）
 
 本文档是**可执行**的上线前检查清单。按顺序执行，每步都有验证命令。
 
@@ -64,7 +64,13 @@ cat .env.local | grep -E 'AUTH_SECRET|DATABASE_URL' | head -2
 
 - **开发/本地**：SQLite（`DATABASE_URL="file:./prisma/dev.db"` + schema provider=sqlite）
 - **生产**：Postgres 16（docker-compose 已声明 postgres:16-alpine）
-- 切换步骤见 DEPLOYMENT.md 和下方构建命令。
+- **切换脚本（不要手改 schema 漏提交）**：
+  ```bash
+  npm run prisma:provider postgresql   # 构建前
+  npx prisma generate
+  npx prisma migrate deploy
+  # 仓库默认保持 sqlite；不要把 postgresql 的 schema.prisma 提交回 main
+  ```
 - **绝不**在生产使用 SQLite。
 
 **schema 变更**（生产前）：
@@ -101,20 +107,20 @@ docker compose logs -f app
 
 ### 1.4 健康检查路径
 
-当前路径：`GET /`（返回首页 200 即视为健康）
+当前路径：`GET /api/health`（JSON `{ ok: true, status: "ok" }`，不查库）
 
-Docker healthcheck（已修复）：
+Docker healthcheck：
 ```yaml
-# docker-compose.yml 中
 healthcheck:
-  test: ["CMD-SHELL", "wget -qO- http://localhost:3000/ || exit 1"]
+  test: ["CMD-SHELL", "wget -qO- http://localhost:3000/api/health || exit 1"]
 ```
+
+**不要**用 `GET /` 做探活（首页 HTML + 历史 Google Fonts 依赖会误报）。
 
 **验证**：
 ```bash
-# 容器内
-docker compose exec app wget -qO- http://localhost:3000/ | head -c 200
-# 应返回 HTML 片段
+curl -sf http://localhost:3000/api/health
+# 应返回 {"ok":true,"status":"ok",...}
 ```
 
 ### 1.5 日志与错误页确认
@@ -132,6 +138,35 @@ docker compose exec app wget -qO- http://localhost:3000/ | head -c 200
 
 **验证**：
 在浏览器登录后导出，检查 JSON `exportBoundary` 各项均为 false，`importSupported: false`。
+
+### 1.7 字体（禁止构建期访问 Google）
+
+- `src/app/layout.tsx` **不得** `next/font/google`。
+- 中文走系统栈：PingFang / 宋体 / YaHei（见 `globals.css`）。
+- 国内网络或离线 `npm run build` 不得再因 fonts.googleapis.com 失败。
+
+### 1.8 安全响应头
+
+- `next.config.ts` `headers()`：`X-Content-Type-Options`、`X-Frame-Options: DENY`、`Referrer-Policy`、`Permissions-Policy`。
+- `Caddyfile` 同步上述头。HSTS 由 Caddy HTTPS 终止层加，不要在本地 HTTP 上强制。
+- 未上完整 CSP（Next 内联脚本需 nonce，避免半吊子 CSP 把站点打挂）。
+
+### 1.9 对公课程发布面
+
+默认公开 **仅**：`tcm-diagnostics`、`physiology`、`physiology-qb`。
+
+其余 12 门题库课仍在 `registeredCourses`（校验真相），但不进 `/learn`、全局题库、sitemap、静态路由。直链生产环境 404。
+
+覆盖：`NEXT_PUBLIC_PUBLISHED_COURSE_SLUGS=*` 显示全部已注册课程。
+
+### 1.10 传染病学 A16（明确不进本次发布）
+
+- `src/content/courses/infectious-diseases/` 与 `scripts/infectious-*` 为 Trae 提取底稿，**不注册、不提交、不上线**。
+- 接入前必须：契约审计 + `tsc` + 生成器跑题库课 + 版权/内容审核。
+
+### 1.11 题库版权（经营红线）
+
+学习指导习题集默认视为他人作品。无出版社/学校授权前，**不得对公售卖或全网公开 15 科题库**。内测白名单见 1.9。
 
 ---
 

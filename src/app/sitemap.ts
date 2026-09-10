@@ -1,5 +1,5 @@
 import type { MetadataRoute } from "next";
-import { registeredCourses } from "@/content/courses";
+import { publishedCourses } from "@/content/courses";
 import { SITE_URL } from "@/lib/site-config";
 
 /** Course workspace pages that exist as App Router pages (not every registered course has one). */
@@ -18,7 +18,7 @@ export default function sitemap(): MetadataRoute.Sitemap {
 
   const courseEntries: MetadataRoute.Sitemap = [];
 
-  for (const course of registeredCourses) {
+  for (const course of publishedCourses) {
     if (COURSE_WORKSPACE_SLUGS.has(course.slug)) {
       courseEntries.push({
         url: `${base}/courses/${course.slug}`,

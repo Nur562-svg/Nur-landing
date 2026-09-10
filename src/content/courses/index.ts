@@ -1,4 +1,5 @@
 import { assertValidCourseRegistry } from "@/lib/course-validation";
+import { isPublishedCourseSlug } from "@/lib/course-publication";
 import type { CourseDefinition } from "@/types/learning";
 import { materialCatalog } from "@/content/materials";
 import { physiologyCourse } from "./physiology";
@@ -43,8 +44,19 @@ const registeredCourses: readonly CourseDefinition[] = [
 
 assertValidCourseRegistry(registeredCourses, materialCatalog);
 
+const publishedCourses: readonly CourseDefinition[] = registeredCourses.filter((course) => (
+  isPublishedCourseSlug(course.slug)
+));
+
 export function getCourseBySlug(slug: string): CourseDefinition | undefined {
   return registeredCourses.find((course) => course.slug === slug);
+}
+
+export function getPublishedCourseBySlug(slug: string): CourseDefinition | undefined {
+  if (!isPublishedCourseSlug(slug)) {
+    return undefined;
+  }
+  return getCourseBySlug(slug);
 }
 
 export function getRequiredCourseBySlug(slug: string): CourseDefinition {
@@ -55,4 +67,4 @@ export function getRequiredCourseBySlug(slug: string): CourseDefinition {
   return course;
 }
 
-export { registeredCourses };
+export { registeredCourses, publishedCourses };

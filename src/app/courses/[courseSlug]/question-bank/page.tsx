@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { QuestionBankHome } from "@/components/question-bank-home";
-import { getCourseBySlug, registeredCourses } from "@/content/courses";
+import { getPublishedCourseBySlug, publishedCourses } from "@/content/courses";
 
 type QuestionBankPageProps = {
   params: Promise<{
@@ -12,7 +12,7 @@ type QuestionBankPageProps = {
 export const dynamicParams = false;
 
 export function generateStaticParams() {
-  return registeredCourses.map((course) => ({
+  return publishedCourses.map((course) => ({
     courseSlug: course.slug,
   }));
 }
@@ -21,7 +21,7 @@ export async function generateMetadata({
   params,
 }: QuestionBankPageProps): Promise<Metadata> {
   const { courseSlug } = await params;
-  const course = getCourseBySlug(courseSlug);
+  const course = getPublishedCourseBySlug(courseSlug);
 
   if (!course) {
     return { title: "题库未找到｜NUR LEARN" };
@@ -37,7 +37,7 @@ export default async function QuestionBankPage({
   params,
 }: QuestionBankPageProps) {
   const { courseSlug } = await params;
-  const course = getCourseBySlug(courseSlug);
+  const course = getPublishedCourseBySlug(courseSlug);
   if (!course) {
     notFound();
   }

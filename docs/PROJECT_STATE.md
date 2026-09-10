@@ -1,6 +1,6 @@
 # NUR LEARN — Canonical Project State
 
-Last updated: 2026-09-10 (Asia/Shanghai) — 错题中心适配题库课程（B1 重做不再 404）+ 落地页/题库/模考/错题 390×844 浏览器补强；16 科题库提取完成（传染病学 A16 已入库 600 道、未注册）；15 科题库课程已接入（10,586 道可答题）；next priority: 传染病学题库课程接入 / 其余扫描件教材提取 / 设计-qa 持续补强
+Last updated: 2026-09-10 (Asia/Shanghai) — P0 上线加固：切断 Google Fonts、/api/health、安全头、课程发布白名单（中诊+生理+生理题库）、Prisma provider 脚本；传染病学 A16 明确不进本次发布
 
 This file is the durable source of truth for continuing NUR LEARN when conversation history is unavailable. Update it after material product decisions, completed milestones, verification changes, or priority changes.
 
@@ -631,6 +631,16 @@ After the browser-local learning-memory and bounded Agent milestones on 2026-07-
 - 错题列表展示课程名；390 隐藏题型/次数列以避免横向溢出
 - Playwright 390×844 + 1440×1000：落地页/题库首页/模考/练习/错题（注入生理学 B1 错答）全部 HTTP 200、无 404 文案、`scrollWidth === clientWidth`；B1 重做 href 指向练习页。证据见 `design-qa.md` 2026-09-10 节
 - `npm test` 222（+3 href 选择器测试）
+
+### P0 上线加固（2026-09-10）
+
+- 切断 `next/font/google`：根布局不再拉取 Inter/Geist/Instrument Serif；`globals.css` 使用系统中文栈（PingFang / 宋体 / YaHei）
+- `GET /api/health` JSON 探活；Docker healthcheck 改打此路径，不再用首页 HTML
+- 安全头：`next.config.ts` + `Caddyfile`（nosniff / DENY iframe / Referrer-Policy / Permissions-Policy）；完整 CSP 未上（避免打断 Next 内联脚本）
+- 对公发布白名单默认 `tcm-diagnostics` + `physiology` + `physiology-qb`；其余题库课仍注册但不进列表/sitemap/静态路由。`NEXT_PUBLIC_PUBLISHED_COURSE_SLUGS=*` 可看全量
+- `npm run prisma:provider postgresql|sqlite`：部署时切换 datasource，仓库默认保持 sqlite
+- 传染病学 A16 extracted **明确不进本次发布**（不注册、不提交）
+- 题库版权：无授权前不得对公售卖 15 科习题集
 
 ## 6. Verified Course Facts, Demonstration Data, and Remaining Gaps
 

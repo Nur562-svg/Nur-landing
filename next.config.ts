@@ -1,6 +1,17 @@
 import type { NextConfig } from "next";
 import { initOpenNextCloudflareForDev } from "@opennextjs/cloudflare";
 
+const securityHeaders = [
+  { key: "X-Content-Type-Options", value: "nosniff" },
+  { key: "X-Frame-Options", value: "DENY" },
+  { key: "Referrer-Policy", value: "strict-origin-when-cross-origin" },
+  { key: "X-DNS-Prefetch-Control", value: "off" },
+  {
+    key: "Permissions-Policy",
+    value: "camera=(), microphone=(), geolocation=(), payment=()",
+  },
+];
+
 const nextConfig: NextConfig = {
   allowedDevOrigins: ["127.0.0.1"],
   // Docker 部署使用 standalone 产物（.next/standalone/server.js），须显式开启
@@ -13,6 +24,14 @@ const nextConfig: NextConfig = {
     "@prisma/adapter-better-sqlite3",
     "better-sqlite3",
   ],
+  async headers() {
+    return [
+      {
+        source: "/(.*)",
+        headers: securityHeaders,
+      },
+    ];
+  },
 };
 
 // 让本地 next dev 也能通过 getCloudflareContext() 访问 Cloudflare bindings（D1 等）

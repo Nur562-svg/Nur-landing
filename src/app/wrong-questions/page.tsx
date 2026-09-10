@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import { WrongQuestionCenter } from "@/components/wrong-question-center";
-import { registeredCourses } from "@/content/courses";
+import { publishedCourses } from "@/content/courses";
 
 export const metadata: Metadata = {
   title: "错题中心｜NUR LEARN",
@@ -10,5 +10,5 @@ export const metadata: Metadata = {
 };
 
 export default function WrongQuestionsPage() {
-  return <WrongQuestionCenter courses={registeredCourses} />;
+  return <WrongQuestionCenter courses={publishedCourses} />;
 }

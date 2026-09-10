@@ -1,5 +1,5 @@
 import { LearningDashboard } from "@/components/learning-dashboard";
-import { registeredCourses } from "@/content/courses";
+import { publishedCourses } from "@/content/courses";
 import type { Metadata } from "next";
 
 export const metadata: Metadata = {
@@ -8,5 +8,5 @@ export const metadata: Metadata = {
 };
 
 export default function LearnPage() {
-  return <LearningDashboard courses={registeredCourses} />;
+  return <LearningDashboard courses={publishedCourses} />;
 }
