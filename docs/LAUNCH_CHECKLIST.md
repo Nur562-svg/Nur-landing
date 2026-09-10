@@ -153,11 +153,13 @@ curl -sf http://localhost:3000/api/health
 
 ### 1.9 对公课程发布面
 
-默认公开 **仅**：`tcm-diagnostics`、`physiology`、`physiology-qb`。
+默认：**全部已注册课程可见**（内测；老习题集无法取得出版社授权时不把做题通路拆掉）。
 
-其余 12 门题库课仍在 `registeredCourses`（校验真相），但不进 `/learn`、全局题库、sitemap、静态路由。直链生产环境 404。
+收窄时设 `NEXT_PUBLIC_PUBLISHED_COURSE_SLUGS=tcm-diagnostics,physiology,physiology-qb`。
 
-覆盖：`NEXT_PUBLIC_PUBLISHED_COURSE_SLUGS=*` 显示全部已注册课程。
+未注册底稿（传染病学 A16 等）不在 `registeredCourses`，直链仍 404。
+
+无授权仍**不得对外售卖题库内容**——产品可练，不等于获得发行权。
 
 ### 1.10 传染病学 A16（明确不进本次发布）
 

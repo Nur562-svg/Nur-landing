@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { QuestionBankPractice } from "@/components/question-bank-practice";
-import { getPublishedCourseBySlug, publishedCourses } from "@/content/courses";
+import { getPublishedCourseBySlug } from "@/content/courses";
 import {
   selectAssessmentItemsForChapter,
   selectChapterBySlug,
@@ -16,24 +16,7 @@ type QuestionBankPracticePageProps = {
   }>;
 };
 
-export const dynamicParams = false;
-
-export function generateStaticParams() {
-  return publishedCourses.flatMap((course) =>
-    course.chapters.flatMap((chapter) => {
-      const items = selectAssessmentItemsForChapter(course, chapter.id);
-      return items
-        .filter((item) => (item.choices && item.choices.length > 0)
-          || item.questionKind === "b1"
-          || item.questionKind === "b2")
-        .map((item) => ({
-          courseSlug: course.slug,
-          chapterSlug: chapter.slug,
-          questionId: item.id,
-        }));
-    }),
-  );
-}
+export const dynamicParams = true;
 
 export async function generateMetadata({
   params,
