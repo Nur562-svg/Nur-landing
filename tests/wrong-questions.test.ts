@@ -425,3 +425,56 @@ describe("wrong-question hrefs for question-bank courses", () => {
     assert.strictEqual(selectWrongQuestionRedoLabel(question), "去写作");
   });
 });
+
+describe("private objective wrongs in the wrong-question center", () => {
+  it("aggregates private wrongs without looking up registered courses", () => {
+    const course = makeCourse();
+    const data = selectWrongQuestionCenter([course], {}, null, {
+      "private-q1": [{
+        questionId: "private-q1",
+        unitId: "unit-1",
+        prompt: "静息心率约为",
+        questionKind: "a1-single",
+        selectedText: "A. 40 次/分",
+        isCorrect: false,
+        basis: "qwen-reference",
+        attemptedAt: "2026-09-11T02:00:00.000Z",
+      }, {
+        questionId: "private-q1",
+        unitId: "unit-1",
+        prompt: "静息心率约为",
+        questionKind: "a1-single",
+        selectedText: "B. 75 次/分",
+        isCorrect: true,
+        basis: "qwen-reference",
+        attemptedAt: "2026-09-11T02:01:00.000Z",
+      }],
+    });
+    assert.strictEqual(data.totalWrong, 1);
+    const question = data.wrongQuestions[0];
+    assert.ok(question);
+    assert.equal(question.isPrivate, true);
+    assert.equal(question.courseTitle, "我的资料");
+    assert.equal(question.wrongCount, 1);
+    assert.equal(question.totalAttempts, 2);
+    assert.equal(selectWrongQuestionRedoHref(question), "/learn/my-materials?unit=unit-1");
+    assert.equal(selectWrongQuestionRedoLabel(question), "去私人练习");
+  });
+
+  it("omits private questions that were only answered correctly", () => {
+    const course = makeCourse();
+    const data = selectWrongQuestionCenter([course], {}, null, {
+      "private-q2": [{
+        questionId: "private-q2",
+        unitId: "unit-1",
+        prompt: "填空",
+        questionKind: "fill",
+        selectedText: "75",
+        isCorrect: true,
+        basis: "source-candidate",
+        attemptedAt: "2026-09-11T02:00:00.000Z",
+      }],
+    });
+    assert.strictEqual(data.totalWrong, 0);
+  });
+});

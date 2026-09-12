@@ -53,6 +53,9 @@
   --font-sans: system-ui, -apple-system, BlinkMacSystemFont, "PingFang SC", "Hiragino Sans GB", "Noto Sans SC", "Microsoft YaHei", "Segoe UI", sans-serif;
   --font-serif: "Songti SC", "STSong", "Noto Serif SC", "SimSun", "Times New Roman", serif;
   --font-heading: var(--font-serif);
+  --ink: #10100f;
+  --paper: #f7f4ee;
+  --paper-light: #f7f4ee;
   --background: oklch(1 0 0);
   --foreground: oklch(0.145 0 0);
   --card: oklch(1 0 0);

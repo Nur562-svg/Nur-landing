@@ -23,6 +23,15 @@ import type { QBAttemptRecord } from "@/types/question-bank";
 import type { MockExamAnswer, MockExamSession } from "@/types/mock-exam";
 import { getMockExamSessions } from "@/lib/mock-exam-store";
 import { computeFsrsInterval, selectRepeatedOmissions } from "@/lib/learning-memory";
+import type { PrivateObjectiveAttemptRecord } from "@/lib/private-practice-memory";
+import { selectPrivatePracticeHref } from "@/lib/private-practice-memory";
+import {
+  PRIVATE_WORKSPACE_COURSE_ID,
+  PRIVATE_WORKSPACE_COURSE_SLUG,
+  PRIVATE_WORKSPACE_COURSE_TITLE,
+  PRIVATE_WORKSPACE_KP_ID,
+  PRIVATE_WORKSPACE_KP_TITLE,
+} from "@/lib/private-workspace";
 import {
   flattenCourseAssessmentItems,
   selectKnowledgePointById,
@@ -51,6 +60,10 @@ export type WrongQuestionSummary = {
   canRedo: boolean;
   /** 主观题是否有写作训练室 */
   hasWritingRoom: boolean;
+  /** 私人导入练习，不挂注册课 */
+  isPrivate: boolean;
+  /** 私人学习单元 id；官方错题为 null */
+  privateUnitId: string | null;
 };
 
 /** 与题库练习页 generateStaticParams 一致：有独立选项或 B1/B2 组成员。 */
@@ -64,6 +77,9 @@ export function isQuestionBankPracticeItem(item: {
 
 /** 错题「重做 / 去写作 / 去做题」入口：题库课程没有知识点页，禁止链到 404。 */
 export function selectWrongQuestionRedoHref(question: WrongQuestionSummary): string {
+  if (question.isPrivate) {
+    return selectPrivatePracticeHref(question.privateUnitId);
+  }
   if (question.canRedo && question.chapterSlug) {
     return `/courses/${question.courseSlug}/question-bank/${question.chapterSlug}/${question.questionId}`;
   }
@@ -77,6 +93,7 @@ export function selectWrongQuestionRedoHref(question: WrongQuestionSummary): str
 }
 
 export function selectWrongQuestionRedoLabel(question: WrongQuestionSummary): string {
+  if (question.isPrivate) return "去私人练习";
   if (question.canRedo) return "重做";
   if (question.hasWritingRoom) return "去写作";
   return "去做题";
@@ -164,6 +181,15 @@ export type WrongQuestionCenterData = {
   fsrsHighRisk: readonly FsrsHighRiskItem[];
   /** 是否已有任意 FSRS 准则状态（用于区分「尚无数据」与「暂无高危」空态） */
   hasFsrsMemory: boolean;
+  /** 复习提案（来自 learning-memory，包括私人练习确认后显式提出的） */
+  reviewProposals: Array<{
+    id: string;
+    proposedAt: string;
+    courseId: string;
+    knowledgePointId: string;
+    isPrivate: boolean;
+    label: string;
+  }>;
 };
 
 function computeWrongQBAttempts(
@@ -307,15 +333,54 @@ export function selectFsrsHighRiskItems(
   return items;
 }
 
+export function selectPrivateWrongQuestions(
+  privateAttempts: Record<string, PrivateObjectiveAttemptRecord[]>,
+): WrongQuestionSummary[] {
+  const summaries: WrongQuestionSummary[] = [];
+  for (const [questionId, attempts] of Object.entries(privateAttempts)) {
+    const wrong = attempts.filter((attempt) => !attempt.isCorrect);
+    if (wrong.length === 0) {
+      continue;
+    }
+    const latestWrong = [...wrong].sort((a, b) => Date.parse(b.attemptedAt) - Date.parse(a.attemptedAt))[0];
+    if (!latestWrong) {
+      continue;
+    }
+    summaries.push({
+      questionId,
+      courseId: PRIVATE_WORKSPACE_COURSE_ID,
+      courseSlug: PRIVATE_WORKSPACE_COURSE_SLUG,
+      courseTitle: PRIVATE_WORKSPACE_COURSE_TITLE,
+      knowledgePointId: PRIVATE_WORKSPACE_KP_ID,
+      knowledgePointTitle: PRIVATE_WORKSPACE_KP_TITLE,
+      knowledgePointSlug: "",
+      chapterSlug: "",
+      prompt: latestWrong.prompt,
+      questionKind: latestWrong.questionKind,
+      wrongCount: wrong.length,
+      totalAttempts: attempts.length,
+      lastWrongAt: latestWrong.attemptedAt,
+      hasChoices: latestWrong.questionKind === "a1-single",
+      canRedo: true,
+      hasWritingRoom: false,
+      isPrivate: true,
+      privateUnitId: latestWrong.unitId,
+    });
+  }
+  return summaries;
+}
+
 /**
  * 聚合所有课程的错题数据。
  * 在组件中通过 useMemo 调用，依赖 localStorage 快照。
  * memoryState 为可选第三参：客观错题聚合与原有行为完全一致。
+ * privateAttempts 为可选第四参：私人导入单选/填空错答，不查注册课。
  */
 export function selectWrongQuestionCenter(
   courses: readonly CourseDefinition[],
   attemptsSnapshot: Record<string, QBAttemptRecord[]>,
   memoryState?: LearningMemoryState | null,
+  privateAttempts: Record<string, PrivateObjectiveAttemptRecord[]> = {},
 ): WrongQuestionCenterData {
   const wrongQB = computeWrongQBAttempts(attemptsSnapshot);
   const wrongMock = computeWrongMockExamAnswers(courses);
@@ -389,6 +454,8 @@ export function selectWrongQuestionCenter(
       hasChoices,
       canRedo: isQuestionBankPracticeItem(item),
       hasWritingRoom,
+      isPrivate: false,
+      privateUnitId: null,
     });
 
     // Aggregate by knowledge point
@@ -443,8 +510,32 @@ export function selectWrongQuestionCenter(
     return b.wrongRatio - a.wrongRatio;
   });
 
+  for (const summary of selectPrivateWrongQuestions(privateAttempts)) {
+    wrongQuestions.push(summary);
+  }
+
   // Sort wrong questions: by last wrong time desc
   wrongQuestions.sort((a, b) => Date.parse(b.lastWrongAt) - Date.parse(a.lastWrongAt));
+
+  // 复习提案：来自 learning-memory 的 proposed 任务（私人练习会显式 propose 以便立即回流）
+  const reviewProposals = (memoryState?.reviewTasks ?? [])
+    .filter((t) => t.status === "proposed")
+    .map((t) => {
+      const firstTarget = t.returnTargets?.[0];
+      const isPrivate = t.courseId.includes("private") || (firstTarget?.taskId?.startsWith("private-") ?? false);
+      const label = isPrivate
+        ? "私人练习确认项"
+        : `${t.knowledgePointId} · ${firstTarget?.surface ?? "练习"}`;
+      return {
+        id: t.id,
+        proposedAt: t.proposedAt,
+        courseId: t.courseId,
+        knowledgePointId: t.knowledgePointId,
+        isPrivate,
+        label,
+      };
+    })
+    .sort((a, b) => Date.parse(b.proposedAt) - Date.parse(a.proposedAt));
 
   return {
     wrongQuestions,
@@ -458,5 +549,6 @@ export function selectWrongQuestionCenter(
       memoryState?.fsrsState
       && Object.keys(memoryState.fsrsState.criteria).length > 0,
     ),
+    reviewProposals,
   };
 }

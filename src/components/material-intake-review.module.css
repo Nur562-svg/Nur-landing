@@ -825,3 +825,34 @@
     margin: 0 0 5px;
   }
 }
+
+.learnerMode .workflowSteps,
+.learnerMode .limits,
+.learnerMode .boundaryLedger,
+.learnerMode .localBadge,
+.learnerMode .reviewColumn,
+.learnerMode .fileCandidate > div > span,
+.learnerMode .fileCandidate > div > small:first-of-type,
+.learnerMode .sectionHeader,
+.learnerMode .boundaryNote,
+.learnerMode .batchSummary > div > span {
+  display: none;
+}
+
+.learnerMode.intake {
+  border-bottom: 0;
+  max-width: none;
+  padding: 0;
+}
+
+.learnerMode .intakeGrid {
+  grid-template-columns: minmax(0, 1fr);
+  margin: 0 auto;
+  max-width: none;
+}
+
+.learnerMode .fileColumn {
+  border-right: 0;
+  padding-right: 0;
+  padding-top: 8px;
+}

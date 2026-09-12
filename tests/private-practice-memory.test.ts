@@ -6,7 +6,9 @@ import type {
 } from "@/types/course-builder";
 import {
   buildPrivateConfirmedAttemptInput,
+  parsePrivateObjectiveAttemptsJson,
   privateAttemptText,
+  selectPrivatePracticeHref,
 } from "@/lib/private-practice-memory";
 
 const question: PrivateMaterialLearningQuestion = {
@@ -75,5 +77,32 @@ describe("private practice memory helpers", () => {
     assert.equal(input.taskId, "private-q-a1");
     assert.equal(input.courseId, "course-private-workspace");
     assert.ok(input.criterionResults.every((item) => item.status === "missing"));
+  });
+
+  it("parses private objective attempt snapshots and drops corrupt rows", () => {
+    const parsed = parsePrivateObjectiveAttemptsJson(JSON.stringify({
+      "q-a1": [{
+        questionId: "q-a1",
+        unitId: "unit-1",
+        prompt: "静息心率约为",
+        questionKind: "a1-single",
+        selectedText: "A. 40 次/分",
+        isCorrect: false,
+        basis: "qwen-reference",
+        attemptedAt: "2026-09-11T02:00:00.000Z",
+      }, {
+        questionId: "q-a1",
+        broken: true,
+      }],
+      "skip": "nope",
+    }));
+    assert.equal(parsed["q-a1"]?.length, 1);
+    assert.equal(parsed["q-a1"]?.[0]?.isCorrect, false);
+    assert.equal(parsed.skip, undefined);
+  });
+
+  it("builds a private practice href with the unit query", () => {
+    assert.equal(selectPrivatePracticeHref(null), "/learn/my-materials");
+    assert.equal(selectPrivatePracticeHref("unit-1"), "/learn/my-materials?unit=unit-1");
   });
 });

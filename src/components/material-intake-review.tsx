@@ -1,6 +1,7 @@
 "use client";
 
 import {
+  useEffect,
   useMemo,
   useState,
   useSyncExternalStore,
@@ -22,6 +23,7 @@ import {
 } from "lucide-react";
 import {
   confirmMaterialIntakeDraft,
+  applyLearnerIntakeDefaults,
   createEmptyMaterialIntakeDraft,
   createMaterialIntakeBatch,
   getMaterialIntakeStorageSnapshot,
@@ -69,6 +71,7 @@ type MaterialIntakeReviewProps = {
   onApproveOverlay: (overlay: ReviewedMaterialOverlayDraft) => void;
   onInvalidatePrivateOverlays: () => void;
   onRevokeOverlay: (overlayId: string) => void;
+  learnerMode?: boolean;
 };
 
 type MaterialIntakeUndoSnapshot = {
@@ -213,6 +216,7 @@ export function MaterialIntakeReview({
   onInvalidatePrivateOverlays,
   onRevokeOverlay,
   parsingCourseOptions,
+  learnerMode = false,
 }: MaterialIntakeReviewProps) {
   const fallback = useMemo(
     () => createEmptyMaterialIntakeDraft(courseOptions[0]?.id ?? ""),
@@ -248,6 +252,16 @@ export function MaterialIntakeReview({
     }
     saveMaterialIntakeDraft({ ...nextDraft, status });
   }
+
+  useEffect(() => {
+    if (!learnerMode || !draft.batch || draft.batch.files.length === 0) {
+      return;
+    }
+    if (draft.status === "eligible-for-course-builder") {
+      return;
+    }
+    persistDraft(applyLearnerIntakeDefaults(draft));
+  }, [learnerMode, draft.status, draft.batch?.id]);
 
   function updateProvenance(
     changes: Partial<MaterialIntakeDraft["provenance"]>,
@@ -472,14 +486,19 @@ export function MaterialIntakeReview({
       selectedSessionFiles.forEach(([id, file]) => next.set(id, file));
       return next;
     });
-    persistBatchChange(batch);
-    setSelectionNotice(
-      candidates.length > 0
-        ? `已追加 ${candidates.length} 份文件并在本地完成 SHA-256；原始文件只在当前会话可用，未上传。`
-        : rejected.length > 0
-          ? "本次没有文件进入候选；拒绝记录可单独移除后重新选择。"
-          : "本次没有文件进入候选，请按边界重新选择。",
-    );
+    if (learnerMode && candidates.length > 0) {
+      persistDraft(applyLearnerIntakeDefaults(setMaterialIntakeBatch(draft, batch)));
+      setSelectionNotice(`已加入 ${candidates.length} 个文件。请继续读取文字。`);
+    } else {
+      persistBatchChange(batch);
+      setSelectionNotice(
+        candidates.length > 0
+          ? `已追加 ${candidates.length} 份文件并在本地完成 SHA-256；原始文件只在当前会话可用，未上传。`
+          : rejected.length > 0
+            ? "本次没有文件进入候选；拒绝记录可单独移除后重新选择。"
+            : "本次没有文件进入候选，请按边界重新选择。",
+      );
+    }
     setHashingFileName(null);
   }
 
@@ -564,13 +583,13 @@ export function MaterialIntakeReview({
   ] as const;
 
   return (
-    <section className={styles.intake} aria-labelledby="material-intake-title">
+    <section className={learnerMode ? `${styles.intake} ${styles.learnerMode}` : styles.intake} aria-labelledby="material-intake-title">
       <div className={styles.sectionHeader}>
         <div className={styles.sectionIndex}>01</div>
         <div>
-          <p>PRIVATE MATERIAL INTAKE</p>
-          <h2 id="material-intake-title">私人材料导入审核箱</h2>
-          <span>先建立身份与边界，再决定是否进入现有 Course Builder。</span>
+          <p>{learnerMode ? "第一步" : "PRIVATE MATERIAL INTAKE"}</p>
+          <h2 id="material-intake-title">{learnerMode ? "上传文件" : "私人材料导入审核箱"}</h2>
+          <span>{learnerMode ? "选择 Word 或有文字的 PDF。文件只留在这台电脑。" : "先建立身份与边界，再决定是否进入现有 Course Builder。"}</span>
         </div>
         <div className={styles.localBadge}>
           <FolderLock aria-hidden="true" size={19} />
@@ -610,8 +629,8 @@ export function MaterialIntakeReview({
             />
             <label htmlFor="material-intake-files">
               {hashingFileName ? <LoaderCircle className={styles.spinner} aria-hidden="true" size={24} /> : <Upload aria-hidden="true" size={24} />}
-              <strong>{hashingFileName ? "正在计算 SHA-256" : draft.batch ? "添加更多本地材料" : "选择一批本地材料"}</strong>
-              <span>{hashingFileName ?? "新选择会追加到当前批次；不会读取或上传正文。"}</span>
+              <strong>{hashingFileName ? "正在读取文件…" : draft.batch ? "再加文件" : "选择 Word 或 PDF"}</strong>
+              <span>{hashingFileName ?? (learnerMode ? "文件只留在这台电脑，请勿上传含个人信息的材料。" : "新选择会追加到当前批次；不会读取或上传正文。")}</span>
             </label>
           </div>
 
@@ -846,6 +865,7 @@ export function MaterialIntakeReview({
           candidates={parseCandidates}
           courseOptions={parsingCourseOptions}
           intakeDraft={draft}
+          learnerMode={learnerMode}
           onApproveOverlay={onApproveOverlay}
           onReauthorize={reauthorizeCandidate}
           onRevokeOverlay={onRevokeOverlay}

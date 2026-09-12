@@ -508,3 +508,27 @@ export function confirmMaterialIntakeDraft(draft: MaterialIntakeDraft): Material
     },
   };
 }
+
+/** 学习者导入：自动填私人练习默认边界，跳过建课审核表。 */
+export function applyLearnerIntakeDefaults(draft: MaterialIntakeDraft): MaterialIntakeDraft {
+  const now = new Date().toISOString();
+  return {
+    ...draft,
+    updatedAt: now,
+    status: "eligible-for-course-builder",
+    privacy: {
+      ...draft.privacy,
+      declaration: "none-observed",
+      risk: "none-observed",
+      publicationPolicy: "local-only",
+    },
+    review: {
+      fileIdentityConfirmed: true,
+      provenanceConfirmed: true,
+      privacyPublicationConfirmed: true,
+      noModelTransferConfirmed: true,
+      status: "confirmed",
+      confirmedAt: now,
+    },
+  };
+}

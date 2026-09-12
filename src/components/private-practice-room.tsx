@@ -20,7 +20,10 @@ import {
   buildPrivateConfirmedAttemptInput,
   privateAttemptText,
   privatePracticeStorageKey,
+  addPrivateObjectiveAttempt,
 } from "@/lib/private-practice-memory";
+import { askNurAgent } from "./nur-agent-dock";
+import { notifyQuizResult } from "@/lib/bot-emotion";
 import styles from "./private-practice-room.module.css";
 
 type PrivatePracticeRoomProps = {
@@ -69,7 +72,7 @@ export function PrivatePracticeRoom({ analysisResult }: PrivatePracticeRoomProps
 
   useEffect(() => {
     try {
-      const raw = window.sessionStorage.getItem(storageKey);
+      const raw = window.localStorage.getItem(storageKey);
       if (!raw) {
         setHydrated(true);
         return;
@@ -79,7 +82,7 @@ export function PrivatePracticeRoom({ analysisResult }: PrivatePracticeRoomProps
         setStates(parsed);
       }
     } catch {
-      window.sessionStorage.removeItem(storageKey);
+      window.localStorage.removeItem(storageKey);
     } finally {
       setHydrated(true);
     }
@@ -89,7 +92,7 @@ export function PrivatePracticeRoom({ analysisResult }: PrivatePracticeRoomProps
     if (!hydrated) {
       return;
     }
-    window.sessionStorage.setItem(storageKey, JSON.stringify(states));
+    window.localStorage.setItem(storageKey, JSON.stringify(states));
   }, [hydrated, states, storageKey]);
 
   const progress = useMemo(() => {
@@ -113,28 +116,62 @@ export function PrivatePracticeRoom({ analysisResult }: PrivatePracticeRoomProps
     }));
   }
 
+  function recordObjectiveAttempt(
+    question: PrivateMaterialLearningQuestion,
+    score: PrivateObjectiveScore,
+    selectedText: string,
+  ) {
+    if (!score.judged || score.correct === null) {
+      return;
+    }
+    if (question.questionKind !== "a1-single" && question.questionKind !== "fill") {
+      return;
+    }
+    addPrivateObjectiveAttempt({
+      questionId: question.id,
+      unitId: analysisResult.learningUnit.id,
+      prompt: question.normalizedPrompt,
+      questionKind: question.questionKind,
+      selectedText,
+      isCorrect: score.correct,
+      basis: score.basis,
+      attemptedAt: new Date().toISOString(),
+    });
+  }
+
   function submit(question: PrivateMaterialLearningQuestion) {
     const current = states[question.id] ?? emptyState();
     if (question.questionKind === "a1-single") {
       if (current.selectedIndex === null) {
         return;
       }
+      const score = scorePrivateChoice(question, current.selectedIndex);
+      const draft = privateAttemptText({
+        question,
+        draft: current.draft,
+        selectedIndex: current.selectedIndex,
+      });
       update(question.id, {
         revealed: true,
-        score: scorePrivateChoice(question, current.selectedIndex),
-        draft: privateAttemptText({
-          question,
-          draft: current.draft,
-          selectedIndex: current.selectedIndex,
-        }),
+        score,
+        draft,
       });
+      recordObjectiveAttempt(question, score, draft);
+      if (score.judged && score.correct !== null) {
+        notifyQuizResult(score.correct);
+      }
       return;
     }
     if (question.questionKind === "fill") {
+      const score = scorePrivateFill(question, current.draft);
       update(question.id, {
         revealed: true,
-        score: scorePrivateFill(question, current.draft),
+        score,
       });
+      recordObjectiveAttempt(question, score, current.draft.trim());
+      if (score.judged && score.correct !== null) {
+        notifyQuizResult(score.correct);
+      }
       return;
     }
     update(question.id, { revealed: true, score: null });
@@ -288,24 +325,49 @@ export function PrivatePracticeRoom({ analysisResult }: PrivatePracticeRoomProps
                 <div className={styles.reveal}>
                   {state.score?.judged ? (
                     <p className={state.score.correct ? styles.pass : styles.fail}>
-                      {state.score.correct ? "参考判定：正确" : "参考判定：不正确"}
-                      <small> · {privateJudgementLabel(state.score.basis)}</small>
+                      {state.score.correct ? "正确" : "不正确"}
+                      <small>{privateJudgementLabel(state.score.basis)}</small>
                     </p>
                   ) : (
-                    <p className={styles.note}>{question.generatedReferenceAnswer.label}</p>
+                    <p className={styles.note}>对照参考，不是教师评分</p>
                   )}
-                  <p className={styles.answer}>{question.generatedReferenceAnswer.variants.exam}</p>
+                  <div className={styles.answerBlock}>
+                    <span className={styles.answerLabel}>参考答案</span>
+                    <p className={styles.answer}>{question.generatedReferenceAnswer.variants.exam}</p>
+                  </div>
                   {question.generatedReferenceAnswer.structurePoints.length > 0 ? (
-                    <ul>
-                      {question.generatedReferenceAnswer.structurePoints.map((point) => (
-                        <li key={point}>{point}</li>
-                      ))}
-                    </ul>
+                    <div className={styles.answerBlock}>
+                      <span className={styles.answerLabel}>要点</span>
+                      <ul>
+                        {question.generatedReferenceAnswer.structurePoints.map((point) => (
+                          <li key={point}>{point}</li>
+                        ))}
+                      </ul>
+                    </div>
                   ) : null}
-                  <small>{question.generatedReferenceAnswer.uncertaintyNote}</small>
+                  {question.generatedReferenceAnswer.uncertaintyNote ? (
+                    <p className={styles.note}>{question.generatedReferenceAnswer.uncertaintyNote}</p>
+                  ) : null}
                   {state.confirmedAt ? (
-                    <p className={styles.note}>已确认 · {new Date(state.confirmedAt).toLocaleString("zh-CN")}</p>
+                    <p className={styles.note}>已保存 · {new Date(state.confirmedAt).toLocaleString("zh-CN")}</p>
                   ) : null}
+                  <button
+                    className={styles.askAgent}
+                    onClick={() => askNurAgent(
+                      [
+                        `题目：${question.normalizedPrompt}`,
+                        state.draft ? `我的作答：${state.draft}` : "",
+                        `参考答案：${question.generatedReferenceAnswer.variants.exam}`,
+                        question.generatedReferenceAnswer.structurePoints.length > 0
+                          ? `要点：${question.generatedReferenceAnswer.structurePoints.join("；")}`
+                          : "",
+                        "请用更清楚的方式讲解，并回答我可能的追问。",
+                      ].filter(Boolean).join("\n"),
+                    )}
+                    type="button"
+                  >
+                    问 NUR Agent
+                  </button>
                 </div>
               ) : null}
             </li>

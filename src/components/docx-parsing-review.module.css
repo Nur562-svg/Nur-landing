@@ -225,14 +225,16 @@
 }
 
 .authorizationGate button {
-  background: var(--ink);
-  color: var(--paper-light);
+  background: var(--paper);
+  border: 1px solid var(--ink);
+  color: var(--ink);
+  min-height: 44px;
   width: 100%;
 }
 
 .authorizationGate button:disabled {
   cursor: not-allowed;
-  opacity: 0.28;
+  opacity: 0.45;
 }
 
 .authorizationGate small {
@@ -607,21 +609,26 @@
 
 .approveOverlayButton {
   align-items: center;
-  background: var(--ink);
+  background: var(--paper);
   border: 1px solid var(--ink);
-  color: var(--paper-light);
+  color: var(--ink);
   cursor: pointer;
   display: inline-flex;
-  font-size: 10px;
+  font-size: 13px;
   gap: 7px;
   justify-content: center;
-  min-height: 42px;
+  min-height: 44px;
   padding: 9px 14px;
 }
 
 .approveOverlayButton:disabled {
   cursor: not-allowed;
-  opacity: 0.28;
+  opacity: 0.45;
+}
+
+.approveOverlayButton:hover:not(:disabled) {
+  border-color: var(--red);
+  color: var(--red);
 }
 
 .overlayApproved {
@@ -789,4 +796,15 @@
     grid-column: 2;
     justify-self: start;
   }
+}
+
+.learnerMode .zeroTransfer,
+.learnerMode .authorizationGate > span,
+.learnerMode .authorizationGate small,
+.learnerMode .reviewHeader span,
+.learnerMode .deltaCard small,
+.learnerMode .identityReady span,
+.learnerMode .identityMissing span,
+.learnerMode .targetFields {
+  display: none;
 }

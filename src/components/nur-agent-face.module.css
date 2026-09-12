@@ -1,0 +1,305 @@
+/* 煤球精灵：SVG 圆角多边形 + 白眼 + 果冻按压 */
+
+.orb {
+  --blob: #24211d;
+  --eye: #f4efe4;
+  --ink: #24211d;
+  position: relative;
+  width: 100%;
+  height: 100%;
+  display: grid;
+  place-items: center;
+  pointer-events: none;
+}
+
+.tilt {
+  width: 100%;
+  height: 100%;
+  display: grid;
+  place-items: center;
+  transition: transform 160ms cubic-bezier(0.22, 1, 0.36, 1);
+  will-change: transform;
+}
+
+.stage {
+  position: relative;
+  width: 78%;
+  height: 78%;
+}
+
+.svg {
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+  display: block;
+}
+
+/* 身体 path：CSS d 过渡 → 形状连续变形（默认路径由组件 style 注入） */
+.body {
+  fill: var(--blob);
+  transition: d 420ms cubic-bezier(0.4, 0, 0.2, 1);
+  transform-origin: center;
+  transform-box: fill-box;
+  filter: drop-shadow(0 8px 14px rgba(36, 33, 29, 0.16));
+}
+
+.orb[data-press="true"] .body {
+  animation: none;
+  transform: scale(0.88, 1.08);
+  transition: transform 80ms ease-out, d 420ms cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.orb[data-emotion="idle"] .body,
+.orb[data-emotion="encourage"] .body {
+  animation: blob-breathe 3.8s ease-in-out infinite;
+}
+
+.orb[data-emotion="happy"] .body {
+  animation: blob-happy 420ms cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.orb[data-emotion="angry"] .body,
+.orb[data-emotion="sad"] .body {
+  animation: blob-wobble 380ms cubic-bezier(0.34, 1.3, 0.64, 1);
+}
+
+.orb[data-emotion="surprised"] .body {
+  animation: blob-pop 360ms cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.orb[data-emotion="thinking"] .body {
+  transform: scale(0.96, 1.06);
+}
+
+.orb[data-emotion="sleepy"] .body {
+  transform: scale(1.04, 0.9);
+}
+
+@keyframes blob-breathe {
+  0%,
+  100% {
+    transform: scale(1, 1);
+  }
+  50% {
+    transform: scale(1.025, 0.975);
+  }
+}
+
+@keyframes blob-happy {
+  0% {
+    transform: scale(1);
+  }
+  35% {
+    transform: scale(1.1, 0.93);
+  }
+  65% {
+    transform: scale(0.97, 1.05);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+
+@keyframes blob-wobble {
+  0% {
+    transform: scale(1);
+  }
+  40% {
+    transform: scale(1.04, 0.97) translateX(2px);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+
+@keyframes blob-pop {
+  0% {
+    transform: scale(0.94);
+  }
+  50% {
+    transform: scale(1.07);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+
+/* 眼睛：HTML 叠在 SVG 上，便于跟随 + 按形状偏移 */
+.eyes {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 48%;
+  height: 22%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 14%;
+  transition:
+    transform 420ms cubic-bezier(0.4, 0, 0.2, 1),
+    height 280ms ease;
+  will-change: transform;
+}
+
+.eye {
+  flex: 1 1 0;
+  max-width: 42%;
+  height: 100%;
+  background: var(--eye);
+  border-radius: 999px;
+  transform-origin: center;
+  transition:
+    transform 200ms ease,
+    border-radius 220ms ease,
+    height 220ms ease;
+}
+
+.orb[data-emotion="idle"] .eye,
+.orb[data-emotion="encourage"] .eye,
+.orb[data-emotion="thinking"] .eye {
+  animation: blob-blink 4.8s ease-in-out infinite;
+}
+
+@keyframes blob-blink {
+  0%,
+  90%,
+  100% {
+    transform: scaleY(1);
+  }
+  93%,
+  95% {
+    transform: scaleY(0.12);
+  }
+}
+
+.orb[data-emotion="happy"] .eye {
+  height: 70%;
+  border-radius: 40%;
+}
+
+.orb[data-emotion="sad"] .eye {
+  height: 88%;
+  transform: translateY(10%);
+}
+
+.orb[data-emotion="angry"] .eye {
+  height: 24%;
+  border-radius: 3px;
+}
+
+.orb[data-emotion="surprised"] .eye {
+  height: 125%;
+  max-width: 36%;
+  border-radius: 50%;
+}
+
+.orb[data-emotion="sleepy"] .eye {
+  height: 14%;
+  border-radius: 2px;
+}
+
+.orb[data-emotion="thinking"] .eye {
+  transform: translateY(-16%);
+}
+
+/* 三角时眼距略收，贴合尖顶宽底 */
+.orb[data-shape="tri"] .eyes {
+  width: 42%;
+  gap: 12%;
+}
+
+.orb[data-shape="square"] .eyes {
+  width: 50%;
+  height: 24%;
+}
+
+.orb[data-shape="penta"] .eyes {
+  width: 46%;
+  height: 21%;
+}
+
+.orb[data-shape="hex"] .eyes {
+  width: 48%;
+  height: 22%;
+}
+
+/* 开心墨点 */
+.ink {
+  position: absolute;
+  border-radius: 50%;
+  background: var(--ink);
+  opacity: 0;
+  pointer-events: none;
+}
+
+.orb[data-emotion="happy"] .ink {
+  animation: ink-fly 560ms cubic-bezier(0.22, 1, 0.36, 1) forwards;
+}
+
+.inkA {
+  width: 10%;
+  height: 10%;
+  top: 8%;
+  right: 4%;
+}
+
+.inkB {
+  width: 7%;
+  height: 7%;
+  top: 2%;
+  right: 18%;
+}
+
+.orb[data-emotion="happy"] .inkB {
+  animation-delay: 70ms;
+}
+
+.inkC {
+  width: 6%;
+  height: 6%;
+  top: 18%;
+  right: 0;
+}
+
+.orb[data-emotion="happy"] .inkC {
+  animation-delay: 120ms;
+}
+
+@keyframes ink-fly {
+  0% {
+    opacity: 0;
+    transform: translate(0, 10px) scale(0.3);
+  }
+  25% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+    transform: translate(12px, -20px) scale(1);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .body,
+  .eye,
+  .ink,
+  .orb[data-emotion="idle"] .body,
+  .orb[data-emotion="encourage"] .body,
+  .orb[data-emotion="happy"] .body,
+  .orb[data-emotion="angry"] .body,
+  .orb[data-emotion="sad"] .body,
+  .orb[data-emotion="surprised"] .body,
+  .orb[data-emotion="idle"] .eye,
+  .orb[data-emotion="encourage"] .eye,
+  .orb[data-emotion="thinking"] .eye,
+  .orb[data-emotion="happy"] .ink {
+    animation: none !important;
+  }
+
+  .body,
+  .tilt,
+  .eyes,
+  .eye {
+    transition: none !important;
+  }
+}

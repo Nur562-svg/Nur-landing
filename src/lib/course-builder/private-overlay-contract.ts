@@ -5,7 +5,7 @@ import type {
 } from "@/types/course-builder";
 import type { ReviewedMaterialOverlayDraft } from "@/types/material-parsing";
 
-export const maximumPrivateOverlayExcerptCount = 80;
+export const maximumPrivateOverlayExcerptCount = 240;
 export const maximumPrivateOverlayCharacterCount = 40_000;
 
 export function createPrivateOverlayBuildInput(

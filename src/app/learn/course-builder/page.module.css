@@ -1,0 +1,48 @@
+.page {
+  --ink: #10100f;
+  --paper: #f7f4ee;
+  --muted: #6c6a66;
+  --line: rgb(16 16 15 / 36%);
+  --blue: #17659a;
+  align-items: center;
+  background: var(--paper);
+  color: var(--ink);
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  min-height: 100dvh;
+  padding: 48px 24px;
+  text-align: center;
+}
+
+.kicker {
+  color: var(--blue);
+  font-size: 13px;
+  letter-spacing: 0.12em;
+  margin: 0 0 12px;
+}
+
+.title {
+  font-family: var(--font-serif), "Times New Roman", serif;
+  font-size: 36px;
+  font-weight: 700;
+  margin: 0 0 16px;
+}
+
+.message {
+  color: var(--muted);
+  font-size: 18px;
+  line-height: 1.7;
+  margin: 0 0 32px;
+}
+
+.back {
+  color: var(--ink);
+  font-size: 15px;
+  min-height: 44px;
+  text-decoration: underline;
+}
+
+.back:hover {
+  color: var(--blue);
+}

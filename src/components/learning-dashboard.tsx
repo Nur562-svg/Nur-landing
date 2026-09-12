@@ -794,7 +794,7 @@ export function LearningDashboard({ courses }: LearningDashboardProps) {
             </span>
             <span>
               <strong>材料建课</strong>
-              <small>把来源编译成可审核课程草稿</small>
+              <small>Nur learn 正努力实现此功能中</small>
             </span>
             <ArrowRight aria-hidden="true" size={18} strokeWidth={1.5} />
           </Link>

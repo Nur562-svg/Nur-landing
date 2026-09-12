@@ -481,7 +481,7 @@ async function assertPrivateMaterialAnalysisBoundary(
   ) {
     throw new CourseBuildExecutionError(
       "private-overlay-rejected",
-      "私人材料超出 80 条 / 40,000 字符边界，或包含重复 ID / locator。",
+      `私人材料超出 ${maximumPrivateOverlayExcerptCount} 条 / ${maximumPrivateOverlayCharacterCount.toLocaleString("zh-CN")} 字符边界，或包含重复 ID / locator。`,
       413,
     );
   }

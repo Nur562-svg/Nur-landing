@@ -1,50 +1,22 @@
-import { CourseBuilderWorkbench } from "@/components/course-builder-workbench";
-import { registeredCourses } from "@/content/courses";
-import { materialCatalog } from "@/content/materials";
+import Link from "next/link";
 import type { Metadata } from "next";
+import styles from "./page.module.css";
 
 export const metadata: Metadata = {
-  title: "课程构建器 | NUR LEARN",
-  description: "私人材料摄入、DOCX 解析、Qwen 私人分析、材料准入与课程草稿编译工作台。",
+  title: "建课",
+  description: "官方闭环课程正在建设中。",
   robots: { index: false, follow: false },
 };
 
 export default function CourseBuilderPage() {
-  const intakeCourseOptions = registeredCourses.map((course) => ({
-    id: course.id,
-    slug: course.slug,
-    title: course.title,
-  }));
-  const intakeParsingCourseOptions = registeredCourses.map((course) => ({
-    id: course.id,
-    title: course.title,
-    knowledgePoints: course.knowledgePoints.map((point) => {
-      const chapter = course.chapters.find((item) => item.knowledgePointIds.includes(point.id));
-      if (!chapter) {
-        throw new Error(`Knowledge point ${point.id} is not assigned to a chapter.`);
-      }
-      return {
-        id: point.id,
-        title: point.title,
-        chapterId: chapter.id,
-        chapterTitle: chapter.title,
-        contentStatus: point.contentStatus,
-        sourceCount: point.sourceIds.length,
-        hasLesson: point.lesson !== null,
-      };
-    }),
-  }));
-  const knownMaterialAssets = materialCatalog.assets.map((asset) => ({
-    assetId: asset.id,
-    sha256: asset.sha256,
-    byteSize: asset.byteSize,
-  }));
-
   return (
-    <CourseBuilderWorkbench
-      intakeCourseOptions={intakeCourseOptions}
-      intakeParsingCourseOptions={intakeParsingCourseOptions}
-      knownMaterialAssets={knownMaterialAssets}
-    />
+    <main className={styles.page}>
+      <p className={styles.kicker}>NUR LEARN</p>
+      <h1 className={styles.title}>建课</h1>
+      <p className={styles.message}>Nur learn 正努力实现此功能中</p>
+      <Link className={styles.back} href="/learn">
+        返回学习首页
+      </Link>
+    </main>
   );
 }

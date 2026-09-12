@@ -16,12 +16,13 @@ import {
 import { QUESTION_KIND_OPTIONS } from "@/lib/question-kind-labels";
 import styles from "./wrong-question-center.module.css";
 import { SyncStatusBadge } from "./sync-status-badge";
+import { NurAgentDock } from "./nur-agent-dock";
 
 type WrongQuestionCenterProps = {
   courses: readonly CourseDefinition[];
 };
 
-type CenterTab = "objective" | "structural" | "fsrs";
+type CenterTab = "objective" | "structural" | "fsrs" | "review";
 
 const FSRS_STATE_LABELS: Record<FsrsCriterionState["state"], string> = {
   new: "未开始",
@@ -85,6 +86,7 @@ export function WrongQuestionCenter({ courses }: WrongQuestionCenterProps) {
     { id: "objective", label: "客观错题", count: data.totalWrong },
     { id: "structural", label: "结构薄弱", count: data.structuralWeaknesses.length },
     { id: "fsrs", label: "即将遗忘", count: data.fsrsHighRisk.length },
+    { id: "review", label: "复习提案", count: data.reviewProposals.length },
   ];
 
   return (
@@ -95,7 +97,7 @@ export function WrongQuestionCenter({ courses }: WrongQuestionCenterProps) {
         </Link>
         <h1 className={styles.title}>错题中心 <SyncStatusBadge /></h1>
         <p className={styles.subtitle}>
-          汇总题库与模考的客观错题、写作与案例确认记录中的结构薄弱点、临遗忘的记忆准则，回流到对应训练室。
+          汇总题库与模考的客观错题、写作与案例确认记录中的结构薄弱点、临遗忘的记忆准则，以及私人练习与确认后产生的复习提案。
         </p>
       </header>
 
@@ -137,7 +139,7 @@ export function WrongQuestionCenter({ courses }: WrongQuestionCenterProps) {
               <CircleX size={32} strokeWidth={1.3} />
               <strong>暂无错题记录</strong>
               <small>
-                去题库做题或参加模考后，错题会自动汇总到这里。
+                去题库做题、参加模考，或在「导入」里提交私人单选/填空后，错题会自动汇总到这里。
               </small>
               <Link className={styles.emptyStateLink} href="/question-bank">
                 去做题 <ArrowRight size={16} />
@@ -383,6 +385,60 @@ export function WrongQuestionCenter({ courses }: WrongQuestionCenterProps) {
           </section>
         </div>
       ) : null}
+
+      {activeTab === "review" ? (
+        <div className={styles.tabPanel} role="tabpanel">
+          <section>
+            <div className={styles.sectionHeading}>
+              <h2 className={styles.sectionTitle}>复习提案</h2>
+              <span className={styles.sectionHint}>确认后显式提出的回流任务（私人练习会立即产生）</span>
+            </div>
+            {data.reviewProposals.length === 0 ? (
+              <div className={styles.emptyState}>
+                <CircleX size={32} strokeWidth={1.3} />
+                <strong>暂无复习提案</strong>
+                <small>
+                  在写作室、案例室或私人练习确认作答后，系统会按需生成复习提案。这里会列出待处理的。
+                </small>
+              </div>
+            ) : (
+              <div className={styles.weaknessList}>
+                {data.reviewProposals.map((proposal, idx) => {
+                  const href = proposal.isPrivate
+                    ? "/learn/my-materials"
+                    : `/courses/${proposal.courseId.split(":")[0] ?? "tcm-diagnostics"}/knowledge-points`; // 简化回退，实际可扩展
+                  const label = proposal.isPrivate ? "去私人练习（会话恢复或重开单元）" : "查看相关练习";
+                  return (
+                    <Link
+                      key={proposal.id}
+                      href={href}
+                      className={styles.weaknessItem}
+                    >
+                      <span className={styles.wrongItemIndex}>{idx + 1}</span>
+                      <span className={styles.weaknessMain}>
+                        <span className={styles.weaknessTitle}>
+                          {proposal.label}
+                          {proposal.isPrivate ? <span className={styles.weaknessCriterion}>（私人）</span> : null}
+                        </span>
+                        <span className={styles.weaknessMeta}>
+                          <span>提案于 {formatDate(proposal.proposedAt)}</span>
+                          <span>·</span>
+                          <span>{proposal.knowledgePointId}</span>
+                        </span>
+                      </span>
+                      <span className={styles.weaknessAction}>
+                        {label}
+                        <ArrowRight size={14} strokeWidth={1.5} />
+                      </span>
+                    </Link>
+                  );
+                })}
+              </div>
+            )}
+          </section>
+        </div>
+      ) : null}
+      <NurAgentDock surface="platform" />
     </div>
   );
 }

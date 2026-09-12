@@ -63,6 +63,7 @@ type DocxParsingReviewProps = {
     file: File,
   ) => Promise<ReauthorizationResult>;
   onRevokeOverlay: (overlayId: string) => void;
+  learnerMode?: boolean;
 };
 
 const blockKindLabels = {
@@ -165,6 +166,7 @@ export function DocxParsingReview({
   onApproveOverlay,
   onReauthorize,
   onRevokeOverlay,
+  learnerMode = false,
 }: DocxParsingReviewProps) {
   const [selectedCandidateId, setSelectedCandidateId] = useState(candidates[0]?.id ?? "");
   const [authorizationConfirmed, setAuthorizationConfirmed] = useState(false);
@@ -390,13 +392,13 @@ export function DocxParsingReview({
   const fileAvailable = sessionFiles.has(selectedCandidate.id);
 
   return (
-    <section className={styles.parser} aria-labelledby="docx-parser-title">
+    <section className={learnerMode ? `${styles.parser} ${styles.learnerMode}` : styles.parser} aria-labelledby="docx-parser-title">
       <div className={styles.heading}>
         <div className={styles.index}>02</div>
         <div>
-          <p>LOCAL PARSING · DOCX / PDF TEXT</p>
-          <h3 id="docx-parser-title">先按章节审核，再处理少数例外</h3>
-          <span>标题自动组成章节；PDF 按页分节。章节可批量接纳、排除或恢复，逐段编辑只在展开后出现。</span>
+          <p>{learnerMode ? "第二步" : "LOCAL PARSING · DOCX / PDF TEXT"}</p>
+          <h3 id="docx-parser-title">{learnerMode ? "核对文字，再生成练习" : "先按章节审核，再处理少数例外"}</h3>
+          <span>{learnerMode ? "按章节批量接纳即可。不需要的段落可以排除。" : "标题自动组成章节；PDF 按页分节。章节可批量接纳、排除或恢复，逐段编辑只在展开后出现。"}</span>
         </div>
         <div className={styles.zeroTransfer}><ShieldCheck aria-hidden="true" size={18} /><span>0 B 模型传输<br />0 次课程写入</span></div>
       </div>
@@ -404,7 +406,7 @@ export function DocxParsingReview({
       <div className={styles.gateGrid}>
         <div className={styles.fileGate}>
           <label>
-            <span>选择已通过身份审核的 DOCX / PDF</span>
+            <span>{learnerMode ? "选择要解析的文件" : "选择已通过身份审核的 DOCX / PDF"}</span>
             <span className={styles.selectWrap}>
               <select value={selectedCandidate.id} onChange={(event) => changeCandidate(event.target.value)}>
                 {candidates.map((candidate) => <option key={candidate.id} value={candidate.id}>{candidate.name}</option>)}
@@ -445,11 +447,13 @@ export function DocxParsingReview({
               onChange={(event) => setAuthorizationConfirmed(event.target.checked)}
               type="checkbox"
             />
-            <span>我授权仅在当前浏览器会话解析这个文件的结构与文字；不发送模型、不持久化正文、不自动进入课程。PDF 只读文字层，扫描件不做 OCR。</span>
+            <span>{learnerMode
+              ? "我同意只在这台电脑读取文件文字，不上传原文。"
+              : "我授权仅在当前浏览器会话解析这个文件的结构与文字；不发送模型、不持久化正文、不自动进入课程。PDF 只读文字层，扫描件不做 OCR。"}</span>
           </label>
           <button disabled={!fileAvailable || !authorizationConfirmed || parsing} onClick={() => void parseSelectedDocument()} type="button">
             {parsing ? <LoaderCircle className={styles.spinner} aria-hidden="true" size={16} /> : <FileLock2 aria-hidden="true" size={16} />}
-            {parsing ? "浏览器本地解析中" : "开始本地解析"}
+            {parsing ? "正在读取文字…" : learnerMode ? "读取文字" : "开始本地解析"}
           </button>
           <small>授权范围：browser-local-docx/pdf-text · persistence: memory-only</small>
         </div>
@@ -548,8 +552,8 @@ export function DocxParsingReview({
 
           <div className={styles.deltaSection}>
             <div className={styles.reviewHeader}>
-              <div><span>COURSE DELTA · PREVIEW ONLY</span><h4>批准为当前会话私人增强包</h4></div>
-              <p>批准后只把人工接纳的摘录加入下方材料包选择器；不会持久化正文，也不会调用模型。</p>
+              <div><span>{learnerMode ? "准备练习" : "COURSE DELTA · PREVIEW ONLY"}</span><h4>{learnerMode ? "确认摘录" : "批准为当前会话私人增强包"}</h4></div>
+              <p>{learnerMode ? "确认后即可生成练习。原文不会上传保存。" : "批准后只把人工接纳的摘录加入下方材料包选择器；不会持久化正文，也不会调用模型。"}</p>
             </div>
             <div className={styles.targetFields}>
               <label>
@@ -586,7 +590,9 @@ export function DocxParsingReview({
                 <div className={styles.overlayApproval}>
                   <label>
                     <input checked={overlayApprovalConfirmed} onChange={(event) => setOverlayApprovalConfirmed(event.target.checked)} type="checkbox" />
-                    <span>我确认只把当前接纳摘录作为本次浏览器会话的 learner-private 材料候选；刷新后正文与增强包都会消失。</span>
+                    <span>{learnerMode
+                      ? "确认用这些摘录生成练习。刷新页面后需重新导入。"
+                      : "我确认只把当前接纳摘录作为本次浏览器会话的 learner-private 材料候选；刷新后正文与增强包都会消失。"}</span>
                   </label>
                   {currentOverlayApproved && currentOverlayId ? (
                     <div className={styles.overlayApproved}>
@@ -596,7 +602,7 @@ export function DocxParsingReview({
                     </div>
                   ) : (
                     <button className={styles.approveOverlayButton} disabled={!overlayApprovalConfirmed} onClick={approveOverlay} type="button">
-                      <Layers3 aria-hidden="true" size={17} />批准摘录并加入私人材料包
+                      <Layers3 aria-hidden="true" size={17} />{learnerMode ? "确认摘录，去生成练习" : "批准摘录并加入私人材料包"}
                     </button>
                   )}
                 </div>

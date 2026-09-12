@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
+import { useSearchParams } from "next/navigation";
 import { ArrowLeft, LoaderCircle } from "lucide-react";
 import {
   countPrivateOverlayCharacters,
@@ -14,30 +15,26 @@ import {
   privateWorkspaceIntakeCourseOption,
   privateWorkspaceParsingCourseOption,
 } from "@/lib/private-workspace";
+import {
+  clearPrivateAnalysisHistory,
+  loadCurrentPrivateAnalysis,
+  loadPrivateAnalysisHistory,
+  savePrivateAnalysisResult,
+  type PrivateMaterialAnalysisResult,
+} from "@/lib/private-practice-memory";
 import type {
   CourseBuilderApiResponse,
-  PrivateMaterialAnalysisAuthorization,
-  PrivateMaterialAnalysisResult,
 } from "@/types/course-builder";
 import type { ReviewedMaterialOverlayDraft } from "@/types/material-parsing";
 import { MaterialIntakeReview } from "./material-intake-review";
+import { NurAgentDock } from "./nur-agent-dock";
 import { PrivatePracticeRoom } from "./private-practice-room";
 import styles from "./private-materials-studio.module.css";
-
-const analysisStorageKey = "nur-learn:private-practice-analysis:v1";
 
 type ProviderStatus = {
   configured: boolean;
   model: string | null;
 };
-
-function isAnalysisResult(value: unknown): value is PrivateMaterialAnalysisResult {
-  return typeof value === "object"
-    && value !== null
-    && "status" in value
-    && value.status === "private-material-analysis"
-    && "learningUnit" in value;
-}
 
 export function PrivateMaterialsStudio() {
   const intakeCourseOptions = useMemo(() => [privateWorkspaceIntakeCourseOption()], []);
@@ -46,11 +43,14 @@ export function PrivateMaterialsStudio() {
   const [provider, setProvider] = useState<ProviderStatus | null>(null);
   const [statusError, setStatusError] = useState<string | null>(null);
   const [confirmed, setConfirmed] = useState(false);
-  const [authorization, setAuthorization] = useState<PrivateMaterialAnalysisAuthorization | null>(null);
   const [authorizing, setAuthorizing] = useState(false);
   const [running, setRunning] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [result, setResult] = useState<PrivateMaterialAnalysisResult | null>(null);
+  const [history, setHistory] = useState<PrivateMaterialAnalysisResult[]>([]);
+  const [restoreNotice, setRestoreNotice] = useState<string | null>(null);
+  const searchParams = useSearchParams();
+  const requestedUnitId = searchParams.get("unit");
 
   const overlayInput = overlay ? createPrivateOverlayBuildInput(overlay) : null;
   const characterCount = overlayInput ? countPrivateOverlayCharacters(overlayInput) : 0;
@@ -89,105 +89,104 @@ export function PrivateMaterialsStudio() {
     };
   }, []);
 
+  // 加载持久化历史 + 当前；?unit= 优先恢复对应单元
   useEffect(() => {
-    try {
-      const stored = window.sessionStorage.getItem(analysisStorageKey);
-      if (!stored) {
+    const loadedHistory = loadPrivateAnalysisHistory();
+    setHistory(loadedHistory);
+
+    if (requestedUnitId) {
+      const current = loadCurrentPrivateAnalysis();
+      const requested = loadedHistory.find((entry) => entry.learningUnit.id === requestedUnitId)
+        ?? (current?.learningUnit.id === requestedUnitId ? current : null);
+      if (requested) {
+        setResult(requested);
+        savePrivateAnalysisResult(requested);
+        setRestoreNotice(null);
         return;
       }
-      const parsed: unknown = JSON.parse(stored);
-      if (isAnalysisResult(parsed)) {
-        setResult(parsed);
-      }
-    } catch {
-      window.sessionStorage.removeItem(analysisStorageKey);
+      setRestoreNotice("未找到该私人练习单元（可能已清除）。可从下面历史列表恢复，或重新导入。");
+    } else {
+      setRestoreNotice(null);
     }
-  }, []);
+
+    const current = loadCurrentPrivateAnalysis();
+    if (current) {
+      setResult(current);
+    }
+  }, [requestedUnitId]);
 
   useEffect(() => {
     setConfirmed(false);
-    setAuthorization(null);
     setError(null);
   }, [overlay?.id]);
 
-  async function authorizeOnce() {
-    if (!overlayInput || !provider?.configured || !provider.model || !withinLimits) {
+  async function generatePractice() {
+    if (!overlayInput || !provider?.configured || !provider.model || !withinLimits || running || authorizing) {
       return;
     }
     setAuthorizing(true);
+    setRunning(true);
     setError(null);
     try {
       const next = await createPrivateMaterialAnalysisAuthorization(
         overlayInput,
         { id: "dashscope", model: provider.model },
       );
-      setAuthorization(next);
-    } catch (cause) {
-      setError(cause instanceof Error ? cause.message : "授权失败");
-    } finally {
-      setAuthorizing(false);
-    }
-  }
-
-  async function runAnalysis() {
-    if (!overlayInput || !authorization || running) {
-      return;
-    }
-    setRunning(true);
-    setError(null);
-    const body = {
-      version: 1,
-      kind: "private-material-analysis",
-      mode: "provider-required",
-      privateOverlay: overlayInput,
-      authorization,
-    };
-    setAuthorization(null);
-    setConfirmed(false);
-    try {
       const response = await fetch("/api/course-builder", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(body),
+        body: JSON.stringify({
+          version: 1,
+          kind: "private-material-analysis",
+          mode: "provider-required",
+          privateOverlay: overlayInput,
+          authorization: next,
+        }),
       });
       const payload = await response.json() as CourseBuilderApiResponse;
       if (!response.ok || payload.status === "error") {
-        throw new Error(payload.status === "error" ? payload.message : "分析失败");
+        throw new Error(payload.status === "error" ? payload.message : "生成练习失败");
       }
       if (payload.status !== "private-material-analysis") {
-        throw new Error("本次没有返回私人练习单元。");
+        throw new Error("这次没有生成可练习的题目。");
       }
       setResult(payload);
-      window.sessionStorage.setItem(analysisStorageKey, JSON.stringify(payload));
+      savePrivateAnalysisResult(payload);
+      setHistory(loadPrivateAnalysisHistory());
+      setConfirmed(false);
     } catch (cause) {
-      setError(cause instanceof Error ? cause.message : "分析失败");
+      setError(cause instanceof Error ? cause.message : "生成练习失败");
     } finally {
+      setAuthorizing(false);
       setRunning(false);
     }
   }
 
   return (
     <div className={styles.container}>
+      <div className={styles.column}>
       <header className={styles.header}>
         <Link className={styles.backLink} href="/learn">
           <ArrowLeft size={16} /> 返回学习首页
         </Link>
         <p className={styles.kicker}>我的资料</p>
-        <h1 className={styles.title}>导入 Word / PDF，生成练习</h1>
+        <h1 className={styles.title}>导入资料，生成练习</h1>
         <p className={styles.subtitle}>
-          接受 .docx 与有文字层的 .pdf。文件留在此浏览器，分析只发送你接纳的摘录。不会注册成官方课，也不会进入课程目录。扫描件不做 OCR。
+          上传 Word 或有文字的 PDF，核对摘录后生成练习。文件留在这台电脑，不会变成官方课。
         </p>
       </header>
 
       {statusError ? <p className={styles.error}>{statusError}</p> : null}
+      {restoreNotice ? <p className={styles.error}>{restoreNotice}</p> : null}
 
       <section className={styles.section}>
-        <h2 className={styles.sectionTitle}>1. 上传并接纳摘录</h2>
-        <p className={styles.hint}>课程目标已固定为「我的资料 / 导入练习」。隐私须声明为未发现个人信息，才能发送分析。</p>
+        <h2 className={styles.sectionTitle}>1. 上传文件</h2>
+        <p className={styles.hint}>文件只留在本机。扫描件图片无法抽字，请用可复制文字的 PDF 或 Word。</p>
         <MaterialIntakeReview
           approvedOverlayIds={overlay ? [overlay.id] : []}
           courseOptions={intakeCourseOptions}
           knownAssets={[]}
+          learnerMode
           onApproveOverlay={setOverlay}
           onInvalidatePrivateOverlays={() => setOverlay(null)}
           onRevokeOverlay={() => setOverlay(null)}
@@ -196,63 +195,102 @@ export function PrivateMaterialsStudio() {
       </section>
 
       <section className={styles.section}>
-        <h2 className={styles.sectionTitle}>2. 一次授权，生成练习</h2>
+        <h2 className={styles.sectionTitle}>2. 生成练习</h2>
         {!overlayInput ? (
-          <p className={styles.hint}>接纳摘录且隐私边界通过后，才会出现分析按钮。</p>
+          <p className={styles.hint}>确认摘录后，这里会出现生成按钮。</p>
         ) : (
           <div className={styles.panel}>
             <p>
-              已接纳 {overlayInput.excerpts.length} 条摘录 · {characterCount.toLocaleString("zh-CN")} 字符
-              {withinLimits ? "" : " · 超出 80 条 / 4 万字符上限，请减少摘录"}
+              已选 {overlayInput.excerpts.length} 段文字
+              {withinLimits ? "" : ` · 超出 ${maximumPrivateOverlayExcerptCount} 段上限，请减少摘录`}
             </p>
-            <p className={styles.hint}>
-              {provider?.configured
-                ? `将发送给 DashScope · ${provider.model ?? "qwen3.7-plus"}，仅一次。`
-                : "当前没有配置 Qwen，无法分析。可在本机 .env.local 配置 DASHSCOPE_API_KEY。"}
-            </p>
+            {!provider?.configured ? (
+              <p className={styles.hint}>当前无法生成练习，需要配置分析服务。</p>
+            ) : null}
             <label className={styles.confirm}>
               <input
                 checked={confirmed}
                 onChange={(event) => setConfirmed(event.target.checked)}
                 type="checkbox"
               />
-              <span>我已检查摘录，授权仅用于一次私人材料分析，不发布、不入库。</span>
+              <span>我已核对摘录，同意只用于生成本地练习。</span>
             </label>
             <div className={styles.actions}>
               <button
-                disabled={!confirmed || !provider?.configured || !withinLimits || authorizing}
-                onClick={() => void authorizeOnce()}
+                disabled={!confirmed || !provider?.configured || !withinLimits || authorizing || running}
+                onClick={() => void generatePractice()}
                 type="button"
               >
-                {authorizing ? "生成授权…" : "生成一次性授权"}
-              </button>
-              <button
-                disabled={!authorization || running}
-                onClick={() => void runAnalysis()}
-                type="button"
-              >
-                {running ? <><LoaderCircle className={styles.spin} size={16} /> 分析中</> : "开始分析"}
+                {authorizing || running ? <><LoaderCircle className={styles.spin} size={16} /> 正在生成练习</> : "生成练习"}
               </button>
             </div>
-            {authorization ? <p className={styles.hint}>授权已就绪，点击开始分析后即消费。</p> : null}
           </div>
         )}
         {error ? <p className={styles.error}>{error}</p> : null}
       </section>
 
-      {result ? (
+      {history.length > 0 ? (
         <section className={styles.section}>
+          <h2 className={styles.sectionTitle}>我的历史私人练习单元</h2>
+          <p className={styles.hint}>最近 {Math.min(history.length, 5)} 个已保存的私人练习（浏览器本地持久）。点击恢复即可继续收藏、确认与练习。</p>
+          <div className={styles.historyList}>
+            {history.map((entry) => {
+              const isCurrent = result?.learningUnit.id === entry.learningUnit.id;
+              const qCount = entry.learningUnit.questions.length;
+              return (
+                <button
+                  key={entry.learningUnit.id}
+                  type="button"
+                  className={isCurrent ? styles.historyItemActive : styles.historyItem}
+                  onClick={() => {
+                    setResult(entry);
+                    // 可选：滚动到练习区
+                    setTimeout(() => {
+                      const el = document.querySelector(`[data-private-practice]`);
+                      el?.scrollIntoView({ behavior: "smooth", block: "start" });
+                    }, 50);
+                  }}
+                >
+                  <div>
+                    <strong>{entry.coverage?.summary ?? "私人单元"}</strong>
+                    <small> · {qCount} 题 · {entry.coverage?.status ?? ""}</small>
+                  </div>
+                  <div className={styles.historyMeta}>
+                    <span>{new Date(entry.learningUnit?.id?.split("-").pop() || Date.now()).toLocaleDateString("zh-CN")}</span>
+                    {isCurrent ? <span className={styles.historyCurrent}>当前</span> : <span>加载练习</span>}
+                  </div>
+                </button>
+              );
+            })}
+          </div>
+          <button
+            type="button"
+            className={styles.clearHistory}
+            onClick={() => {
+              if (confirm("清除所有私人练习历史与状态？此操作不可恢复。")) {
+                clearPrivateAnalysisHistory();
+                setHistory([]);
+                setResult(null);
+              }
+            }}
+          >
+            清除全部历史
+          </button>
+        </section>
+      ) : null}
+
+      {result ? (
+        <section className={styles.section} data-private-practice>
           <h2 className={styles.sectionTitle}>3. 练习</h2>
-          <p className={styles.hint}>
-            {result.coverage.summary} 覆盖 {result.coverage.status} · 完整课程 {result.coverage.compilationReadiness}。
-          </p>
           {result.learningUnit.questions.length > 0 ? (
             <PrivatePracticeRoom analysisResult={result} />
           ) : (
-            <p className={styles.hint}>这次没有映射出可练习题目，材料被标为 unmapped。可以改摘录后重新授权。</p>
+            <p className={styles.hint}>这次没有拆出题目。可以改摘录后重新生成。</p>
           )}
         </section>
       ) : null}
+      </div>
+      <NurAgentDock surface="platform" />
     </div>
   );
 }

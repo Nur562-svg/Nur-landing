@@ -858,7 +858,7 @@ export function CourseBuilderWorkbench({
                       ) : !privateOverlayWithinLimits ? (
                         <div className={styles.transferBlocker} role="alert">
                           <CircleAlert aria-hidden="true" size={17} />
-                          <span>摘录超过 80 条或 40,000 字符；请回到章节审核继续筛选，系统不会静默截断。</span>
+                          <span>摘录超过 {maximumPrivateOverlayExcerptCount} 条或 {maximumPrivateOverlayCharacterCount.toLocaleString("zh-CN")} 字符；请回到章节审核继续筛选，系统不会静默截断。</span>
                         </div>
                       ) : !privateProviderReady ? (
                         <div className={styles.transferBlocker} role="alert">

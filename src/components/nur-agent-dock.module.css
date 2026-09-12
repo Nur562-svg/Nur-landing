@@ -1,24 +1,25 @@
 .fab {
   position: fixed;
-  bottom: 24px;
-  right: 24px;
-  width: 48px;
-  height: 48px;
+  bottom: 28px;
+  right: 28px;
+  width: 64px;
+  height: 64px;
   border-radius: 50%;
   border: none;
-  background: #24211d;
-  color: #f8f3e8;
+  background: transparent;
+  color: inherit;
   display: flex;
   align-items: center;
   justify-content: center;
   cursor: pointer;
   z-index: 240;
-  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.15);
-  transition: transform 0.15s ease;
+  padding: 0;
+  -webkit-tap-highlight-color: transparent;
 }
 
-.fab:hover {
-  transform: scale(1.06);
+.fab:focus-visible {
+  outline: 2px solid #3f5464;
+  outline-offset: 4px;
 }
 
 .fab[data-open="true"] {
@@ -61,10 +62,38 @@
   display: flex;
   align-items: center;
   gap: 8px;
+  min-width: 0;
 }
 
 .headerLeft svg {
   color: #9b392c;
+}
+
+.headerOrb {
+  width: 28px;
+  height: 28px;
+  flex-shrink: 0;
+  display: grid;
+  place-items: center;
+}
+
+.thinkingLabel {
+  font-size: 11px;
+  color: #8b5cf6;
+  background: rgba(139, 92, 246, 0.12);
+  border-radius: 999px;
+  padding: 2px 8px;
+  animation: thinking-pulse 1.2s ease-in-out infinite;
+}
+
+@keyframes thinking-pulse {
+  0%,
+  100% {
+    opacity: 0.55;
+  }
+  50% {
+    opacity: 1;
+  }
 }
 
 .header h3 {
@@ -186,12 +215,19 @@
   .fab {
     bottom: 16px;
     right: 16px;
-    width: 44px;
-    height: 44px;
+    width: 56px;
+    height: 56px;
   }
 
   .drawer {
     width: 100%;
     border-left: none;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .fab {
+    transition: none !important;
+    animation: none !important;
   }
 }

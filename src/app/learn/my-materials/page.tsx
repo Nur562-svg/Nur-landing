@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { Suspense } from "react";
 import { PrivateMaterialsStudio } from "@/components/private-materials-studio";
 
 export const metadata: Metadata = {
@@ -8,5 +9,9 @@ export const metadata: Metadata = {
 };
 
 export default function MyMaterialsPage() {
-  return <PrivateMaterialsStudio />;
+  return (
+    <Suspense fallback={null}>
+      <PrivateMaterialsStudio />
+    </Suspense>
+  );
 }

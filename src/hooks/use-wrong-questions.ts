@@ -8,6 +8,10 @@ import {
   type WrongQuestionCenterData,
 } from "@/lib/wrong-questions";
 import { parseLearningMemoryJson } from "@/lib/learning-memory";
+import {
+  parsePrivateObjectiveAttemptsJson,
+  PRIVATE_OBJECTIVE_ATTEMPTS_KEY,
+} from "@/lib/private-practice-memory";
 
 const QB_ATTEMPTS_KEY = "nur-learn:qb-attempts:v1";
 const MEMORY_KEY = "nur-learn:learning-memory:v1";
@@ -24,6 +28,7 @@ const EMPTY_DATA: WrongQuestionCenterData = {
   structuralWeaknesses: [],
   fsrsHighRisk: [],
   hasFsrsMemory: false,
+  reviewProposals: [],
 };
 
 /** 订阅 localStorage 变化（qb-attempts + learning-memory + mock-exam + storage 事件） */
@@ -49,6 +54,11 @@ function getAttemptsSnapshot(): string | null {
 function getMemorySnapshot(): string | null {
   if (typeof window === "undefined") return null;
   return window.localStorage.getItem(MEMORY_KEY);
+}
+
+function getPrivateAttemptsSnapshot(): string | null {
+  if (typeof window === "undefined") return null;
+  return window.localStorage.getItem(PRIVATE_OBJECTIVE_ATTEMPTS_KEY);
 }
 
 function parseAttemptsSnapshot(snapshot: string | null): Record<string, QBAttemptRecord[]> {
@@ -104,10 +114,17 @@ export function useWrongQuestionCenter(
     () => null,
   );
 
+  const privateSnapshot = useSyncExternalStore(
+    subscribeChanges,
+    getPrivateAttemptsSnapshot,
+    () => null,
+  );
+
   return useMemo(() => {
     if (!mounted) return EMPTY_DATA;
     const attempts = parseAttemptsSnapshot(snapshot);
     const memoryState = parseLearningMemoryJson(memorySnapshot);
-    return selectWrongQuestionCenter(courses, attempts, memoryState);
-  }, [mounted, courses, snapshot, memorySnapshot]);
+    const privateAttempts = parsePrivateObjectiveAttemptsJson(privateSnapshot);
+    return selectWrongQuestionCenter(courses, attempts, memoryState, privateAttempts);
+  }, [mounted, courses, snapshot, memorySnapshot, privateSnapshot]);
 }

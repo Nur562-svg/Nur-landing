@@ -2,9 +2,17 @@
 
 import { useEffect, useMemo, useState, useSyncExternalStore } from "react";
 import { createPortal } from "react-dom";
-import { Bot, MessageSquare, ScanText, X } from "lucide-react";
+import { MessageSquare, ScanText, X } from "lucide-react";
 import type { LearningAttemptSurface, LearningMemoryState } from "@/types/learning";
 import type { FsrsCriterionSummary } from "@/types/nur-agent";
+import {
+  getBotEmotionServerSnapshot,
+  getBotEmotionSnapshot,
+  getBotWrongStreak,
+  subscribeBotEmotion,
+} from "@/lib/bot-emotion";
+import { NurAgentFace } from "./nur-agent-face";
+import { useNearPointer } from "./use-near-pointer";
 import { NurAgentPilot } from "./nur-agent-pilot";
 import { NurAgentChat } from "./nur-agent-chat";
 import styles from "./nur-agent-dock.module.css";
@@ -49,6 +57,21 @@ type NurAgentDockProps = {
 
 type TabId = "chat" | "analysis";
 
+export function askNurAgent(text: string) {
+  if (typeof window === "undefined") {
+    return;
+  }
+  window.dispatchEvent(new CustomEvent("nur-learn:ask-agent", { detail: { text } }));
+}
+
+export {
+  notifyQuizResult,
+  setBotEmotion,
+  resetBotWrongStreak,
+  getBotWrongStreak,
+  type BotEmotion,
+} from "@/lib/bot-emotion";
+
 export function NurAgentDock(props: NurAgentDockProps) {
   const mounted = useSyncExternalStore(
     () => () => {},
@@ -57,6 +80,17 @@ export function NurAgentDock(props: NurAgentDockProps) {
   );
   const [open, setOpen] = useState(false);
   const [tab, setTab] = useState<TabId>("chat");
+  const [seedText, setSeedText] = useState<string | null>(null);
+  const [pressed, setPressed] = useState(false);
+  const emotion = useSyncExternalStore(
+    subscribeBotEmotion,
+    getBotEmotionSnapshot,
+    getBotEmotionServerSnapshot,
+  );
+  const [fabRef, pointer] = useNearPointer<HTMLButtonElement>({
+    radius: 320,
+    fullAt: 100,
+  });
   const { surface } = props;
   const isKnowledgePoint = surface === "knowledge-point";
   const isPlatform = surface === "platform";
@@ -69,6 +103,19 @@ export function NurAgentDock(props: NurAgentDockProps) {
     window.addEventListener("keydown", handler);
     return () => window.removeEventListener("keydown", handler);
   }, [open]);
+
+  useEffect(() => {
+    const handler = (event: Event) => {
+      const detail = (event as CustomEvent<{ text?: string }>).detail;
+      if (typeof detail?.text === "string" && detail.text.trim()) {
+        setSeedText(detail.text);
+      }
+      setOpen(true);
+      setTab("chat");
+    };
+    window.addEventListener("nur-learn:ask-agent", handler);
+    return () => window.removeEventListener("nur-learn:ask-agent", handler);
+  }, []);
 
   const fsrsState = props.state?.fsrsState ?? null;
   const fsrsSummary = useMemo<readonly FsrsCriterionSummary[] | null>(() => {
@@ -131,22 +178,37 @@ export function NurAgentDock(props: NurAgentDockProps) {
         ? "写作室"
         : "推理室";
 
-  const hasDraft = Boolean(props.currentText && props.currentText.trim().length > 0);
+  const hasDraft = Boolean((seedText ?? props.currentText)?.trim());
 
   if (!mounted) {
     return null;
   }
 
+  const lookX = pointer.near ? pointer.x : 0;
+  const lookY = pointer.near ? pointer.y : 0;
+
   return createPortal(
     <>
       <button
+        ref={fabRef}
         className={styles.fab}
         onClick={() => setOpen(true)}
-        aria-label="打开 NUR Agent"
+        aria-label={`打开 NUR Agent（当前表情：${emotion}）`}
         type="button"
         data-open={open}
+        data-emotion={emotion}
+        data-over={pointer.over ? "true" : undefined}
+        onPointerDown={() => setPressed(true)}
+        onPointerUp={() => setPressed(false)}
+        onPointerLeave={() => setPressed(false)}
       >
-        <Bot size={22} strokeWidth={1.5} />
+        <NurAgentFace
+          emotion={emotion}
+          wrongStreak={getBotWrongStreak()}
+          lookX={lookX}
+          lookY={lookY}
+          pressed={pressed}
+        />
       </button>
       {open ? (
         <div className={styles.overlay} onClick={() => setOpen(false)}>
@@ -158,9 +220,14 @@ export function NurAgentDock(props: NurAgentDockProps) {
           >
             <header className={styles.header}>
               <div className={styles.headerLeft}>
-                <Bot size={18} strokeWidth={1.5} aria-hidden="true" />
+                <span className={styles.headerOrb} aria-hidden="true">
+                  <NurAgentFace emotion={emotion} size={28} />
+                </span>
                 <h3>NUR Agent</h3>
                 <span className={styles.surfaceLabel}>{surfaceLabel}</span>
+                {emotion === "thinking" ? (
+                  <span className={styles.thinkingLabel}>思考中</span>
+                ) : null}
               </div>
               <button
                 type="button"
@@ -198,7 +265,7 @@ export function NurAgentDock(props: NurAgentDockProps) {
                   courseSlug={isPlatform ? null : (props.courseSlug ?? null)}
                   knowledgePointId={isPlatform ? null : (props.knowledgePointId ?? null)}
                   fsrsSummary={isPlatform ? null : fsrsSummary}
-                  currentText={null}
+                  currentText={seedText ?? props.currentText ?? null}
                   taskContext={null}
                 />
               ) : tab === "chat" ? (
@@ -206,7 +273,7 @@ export function NurAgentDock(props: NurAgentDockProps) {
                   courseSlug={props.courseSlug ?? ""}
                   knowledgePointId={props.knowledgePointId ?? ""}
                   fsrsSummary={fsrsSummary}
-                  currentText={props.currentText ?? null}
+                  currentText={seedText ?? props.currentText ?? null}
                   taskContext={taskContext}
                 />
               ) : (

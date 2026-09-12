@@ -18,8 +18,24 @@ import type {
   CourseDefinition,
 } from "@/types/learning";
 import styles from "./question-bank-practice.module.css";
+import { NurAgentDock } from "./nur-agent-dock";
+import { notifyQuizResult } from "@/lib/bot-emotion";
+import {
+  matchQuestionBankFill,
+  shouldRecordQuestionBankAttempt,
+} from "@/lib/question-bank-written";
 
 const CHOICE_LABELS = ["A", "B", "C", "D", "E", "F"];
+
+const KIND_LABEL: Record<string, string> = {
+  "a1-single": "单选",
+  b1: "B型题",
+  b2: "B型题",
+  fill: "填空",
+  term: "名词解释",
+  "short-answer": "简答",
+  case: "病例分析",
+};
 
 type QuestionBankPracticeProps = {
   course: CourseDefinition;
@@ -27,6 +43,22 @@ type QuestionBankPracticeProps = {
   items: AssessmentItemDefinition[];
   currentIndex: number;
 };
+
+function markChapterProgress(
+  courseId: string,
+  chapterId: string,
+  currentIndex: number,
+) {
+  const progressStore = getQBProgress(courseId);
+  const chapterProgress = progressStore[chapterId];
+  const completedIndices = new Set(chapterProgress?.completedIndices ?? []);
+  completedIndices.add(currentIndex);
+  saveQBProgress(courseId, chapterId, {
+    chapterId,
+    lastIndex: currentIndex,
+    completedIndices: Array.from(completedIndices),
+  });
+}
 
 export function QuestionBankPractice({
   course,
@@ -36,21 +68,34 @@ export function QuestionBankPractice({
 }: QuestionBankPracticeProps) {
   const item = items[currentIndex];
   const [selectedIndex, setSelectedIndex] = useState<number | null>(null);
+  const [draft, setDraft] = useState("");
+  const [writtenSubmitted, setWrittenSubmitted] = useState(false);
   const [fav, setFav] = useState(() => isQBFavorite(item?.id ?? ""));
-  // B1/B2 组成员通过组上下文渲染（共享题干 / 共享备选答案）。
   const itemGroup = item ? findAssessmentItemWithGroup(course, item.id)?.group : undefined;
   const renderChoices = item && item.choices && item.choices.length > 0
     ? item.choices
     : itemGroup?.sharedChoices ?? null;
 
+  // 换题时重置本地作答态（渲染期派生，避免 effect 级联 setState）
+  const [prevItemId, setPrevItemId] = useState(item?.id);
+  if (item?.id !== prevItemId) {
+    setPrevItemId(item?.id);
+    setSelectedIndex(null);
+    setDraft("");
+    setWrittenSubmitted(false);
+    setFav(isQBFavorite(item?.id ?? ""));
+  }
+
   if (!item) {
     return (
-      <div className={styles.noChoices}>
-        <strong>题目未找到</strong>
-        <small>请返回章节列表重新选择。</small>
-        <Link href={`/courses/${course.slug}/question-bank/${chapter.slug}`}>
-          返回章节
-        </Link>
+      <div className={styles.container}>
+        <div className={styles.noChoices}>
+          <strong>题目未找到</strong>
+          <small>请返回章节列表重新选择。</small>
+          <Link href={`/courses/${course.slug}/question-bank/${chapter.slug}`}>
+            返回章节
+          </Link>
+        </div>
       </div>
     );
   }
@@ -58,11 +103,17 @@ export function QuestionBankPractice({
   const hasChoices = (item.choices && item.choices.length > 0)
     || (itemGroup?.sharedChoices && itemGroup.sharedChoices.length > 0) || false;
   const correctIndex = item.correctChoiceIndex ?? -1;
-  const isSubmitted = selectedIndex !== null;
-  const isCorrect = isSubmitted ? selectedIndex === correctIndex : false;
+  const isSubmitted = hasChoices ? selectedIndex !== null : writtenSubmitted;
+  const isCorrect = hasChoices && selectedIndex !== null
+    ? selectedIndex === correctIndex
+    : item.questionKind === "fill" && item.answer.status === "available"
+      ? matchQuestionBankFill(item.answer.content, draft)
+      : null;
   const total = items.length;
   const attemptStats = getQBAttemptStats(item.id);
   const kp = selectKnowledgePointById(course, item.knowledgePointId);
+  const kindLabel = KIND_LABEL[item.questionKind] ?? item.questionKind;
+  const referenceLines = item.answer.status === "available" ? item.answer.content : [];
 
   const prevItem = currentIndex > 0 ? items[currentIndex - 1] : null;
   const nextItem = currentIndex < total - 1 ? items[currentIndex + 1] : null;
@@ -77,16 +128,35 @@ export function QuestionBankPractice({
       isCorrect: correct,
       attemptedAt: new Date().toISOString(),
     });
+    notifyQuizResult(correct);
+    markChapterProgress(course.id, chapter.id, currentIndex);
+  }
 
-    const progressStore = getQBProgress(course.id);
-    const chapterProgress = progressStore[chapter.id];
-    const completedIndices = new Set(chapterProgress?.completedIndices ?? []);
-    completedIndices.add(currentIndex);
-    saveQBProgress(course.id, chapter.id, {
-      chapterId: chapter.id,
-      lastIndex: currentIndex,
-      completedIndices: Array.from(completedIndices),
-    });
+  function handleWrittenSubmit() {
+    if (writtenSubmitted || !draft.trim()) {
+      return;
+    }
+    setWrittenSubmitted(true);
+    markChapterProgress(course.id, chapter.id, currentIndex);
+    const fillAnswerAvailable = item.answer.status === "available";
+    if (
+      shouldRecordQuestionBankAttempt({
+        hasChoices: false,
+        questionKind: item.questionKind,
+        fillAnswerAvailable,
+      })
+    ) {
+      const correct = item.answer.status === "available"
+        ? matchQuestionBankFill(item.answer.content, draft)
+        : false;
+      addQBAttempt(item.id, {
+        questionId: item.id,
+        selectedIndex: -1,
+        isCorrect: correct,
+        attemptedAt: new Date().toISOString(),
+      });
+      notifyQuizResult(correct);
+    }
   }
 
   function handleToggleFav() {
@@ -96,25 +166,6 @@ export function QuestionBankPractice({
 
   function getNavUrl(index: number): string {
     return `/courses/${course.slug}/question-bank/${chapter.slug}/${items[index].id}`;
-  }
-
-  if (!hasChoices) {
-    return (
-      <div className={styles.noChoices}>
-        <strong>此题目暂不支持交互作答</strong>
-        <small>
-          {item.questionKind === "term" || item.questionKind === "short-answer"
-            ? "主观题请前往写作训练室练习。"
-            : "该题型交互功能将在后续版本提供。"}
-        </small>
-        <Link
-          href={`/courses/${course.slug}/question-bank/${chapter.slug}`}
-          style={{ display: "inline-block", marginTop: 16, color: "var(--ink)", textDecoration: "underline" }}
-        >
-          返回章节列表
-        </Link>
-      </div>
-    );
   }
 
   const answerSourceLabel =
@@ -151,7 +202,7 @@ export function QuestionBankPractice({
             <ArrowLeft size={16} /> {chapter.title}
           </Link>
           <span className={styles.breadcrumbSep}>/</span>
-          <span className={styles.kindTag}>{item.questionKind}</span>
+          <span className={styles.kindTag}>{kindLabel}</span>
           <span className={styles.progressLabel}>
             {currentIndex + 1} / {total}
           </span>
@@ -176,38 +227,80 @@ export function QuestionBankPractice({
           </p>
         ) : null}
 
-        <div className={styles.choices}>
-          {renderChoices!.map((choice, index) => (
+        {hasChoices ? (
+          <div className={styles.choices}>
+            {renderChoices!.map((choice, index) => (
+              <button
+                key={index}
+                type="button"
+                className={getChoiceClass(index)}
+                onClick={() => handleSelect(index)}
+                disabled={isSubmitted}
+              >
+                <span className={styles.choiceLabel}>
+                  {CHOICE_LABELS[index] ?? index}
+                </span>
+                <span className={styles.choiceText}>{choice}</span>
+              </button>
+            ))}
+          </div>
+        ) : (
+          <div className={styles.written}>
+            <textarea
+              className={styles.writtenInput}
+              disabled={writtenSubmitted}
+              onChange={(event) => setDraft(event.currentTarget.value)}
+              placeholder={item.questionKind === "fill" ? "填入答案" : "写下你的作答"}
+              rows={item.questionKind === "fill" ? 2 : 6}
+              value={draft}
+            />
             <button
-              key={index}
+              className={styles.writtenSubmit}
+              disabled={writtenSubmitted || !draft.trim()}
+              onClick={handleWrittenSubmit}
               type="button"
-              className={getChoiceClass(index)}
-              onClick={() => handleSelect(index)}
-              disabled={isSubmitted}
             >
-              <span className={styles.choiceLabel}>
-                {CHOICE_LABELS[index] ?? index}
-              </span>
-              <span className={styles.choiceText}>{choice}</span>
+              {writtenSubmitted ? "已提交" : "提交后看参考"}
             </button>
-          ))}
-        </div>
+          </div>
+        )}
       </section>
 
       {isSubmitted ? (
         <section className={styles.resultSection}>
           <div className={styles.resultRow}>
-            {isCorrect ? (
-              <span className={styles.resultCorrect}>✓ 回答正确</span>
+            {hasChoices ? (
+              isCorrect ? (
+                <span className={styles.resultCorrect}>✓ 回答正确</span>
+              ) : (
+                <span className={styles.resultWrong}>
+                  ✗ 正确答案：{CHOICE_LABELS[correctIndex]}
+                </span>
+              )
+            ) : item.questionKind === "fill" && isCorrect !== null ? (
+              isCorrect ? (
+                <span className={styles.resultCorrect}>✓ 与参考一致</span>
+              ) : (
+                <span className={styles.resultWrong}>与参考不一致</span>
+              )
             ) : (
-              <span className={styles.resultWrong}>
-                ✗ 正确答案：{CHOICE_LABELS[correctIndex]}
-              </span>
+              <span className={styles.resultNote}>对照参考，系统不做对错判定。</span>
             )}
           </div>
-          {!isCorrect && correctIndex >= 0 && renderChoices ? (
+          {!hasChoices && referenceLines.length > 0 ? (
+            <div className={styles.reference}>
+              <strong>参考答案</strong>
+              {referenceLines.map((line) => (
+                <p key={line}>{line}</p>
+              ))}
+            </div>
+          ) : null}
+          {!hasChoices && referenceLines.length === 0 ? (
+            <p className={styles.resultNote}>本题尚无收录参考答案。</p>
+          ) : null}
+          {hasChoices && !isCorrect && correctIndex >= 0 && renderChoices ? (
             <div className={styles.resultRow}>
-              <span style={{ color: "var(--muted)", fontSize: 14 }}>
+              <span className={styles.resultNote}>
                 你的选择：{CHOICE_LABELS[selectedIndex!]} · {renderChoices[selectedIndex!]}
               </span>
             </div>
@@ -283,6 +376,7 @@ export function QuestionBankPractice({
           </span>
         </div>
       </div>
+      <NurAgentDock surface="platform" />
     </div>
   );
 }

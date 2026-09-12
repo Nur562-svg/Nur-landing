@@ -1,6 +1,6 @@
 # NUR LEARN — Canonical Project State
 
-Last updated: 2026-09-10 (Asia/Shanghai) — 私人练习可收藏/确认进学习记忆
+Last updated: 2026-09-12 (Asia/Shanghai) — 导入精简、题库主观作答、建课改为建设中；下一步是真人点选而非新功能
 
 This file is the durable source of truth for continuing NUR LEARN when conversation history is unavailable. Update it after material product decisions, completed milestones, verification changes, or priority changes.
 
@@ -684,6 +684,15 @@ After the browser-local learning-memory and bounded Agent milestones on 2026-07-
 - `/learn` 导航增加「导入」
 - PDF 文字层（pdfjs，`enableScripting:false`）可解析进同一练习链；扫描件标 `scan-or-empty-text-layer`，不做 OCR
 - 练习页支持收藏筛选、确认写入浏览器学习记忆、复习提案与会话恢复
+- 复习提案（含私人）已纳入 `/wrong-questions` 「复习提案」tab，全局可见并可回流到私人练习页（会话恢复或重开单元）
+- 分析结果 + 练习状态（收藏/确认/草稿状态）从 sessionStorage 升级到 localStorage 持久；studio 新增「我的历史私人练习单元」列表（最近 5 个），支持一键恢复加载；清除历史按钮；跨 reload/tab 恢复可用
+- 私人单选/填空提交判定后写入独立 `private-objective-attempts`（不进题库 store）；错题中心客观列表聚合这些错答，重做链到 `/learn/my-materials`
+- 私人错题重做链带 `?unit=`；`/learn/my-materials` 按历史恢复对应单元，找不到则诚实提示
+- 学习者导入隐藏建课审核表，自动填私人本机边界；上传区居中；摘录上限 240
+- `/learn/course-builder` 对学生显示「Nur learn 正努力实现此功能中」（官方闭环课后做）
+- 题库填空/名词/简答可书面作答；填空对照参考（不去拆「次/分」）；名词/简答不写入题库错题
+- 本地 `next dev` 固定 webpack，避免本仓库 Turbopack 空转导致整站卡在加载页
+- 传染病学 Trae 底稿仍不注册、不进本次发布
 
 ### 运维窄修（2026-09-10）
 
