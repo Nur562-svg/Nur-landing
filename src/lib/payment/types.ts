@@ -3,6 +3,7 @@
  * provider 可切换：mock（演示）→ wechat（APIv3 Native 扫码）→ alipay（网站支付）。
  * 自研签名/验签，不引第三方 SDK。
  */
+import type { MembershipTier } from "@/types/auth";
 
 /** 支付渠道标识。 */
 export type PaymentChannel = "mock" | "wechat" | "alipay";
@@ -10,17 +11,23 @@ export type PaymentChannel = "mock" | "wechat" | "alipay";
 /** 套餐周期。 */
 export type PlanPeriod = "month" | "quarter" | "year";
 
-/** 套餐层级。 */
-export type PlanTier = "lite" | "pro";
+/** 收费会员层级；free/trial 不通过支付 SKU 购买。 */
+export type PlanTier = Exclude<MembershipTier, "free">;
 
-/** 套餐标识。 */
+/** 新版套餐标识。 */
 export type PlanId =
-  | "lite-month"
-  | "lite-quarter"
-  | "lite-year"
+  | "basic-month"
+  | "basic-quarter"
+  | "basic-year"
   | "pro-month"
   | "pro-quarter"
-  | "pro-year";
+  | "pro-year"
+  | "max-month"
+  | "max-quarter"
+  | "max-year";
+
+/** 旧版 lite SKU。只用于识别/复用存量订单，新订单一律写 basic。 */
+export type LegacyPlanId = "lite-month" | "lite-quarter" | "lite-year";
 
 /** 套餐定义。 */
 export type Plan = {
@@ -38,7 +45,7 @@ export type Plan = {
 /** 创建订单请求（服务端内部使用）。 */
 export type CreateOrderInput = {
   userId: string;
-  planId: PlanId;
+  planId: PlanId | LegacyPlanId;
   channel: PaymentChannel;
 };
 
@@ -72,7 +79,7 @@ export type NotifyResult =
 /** 订单视图（返回前端用，敏感字段已过滤）。 */
 export type OrderView = {
   id: string;
-  planId: PlanId;
+  planId: PlanId | LegacyPlanId;
   tier: PlanTier;
   period: PlanPeriod;
   amountCents: number;

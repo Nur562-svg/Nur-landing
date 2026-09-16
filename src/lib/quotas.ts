@@ -3,7 +3,7 @@ import type { MembershipTier } from "@/types/auth";
 /**
  * M3: 会员配额定义 + 使用记录（浏览器端 + 共享类型/纯函数）
  * 服务端函数（依赖 Prisma）见 quotas-server.ts，避免客户端 bundle 引入 Prisma。
- * 免费版合理限制；Pro 显著放宽。Demo 阶段使用 client bump + DB 基础数据。
+ * 免费版合理限制；basic 继承原 lite 权益；max 为最高档。Demo 阶段使用 client bump + DB 基础数据。
  * 不涉及真实支付。
  */
 
@@ -36,13 +36,19 @@ export const TIER_QUOTAS: Record<MembershipTier, Record<QuotaResource, number | 
     mockExams: 10,
     agentCalls: 50,
   },
-  lite: {
+  basic: {
     privateMaterials: 20,
     courseBuilds: 10,
     mockExams: 30,
     agentCalls: 200,
   },
   pro: {
+    privateMaterials: "unlimited",
+    courseBuilds: "unlimited",
+    mockExams: "unlimited",
+    agentCalls: "unlimited",
+  },
+  max: {
     privateMaterials: "unlimited",
     courseBuilds: "unlimited",
     mockExams: "unlimited",

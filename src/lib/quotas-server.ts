@@ -1,6 +1,7 @@
 import { prisma } from "@/lib/prisma";
 import type { MembershipTier } from "@/types/auth";
 import type { QuotaItem, QuotaResource, UserQuotas, UserUsageRecord } from "@/lib/quotas";
+import { resolveEffectiveMembershipTier } from "@/lib/membership";
 import { computeItem, getClientBump, getQuotaLabel, TIER_QUOTAS } from "@/lib/quotas";
 
 /**
@@ -25,13 +26,14 @@ export async function computeUserQuotas(userId: string): Promise<UserQuotas> {
     select: { membershipTier: true, membershipExpiresAt: true, usage: true },
   });
 
-  // 会员到期自动回退 free 档
+  // 会员到期自动回退 free 档；旧 lite 兼容为 basic。
   const now = new Date();
-  const isExpired = !user?.membershipExpiresAt || user.membershipExpiresAt < now;
   const rawTier = user?.membershipTier ?? "free";
-  const tier: MembershipTier = isExpired
-    ? "free"
-    : rawTier === "pro" ? "pro" : rawTier === "lite" ? "lite" : "free";
+  const tier: MembershipTier = resolveEffectiveMembershipTier({
+    membershipTier: rawTier,
+    membershipExpiresAt: user?.membershipExpiresAt ?? null,
+    now,
+  });
   const limits = TIER_QUOTAS[tier];
 
   const privateMaterialsUsed = await prisma.materialAdmissionSyncConsent.count({
@@ -62,8 +64,10 @@ export async function computeUserQuotas(userId: string): Promise<UserQuotas> {
 
   const periodNote = tier === "pro"
     ? "Pro 会员 · 无限制"
-    : tier === "lite"
-    ? "Lite 会员 · 按订阅周期重置"
+    : tier === "basic"
+    ? "Basic 会员 · 按订阅周期重置"
+    : tier === "max"
+    ? "Max 会员 · 无限制"
     : "免费版 · 累计总额度（演示）";
 
   return { tier, quotas, periodNote };
@@ -74,7 +78,7 @@ export async function checkAndEnforceQuota(userId: string, resource: "courseBuil
   const quotas = await computeUserQuotas(userId);
   const item = quotas.quotas[resource];
   if (!item) return null;
-  if (quotas.tier === "pro" || quotas.tier === "lite" || !item.isOverLimit) {
+  if (quotas.tier !== "free" || !item.isOverLimit) {
     return null;
   }
   return {
@@ -84,7 +88,7 @@ export async function checkAndEnforceQuota(userId: string, resource: "courseBuil
       resource,
       used: item.used,
       limit: item.limit,
-      message: `${getQuotaLabel(resource)} 已达免费上限，请升级 Pro 或稍后重试（演示周期重置）。`,
+      message: `${getQuotaLabel(resource)} 已达免费上限，请升级 Basic / Pro / Max 或稍后重试（演示周期重置）。`,
       upgradeHint: true,
     },
   };

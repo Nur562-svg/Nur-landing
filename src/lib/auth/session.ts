@@ -1,6 +1,7 @@
 import { SignJWT, jwtVerify } from "jose";
 import { cookies } from "next/headers";
 import type { AuthUserView, MembershipTier } from "@/types/auth";
+import { normalizeMembershipTier } from "@/lib/membership";
 
 const SESSION_COOKIE = "nur_session";
 const SESSION_TTL_SECONDS = 60 * 60 * 24 * 30; // 30 天
@@ -42,8 +43,10 @@ export async function verifySessionToken(token: string): Promise<SessionPayload 
     if (!payload.sub || typeof payload.email !== "string") {
       return null;
     }
-    const tier: MembershipTier =
-      payload.membershipTier === "pro" ? "pro" : payload.membershipTier === "lite" ? "lite" : "free";
+    const tier: MembershipTier | null = normalizeMembershipTier(payload.membershipTier);
+    if (!tier) {
+      return null;
+    }
     return {
       sub: payload.sub,
       email: payload.email,

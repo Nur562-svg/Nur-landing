@@ -8,7 +8,8 @@
 import { prisma } from "@/lib/prisma";
 import { randomUUID } from "node:crypto";
 import type { PaymentChannel, PaymentProvider, PaymentParams, NotifyData, OrderView } from "./types";
-import { getPlan, periodToDays } from "./plans";
+import { getCompatiblePlanIds, getPlan, periodToDays } from "./plans";
+import { resolveEffectiveMembershipTier } from "@/lib/membership";
 import { mockProvider } from "./providers/mock";
 import { wechatProvider } from "./providers/wechat";
 import { alipayProvider } from "./providers/alipay";
@@ -38,9 +39,15 @@ async function findOrCreateOrder(
   const plan = getPlan(planId);
   if (!plan) throw new Error(`invalid planId: ${planId}`);
 
-  // 查找最近的 pending 订单（同用户同 plan 同 channel）
+  // 查找最近的 pending 订单（同用户同 plan 同 channel）。
+  // 旧 lite-* 与迁移后的 basic-* 视为同语义，可继续复用。
   const existing = await prisma.order.findFirst({
-    where: { userId, planId, channel, status: "pending" },
+    where: {
+      userId,
+      planId: { in: [...getCompatiblePlanIds(plan.id)] },
+      channel,
+      status: "pending",
+    },
     orderBy: { createdAt: "desc" },
     take: 1,
   });
@@ -79,7 +86,7 @@ export async function createOrder(
     if (!plan) return { ok: false, error: "invalid_plan" };
 
     const channel = getCurrentPaymentChannel();
-    const { id: orderId, isNew } = await findOrCreateOrder(userId, planId, channel);
+    const { id: orderId, isNew } = await findOrCreateOrder(userId, plan.id, channel);
 
     const provider = getProvider(channel);
     const payment = await provider.createOrder({
@@ -210,8 +217,13 @@ export async function getSubscription(userId: string): Promise<{
   const now = new Date();
   const isActive = !!user.membershipExpiresAt && user.membershipExpiresAt > now;
 
-  // 如果会员已过期，tier 降级为 free（但不立即写 DB，由下次配额计算处理）
-  const effectiveTier = isActive ? user.membershipTier : "free";
+  // 如果会员已过期，tier 降级为 free（但不立即写 DB，由下次配额计算处理）；
+  // 旧 lite 在读取层兼容为 basic。
+  const effectiveTier = resolveEffectiveMembershipTier({
+    membershipTier: user.membershipTier,
+    membershipExpiresAt: user.membershipExpiresAt,
+    now,
+  });
 
   return {
     tier: effectiveTier,

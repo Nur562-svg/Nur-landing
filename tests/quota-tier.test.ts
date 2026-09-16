@@ -1,15 +1,16 @@
 import { describe, it } from "node:test";
 import assert from "node:assert/strict";
 
-// 阶段 4: 三档配额测试
+// M0: 四档会员配额测试
 
-describe("Tier quotas (free/lite/pro)", async () => {
+describe("Tier quotas (free/basic/pro/max)", async () => {
   const { TIER_QUOTAS, computeItem, canUseResource } = await import("../src/lib/quotas");
 
-  it("三档均存在", () => {
+  it("四档均存在", () => {
     assert.ok(TIER_QUOTAS.free);
-    assert.ok(TIER_QUOTAS.lite);
+    assert.ok(TIER_QUOTAS.basic);
     assert.ok(TIER_QUOTAS.pro);
+    assert.ok(TIER_QUOTAS.max);
   });
 
   it("free 档配额最严格", () => {
@@ -19,18 +20,21 @@ describe("Tier quotas (free/lite/pro)", async () => {
     assert.equal(TIER_QUOTAS.free.agentCalls, 50);
   });
 
-  it("lite 档配额介于 free 和 pro 之间", () => {
-    assert.equal(TIER_QUOTAS.lite.privateMaterials, 20);
-    assert.equal(TIER_QUOTAS.lite.courseBuilds, 10);
-    assert.ok((TIER_QUOTAS.lite.privateMaterials as number) > (TIER_QUOTAS.free.privateMaterials as number));
-    assert.ok(TIER_QUOTAS.lite.privateMaterials !== ("unlimited" as never));
+  it("basic 档继承原 lite 权益", () => {
+    assert.equal(TIER_QUOTAS.basic.privateMaterials, 20);
+    assert.equal(TIER_QUOTAS.basic.courseBuilds, 10);
+    assert.equal(TIER_QUOTAS.basic.mockExams, 30);
+    assert.equal(TIER_QUOTAS.basic.agentCalls, 200);
+    assert.ok((TIER_QUOTAS.basic.privateMaterials as number) > (TIER_QUOTAS.free.privateMaterials as number));
   });
 
-  it("pro 档全部 unlimited", () => {
-    assert.equal(TIER_QUOTAS.pro.privateMaterials, "unlimited");
-    assert.equal(TIER_QUOTAS.pro.courseBuilds, "unlimited");
-    assert.equal(TIER_QUOTAS.pro.mockExams, "unlimited");
-    assert.equal(TIER_QUOTAS.pro.agentCalls, "unlimited");
+  it("pro 与 max 档当前平台资源均 unlimited", () => {
+    for (const tier of ["pro", "max"] as const) {
+      assert.equal(TIER_QUOTAS[tier].privateMaterials, "unlimited");
+      assert.equal(TIER_QUOTAS[tier].courseBuilds, "unlimited");
+      assert.equal(TIER_QUOTAS[tier].mockExams, "unlimited");
+      assert.equal(TIER_QUOTAS[tier].agentCalls, "unlimited");
+    }
   });
 
   it("computeItem 正确计算 unlimited", () => {
@@ -49,7 +53,7 @@ describe("Tier quotas (free/lite/pro)", async () => {
   });
 
   it("computeItem 接近上限时 isNearLimit 为 true", () => {
-    const item = computeItem(4, 5); // 80%
+    const item = computeItem(4, 5);
     assert.equal(item.isNearLimit, true);
     assert.equal(item.isOverLimit, false);
   });
@@ -75,12 +79,26 @@ describe("Tier quotas (free/lite/pro)", async () => {
   });
 });
 
-describe("MembershipTier type", async () => {
-  it("类型包含 free/lite/pro", async () => {
-    const { TIER_QUOTAS } = await import("../src/lib/quotas");
-    const tiers = Object.keys(TIER_QUOTAS);
-    assert.ok(tiers.includes("free"));
-    assert.ok(tiers.includes("lite"));
-    assert.ok(tiers.includes("pro"));
+describe("Membership tier normalization", async () => {
+  it("旧 lite 数据归一化为 basic", async () => {
+    const { normalizeMembershipTier, resolveEffectiveMembershipTier } = await import("../src/lib/membership");
+    assert.equal(normalizeMembershipTier("lite"), "basic");
+    assert.equal(normalizeMembershipTier("basic"), "basic");
+    assert.equal(normalizeMembershipTier("max"), "max");
+    assert.equal(normalizeMembershipTier("unknown"), null);
+    assert.equal(resolveEffectiveMembershipTier({
+      membershipTier: "lite",
+      membershipExpiresAt: new Date("2999-01-01T00:00:00.000Z"),
+      now: new Date("2026-09-17T00:00:00.000Z"),
+    }), "basic");
+  });
+
+  it("到期会员回退 free", async () => {
+    const { resolveEffectiveMembershipTier } = await import("../src/lib/membership");
+    assert.equal(resolveEffectiveMembershipTier({
+      membershipTier: "max",
+      membershipExpiresAt: new Date("2000-01-01T00:00:00.000Z"),
+      now: new Date("2026-09-17T00:00:00.000Z"),
+    }), "free");
   });
 });

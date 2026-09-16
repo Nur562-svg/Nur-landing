@@ -2,6 +2,8 @@ import { NextResponse } from "next/server";
 import { getCurrentSession, createSessionToken, setSessionCookie } from "@/lib/auth/session";
 import { prisma } from "@/lib/prisma";
 import { createOrder, mockPay } from "@/lib/payment/service";
+import { toUserView } from "@/lib/auth/service";
+import { getMembershipTierLabel } from "@/lib/membership";
 import type { AuthUserView } from "@/types/auth";
 
 export const dynamic = "force-dynamic";
@@ -56,22 +58,14 @@ export async function POST(request: Request): Promise<Response> {
         return NextResponse.json({ ok: false, error: "用户查询失败" }, { status: 500 });
       }
 
-      const newUserView: AuthUserView = {
-        id: updated.id,
-        email: updated.email,
-        displayName: updated.displayName,
-        membershipTier: updated.membershipTier === "pro" ? "pro" : updated.membershipTier === "lite" ? "lite" : "free",
-        membershipExpiresAt: updated.membershipExpiresAt?.toISOString() ?? null,
-        emailVerified: !!updated.emailVerifiedAt,
-        createdAt: updated.createdAt.toISOString(),
-      };
+      const newUserView: AuthUserView = toUserView(updated);
 
       const token = await createSessionToken(newUserView);
       await setSessionCookie(token);
 
       return NextResponse.json({
         ok: true,
-        message: `已升级为 ${newUserView.membershipTier === "pro" ? "Pro" : "Lite"} 会员`,
+        message: `已升级为 ${getMembershipTierLabel(newUserView.membershipTier)}`,
         user: newUserView,
         orderId: orderResult.orderId,
       });

@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { getCurrentSession, createSessionToken, setSessionCookie } from "@/lib/auth/session";
 import { prisma } from "@/lib/prisma";
 import type { AuthUserView } from "@/types/auth";
+import { getMembershipTierLabel, normalizeMembershipTier } from "@/lib/membership";
 
 export const dynamic = "force-dynamic";
 
@@ -25,10 +26,11 @@ export async function POST() {
       return NextResponse.json({ ok: false, error: "用户不存在" }, { status: 404 });
     }
 
-    if (user.membershipTier === "pro") {
+    const currentTier = normalizeMembershipTier(user.membershipTier) ?? "free";
+    if (currentTier === "pro" || currentTier === "max") {
       return NextResponse.json({
         ok: true,
-        message: "已经是 Pro",
+        message: `已经是 ${getMembershipTierLabel(currentTier)}`,
         user: { id: user.id, email: user.email, displayName: user.displayName, membershipTier: "pro" as const },
       });
     }

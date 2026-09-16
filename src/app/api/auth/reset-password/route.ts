@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { hashPassword, validatePasswordStrength } from "@/lib/auth/password";
 import { createSessionToken, setSessionCookie } from "@/lib/auth/session";
+import { toUserView } from "@/lib/auth/service";
 import type { AuthUserView } from "@/types/auth";
 
 export const dynamic = "force-dynamic";
@@ -64,15 +65,7 @@ export async function POST(request: Request): Promise<Response> {
     });
 
     // 签发新会话
-    const userView: AuthUserView = {
-      id: updated.id,
-      email: updated.email,
-      displayName: updated.displayName,
-      membershipTier: updated.membershipTier === "pro" ? "pro" : updated.membershipTier === "lite" ? "lite" : "free",
-      membershipExpiresAt: updated.membershipExpiresAt?.toISOString() ?? null,
-      emailVerified: !!updated.emailVerifiedAt,
-      createdAt: updated.createdAt.toISOString(),
-    };
+    const userView: AuthUserView = toUserView(updated);
 
     const token = await createSessionToken(userView);
     await setSessionCookie(token);

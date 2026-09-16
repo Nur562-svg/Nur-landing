@@ -10,6 +10,8 @@ import {
   ChevronUp,
   CircleX,
   FileStack,
+  Library,
+  ListChecks,
   PenLine,
   X,
 } from "lucide-react";
@@ -36,6 +38,7 @@ import {
   downloadLearnerExport,
 } from "@/lib/export-learner-data";
 import type { UserQuotas } from "@/lib/quotas";
+import { getMembershipTierLabel } from "@/lib/membership";
 import { NurAgentDock } from "./nur-agent-dock";
 import styles from "./learning-dashboard.module.css";
 
@@ -449,7 +452,7 @@ export function LearningDashboard({ courses }: LearningDashboardProps) {
                     <span className={styles.accountLabel}>已登录账户</span>
                     <strong className={styles.accountEmail}>{user.email}</strong>
                     <span className={styles.accountTier}>
-                      {user.membershipTier === "pro" ? "Pro 会员" : "免费版"}
+                      {getMembershipTierLabel(user.membershipTier)}
                     </span>
                     {/* M3 配额展示 */}
             {quotas && (
@@ -462,7 +465,7 @@ export function LearningDashboard({ courses }: LearningDashboardProps) {
                         ))}
                       </div>
                     )}
-                    {user.membershipTier !== "pro" && (
+                    {user.membershipTier !== "max" && (
                       <a
                         href="/account/billing"
                         style={{fontSize: "11px", marginTop: 6, padding: "2px 8px", border: "1px solid #c9a36b", borderRadius: 2, background: "#fffaf0", display: "inline-block", textDecoration: "none", color: "#10100f"}}
@@ -474,7 +477,7 @@ export function LearningDashboard({ courses }: LearningDashboardProps) {
                       href="/account/billing"
                       style={{fontSize: "12px", marginTop: 6, display: "block", textDecoration: "none", color: "#17659a"}}
                     >
-                      会员中心 · {user.membershipTier === "pro" ? "Pro 会员" : user.membershipTier === "lite" ? "Lite 会员" : "免费版"}
+                      会员中心 · {getMembershipTierLabel(user.membershipTier)}
                     </a>
                   </div>
                   <button
@@ -680,6 +683,42 @@ export function LearningDashboard({ courses }: LearningDashboardProps) {
         <section className={styles.mainColumn} aria-labelledby="page-title">
           <p className={styles.eyebrow}>本周学习&nbsp; · &nbsp;{todayLabel}</p>
           <h1 id="page-title">从证据开始辨证</h1>
+
+          <section className={styles.entrySection} aria-label="学习入口">
+            <p className={styles.sectionLabel}>三条学习主线</p>
+            <div className={styles.entryGrid}>
+              <Link className={styles.entryCard} href="/courses">
+                <span className={styles.entryIcon}>
+                  <Library aria-hidden="true" size={22} strokeWidth={1.5} />
+                </span>
+                <span className={styles.entryCopy}>
+                  <strong>官方课程学习闭环</strong>
+                  <small>证据、双视角、写作与案例训练；试点课免费。</small>
+                </span>
+                <ArrowRight aria-hidden="true" size={18} strokeWidth={1.5} />
+              </Link>
+              <Link className={styles.entryCard} href="/learn/hi-doc">
+                <span className={styles.entryIcon}>
+                  <FileStack aria-hidden="true" size={22} strokeWidth={1.5} />
+                </span>
+                <span className={styles.entryCopy}>
+                  <strong>Hi doc</strong>
+                  <small>上传教材，建立个人书架；目录识别 M2 后开放。</small>
+                </span>
+                <ArrowRight aria-hidden="true" size={18} strokeWidth={1.5} />
+              </Link>
+              <Link className={styles.entryCard} href="/question-bank">
+                <span className={styles.entryIcon}>
+                  <ListChecks aria-hidden="true" size={22} strokeWidth={1.5} />
+                </span>
+                <span className={styles.entryCopy}>
+                  <strong>传统刷题题库</strong>
+                  <small>跨课程题目聚合浏览与训练。</small>
+                </span>
+                <ArrowRight aria-hidden="true" size={18} strokeWidth={1.5} />
+              </Link>
+            </div>
+          </section>
 
           <div className={styles.caseSection}>
             <p className={styles.sectionLabel}>当前案例</p>

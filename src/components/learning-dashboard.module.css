@@ -572,6 +572,72 @@
   margin: 0;
 }
 
+.entrySection {
+  margin-top: 29px;
+  max-width: 688px;
+}
+
+.entryGrid {
+  border: 1px solid var(--ink);
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.entryCard {
+  align-items: center;
+  background: rgb(251 249 244 / 72%);
+  color: var(--ink);
+  display: grid;
+  gap: 13px;
+  grid-template-columns: 44px minmax(0, 1fr) 18px;
+  min-height: 112px;
+  padding: 18px;
+  text-decoration: none;
+  transition: background 140ms ease;
+}
+
+.entryCard + .entryCard {
+  border-left: 1px solid var(--line);
+}
+
+.entryCard:hover {
+  background: var(--paper-bright);
+}
+
+.entryIcon {
+  align-items: center;
+  border: 1px solid var(--line);
+  display: flex;
+  height: 44px;
+  justify-content: center;
+  width: 44px;
+}
+
+.entryCopy {
+  display: grid;
+  gap: 7px;
+}
+
+.entryCopy strong {
+  font-family: "Songti SC", "STSong", serif;
+  font-size: 18px;
+  letter-spacing: 0.02em;
+}
+
+.entryCopy small {
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 1.5;
+}
+
+.entryCard > svg {
+  transition: transform 160ms ease;
+}
+
+.entryCard:hover > svg {
+  transform: translateX(4px);
+}
+
 .caseSection {
   margin-top: 31px;
   max-width: 688px;
@@ -1157,6 +1223,15 @@
 
   .mainColumn h1 {
     font-size: clamp(42px, 10vw, 58px);
+  }
+
+  .entryGrid {
+    grid-template-columns: 1fr;
+  }
+
+  .entryCard + .entryCard {
+    border-left: 0;
+    border-top: 1px solid var(--line);
   }
 
   .caseSection {

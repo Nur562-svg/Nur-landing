@@ -11,75 +11,87 @@ generator client {
 
 datasource db {
   provider = "sqlite"
-  url      = env("DATABASE_URL")
 }
 
 model User {
-  id                  String   @id @default(cuid())
-  email               String   @unique
+  id                  String    @id @default(cuid())
+  email               String    @unique
   passwordHash        String
   displayName         String
-  // membershipTier: "free" | "lite" | "pro"（TS 类型约束保证可移植性）
-  membershipTier     String   @default("free")
-  // 会员到期时间（null = free）；Pro/Lite 到期后自动回退 free
+  // membershipTier: "free" | "basic" | "pro" | "max"（TS 类型约束保证可移植性；旧 lite 数据迁移为 basic）
+  membershipTier      String    @default("free")
+  // 会员到期时间（null = free/basic）；到期后自动回退 free
   membershipExpiresAt DateTime?
   // 邮箱验证时间（null = 未验证）；收费前须完成验证
   emailVerifiedAt     DateTime?
   // M3: usage counters for quota (courseBuilds, agentCalls, etc.)
-  usage               Json?    // { courseBuilds?: number, agentCalls?: number }
-  createdAt           DateTime @default(now())
-  updatedAt           DateTime @updatedAt
+  usage               Json? // { courseBuilds?: number, agentCalls?: number }
+  createdAt           DateTime  @default(now())
+  updatedAt           DateTime  @updatedAt
 
   // M2: 学习状态云同步（FSRS、尝试记录、题库、模考）。复用现有 browser contracts 的结构化字段。
-  learnerAttempts                 LearnerAttempt[]
-  learnerFsrsStates               LearnerFsrsState[]
-  qbAttempts                      QbAttempt[]
-  qbFavorites                     QbFavorite[]
-  mockExamSessions                MockExamSession[]
+  learnerAttempts               LearnerAttempt[]
+  learnerFsrsStates             LearnerFsrsState[]
+  qbAttempts                    QbAttempt[]
+  qbFavorites                   QbFavorite[]
+  mockExamSessions              MockExamSession[]
   // 私人材料准入记录的云同步需单独明确同意（learner-private 边界保持）
-  materialAdmissionSyncConsents   MaterialAdmissionSyncConsent[]
+  materialAdmissionSyncConsents MaterialAdmissionSyncConsent[]
   // M4: 会员订单（支付体系）
-  orders                          Order[]
+  orders                        Order[]
   // M4: 密码重置令牌
-  passwordResetTokens             PasswordResetToken[]
+  passwordResetTokens           PasswordResetToken[]
+  courseEntitlements            CourseEntitlement[]
 }
 
 /// M4: 会员订单（支付抽象层持久化）。provider 切换不影响已存订单。
 model Order {
-  id               String    @id @default(cuid())
-  userId           String
-  user             User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  id     String @id @default(cuid())
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
 
-  // 套餐标识：lite-month | lite-quarter | lite-year | pro-month | pro-quarter | pro-year
-  planId           String
+  // 套餐标识：basic-month | basic-quarter | basic-year | pro-* | max-*（旧 lite-* 数据迁移为 basic-*）
+  planId          String
   // "lite" | "pro"
-  tier             String
+  tier            String
   // "month" | "quarter" | "year"
-  period           String
+  period          String
   // 订单金额（分），避免浮点误差
-  amountCents      Int
+  amountCents     Int
   // 支付渠道："mock" | "wechat" | "alipay"
-  channel          String
+  channel         String
   // "pending" | "paid" | "closed" | "refunded"
-  status           String    @default("pending")
+  status          String    @default("pending")
   // 渠道方交易号（微信/支付宝回调返回）
-  providerTradeNo  String?
-  paidAt           DateTime?
-  createdAt        DateTime  @default(now())
+  providerTradeNo String?
+  paidAt          DateTime?
+  createdAt       DateTime  @default(now())
 
   @@index([userId, status])
   @@index([status, createdAt])
 }
 
-/// M4: 密码重置令牌（一次性，15 分钟过期）。
-model PasswordResetToken {
+/// Hi doc M0: 官方课程名额。试点课白名单不占名额、不写行。
+model CourseEntitlement {
   id        String   @id @default(cuid())
   userId    String
   user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  token     String   @unique
+  courseId  String
+  grantedAt DateTime @default(now())
+
+  @@unique([userId, courseId])
+  @@index([userId, grantedAt])
+}
+
+/// M4: 密码重置令牌（一次性，15 分钟过期）。
+model PasswordResetToken {
+  id        String    @id @default(cuid())
+  userId    String
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  token     String    @unique
   expiresAt DateTime
   usedAt    DateTime?
-  createdAt DateTime @default(now())
+  createdAt DateTime  @default(now())
 
   @@index([userId])
 }
@@ -87,7 +99,7 @@ model PasswordResetToken {
 /// M5: 极简自研埋点（PV / 注册转化 / 关键漏斗计数），不引第三方 SDK。
 model EventLog {
   id        String   @id @default(cuid())
-  event     String   // "page_view" | "signup" | "login" | "order_create" | "order_paid" | ...
+  event     String // "page_view" | "signup" | "login" | "order_create" | "order_paid" | ...
   userId    String?
   props     Json?
   createdAt DateTime @default(now())
@@ -97,50 +109,52 @@ model EventLog {
 }
 
 model LearnerAttempt {
-  id                String   @id @default(cuid())
-  userId            String
-  user              User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  id     String @id @default(cuid())
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
 
-  courseId          String
-  courseVersionId   String?
-  offeringId        String?
-  knowledgePointId  String
-  surface           String   // "subjective-writing" | "case-reasoning"
-  taskId            String
-  segmentId         String?
+  courseId         String
+  courseVersionId  String?
+  offeringId       String?
+  knowledgePointId String
+  surface          String // "subjective-writing" | "case-reasoning"
+  taskId           String
+  segmentId        String?
 
-  confirmedText     String
-  criterionResults  Json     // 复用 LearnerAttemptCriterionResult[]
-  answerConfidence  String
-  scoringStandard   Json?    // {id, version, authority}
+  confirmedText    String
+  criterionResults Json // 复用 LearnerAttemptCriterionResult[]
+  answerConfidence String
+  scoringStandard  Json? // {id, version, authority}
 
-  createdAt         DateTime @default(now())
+  createdAt DateTime @default(now())
+
   @@index([userId, courseId, knowledgePointId])
   @@index([userId, createdAt])
 }
 
 model LearnerFsrsState {
-  id            String   @id @default(cuid())
-  userId        String
-  user          User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  id     String @id @default(cuid())
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
 
-  criterionId   String   // 对应 memory criterion（知识点+任务维度）
-  state         String   // "new" | "learning" | "review" | "relearning"
-  difficulty    Float
-  stability     Float
-  reps          Int      @default(0)
-  lapses        Int      @default(0)
-  lastReviewAt  DateTime?
+  criterionId  String // 对应 memory criterion（知识点+任务维度）
+  state        String // "new" | "learning" | "review" | "relearning"
+  difficulty   Float
+  stability    Float
+  reps         Int       @default(0)
+  lapses       Int       @default(0)
+  lastReviewAt DateTime?
 
-  updatedAt     DateTime @updatedAt
+  updatedAt DateTime @updatedAt
+
   @@unique([userId, criterionId])
   @@index([userId])
 }
 
 model QbAttempt {
-  id            String   @id @default(cuid())
-  userId        String
-  user          User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  id     String @id @default(cuid())
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   questionId    String
   selectedIndex Int
@@ -161,32 +175,34 @@ model QbFavorite {
 }
 
 model MockExamSession {
-  id            String   @id @default(cuid())
-  userId        String
-  user          User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  id     String @id @default(cuid())
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
 
-  sessionId     String   @unique
-  courseId      String
-  startedAt     DateTime
-  completedAt   DateTime?
-  answers       Json     // 复用 MockExamPaperItem answers
-  score         Json?    // objective + pending
+  sessionId   String    @unique
+  courseId    String
+  startedAt   DateTime
+  completedAt DateTime?
+  answers     Json // 复用 MockExamPaperItem answers
+  score       Json? // objective + pending
 
-  createdAt     DateTime @default(now())
+  createdAt DateTime @default(now())
+
   @@index([userId, courseId])
 }
 
 model MaterialAdmissionSyncConsent {
-  id                String   @id @default(cuid())
-  userId            String
-  user              User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  id     String @id @default(cuid())
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
 
-  admissionRecordId String   // 对应 browser 端 versioned record 的 id
-  consentGiven      Boolean  @default(false)
+  admissionRecordId String // 对应 browser 端 versioned record 的 id
+  consentGiven      Boolean   @default(false)
   consentedAt       DateTime?
   notes             String?
 
-  createdAt         DateTime @default(now())
-  updatedAt         DateTime @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
   @@unique([userId, admissionRecordId])
 }

@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { Loader2, Check, ArrowRight } from "lucide-react";
 import type { Plan, PlanId, PaymentParams } from "@/lib/payment/types";
 import { ALL_PLANS } from "@/lib/payment/plans";
+import { getMembershipTierLabel, normalizeMembershipTier } from "@/lib/membership";
 
 type SubscriptionState = {
   tier: string;
@@ -135,7 +136,7 @@ export function BillingPanel() {
     );
   }
 
-  const currentTier = subscription?.tier ?? "free";
+  const currentTier = normalizeMembershipTier(subscription?.tier) ?? "free";
   const isActive = subscription?.isActive ?? false;
 
   return (
@@ -143,8 +144,8 @@ export function BillingPanel() {
       <h1 style={{ fontSize: 24, fontWeight: 600, marginBottom: 8 }}>会员中心</h1>
       <p style={{ fontSize: 14, color: "#6c6a66", marginBottom: 32 }}>
         当前状态：
-        <strong style={{ color: currentTier === "pro" ? "#17659a" : currentTier === "lite" ? "#c9a36b" : "#10100f" }}>
-          {currentTier === "pro" ? "Pro 会员" : currentTier === "lite" ? "Lite 会员" : "免费版"}
+        <strong style={{ color: currentTier === "pro" ? "#17659a" : currentTier === "basic" ? "#c9a36b" : currentTier === "max" ? "#2d7a2d" : "#10100f" }}>
+          {getMembershipTierLabel(currentTier)}
         </strong>
         {isActive && subscription?.expiresAt ? ` · 到期 ${new Date(subscription.expiresAt).toLocaleDateString("zh-CN")}` : ""}
       </p>
@@ -216,7 +217,7 @@ export function BillingPanel() {
             <tbody>
               {orders.map((order) => (
                 <tr key={order.id} style={{ borderBottom: "1px solid #eee" }}>
-                  <td style={{ padding: "8px 4px" }}>{order.tier} · {order.period === "month" ? "月" : order.period === "quarter" ? "季" : "年"}</td>
+                  <td style={{ padding: "8px 4px" }}>{getMembershipTierLabel(normalizeMembershipTier(order.tier) ?? "free")} · {order.period === "month" ? "月" : order.period === "quarter" ? "季" : "年"}</td>
                   <td style={{ padding: "8px 4px" }}>¥{(order.amountCents / 100).toFixed(2)}</td>
                   <td style={{ padding: "8px 4px" }}>{order.channel}</td>
                   <td style={{ padding: "8px 4px" }}>
