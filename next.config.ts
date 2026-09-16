@@ -16,6 +16,11 @@ const nextConfig: NextConfig = {
   allowedDevOrigins: ["127.0.0.1"],
   // Docker 部署使用 standalone 产物（.next/standalone/server.js），须显式开启
   output: "standalone",
+  // Hi doc 服务端 PDF 文字层检测：pdfjs 本体被打包，但 fake worker 需在运行时按真实路径加载
+  // node_modules/pdfjs-dist/legacy/build/pdf.worker.mjs，因此显式纳入 standalone 产物。
+  outputFileTracingIncludes: {
+    "/api/hidoc/textbooks": ["./node_modules/pdfjs-dist/legacy/build/pdf.worker.mjs"],
+  },
   // Prisma client 需要被 OpenNext patch 才能在 workerd 运行时工作（含 wasm 预编译加载）；
   // 本地 fallback 的原生模块（better-sqlite3）不进入 Cloudflare bundle
   serverExternalPackages: [

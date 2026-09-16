@@ -567,3 +567,22 @@ Playwright Chromium，视口 **1440×1000** 与 **390×844（isMobile）**，对
   - `docs/design-references/qb-mock-exam-mobile-2026-09-10.png`
   - `docs/design-references/wrong-question-center-qb-desktop-2026-09-10.png`
   - `docs/design-references/wrong-question-center-qb-mobile-2026-09-10.png`
+
+## Hi doc M0 + M1 — 首页三入口 / 教材书架（2026-09-17）
+
+真实 Chromium（Tabbit + Playwright），视口 **1440×900** 与 **390×844**；dev server `PORT=3100`，登录态用专门注册的 free 档验证账号（本月名额 1/1 已用，书架 1 本《冻结测试教材》）。
+
+- `/learn` 三入口：并列方框卡片「官方课程学习闭环 / Hi doc / 传统刷题题库」，分别指向 `/courses`、`/learn/hi-doc`、`/question-bank`；沿用暖象牙 + 细线的编辑式视觉，无新增色彩。
+- `/learn/hi-doc` 未登录：显示「登录后使用 Hi doc」引导卡（去登录 / 返回学习首页），不泄漏任何教材信息。
+- 登录后书架：名额区「本月名额 · 2026-09 / 1 /1 已用」+ 名额格（1 满 1 空）+ 档位与刷新说明；教材卡显示标题、`文件名 · 页数 · 大小 · 上传日期`、状态「已上传 · 目录识别将在 M2 开放」；无冻结分区时（本月激活）不渲染冻结区。
+- 名额超额：浏览器内选择 `sample-text.pdf` 并上传，红框（cinnabar）中文提示「本月教材名额已用完（1/1）。删除不再学习的教材可释放当月名额，或升级会员档位；名额每月 1 日刷新。」——503 不静默放行，UI 如实呈现。
+- 390×844：`document.documentElement.scrollWidth === 390`，无横向溢出；上传区变为单列堆叠。
+- 控制台：无 4xx/5xx 请求错误；唯一 error 为浏览器扩展 Dark Reader 注入 `data-darkreader-inline-stroke` 造成的 hydration 差异（扩展副作用，非产品缺陷，三个页面均复现）。QA 截图前临时关闭 Dark Reader 深色覆盖以还原原生浅色设计。
+- API 侧端到端（curl，同一账号）：未登录 401；扫描件 PDF 422 `unsupported-scan`；1501 页 PDF 422 `page-limit`；非 PDF 422 `invalid-file`；损坏 PDF 422 `pdf-unreadable`；本月第二本 503 `quota-exceeded`；删除后名额回到 0/1 且服务器文件被移除；把 `activeMonth` 改为上月后书架显示冻结态且不占本月名额，`PATCH activate` 后重新占用 1/1。
+- 磁盘隔离：`HIDOC_STORAGE_ROOT` 下按 `hidoc/{userId}/{textbookId}/{fileName}` 分层，验证文件写入大小与原始 PDF 一致（28,766 B）；被拒绝的上传不留文件与空目录。
+- 证据：
+  - `docs/design-references/hidoc-learn-three-entries-2026-09-17.png`
+  - `docs/design-references/hidoc-shelf-desktop-2026-09-17.png`
+  - `docs/design-references/hidoc-shelf-login-gate-2026-09-17.png`
+  - `docs/design-references/hidoc-quota-exceeded-2026-09-17.png`
+  - `docs/design-references/hidoc-shelf-mobile-2026-09-17.png`

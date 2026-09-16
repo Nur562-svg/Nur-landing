@@ -1,6 +1,6 @@
 # NUR LEARN — Canonical Project State
 
-Last updated: 2026-09-12 (Asia/Shanghai) — 导入精简、题库主观作答、建课改为建设中；下一步是真人点选而非新功能
+Last updated: 2026-09-17 (Asia/Shanghai) — Hi doc M0（四档会员/官方课名额/首页三入口）+ M1（教材上传/书架/当月名额）已完成，下一步 M2 目录识别
 
 This file is the durable source of truth for continuing NUR LEARN when conversation history is unavailable. Update it after material product decisions, completed milestones, verification changes, or priority changes.
 
@@ -1415,3 +1415,28 @@ Answer: modern medicine also enters exam-answer and scoring training. The implem
 - **截图**: `docs/design-references/m4-touch-*-390-2026-08-17.png`
 - **check**: `npm run check` EXIT 0
 - **仍残留**: 真机 Safari/手势；设计 QA 人工走查；既有 lint warning 14 条；性能细抠非本轮
+
+---
+
+## Hi doc 主线 M0 + M1（2026-09-17 完成）
+
+**真相源**：`docs/HI_DOC_PLAN.md`（用户 2026-09-16 四条定案：教材存服务器、名额当月制、Hi doc 替代我的资料、试点课免费）。该主线明确覆盖 `AGENTS.md`「Next Product Priority」中写于定案前的「不做 server material store」旧约束；其余 Tier 1–4、设计规则、验证要求继续生效。
+
+### M0 — 会员四档迁移 + 官方课名额 + 首页三入口
+- 会员档位 `free|lite|pro` → `free(=trial)|basic|pro|max`；`basic` 继承原 `lite` 权益，旧 `lite` 在 schema 注释、读取层（`src/lib/membership.ts`）、JWT 会话、配额、账单 UI 全链归一化，迁移含 `lite→basic` 数据回填。
+- 支付 SKU：Basic / Pro / Max × 月/季/年 = 9 个；旧 `lite-*` planId 只作兼容映射（存量 pending 订单可与 basic 订单同语义复用）。
+- `CourseEntitlement`（userId+courseId+grantedAt）+ 试点课白名单（`course-tcm-diagnostics`、`course-physiology`）免费且不占名额；官方课名额按档位 2/2/5/无限。
+- `/learn` 首页新增三入口：官方课程学习闭环 / Hi doc / 传统刷题题库。
+- 提交 `36e8efc`。
+
+### M1 — 上传 + 书架 + 当月名额（不越期：无 OCR、无目录识别）
+- Prisma `HiDocTextbook`（title/fileName/storageKey/sizeBytes/pageCount/hasTextLayer/status/toc/activeMonth/deletedAt，全部挂 userId），迁移 `20260916172135_m1_hidoc_textbook`。
+- 服务端全部在 `src/lib/hidoc/`：`storage.ts`（storageKey 抽象 + 本地磁盘卷驱动，接口留 OSS 适配空间）、`storage-key.ts`（键生成/目录穿越防护）、`pdf-text-layer.ts`（pdfjs 文字层探测，无文字层拒绝）、`limits.ts`（档位月额度、Asia/Shanghai 自然月、冻结判定）、`textbooks.ts`（上传/书架/删除/重新激活 + 名额事务校验）、`session-user.ts`；API `/api/hidoc/textbooks` 只做 thin adapter。
+- 名额仅当月有效：trial/basic 1、pro 3、max 10；超额 503 + 中文原因，不静默放行；删除软删除墓碑并立即删除服务器文件、释放当月名额；跨月教材显示冻结态，重新激活占用当月名额。
+- 上限与拒绝：单本 ≤1500 页、≤200 MB、必须 PDF（无文字层的扫描件明确拒绝并提示，暂不做 OCR）。
+- 关键实现约束（回归时勿改）：pdfjs v6 的 fake worker 必须把 `GlobalWorkerOptions.workerSrc` 指到 `node_modules/pdfjs-dist/legacy/build/pdf.worker.mjs`，该文件由 `next.config.ts` 的 `outputFileTracingIncludes` 纳入 standalone 产物；pdfjs 会 detach 传入的 `ArrayBuffer`，`sizeBytes` 必须在探测前固定；`pdfjs-dist` 不可加入 `serverExternalPackages`（会破坏浏览器端 PDF 解析的构建）。
+- 验证：`npm run lint`（0 error）/ `npm run typecheck` / `npm run test`（274/274，含新增 `tests/hidoc-quota.test.ts`、`tests/hidoc-storage-key.test.ts`）/ `npm run build` 通过；浏览器与 API 端到端见 `design-qa.md`「Hi doc M0 + M1」节。
+- 已知限制：孤儿文件（写入成功但落库前进程崩溃，无从清理）；`/data/hidoc` 持久卷与 docker-compose volume 待部署配置；被拒绝文件留空目录已通过 rmdir 清理。
+- 未提交的 `src/content/courses/infectious-diseases/` 与 `scripts/infectious-*` 全程未触碰。
+
+**下一优先级**：M2 目录识别 + 手动修正（`/learn/hi-doc/t/[id]` 章节树），复用同一 storage/catalog 边界，不引入平行课程真相模型。

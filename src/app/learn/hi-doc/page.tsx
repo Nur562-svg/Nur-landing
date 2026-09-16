@@ -1,28 +1,63 @@
-import type { Metadata } from "next";
 import Link from "next/link";
+import type { Metadata } from "next";
+import { HiDocBookshelf } from "@/components/hi-doc-bookshelf";
+import { getHiDocSessionUser } from "@/lib/hidoc/session-user";
+import { getHiDocShelf } from "@/lib/hidoc/textbooks";
+import { getMembershipTierLabel } from "@/lib/membership";
+import styles from "@/components/hi-doc.module.css";
 
 export const metadata: Metadata = {
-  title: "Hi doc | NUR LEARN",
-  description: "上传教材并建立个人学习书架。",
+  title: "Hi doc 教材书架 | NUR LEARN",
+  description: "上传文字版 PDF 教材，建立个人学习书架；教材仅本人可见。",
   robots: { index: false, follow: false },
 };
 
-export default function HiDocPlaceholderPage() {
+export const dynamic = "force-dynamic";
+
+export default async function HiDocBookshelfPage() {
+  const user = await getHiDocSessionUser();
+
   return (
-    <main className="min-h-dvh bg-[#f7f4ee] px-6 py-16 text-[#10100f]">
-      <section className="mx-auto max-w-3xl border border-[#10100f] bg-[#fbf9f4] p-8">
-        <p className="text-sm font-semibold tracking-[0.08em] text-[#6c6a66]">HI DOC</p>
-        <h1 className="mt-3 font-serif text-4xl font-bold tracking-tight">教材学习书架</h1>
-        <p className="mt-4 max-w-xl text-sm leading-6 text-[#6c6a66]">
-          Hi doc 将支持上传教材、目录识别、知识点萃取与个人化教学。M0 当前仅提供入口占位，上传与书架将在 M1 开放。
-        </p>
-        <Link
-          href="/learn"
-          className="mt-8 inline-flex min-h-11 items-center border border-[#10100f] bg-[#10100f] px-6 text-sm font-semibold text-[#fbf9f4]"
-        >
-          返回学习首页
+    <main className={styles.page}>
+      <header className={styles.header}>
+        <Link className={styles.brand} href="/learn">
+          NUR LEARN
         </Link>
-      </section>
+        <div className={styles.headerMeta}>
+          {user ? <span>{user.displayName} · {getMembershipTierLabel(user.tier)}</span> : null}
+          <Link className={styles.headerLink} href="/learn">
+            返回学习首页
+          </Link>
+        </div>
+      </header>
+
+      <div className={styles.content}>
+        <p className={styles.kicker}>HI DOC</p>
+        <h1 className={styles.title}>教材学习书架</h1>
+        <p className={styles.intro}>
+          上传你自己的教材（文字版 PDF），NUR LEARN 会按当月名额为你保留书架位。
+          目录识别、知识点萃取与讲义生成将在后续版本逐步开放。
+        </p>
+
+        {user ? (
+          <HiDocBookshelf initialShelf={await getHiDocShelf(user.id, user.tier)} tier={user.tier} />
+        ) : (
+          <section className={styles.gateCard} aria-labelledby="hidoc-gate-title">
+            <h2 id="hidoc-gate-title">登录后使用 Hi doc</h2>
+            <p>
+              教材保存在服务器并仅本人可见，因此需要登录账户。登录后即可上传文字版 PDF、查看本月名额与书架。
+            </p>
+            <div className={styles.gateActions}>
+              <Link className={styles.gateButton} href="/login?next=/learn/hi-doc">
+                去登录
+              </Link>
+              <Link className={styles.gateSecondary} href="/learn">
+                返回学习首页
+              </Link>
+            </div>
+          </section>
+        )}
+      </div>
     </main>
   );
 }

@@ -1,0 +1,505 @@
+.page {
+  --ink: #10100f;
+  --paper: #f7f4ee;
+  --paper-bright: #fbf9f4;
+  --muted: #6c6a66;
+  --line: rgb(16 16 15 / 38%);
+  --line-soft: rgb(16 16 15 / 16%);
+  --red: #bf2118;
+  --blue: #17659a;
+  background: var(--paper);
+  color: var(--ink);
+  min-height: 100dvh;
+  overflow-x: clip;
+}
+
+.page button,
+.page input {
+  font: inherit;
+}
+
+.page :where(a, button, input):focus-visible {
+  outline: 2px solid var(--blue);
+  outline-offset: 3px;
+}
+
+.header {
+  align-items: center;
+  background: rgb(247 244 238 / 96%);
+  border-bottom: 1px solid var(--ink);
+  display: flex;
+  gap: 18px;
+  justify-content: space-between;
+  min-height: 73px;
+  padding: 0 28px;
+  position: sticky;
+  top: 0;
+  z-index: 60;
+}
+
+.brand {
+  color: var(--ink);
+  font-family: var(--font-serif), "Times New Roman", serif;
+  font-size: 22px;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  line-height: 1;
+  text-decoration: none;
+}
+
+.headerMeta {
+  align-items: center;
+  color: var(--muted);
+  display: flex;
+  font-size: 13px;
+  gap: 18px;
+}
+
+.headerLink {
+  border-bottom: 1px solid var(--line);
+  color: var(--ink);
+  padding-bottom: 2px;
+  text-decoration: none;
+}
+
+.headerLink:hover {
+  border-color: var(--ink);
+}
+
+.content {
+  margin: 0 auto;
+  max-width: 960px;
+  padding: 44px 28px 88px;
+}
+
+.kicker {
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.16em;
+  margin: 0;
+}
+
+.title {
+  font-family: var(--font-serif), "Times New Roman", serif;
+  font-size: clamp(30px, 5vw, 40px);
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  margin: 12px 0 0;
+}
+
+.intro {
+  color: var(--muted);
+  font-size: 14px;
+  line-height: 1.8;
+  margin: 14px 0 0;
+  max-width: 640px;
+}
+
+.shelfLayout {
+  display: grid;
+  gap: 26px;
+  margin-top: 34px;
+}
+
+.quotaPanel {
+  border: 1px solid var(--ink);
+  background: var(--paper-bright);
+  display: flex;
+  flex-wrap: wrap;
+  gap: 18px;
+  justify-content: space-between;
+  padding: 20px 22px;
+}
+
+.quotaCopy {
+  min-width: 0;
+}
+
+.quotaLabel {
+  color: var(--muted);
+  font-size: 12px;
+  letter-spacing: 0.08em;
+  margin: 0;
+}
+
+.quotaValue {
+  font-family: var(--font-serif), "Times New Roman", serif;
+  font-size: 32px;
+  font-weight: 700;
+  line-height: 1.2;
+  margin: 8px 0 0;
+}
+
+.quotaValue span {
+  color: var(--muted);
+  font-family: var(--font-sans);
+  font-size: 13px;
+  font-weight: 500;
+  letter-spacing: 0.04em;
+  margin-left: 6px;
+}
+
+.quotaNote {
+  color: var(--muted);
+  font-size: 12.5px;
+  line-height: 1.7;
+  margin: 8px 0 0;
+  max-width: 520px;
+}
+
+.quotaCells {
+  align-items: flex-end;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  max-width: 240px;
+}
+
+.quotaCell,
+.quotaCellUsed {
+  border: 1px solid var(--ink);
+  display: block;
+  height: 30px;
+  width: 18px;
+}
+
+.quotaCell {
+  background: transparent;
+  border-color: var(--line-soft);
+}
+
+.quotaCellUsed {
+  background: var(--ink);
+}
+
+.uploadPanel {
+  border: 1px solid var(--ink);
+  padding: 22px;
+}
+
+.panelHead {
+  align-items: baseline;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px 16px;
+  justify-content: space-between;
+}
+
+.panelHead h2,
+.sectionHead h2 {
+  font-family: var(--font-serif), "Times New Roman", serif;
+  font-size: 20px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  margin: 0;
+}
+
+.panelHead p {
+  color: var(--muted);
+  font-size: 12.5px;
+  margin: 0;
+}
+
+.uploadRow {
+  display: grid;
+  gap: 12px;
+  grid-template-columns: minmax(0, 1.1fr) minmax(0, 1fr) auto;
+  margin-top: 18px;
+}
+
+.filePicker {
+  align-items: center;
+  border: 1px dashed var(--line);
+  cursor: pointer;
+  display: flex;
+  gap: 10px;
+  min-height: 46px;
+  min-width: 0;
+  padding: 0 14px;
+}
+
+.filePicker:hover {
+  border-color: var(--ink);
+}
+
+.filePickerText {
+  color: var(--ink);
+  font-size: 13.5px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.fileInput {
+  display: none;
+}
+
+.titleInput {
+  background: var(--paper-bright);
+  border: 1px solid var(--line);
+  color: var(--ink);
+  min-height: 46px;
+  min-width: 0;
+  padding: 0 14px;
+}
+
+.titleInput::placeholder {
+  color: var(--muted);
+}
+
+.primaryButton {
+  align-items: center;
+  background: var(--ink);
+  border: 1px solid var(--ink);
+  color: var(--paper-bright);
+  cursor: pointer;
+  display: inline-flex;
+  font-size: 13.5px;
+  gap: 8px;
+  justify-content: center;
+  min-height: 46px;
+  padding: 0 22px;
+  white-space: nowrap;
+}
+
+.primaryButton:disabled {
+  cursor: not-allowed;
+  opacity: 0.45;
+}
+
+.uploadHint {
+  color: var(--muted);
+  font-size: 12.5px;
+  line-height: 1.7;
+  margin: 14px 0 0;
+}
+
+.errorBox {
+  align-items: flex-start;
+  background: rgb(191 33 24 / 6%);
+  border: 1px solid var(--red);
+  color: var(--red);
+  display: flex;
+  font-size: 13px;
+  gap: 8px;
+  line-height: 1.7;
+  margin: 14px 0 0;
+  padding: 12px 14px;
+}
+
+.spin {
+  animation: hidocSpin 900ms linear infinite;
+}
+
+@keyframes hidocSpin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.textbookSection {
+  border-top: 1px solid var(--ink);
+  padding-top: 20px;
+}
+
+.sectionHead {
+  align-items: baseline;
+  display: flex;
+  gap: 14px;
+  justify-content: space-between;
+}
+
+.sectionHead span {
+  color: var(--muted);
+  font-size: 12.5px;
+}
+
+.emptyState {
+  border: 1px dashed var(--line-soft);
+  color: var(--muted);
+  font-size: 13.5px;
+  line-height: 1.8;
+  margin: 16px 0 0;
+  padding: 22px;
+}
+
+.frozenHint {
+  color: var(--muted);
+  font-size: 12.5px;
+  line-height: 1.7;
+  margin: 12px 0 0;
+}
+
+.textbookList {
+  display: grid;
+  gap: 12px;
+  list-style: none;
+  margin: 16px 0 0;
+  padding: 0;
+}
+
+.textbookCard {
+  align-items: flex-start;
+  background: var(--paper-bright);
+  border: 1px solid var(--line);
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  justify-content: space-between;
+  padding: 16px 18px;
+}
+
+.textbookCardFrozen {
+  background: transparent;
+}
+
+.textbookMain {
+  min-width: 0;
+}
+
+.textbookTitle {
+  align-items: center;
+  display: flex;
+  font-family: var(--font-serif), "Times New Roman", serif;
+  font-size: 17px;
+  font-weight: 700;
+  gap: 8px;
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+
+.textbookMeta {
+  color: var(--muted);
+  font-size: 12.5px;
+  line-height: 1.7;
+  margin: 8px 0 0;
+  overflow-wrap: anywhere;
+}
+
+.textbookState {
+  color: var(--blue);
+  font-size: 12.5px;
+  margin: 6px 0 0;
+}
+
+.textbookActions {
+  align-items: center;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.ghostButton {
+  align-items: center;
+  background: transparent;
+  border: 1px solid var(--line);
+  color: var(--ink);
+  cursor: pointer;
+  display: inline-flex;
+  font-size: 12.5px;
+  gap: 7px;
+  min-height: 38px;
+  padding: 0 14px;
+}
+
+.ghostButton:hover:not(:disabled) {
+  border-color: var(--ink);
+}
+
+.ghostButton:disabled {
+  cursor: not-allowed;
+  opacity: 0.45;
+}
+
+.footNote {
+  color: var(--muted);
+  font-size: 12.5px;
+  line-height: 1.8;
+  margin: 0;
+}
+
+.footNote a {
+  border-bottom: 1px solid var(--line);
+  color: var(--ink);
+  text-decoration: none;
+}
+
+.gateCard {
+  border: 1px solid var(--ink);
+  background: var(--paper-bright);
+  margin-top: 34px;
+  padding: 30px;
+}
+
+.gateCard h2 {
+  font-family: var(--font-serif), "Times New Roman", serif;
+  font-size: 22px;
+  font-weight: 700;
+  margin: 0;
+}
+
+.gateCard p {
+  color: var(--muted);
+  font-size: 13.5px;
+  line-height: 1.8;
+  margin: 12px 0 0;
+  max-width: 560px;
+}
+
+.gateActions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-top: 22px;
+}
+
+.gateButton {
+  align-items: center;
+  background: var(--ink);
+  border: 1px solid var(--ink);
+  color: var(--paper-bright);
+  display: inline-flex;
+  font-size: 13.5px;
+  gap: 8px;
+  min-height: 46px;
+  padding: 0 22px;
+  text-decoration: none;
+}
+
+.gateSecondary {
+  align-items: center;
+  border: 1px solid var(--line);
+  color: var(--ink);
+  display: inline-flex;
+  font-size: 13.5px;
+  min-height: 46px;
+  padding: 0 22px;
+  text-decoration: none;
+}
+
+@media (max-width: 760px) {
+  .header {
+    padding: 0 18px;
+  }
+
+  .headerMeta {
+    gap: 12px;
+  }
+
+  .content {
+    padding: 32px 18px 72px;
+  }
+
+  .uploadRow {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .quotaCells {
+    max-width: none;
+  }
+
+  .textbookCard {
+    flex-direction: column;
+  }
+}

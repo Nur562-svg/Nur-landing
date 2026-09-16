@@ -42,6 +42,8 @@ model User {
   // M4: 密码重置令牌
   passwordResetTokens           PasswordResetToken[]
   courseEntitlements            CourseEntitlement[]
+  // Hi doc: 用户私有教材（服务器存储，仅本人可见，不进官方课程目录）
+  hiDocTextbooks                HiDocTextbook[]
 }
 
 /// M4: 会员订单（支付抽象层持久化）。provider 切换不影响已存订单。
@@ -81,6 +83,34 @@ model CourseEntitlement {
 
   @@unique([userId, courseId])
   @@index([userId, grantedAt])
+}
+
+/// Hi doc M1: 用户私有教材（服务器存储、按 userId 隔离；不进官方课程目录、不进 /courses）。
+model HiDocTextbook {
+  id     String @id @default(cuid())
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  title    String
+  fileName String
+  // 存储抽象键（hidoc/{userId}/{textbookId}/{fileName}）；本地磁盘卷与 OSS 适配后语义一致
+  storageKey   String   @unique
+  sizeBytes    Int
+  pageCount    Int
+  // M1 上传即检测：无文字层（扫描版）直接拒绝，不落库
+  hasTextLayer Boolean  @default(true)
+  // "uploaded" | "toc_ready" | "extracting" | "ready" | "failed"
+  status       String   @default("uploaded")
+  // M2 目录识别结果（章节数组）
+  toc          Json?
+  // 激活月（YYYY-MM，Asia/Shanghai）；跨月进入冻结态，重新激活占用当月名额
+  activeMonth  String
+  deletedAt    DateTime?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  @@index([userId, activeMonth, deletedAt])
+  @@index([userId, createdAt])
 }
 
 /// M4: 密码重置令牌（一次性，15 分钟过期）。
