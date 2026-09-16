@@ -115,6 +115,24 @@ model HiDocTextbook {
   chapters HiDocChapter[]
 }
 
+/// Hi doc M3: 章节知识点（模型萃取草稿，含页码溯源；私有挂教材章节）。
+model HiDocKnowledgePoint {
+  id         String      @id @default(cuid())
+  chapterId  String
+  chapter    HiDocChapter @relation(fields: [chapterId], references: [id], onDelete: Cascade)
+
+  order       Int
+  title       String
+  description String
+  keyTerms    Json // string[]
+  prerequisites Json // string[]（章节内先修知识点标题）
+  // 该知识点在 PDF 中的页序（1 起，与章节页码同源）
+  sourcePage  Int
+  createdAt   DateTime @default(now())
+
+  @@index([chapterId, order])
+}
+
 /// Hi doc M2: 教材章节（目录识别结果 / 手动修正结果；页码为 PDF 页序，1 起）。
 model HiDocChapter {
   id         String       @id @default(cuid())
@@ -131,6 +149,8 @@ model HiDocChapter {
   status    String   @default("pending")
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+
+  knowledgePoints HiDocKnowledgePoint[]
 
   @@index([textbookId, order])
 }

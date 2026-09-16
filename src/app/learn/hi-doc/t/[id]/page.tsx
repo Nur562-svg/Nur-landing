@@ -106,7 +106,8 @@ export default async function HiDocTextbookPage({
         <p className={styles.kicker}>HI DOC · 教材详情</p>
         <h1 className={styles.title}>{textbook.title}</h1>
         <p className={styles.intro}>
-          目录识别会优先使用 PDF 书签，其次解析印刷目录页，必要时才调用模型；识别结果可以手动修正。
+          目录识别优先使用 PDF 书签，其次解析印刷目录页，必要时才调用模型；章节与知识点都可人工核对。
+          识别出章节后，可按章萃取知识点（含页码溯源），讲义与教学对话将在后续版本开放。
         </p>
         <HiDocTextbookDetailView initialDetail={result.data} />
       </div>

@@ -26,6 +26,18 @@ export type HiDocChapterView = {
   pageEnd: number;
   source: HiDocChapterSource;
   status: HiDocChapterStatus;
+  knowledgePointCount: number;
+};
+
+/** 知识点视图（M3 模型萃取草稿，含页码溯源）。 */
+export type HiDocKnowledgePointView = {
+  id: string;
+  order: number;
+  title: string;
+  description: string;
+  keyTerms: string[];
+  prerequisites: string[];
+  sourcePage: number;
 };
 
 /** 目录识别结果元信息（不重复存章节本身）。 */
@@ -68,6 +80,27 @@ export type HiDocTocEvent =
   | { type: "result"; detail: HiDocTextbookDetail }
   | { type: "error"; code: HiDocErrorCode; error: string };
 
+/** 单章萃取结果（SSE result 载荷）。 */
+export type HiDocChapterExtractionResult = {
+  chapter: HiDocChapterView;
+  knowledgePoints: HiDocKnowledgePointView[];
+  notes: string[];
+};
+
+/** 知识点萃取 SSE 事件（进度与 Mentrix 风格对齐：精读第 N 章 → 逐知识点写入）。 */
+export type HiDocExtractEvent =
+  | {
+      type: "progress";
+      stage: "read" | "extracting" | "save";
+      /** 当前章序（1 起）与总章数，供前端显示「第 N/M 章」。 */
+      chapterIndex?: number;
+      chapterTotal?: number;
+      message: string;
+    }
+  | { type: "kp"; chapterIndex: number; knowledgePoint: HiDocKnowledgePointView }
+  | { type: "result"; result: HiDocChapterExtractionResult }
+  | { type: "error"; code: HiDocErrorCode; error: string };
+
 /** 当月名额视图（名额仅当月有效）。 */
 export type HiDocQuotaView = {
   month: string;
@@ -93,6 +126,7 @@ export type HiDocErrorCode =
   | "pdf-unreadable"
   | "quota-exceeded"
   | "no-toc"
+  | "extraction-failed"
   | "not-found"
   | "storage-unavailable"
   | "server-error";

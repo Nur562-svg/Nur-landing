@@ -12,7 +12,7 @@ import { computeItem, getClientBump, getQuotaLabel, TIER_QUOTAS } from "@/lib/qu
 /** Server-side record for persistence (M3) */
 export async function recordServerUsage(
   userId: string,
-  resource: "courseBuilds" | "agentCalls" | "hidocParses",
+  resource: "courseBuilds" | "agentCalls" | "hidocParses" | "hidocExtracts",
 ): Promise<void> {
   const user = await prisma.user.findUnique({ where: { id: userId }, select: { usage: true } });
   const current: UserUsageRecord = ((user?.usage as UserUsageRecord) ?? {}) as UserUsageRecord;
@@ -52,6 +52,7 @@ export async function computeUserQuotas(userId: string): Promise<UserQuotas> {
   const serverBuilds = serverUsage.courseBuilds || 0;
   const serverAgent = serverUsage.agentCalls || 0;
   const serverHidocParses = serverUsage.hidocParses || 0;
+  const serverHidocExtracts = serverUsage.hidocExtracts || 0;
 
   const clientBuilds = getClientBump("courseBuilds");
   const clientAgent = getClientBump("agentCalls");
@@ -65,6 +66,7 @@ export async function computeUserQuotas(userId: string): Promise<UserQuotas> {
     mockExams: computeItem(mockExamsUsed, limits.mockExams),
     agentCalls: computeItem(agentCallsUsed, limits.agentCalls),
     hidocParses: computeItem(serverHidocParses, limits.hidocParses),
+    hidocExtracts: computeItem(serverHidocExtracts, limits.hidocExtracts),
   };
 
   const periodNote = tier === "pro"

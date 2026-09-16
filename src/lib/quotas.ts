@@ -12,7 +12,8 @@ export type QuotaResource =
   | "courseBuilds"       // Course Builder 使用（含私人分析）
   | "mockExams"          // 模考会话
   | "agentCalls"         // Agent 调用
-  | "hidocParses";       // Hi doc 目录解析（模型辅助识别，M2 起）
+  | "hidocParses"        // Hi doc 目录解析（模型辅助识别，M2 起）
+  | "hidocExtracts";     // Hi doc 知识点萃取（按章模型调用，M3 起）
 
 export type QuotaItem = {
   used: number;
@@ -37,6 +38,7 @@ export const TIER_QUOTAS: Record<MembershipTier, Record<QuotaResource, number | 
     mockExams: 10,
     agentCalls: 50,
     hidocParses: 3,
+    hidocExtracts: 5,
   },
   basic: {
     privateMaterials: 20,
@@ -44,6 +46,7 @@ export const TIER_QUOTAS: Record<MembershipTier, Record<QuotaResource, number | 
     mockExams: 30,
     agentCalls: 200,
     hidocParses: 10,
+    hidocExtracts: 20,
   },
   pro: {
     privateMaterials: "unlimited",
@@ -51,6 +54,7 @@ export const TIER_QUOTAS: Record<MembershipTier, Record<QuotaResource, number | 
     mockExams: "unlimited",
     agentCalls: "unlimited",
     hidocParses: "unlimited",
+    hidocExtracts: "unlimited",
   },
   max: {
     privateMaterials: "unlimited",
@@ -58,6 +62,7 @@ export const TIER_QUOTAS: Record<MembershipTier, Record<QuotaResource, number | 
     mockExams: "unlimited",
     agentCalls: "unlimited",
     hidocParses: "unlimited",
+    hidocExtracts: "unlimited",
   },
 };
 
@@ -118,6 +123,7 @@ export function getQuotaLabel(resource: QuotaResource): string {
     case "mockExams": return "模考会话";
     case "agentCalls": return "NUR Agent 对话";
     case "hidocParses": return "Hi doc 目录解析（模型）";
+    case "hidocExtracts": return "Hi doc 知识点萃取（模型）";
   }
 }
 

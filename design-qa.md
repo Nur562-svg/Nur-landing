@@ -603,3 +603,20 @@ Playwright Chromium，视口 **1440×1000** 与 **390×844（isMobile）**，对
   - `docs/design-references/hidoc-detail-chapter-editing-2026-09-17.png`
   - `docs/design-references/hidoc-detail-edit-error-2026-09-17.png`
   - `docs/design-references/hidoc-detail-mobile-2026-09-17.png`
+
+## Hi doc M3 — 知识点萃取（SSE 流式）（2026-09-17）
+
+真实 Chromium（Tabbit + Playwright），视口 **1440×900** 与 **390×844**；真实教材《卫生统计学_赵耐青练习册》第一/二/三章（文字层完整）。dev server `localhost:3000`。
+
+- 详情页章节行：元信息含「已萃取（N 个知识点）/ 未萃取」；已萃取章按钮「重新萃取」、未萃取章「萃取知识点」；行左侧展开箭头（未萃取章置灰）。
+- 展开第一章：13 条知识点，每条含标题、页码徽标（如「第 1 页」）、描述、术语行；6 条含先修行；列表底部固定说明「知识点为模型萃取草稿，页码可溯源；讲义与教学对话将在 M4 开放。」
+- 浏览器内对第三章点「萃取知识点」：SSE 进度依次为「开始萃取…」「读取《第三章》（第 6–8 页）…」「精读《第三章》并萃取知识点（qwen3.7-plus）…」「写入 11 个知识点…」，约 19 秒完成；章节行实时变为「已萃取（11 个知识点）」并自动展开 11 条（前两条「二项分布近似正态分布的条件」「二项分布近似 Poisson 分布的条件」，页码徽标第 6 页，均在章范围 6–8 内）；刷新后持久化。
+- API/服务端端到端（curl + tsx 服务层直连）：未登录 401；第一章服务层直连萃取 11–13 个知识点（两次调用展示覆盖语义：重跑整体替换该章知识点）；HTTP SSE 第二章萃取 10 个（页码 p3–p5 全在章内）；`usage.hidocExtracts` 与真实模型调用次数严格一致（含失败尝试也记账，`EventLog(hidoc_chapter_extract)` 带 outcome）；GET `/chapters/[n]` 返回知识点列表。
+- 390×844：`scrollWidth === 390` 无横向溢出；知识点列表窄屏可读。
+- 控制台：无应用级 error；仅 Dark Reader 扩展注入属性造成的 hydration 差异（已知扩展副作用）。
+- 验证环境注记：本机 dev 的 better-sqlite3 崩溃（Node 24 + `@prisma/adapter-better-sqlite3` 内嵌 12.11.1 的 Statement GC 终结器断言）曾三次中断 SSE 落库；本地将适配器解析切到顶层 better-sqlite3 13.0.3 后完全稳定（node_modules 内重命名，未改任何项目依赖声明；`npm install` 会回退并复现崩溃，根治建议见 PROJECT_STATE）。
+- 证据：
+  - `docs/design-references/hidoc-kp-detail-2026-09-17.png`
+  - `docs/design-references/hidoc-kp-list-2026-09-17.png`
+  - `docs/design-references/hidoc-kp-extracted-2026-09-17.png`
+  - `docs/design-references/hidoc-kp-mobile-2026-09-17.png`

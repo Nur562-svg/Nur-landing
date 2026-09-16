@@ -1,6 +1,6 @@
 # NUR LEARN — Canonical Project State
 
-Last updated: 2026-09-17 (Asia/Shanghai) — Hi doc M0/M1/M2（四档会员、教材上传书架当月名额、目录识别与手动修正）已完成，下一步 M3 知识点萃取
+Last updated: 2026-09-17 (Asia/Shanghai) — Hi doc M0–M3（四档会员、上传书架名额、目录识别修正、知识点萃取 SSE）已完成，下一步 M4 学习页讲义与讲解对话
 
 This file is the durable source of truth for continuing NUR LEARN when conversation history is unavailable. Update it after material product decisions, completed milestones, verification changes, or priority changes.
 
@@ -1473,3 +1473,37 @@ Answer: modern medicine also enters exam-answer and scoring training. The implem
 - 已知限制：书签标题可能只有「第一章」而无章名（PDF 书签本身如此），需人工补名；页码偏移在探针不足 2 票一致时不校正（如实提示人工核对）。
 
 **下一优先级**：M3 知识点萃取（SSE 流式，按章读文字层 → 逐知识点结构化 + 页码溯源），复用本期的 pdf 运行时、章节契约与配额/EventLog 边界。
+
+---
+
+## Hi doc 主线 M3（2026-09-17 完成）
+
+**验收达成**：真实一章萃取出带页码溯源的知识点（计划 §7 M3 验收标准）。
+
+### 数据与配额
+- Prisma `HiDocKnowledgePoint`（chapterId/order/title/description/keyTerms/prerequisites/sourcePage），迁移 `20260916180343_m3_hidoc_knowledge_point`（编号见 migrations 目录）；章节行新增萃取状态推进（pending→extracted）。
+- 新配额资源 `hidocExtracts`（Hi doc 知识点萃取，按章一次模型调用）：free 5 / basic 20 / pro·max 无限；模型调用无论成败都计入 `usage.hidocExtracts` 并写 `EventLog(hidoc_chapter_extract, outcome)`（与 hidocParses 同一「token 已消耗即记账」原则）。
+
+### 服务端（src/lib/hidoc/）
+- `extraction-heuristic.ts`（纯函数）：模型 payload 严格校验（页码必须在章节范围内、字段长度/类型/数量上限、同章去重）、先修引用只保留同批次可对上标题（自引用与不存在引用丢弃并计数）、章节文字带【PDF 第 X 页】标记构建与截断。
+- `extraction-provider.ts` + `providers/dashscope-extract.ts`：provider-neutral 萃取边界（复用 DASHSCOPE 密钥，默认 `qwen3.7-plus`，HIDOC_EXTRACT_PROVIDER/MODEL 可覆盖），输入为带页标记的单章文字（≤20k 字符）。
+- `extraction.ts`：单章编排（读文件 → 按页读文字 → 模型 → 事务落库整体替换该章知识点 → 章节 extracted），SSE 进度（read/extracting/save）+ 落库后逐知识点回放事件；章节文字层过少、无密钥、额度不足、模型 0 结果都如实报错不静默。
+- `chapters.ts`：`replaceChapterKnowledgePoints`（事务内 deleteMany+createMany+状态更新，落库前页码二次校验）与 `getChapterKnowledgePoints`；`loadChapters` 带 `_count.knowledgePoints`。
+
+### API 与页面
+- `POST /api/hidoc/textbooks/[id]/chapters/[order]/extract`（SSE：progress/kp/result/error）、`GET .../chapters/[order]`（按需读取知识点）；均为 thin adapter。
+- 详情页章节行：萃取状态与知识点计数、行内「萃取知识点/重新萃取」按钮、展开箭头查看知识点列表（标题/页码徽标/描述/术语/先修）；萃取进度日志逐条显示，完成后自动展开；重跑整体替换（覆盖语义在页脚明示）。
+
+### 真实验证（2026-09-17，《卫生统计学_赵耐青练习册》）
+- 第一章（1–2 页）直连服务层萃取：11–13 个知识点（两次调用验证覆盖语义），页码全部落在章内（p1/p2），术语与先修完整、内容与卫生统计学「总体/样本/变异/抽样」主题吻合。
+- 第二章（3–5 页）经 HTTP SSE 路由萃取：10 个知识点（p3–p5）。
+- 第三章（6–8 页）浏览器内点击萃取：约 19 秒，11 个知识点（p6 起），刷新后持久化。
+- `usage.hidocExtracts=6` 与真实模型调用次数（含 3 次被环境崩溃中断但已消耗 token 的尝试）严格一致。
+- 测试 301/301（新增 `tests/hidoc-extract.test.ts`）；lint 0 error；typecheck 干净；build 463 页通过；390×844 无溢出（见 design-qa.md「Hi doc M3」）。
+
+### 验证环境根因与建议（重要，面向后续开发）
+- 本机 dev（Node 24.19 + `@prisma/adapter-better-sqlite3@7.9.1` 内嵌 better-sqlite3 12.11.1）存在 Statement GC 终结器断言崩溃：查询产生垃圾 Statement → 大内存分配（模型响应解析）触发 GC → `RemoveEnvironmentCleanupHook(env=nullptr)` 断言 → dev 进程崩溃。M3 萃取流程（20k 字符输入 + 模型响应）必现。
+- 临时处置（本地 node_modules，未改依赖声明）：把 `node_modules/@prisma/adapter-better-sqlite3/node_modules/better-sqlite3` 重命名，使解析到顶层 better-sqlite3 13.0.3（prisma CLI 依赖）——实测完全稳定，全部 E2E 通过。`npm install` 会回退并复现崩溃。
+- 根治建议（待用户确认）：在 package.json 加 `"overrides": { "better-sqlite3": "^13.0.3" }`（或等 adapter 升级）；生产 Postgres 适配器不受影响。
+
+**下一优先级**：M4 学习页（`/learn/hi-doc/t/[id]/c/[n]`：知识点讲义生成 + NUR Agent 讲解对话），复用章节/知识点契约与同一 provider-neutral 边界。

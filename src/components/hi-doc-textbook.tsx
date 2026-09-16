@@ -2,18 +2,34 @@
 
 import Link from "next/link";
 import { useState } from "react";
-import { CircleAlert, Loader2, Pencil, Plus, RotateCcw, Save, ScanSearch, Trash2, X } from "lucide-react";
+import {
+  ChevronDown,
+  ChevronRight,
+  CircleAlert,
+  Loader2,
+  Pencil,
+  Plus,
+  RotateCcw,
+  Save,
+  ScanSearch,
+  Sparkles,
+  Trash2,
+  X,
+} from "lucide-react";
 import type {
   HiDocApiFailure,
   HiDocChapterSource,
+  HiDocChapterStatus,
   HiDocChapterView,
+  HiDocExtractEvent,
+  HiDocKnowledgePointView,
   HiDocTextbookDetail,
   HiDocTocEvent,
 } from "@/types/hidoc";
 import styles from "./hi-doc.module.css";
 
 /**
- * Hi doc 教材详情（客户端）：目录识别（SSE 进度）+ 章节树 + 手动修正。
+ * Hi doc 教材详情（客户端）：目录识别（SSE 进度）+ 章节树 + 手动修正 + 知识点萃取。
  * 所有状态变更都经服务端 API；这里只负责展示与提交。
  */
 
@@ -42,6 +58,13 @@ const strategyLabels: Record<string, string> = {
   none: "未识别",
 };
 
+const chapterStatusLabels: Record<HiDocChapterStatus, string> = {
+  pending: "未萃取",
+  extracting: "萃取中",
+  extracted: "已萃取",
+  failed: "萃取失败",
+};
+
 function toDraftRows(chapters: readonly HiDocChapterView[]): ChapterDraftRow[] {
   return chapters.map((chapter) => ({
     key: chapter.id,
@@ -59,6 +82,12 @@ export function HiDocTextbookDetailView({ initialDetail }: HiDocTextbookDetailPr
   const [editing, setEditing] = useState(false);
   const [draftRows, setDraftRows] = useState<ChapterDraftRow[]>([]);
   const [saving, setSaving] = useState(false);
+
+  // 知识点萃取状态
+  const [extractingOrder, setExtractingOrder] = useState<number | null>(null);
+  const [extractLog, setExtractLog] = useState<string[]>([]);
+  const [expandedOrders, setExpandedOrders] = useState<Set<number>>(new Set());
+  const [chapterKnowledgePoints, setChapterKnowledgePoints] = useState<Record<number, HiDocKnowledgePointView[]>>({});
 
   const { textbook, chapters } = detail;
   const recognition = textbook.recognition;
@@ -130,6 +159,119 @@ export function HiDocTextbookDetailView({ initialDetail }: HiDocTextbookDetailPr
     setDraftRows(toDraftRows(chapters));
     setEditing(true);
     setError(null);
+  }
+
+  /** SSE 行解析（目录识别与知识点萃取共用）。 */
+  async function consumeSse(
+    response: Response,
+    onEvent: (event: unknown) => void,
+  ): Promise<void> {
+    if (!response.ok || !response.body) {
+      setError(await readFailure(response));
+      return;
+    }
+    const reader = response.body.getReader();
+    const decoder = new TextDecoder();
+    let buffer = "";
+    for (;;) {
+      const { value, done } = await reader.read();
+      if (done) {
+        break;
+      }
+      buffer += decoder.decode(value, { stream: true });
+      const parts = buffer.split("\n\n");
+      buffer = parts.pop() ?? "";
+      for (const part of parts) {
+        const dataLine = part.split("\n").find((line) => line.startsWith("data: "));
+        if (!dataLine) {
+          continue;
+        }
+        try {
+          onEvent(JSON.parse(dataLine.slice(6)));
+        } catch {
+          // 忽略无法解析的行
+        }
+      }
+    }
+  }
+
+  /** 单章知识点萃取（SSE：进度 → 逐知识点 → 结果）。 */
+  async function onExtractChapter(chapter: HiDocChapterView) {
+    if (extractingOrder !== null || editing) {
+      return;
+    }
+    setExtractingOrder(chapter.order);
+    setError(null);
+    setExtractLog([`开始萃取《${chapter.title}》…`]);
+
+    try {
+      const response = await fetch(
+        `/api/hidoc/textbooks/${textbook.id}/chapters/${chapter.order}/extract`,
+        { method: "POST" },
+      );
+      await consumeSse(response, (raw) => {
+        const event = raw as HiDocExtractEvent;
+        if (event.type === "progress") {
+          setExtractLog((log) => [...log, event.message]);
+        } else if (event.type === "kp") {
+          setChapterKnowledgePoints((current) => ({
+            ...current,
+            [chapter.order]: [...(current[chapter.order] ?? []), event.knowledgePoint],
+          }));
+        } else if (event.type === "result") {
+          setChapterKnowledgePoints((current) => ({
+            ...current,
+            [chapter.order]: event.result.knowledgePoints,
+          }));
+          setDetail((current) => ({
+            ...current,
+            chapters: current.chapters.map((row) =>
+              row.order === event.result.chapter.order ? event.result.chapter : row,
+            ),
+          }));
+          setExpandedOrders((current) => new Set(current).add(chapter.order));
+          setExtractLog((log) => [...log, ...event.result.notes]);
+        } else {
+          setError(event.error);
+        }
+      });
+    } catch {
+      setError("知识点萃取失败：网络或服务暂时不可用，请稍后重试。");
+    } finally {
+      setExtractingOrder(null);
+    }
+  }
+
+  /** 展开章节：首次展开时按需拉取知识点。 */
+  async function onToggleChapter(chapter: HiDocChapterView) {
+    const next = new Set(expandedOrders);
+    if (next.has(chapter.order)) {
+      next.delete(chapter.order);
+      setExpandedOrders(next);
+      return;
+    }
+    next.add(chapter.order);
+    setExpandedOrders(next);
+    if (chapterKnowledgePoints[chapter.order] === undefined && chapter.knowledgePointCount > 0) {
+      try {
+        const response = await fetch(
+          `/api/hidoc/textbooks/${textbook.id}/chapters/${chapter.order}`,
+        );
+        const payload = (await response.json()) as
+          | { ok: true; knowledgePoints: HiDocKnowledgePointView[] }
+          | HiDocApiFailure;
+        if (payload.ok) {
+          setChapterKnowledgePoints((current) => ({
+            ...current,
+            [chapter.order]: payload.knowledgePoints,
+          }));
+        } else {
+          setError(payload.error);
+        }
+      } catch {
+        setError("知识点读取失败：网络或服务暂时不可用，请稍后重试。");
+      }
+    }
   }
 
   function updateRow(key: string, patch: Partial<ChapterDraftRow>) {
@@ -343,17 +485,88 @@ export function HiDocTextbookDetailView({ initialDetail }: HiDocTextbookDetailPr
           </ul>
         ) : (
           <ul className={styles.textbookList}>
-            {chapters.map((chapter) => (
-              <li key={chapter.id} className={styles.chapterRow}>
-                <span className={styles.chapterIndex}>{String(chapter.order).padStart(2, "0")}</span>
-                <span className={styles.chapterMain}>
-                  <span className={styles.chapterTitle}>{chapter.title}</span>
-                  <span className={styles.chapterMeta}>
-                    第 {chapter.pageStart}–{chapter.pageEnd} 页 · 来源：{sourceLabels[chapter.source]}
-                  </span>
-                </span>
-              </li>
-            ))}
+            {chapters.map((chapter) => {
+              const isExtracting = extractingOrder === chapter.order;
+              const isExpanded = expandedOrders.has(chapter.order);
+              const knowledgePoints = chapterKnowledgePoints[chapter.order];
+              return (
+                <li key={chapter.id} className={styles.chapterRowBlock}>
+                  <div className={styles.chapterRow}>
+                    <button
+                      type="button"
+                      className={styles.chapterToggle}
+                      aria-expanded={isExpanded}
+                      aria-label={`${isExpanded ? "收起" : "展开"}《${chapter.title}》的知识点`}
+                      disabled={chapter.knowledgePointCount === 0}
+                      onClick={() => onToggleChapter(chapter)}
+                    >
+                      {isExpanded ? (
+                        <ChevronDown aria-hidden="true" size={15} strokeWidth={1.6} />
+                      ) : (
+                        <ChevronRight aria-hidden="true" size={15} strokeWidth={1.6} />
+                      )}
+                    </button>
+                    <span className={styles.chapterIndex}>{String(chapter.order).padStart(2, "0")}</span>
+                    <span className={styles.chapterMain}>
+                      <span className={styles.chapterTitle}>{chapter.title}</span>
+                      <span className={styles.chapterMeta}>
+                        第 {chapter.pageStart}–{chapter.pageEnd} 页 · 来源：{sourceLabels[chapter.source]} ·{" "}
+                        {chapterStatusLabels[chapter.status]}
+                        {chapter.knowledgePointCount > 0 ? `（${chapter.knowledgePointCount} 个知识点）` : ""}
+                      </span>
+                    </span>
+                    <button
+                      type="button"
+                      className={styles.ghostButton}
+                      disabled={extractingOrder !== null || recognizing}
+                      onClick={() => onExtractChapter(chapter)}
+                    >
+                      {isExtracting ? (
+                        <Loader2 className={styles.spin} aria-hidden="true" size={15} strokeWidth={1.8} />
+                      ) : (
+                        <Sparkles aria-hidden="true" size={15} strokeWidth={1.6} />
+                      )}
+                      {isExtracting
+                        ? "萃取中"
+                        : chapter.knowledgePointCount > 0
+                        ? "重新萃取"
+                        : "萃取知识点"}
+                    </button>
+                  </div>
+
+                  {isExtracting && extractLog.length > 0 ? (
+                    <ul className={styles.progressLog} aria-label="萃取进度">
+                      {extractLog.map((line, index) => (
+                        <li key={`${index}-${line}`}>{line}</li>
+                      ))}
+                    </ul>
+                  ) : null}
+
+                  {isExpanded && knowledgePoints && knowledgePoints.length > 0 ? (
+                    <ul className={styles.kpList} aria-label="知识点">
+                      {knowledgePoints.map((knowledgePoint) => (
+                        <li key={knowledgePoint.id} className={styles.kpItem}>
+                          <p className={styles.kpTitle}>
+                            {String(knowledgePoint.order).padStart(2, "0")} · {knowledgePoint.title}
+                            <span className={styles.kpPage}>第 {knowledgePoint.sourcePage} 页</span>
+                          </p>
+                          <p className={styles.kpDescription}>{knowledgePoint.description}</p>
+                          {knowledgePoint.keyTerms.length > 0 ? (
+                            <p className={styles.kpTerms}>术语：{knowledgePoint.keyTerms.join("、")}</p>
+                          ) : null}
+                          {knowledgePoint.prerequisites.length > 0 ? (
+                            <p className={styles.kpTerms}>先修：{knowledgePoint.prerequisites.join("、")}</p>
+                          ) : null}
+                        </li>
+                      ))}
+                      <li className={styles.kpFootNote}>
+                        知识点为模型萃取草稿，页码可溯源；讲义与教学对话将在 M4 开放。
+                      </li>
+                    </ul>
+                  ) : null}
+                </li>
+              );
+            })}
           </ul>
         )}
 
@@ -378,7 +591,7 @@ export function HiDocTextbookDetailView({ initialDetail }: HiDocTextbookDetailPr
       </section>
 
       <p className={styles.footNote}>
-        <RotateCcw aria-hidden="true" size={13} strokeWidth={1.6} /> 重新识别会覆盖当前章节列表；人工修正后请勿随意重跑。
+        <RotateCcw aria-hidden="true" size={13} strokeWidth={1.6} /> 重新识别会覆盖当前章节列表（含已萃取的知识点）；重新萃取会覆盖该章既有知识点。
         返回 <Link href="/learn/hi-doc">Hi doc 书架</Link>。
       </p>
     </div>

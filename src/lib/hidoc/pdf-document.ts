@@ -154,6 +154,31 @@ export async function readHiDocPdfOutline(
   return entries;
 }
 
+/** 读取指定页区间的文字层（按行）；fromPage 1 起，含端点。 */
+export async function readHiDocPdfPageRange(
+  document: HiDocPdfDocument,
+  options: {
+    fromPage: number;
+    toPage: number;
+    itemsToLines: (items: readonly { str?: string; hasEOL?: boolean }[]) => string[];
+  },
+): Promise<HiDocPdfPageText[]> {
+  const from = Math.max(1, Math.min(document.numPages, options.fromPage));
+  const to = Math.max(from, Math.min(document.numPages, options.toPage));
+  const pages: HiDocPdfPageText[] = [];
+  for (let pageNumber = from; pageNumber <= to; pageNumber += 1) {
+    const page = await document.getPage(pageNumber);
+    const textContent = await page.getTextContent({ includeMarkedContent: false });
+    pages.push({
+      pageNumber,
+      lines: options.itemsToLines(
+        textContent.items as readonly { str?: string; hasEOL?: boolean }[],
+      ),
+    });
+  }
+  return pages;
+}
+
 /** 读取前 N 页文字层（按行），用于目录页启发式与模型输入。 */
 export async function readHiDocPdfPageTexts(
   document: HiDocPdfDocument,
