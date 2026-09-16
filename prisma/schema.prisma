@@ -111,6 +111,28 @@ model HiDocTextbook {
 
   @@index([userId, activeMonth, deletedAt])
   @@index([userId, createdAt])
+
+  chapters HiDocChapter[]
+}
+
+/// Hi doc M2: 教材章节（目录识别结果 / 手动修正结果；页码为 PDF 页序，1 起）。
+model HiDocChapter {
+  id         String       @id @default(cuid())
+  textbookId String
+  textbook   HiDocTextbook @relation(fields: [textbookId], references: [id], onDelete: Cascade)
+
+  order     Int
+  title     String
+  pageStart Int
+  pageEnd   Int
+  // 来源："outline"（PDF 书签）| "toc-page"（印刷目录页）| "model"（模型解析）| "manual"（人工修正）
+  source    String   @default("manual")
+  // M3 萃取状态："pending" | "extracting" | "extracted" | "failed"；M2 只写 pending
+  status    String   @default("pending")
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([textbookId, order])
 }
 
 /// M4: 密码重置令牌（一次性，15 分钟过期）。

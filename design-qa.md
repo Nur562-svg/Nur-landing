@@ -586,3 +586,20 @@ Playwright Chromium，视口 **1440×1000** 与 **390×844（isMobile）**，对
   - `docs/design-references/hidoc-shelf-login-gate-2026-09-17.png`
   - `docs/design-references/hidoc-quota-exceeded-2026-09-17.png`
   - `docs/design-references/hidoc-shelf-mobile-2026-09-17.png`
+
+## Hi doc M2 — 教材详情 / 目录识别 / 手动修正（2026-09-17）
+
+真实 Chromium（Tabbit + Playwright），视口 **1440×900** 与 **390×844**；真实教材《卫生统计学_赵耐青练习册》（79 页，PDF 书签 77 条，前 12 页有文字层）+ 合成教材（7 页，含印刷目录页）。
+
+- 详情页 `/learn/hi-doc/t/[id]`：kicker「HI DOC · 教材详情」+ 教材信息区（文件名 / 页数 / 章节数）+「目录识别」面板（上次识别策略与说明、识别进度日志）+ 章节树（序号、标题、`第 X–Y 页`、来源标注）+ 底注。
+- 真实教材识别（SSE 四步进度：读取 → 检查书签 → 写入章节）：**strategy=outline，19 章**（第一章 1–2 … 第十九章 77–79），notes 如实写明「来源：PDF 书签（19 条，章标题匹配）」「忽略了 58 条次级/未定位书签条目」。
+- 合成教材走印刷目录页路径：**strategy=toc-page，3 章**，页码偏移探针投票得 `+2`（3 个探针校验），章节落在真实 PDF 页 3–4 / 5–6 / 7–7；目录页识别只认真正产出条目的页（正文页不再被误标为目录页）。
+- 无目录 PDF（1 页纯文字样本）：启发式未命中 → 自动调用 `qwen3.7-plus` → 模型未产出可用章节 → 如实回退并返回 422 `no-toc` + 中文指引；该次模型调用已计入 `usage.hidocParses` 并写入 `EventLog`（`outcome=failed`），成本不静默放过。
+- 手动修正：编辑态仅显示「保存章节 / 取消」；最后一章已到书末时「新增章节」置灰并给出原因；越界保存返回中文原因（《附录 复习要点》的页码超出 1–79）；保存成功的行按起始页重排，被改动/新增的行标为「人工修正」，未改动的行保留识别来源（验证：改名行 manual、未动行 toc-page）。
+- 响应式：390×844 `scrollWidth === 390`、无横向溢出、教材标题只出现一次；操作按钮按内容宽度排列（未拉满整行）。
+- 控制台：无 4xx/5xx 与应用 error；唯一 hydration 差异仍来自浏览器扩展 Dark Reader（截图时临时屏蔽）。
+- 证据：
+  - `docs/design-references/hidoc-detail-outline-recognized-2026-09-17.png`
+  - `docs/design-references/hidoc-detail-chapter-editing-2026-09-17.png`
+  - `docs/design-references/hidoc-detail-edit-error-2026-09-17.png`
+  - `docs/design-references/hidoc-detail-mobile-2026-09-17.png`

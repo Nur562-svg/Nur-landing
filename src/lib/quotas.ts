@@ -11,7 +11,8 @@ export type QuotaResource =
   | "privateMaterials"   // 私人材料准入（已同意的 admission）
   | "courseBuilds"       // Course Builder 使用（含私人分析）
   | "mockExams"          // 模考会话
-  | "agentCalls";        // Agent 调用
+  | "agentCalls"         // Agent 调用
+  | "hidocParses";       // Hi doc 目录解析（模型辅助识别，M2 起）
 
 export type QuotaItem = {
   used: number;
@@ -35,24 +36,28 @@ export const TIER_QUOTAS: Record<MembershipTier, Record<QuotaResource, number | 
     courseBuilds: 3,
     mockExams: 10,
     agentCalls: 50,
+    hidocParses: 3,
   },
   basic: {
     privateMaterials: 20,
     courseBuilds: 10,
     mockExams: 30,
     agentCalls: 200,
+    hidocParses: 10,
   },
   pro: {
     privateMaterials: "unlimited",
     courseBuilds: "unlimited",
     mockExams: "unlimited",
     agentCalls: "unlimited",
+    hidocParses: "unlimited",
   },
   max: {
     privateMaterials: "unlimited",
     courseBuilds: "unlimited",
     mockExams: "unlimited",
     agentCalls: "unlimited",
+    hidocParses: "unlimited",
   },
 };
 
@@ -112,6 +117,7 @@ export function getQuotaLabel(resource: QuotaResource): string {
     case "courseBuilds": return "Course Builder 构建 / 私人分析";
     case "mockExams": return "模考会话";
     case "agentCalls": return "NUR Agent 对话";
+    case "hidocParses": return "Hi doc 目录解析（模型）";
   }
 }
 

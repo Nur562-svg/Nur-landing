@@ -12,10 +12,10 @@ import {
   computeHiDocQuota,
   getHiDocActiveMonth,
   getHiDocMonthlyTextbookLimit,
-  isHiDocTextbookFrozen,
 } from "./limits";
 import { getHiDocStorage, type HiDocStorageDriver } from "./storage";
 import { buildHiDocStorageKey } from "./storage-key";
+import { toHiDocTextbookView, type HiDocTextbookRow } from "./textbook-view";
 
 /**
  * Hi doc 教材服务（server-only）：上传 / 书架 / 删除 / 重新激活。
@@ -32,33 +32,6 @@ export type HiDocServiceFailure = {
 
 export type HiDocServiceResult<T> = { ok: true; data: T } | HiDocServiceFailure;
 
-type HiDocTextbookRow = {
-  id: string;
-  title: string;
-  fileName: string;
-  sizeBytes: number;
-  pageCount: number;
-  hasTextLayer: boolean;
-  status: string;
-  activeMonth: string;
-  createdAt: Date;
-};
-
-function toTextbookView(row: HiDocTextbookRow, currentMonth: string): HiDocTextbookView {
-  return {
-    id: row.id,
-    title: row.title,
-    fileName: row.fileName,
-    sizeBytes: row.sizeBytes,
-    pageCount: row.pageCount,
-    hasTextLayer: row.hasTextLayer,
-    status: row.status as HiDocTextbookView["status"],
-    activeMonth: row.activeMonth,
-    isFrozen: isHiDocTextbookFrozen(row.activeMonth, currentMonth),
-    createdAt: row.createdAt.toISOString(),
-  };
-}
-
 async function countMonthlyUsage(userId: string, month: string): Promise<number> {
   return prisma.hiDocTextbook.count({
     where: { userId, activeMonth: month, deletedAt: null },
@@ -74,10 +47,11 @@ export async function getHiDocShelf(userId: string, tier: MembershipTier): Promi
   const rows = await prisma.hiDocTextbook.findMany({
     where: { userId, deletedAt: null },
     orderBy: { createdAt: "desc" },
+    include: { _count: { select: { chapters: true } } },
   });
   const used = rows.filter((row) => row.activeMonth === currentMonth).length;
   return {
-    textbooks: rows.map((row) => toTextbookView(row, currentMonth)),
+    textbooks: rows.map((row) => toHiDocTextbookView(row, currentMonth)),
     quota: computeHiDocQuota(used, tier, currentMonth),
   };
 }
@@ -239,7 +213,7 @@ export async function uploadHiDocTextbook(
 
   return {
     ok: true,
-    data: { textbook: toTextbookView(created, currentMonth) },
+    data: { textbook: toHiDocTextbookView({ ...created, _count: { chapters: 0 } }, currentMonth) },
   };
 }
 
@@ -285,6 +259,7 @@ export async function activateHiDocTextbook(
   const currentMonth = getHiDocActiveMonth();
   const row = await prisma.hiDocTextbook.findFirst({
     where: { id: textbookId, userId, deletedAt: null },
+    include: { _count: { select: { chapters: true } } },
   });
   if (!row) {
     return { ok: false, status: 404, code: "not-found", message: "教材不存在或已删除。" };
@@ -309,6 +284,6 @@ export async function activateHiDocTextbook(
 
   return {
     ok: true,
-    data: { textbook: toTextbookView({ ...row, activeMonth: currentMonth }, currentMonth) },
+    data: { textbook: toHiDocTextbookView({ ...row, activeMonth: currentMonth }, currentMonth) },
   };
 }

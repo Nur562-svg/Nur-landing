@@ -1,6 +1,6 @@
 # NUR LEARN — Canonical Project State
 
-Last updated: 2026-09-17 (Asia/Shanghai) — Hi doc M0（四档会员/官方课名额/首页三入口）+ M1（教材上传/书架/当月名额）已完成，下一步 M2 目录识别
+Last updated: 2026-09-17 (Asia/Shanghai) — Hi doc M0/M1/M2（四档会员、教材上传书架当月名额、目录识别与手动修正）已完成，下一步 M3 知识点萃取
 
 This file is the durable source of truth for continuing NUR LEARN when conversation history is unavailable. Update it after material product decisions, completed milestones, verification changes, or priority changes.
 
@@ -1440,3 +1440,36 @@ Answer: modern medicine also enters exam-answer and scoring training. The implem
 - 未提交的 `src/content/courses/infectious-diseases/` 与 `scripts/infectious-*` 全程未触碰。
 
 **下一优先级**：M2 目录识别 + 手动修正（`/learn/hi-doc/t/[id]` 章节树），复用同一 storage/catalog 边界，不引入平行课程真相模型。
+
+---
+
+## Hi doc 主线 M2（2026-09-17 完成）
+
+**目标**：一本真实教材能切出正确章节；识别结果可人工修正。
+
+### 数据与配额
+- Prisma `HiDocChapter`（textbookId/order/title/pageStart/pageEnd/source/status），迁移 `20260916180343_m2_hidoc_chapter`；`source` 诚实标注 `outline | toc-page | model | manual`，`status` 为 M3 萃取状态（M2 只写 pending）。
+- `HiDocTextbook.toc` 存识别元信息（strategy / chapterCount / notes / recognizedAt），章节本体不重复存 JSON。
+- 新增配额资源 `hidocParses`（Hi doc 目录解析，模型）：free 3 / basic 10 / pro·max 无限；模型调用无论成败都计入 `usage.hidocParses` 并写 `EventLog`（`hidoc_toc_parse` + outcome），额度不足 503 中文报错不静默放行。
+
+### 服务端（src/lib/hidoc/）
+- `pdf-document.ts`：统一 pdfjs 加载（worker 解析）、书签读取（含命名目标 → 页序解析）、前 N 页按行取文本。
+- `toc-heuristic.ts`（纯函数）：pdfjs 文本项按 Y 基线聚类分行（真实 PDF 常无 hasEOL）→ 印刷目录页解析（第X章/篇 + 点线 + 页码，兼容康熙部首数字与全角页码）→ 章节归一化（排序/去重/补 pageEnd/上限 200）→ 书签章节择优（章标题 > 篇标题 > 最浅层级兜底）→ 页码偏移投票（≥2 票一致才采信）→ 手动修正校验。
+- `toc-provider.ts` + `providers/dashscope-toc.ts`：provider-neutral 目录解析边界（复用 DASHSCOPE_API_KEY/BASE_URL，模型默认 `qwen3.7-plus`，HIDOC_TOC_PROVIDER/MODEL 可覆盖），严格 JSON + 逐条校验，未配置密钥时如实降级为纯启发式。
+- `toc-recognition.ts`：确定性优先的编排（书签 → 印刷目录页 → 模型兜底），SSE 进度回调；探针会排除目录页自身（目录页也含章节标题，否则污染偏移投票）。
+- `chapters.ts`：识别结果事务落库 + 教材状态 `toc_ready`；手动修正整体替换，未改动行保留原来源、改动/新增行标 `manual`。
+- `textbook-view.ts`：教材视图映射（含章节数、识别元信息的不可信解析）。
+
+### API 与页面
+- `GET /api/hidoc/textbooks/[id]`（详情）、`POST /api/hidoc/textbooks/[id]/toc`（SSE 识别）、`PUT /api/hidoc/textbooks/[id]/chapters`（手动修正）；集合路由复用统一失败响应助手。
+- `/learn/hi-doc/t/[id]`：教材信息 + 目录识别（进度日志 + 说明）+ 章节树 + 手动修正（改标题/页码、删除、新增、按起始页重排）；书架标题与「进入教材」链接到详情页。
+
+### 真实验证（2026-09-17）
+- 真实教材《卫生统计学_赵耐青练习册》（79 页 / 77 书签 / 有文字层）：书签层级为「根 → 习题参考答案 → 第一章…」（章在 L3），择优规则命中 **19 章**，页码 1–2 … 77–79 与书末一致。
+- 合成教材（印刷目录页 + 前 2 页前置页）：偏移投票 `+2`，3 章页码与真实 PDF 页一致。
+- 无目录样本：模型兜底无果 → 422 `no-toc` + 中文指引；`hidocParses` 与 EventLog 均已记录。
+- 手动修正：越界/空标题/倒序均返回中文原因；来源保留规则经 API 实测。
+- `npm run lint`（0 error）/ `typecheck` / `test` 291 通过；浏览器与 390 无溢出见 `design-qa.md`「Hi doc M2」节。
+- 已知限制：书签标题可能只有「第一章」而无章名（PDF 书签本身如此），需人工补名；页码偏移在探针不足 2 票一致时不校正（如实提示人工核对）。
+
+**下一优先级**：M3 知识点萃取（SSE 流式，按章读文字层 → 逐知识点结构化 + 页码溯源），复用本期的 pdf 运行时、章节契约与配额/EventLog 边界。

@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useRef, useState } from "react";
 import {
+  BookOpen,
   CircleAlert,
   FileUp,
   Loader2,
@@ -32,9 +33,11 @@ function formatSize(sizeBytes: number): string {
 function describeState(textbook: HiDocTextbookView): string {
   switch (textbook.status) {
     case "uploaded":
-      return "已上传 · 目录识别将在 M2 开放";
+      return "未识别目录 · 进入教材可识别";
     case "toc_ready":
-      return "目录已识别";
+      return textbook.chapterCount > 0
+        ? `目录已识别 · ${textbook.chapterCount} 章`
+        : "目录已识别";
     case "extracting":
       return "知识点萃取中";
     case "ready":
@@ -235,7 +238,9 @@ export function HiDocBookshelf({ initialShelf, tier }: HiDocBookshelfProps) {
             {activeTextbooks.map((textbook) => (
               <li key={textbook.id} className={styles.textbookCard}>
                 <div className={styles.textbookMain}>
-                  <p className={styles.textbookTitle}>{textbook.title}</p>
+                  <p className={styles.textbookTitle}>
+                    <Link href={`/learn/hi-doc/t/${textbook.id}`}>{textbook.title}</Link>
+                  </p>
                   <p className={styles.textbookMeta}>
                     {textbook.fileName} · {textbook.pageCount} 页 · {formatSize(textbook.sizeBytes)} · 上传于{" "}
                     {textbook.createdAt.slice(0, 10)}
@@ -243,6 +248,10 @@ export function HiDocBookshelf({ initialShelf, tier }: HiDocBookshelfProps) {
                   <p className={styles.textbookState}>{describeState(textbook)}</p>
                 </div>
                 <div className={styles.textbookActions}>
+                  <Link className={styles.ghostButton} href={`/learn/hi-doc/t/${textbook.id}`}>
+                    <BookOpen aria-hidden="true" size={15} strokeWidth={1.6} />
+                    进入教材
+                  </Link>
                   <button
                     type="button"
                     className={styles.ghostButton}

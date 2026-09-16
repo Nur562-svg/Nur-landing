@@ -1,6 +1,6 @@
 import "server-only";
 
-import { mkdir, rmdir, rm, writeFile } from "node:fs/promises";
+import { mkdir, readFile, rmdir, rm, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { isSafeHiDocStorageKey } from "./storage-key";
 
@@ -14,6 +14,7 @@ import { isSafeHiDocStorageKey } from "./storage-key";
 export type HiDocStorageDriver = {
   readonly id: "local-disk";
   putObject(key: string, data: Uint8Array): Promise<void>;
+  readObject(key: string): Promise<Uint8Array>;
   removeObject(key: string): Promise<void>;
 };
 
@@ -47,6 +48,10 @@ function createLocalDiskDriver(root: string): HiDocStorageDriver {
       const filePath = resolveLocalPath(root, key);
       await mkdir(path.dirname(filePath), { recursive: true });
       await writeFile(filePath, data);
+    },
+    async readObject(key) {
+      const filePath = resolveLocalPath(root, key);
+      return new Uint8Array(await readFile(filePath));
     },
     async removeObject(key) {
       const filePath = resolveLocalPath(root, key);
