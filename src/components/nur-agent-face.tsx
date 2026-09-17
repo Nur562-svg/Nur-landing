@@ -137,7 +137,6 @@ export function NurAgentFace({
             d={ringLoopPath}
             pathLength={100}
             fill="none"
-            strokeWidth={2.4}
             strokeLinecap="round"
           />
         </g>
