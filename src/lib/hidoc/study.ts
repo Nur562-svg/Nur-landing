@@ -8,16 +8,18 @@ import type {
   HiDocKnowledgePointStudyView,
 } from "@/types/hidoc";
 import { toKnowledgePointView, type HiDocChapterServiceResult } from "./chapters";
+import { listHiDocHighlights } from "./highlights";
 import {
   loadHiDocConversationMessages,
   loadHiDocKnowledgePointContext,
 } from "./knowledge-points";
 import { loadHiDocLesson } from "./lesson";
 import { getHiDocActiveMonth } from "./limits";
+import { loadHiDocChapterNote } from "./note";
 import { toHiDocTextbookView } from "./textbook-view";
 
 /**
- * Hi doc 学习页读取（server-only）：章节 + 知识点清单（含讲义状态）与单个知识点（讲义 + 对话历史）。
+ * Hi doc 学习页读取（server-only）：章节 + 知识点清单（含讲义状态）、单个知识点（讲义 + 对话历史 + 划重点）与章级学霸笔记。
  * 只读查询，全部从 userId 出发校验私有归属。
  */
 
@@ -66,6 +68,7 @@ export async function getHiDocChapterStudy(
   };
 
   const textbookView = toHiDocTextbookView(textbook, getHiDocActiveMonth());
+  const note = await loadHiDocChapterNote(userId, chapterRow.id);
 
   return {
     ok: true,
@@ -80,6 +83,7 @@ export async function getHiDocChapterStudy(
       chapterTotal: chapters.length,
       knowledgePoints,
       lessonCount: knowledgePoints.filter((point) => point.hasLesson).length,
+      note,
     },
   };
 }
@@ -94,6 +98,7 @@ export async function getHiDocKnowledgePointStudy(
   }
   const lesson = await loadHiDocLesson(kpId);
   const messages = await loadHiDocConversationMessages(userId, kpId);
+  const highlights = await listHiDocHighlights(userId, kpId);
   return {
     ok: true,
     data: {
@@ -101,6 +106,7 @@ export async function getHiDocKnowledgePointStudy(
       chapterTitle: context.data.chapter.title,
       lesson: lesson?.view ?? null,
       messages,
+      highlights,
     },
   };
 }

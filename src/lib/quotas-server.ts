@@ -12,7 +12,14 @@ import { computeItem, getClientBump, getQuotaLabel, TIER_QUOTAS } from "@/lib/qu
 /** Server-side record for persistence (M3) */
 export async function recordServerUsage(
   userId: string,
-  resource: "courseBuilds" | "agentCalls" | "hidocParses" | "hidocExtracts" | "hidocLessons" | "hidocChats",
+  resource:
+    | "courseBuilds"
+    | "agentCalls"
+    | "hidocParses"
+    | "hidocExtracts"
+    | "hidocLessons"
+    | "hidocChats"
+    | "hidocNotes",
 ): Promise<void> {
   const user = await prisma.user.findUnique({ where: { id: userId }, select: { usage: true } });
   const current: UserUsageRecord = ((user?.usage as UserUsageRecord) ?? {}) as UserUsageRecord;
@@ -55,6 +62,7 @@ export async function computeUserQuotas(userId: string): Promise<UserQuotas> {
   const serverHidocExtracts = serverUsage.hidocExtracts || 0;
   const serverHidocLessons = serverUsage.hidocLessons || 0;
   const serverHidocChats = serverUsage.hidocChats || 0;
+  const serverHidocNotes = serverUsage.hidocNotes || 0;
 
   const clientBuilds = getClientBump("courseBuilds");
   const clientAgent = getClientBump("agentCalls");
@@ -71,6 +79,7 @@ export async function computeUserQuotas(userId: string): Promise<UserQuotas> {
     hidocExtracts: computeItem(serverHidocExtracts, limits.hidocExtracts),
     hidocLessons: computeItem(serverHidocLessons, limits.hidocLessons),
     hidocChats: computeItem(serverHidocChats, limits.hidocChats),
+    hidocNotes: computeItem(serverHidocNotes, limits.hidocNotes),
   };
 
   const periodNote = tier === "pro"

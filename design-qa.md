@@ -641,3 +641,28 @@ Playwright Chromium，视口 **1440×1000** 与 **390×844（isMobile）**，对
   - `docs/design-references/hidoc-study-regenerate-confirm-2026-09-17.png`
   - `docs/design-references/hidoc-study-heuristic-fallback-2026-09-17.png`
   - `docs/design-references/hidoc-study-mobile-2026-09-17.png`
+
+## Hi doc M5 — 划重点/批注 + 学霸笔记（2026-09-17）
+
+真实 Chromium（Tabbit + Playwright；另用独立无扩展 Chrome 采集原生浅色截图并复验跨浏览器持久化），视口 **1440×900 / 1440×1000** 与 **390×844**；验证账号为 M4 免费档账号（free 档，笔记额度 3），教材为真实《卫生统计学练习册（M4 验证）》（79 页，第一章 13 个知识点、2 份讲义：1 份真实 `qwen3.7-plus`、1 份启发式）。
+
+- 划线创建：在讲义正文中选中「离散的数值，通常由计数产生」→ 浮出气泡「划重点」（引用原文 + 四色色板 琥珀/朱砂/黛蓝/青玉 + 批注输入 ≤1000 字 + 保存/取消）；选朱砂、写批注保存 → 该句被 `<mark data-hidoc-highlight-id data-hidoc-swatch="cinnabar">` 包裹，实测背景 `rgba(160, 28, 20, 0.14)`、下划线 `rgba(169, 29, 21, 0.6)`（低饱和度，不抢正文）；面板「划重点 1 条 · 已定位 1 · 未定位 0」，条目含色块、引用原文、批注、颜色标签与时间。
+- 定位契约：划线包裹全程走 TreeWalker + `splitText` + `insertBefore`（Range/textNode），不使用 `innerHTML`；只按 quote + prefix/suffix 匹配，匹配失败即入「未定位」，不做猜测式定位。
+- 持久化与跨设备：刷新后划线按 anchor 与讲义版本一致重新定位；另用独立无扩展 Chrome（干净配置文件、不同浏览器会话、同一账号）复测，2 条划线同样重新出现。
+- 编辑：面板「编辑颜色或批注」→ 气泡带入原值 → 改青玉并改批注 → `PATCH /api/hidoc/highlights/[id]` 生效：mark 类名 `swatchCinnabar` → `swatchJade`、背景 `rgba(55, 110, 92, 0.18)`，面板同步为「青玉 · …」。
+- 讲义重新生成后的失配：点「重新生成讲义 → 确认重新生成」，真实 `qwen3.7-plus` 重写讲义（生成时间 20:33:30 → 22:35:54）；重生成后讲义中 mark 数 0，面板「划重点 1 条 · 已定位 0 · 未定位 1」，未定位区以朱色标注「未定位 1 条 · 讲义已更新，暂无法定位」，条目显示「青玉 · 旧版讲义（2026/9/17 20:33:30）」，并写明「不会伪造位置，可删除后在新讲义上重新划线」。
+- 新讲义重新划线（四色）：在新讲义上以琥珀（带批注）与黛蓝各划一条 → 面板「3 条 · 已定位 2 · 未定位 1」；琥珀/朱砂/青玉/黛蓝四色均已实测。
+- 删除：未定位条目删除后立即消失（未定位区不再渲染）；气泡内亦可删除，服务端 `DELETE /api/hidoc/highlights/[id]`。
+- 学霸笔记（模型，SSE）：`POST /api/hidoc/textbooks/[id]/chapters/[order]/note` 共 533 个事件（progress → 490 delta → result），生成方式「模型生成（dashscope · qwen3.7-plus）· 2026/9/17 22:36」，结构校验通过；渲染为：章首导读 → 知识点笔记（13 个三级小节，含核心定义/要点/易错点）→ 自测题汇总；说明区如实写「聚合范围：13 个知识点（2 份讲义）、2 条追问、3 条划重点/批注」「本章有 11/13 个知识点尚未生成讲义，笔记中如实略去对应要点」；正文含真实划重点引用、「我的批注」「追问中暴露的问题」，无「你曾问到」等编造。
+- 笔记下载：点「下载 .md」创建 Blob（`text/markdown;charset=utf-8`）并触发 `<a download="卫生统计学练习册（M4 验证）-第一章-学霸笔记.md">`；点击探针读到 3621 字节、13 个三级小节、含「## 自测题汇总」与模型生成页首。注：本机 Tabbit 环境不派发 Playwright download 事件（同环境 data URL 对照实验同样不派发，属环境拦截），因此以锚点文件名 + Blob 内容探针为证据；独立无扩展 Chrome 中页面行为一致。
+- 重新生成覆盖：已有笔记时按钮为「重新生成学霸笔记」，点击出现朱色「重新生成将覆盖当前学霸笔记，确认继续？」+ 确认/取消；点取消后正文与生成时间逐字节不变。
+- 无 key 启发式兜底：在不配置 `DASHSCOPE_API_KEY` 的进程内重新生成 → `generator=heuristic`，页首「生成方式：启发式整理 · 未接入模型」+「本笔记未调用模型：内容由讲义要点、划重点、批注与追问记录确定性地汇总」；含章首导读 / 知识点笔记（13 小节）/ 我的划重点 / 我的批注 / 追问中暴露的问题 / 自测题汇总 / 下载提示；说明区含「未接入模型（…未配置）」与「本次生成覆盖了此前的学霸笔记」；`usage.hidocNotes` 保持不变（未占模型额度），仅写 heuristic EventLog。
+- 安全与配额（API 端到端，curl）：未登录 POST/PATCH/DELETE 与笔记生成均 401；跨账号 kpId 创建划线 404「知识点不存在或不属于当前账户。」；他人划线 PATCH/DELETE 404「划重点不存在或不属于当前账户。」；quote 501 字 400「选中的文字过长（501 字），请控制在 500 字以内。」；非法颜色 400「划线颜色不在允许的四色之内（琥珀 / 朱砂 / 黛蓝 / 青玉）。」；批注 1001 字 400「批注过长（1001 字），请控制在 1000 字以内。」；每 kp 第 101 条 503「本知识点的划重点已达上限（100 条）。请先删除…」（临时夹具 100 条，验后级联清理无残留）；笔记额度 3/3 时 0.24s 即 SSE error 503「Hi doc 学霸笔记（模型） 已用完（3/3），本次笔记生成已停止…」，未发起模型调用、未写 EventLog；跨账号教材 id 笔记生成 SSE 404。验证账号 `usage` 与真实调用一致（hidocLessons 3 / hidocNotes 2，含 1 次真实笔记生成 + 1 次重生成；启发式与配额拦截均不计数）。
+- 响应式：390×844 `documentElement.scrollWidth === clientWidth === 390`，无溢出元素；移动端划线仍正确定位（mark 2 条），气泡宽度自适应 `min(360px, calc(100vw - 24px))`，面板单列堆叠。
+- 控制台：独立无扩展 Chrome 无 error；Tabbit 中仅有 Dark Reader 扩展注入 `data-darkreader-*`（html 与图标 inline stroke）造成的 hydration 差异，与前几期一致，非产品缺陷。
+- 证据：
+  - `docs/design-references/hidoc-m5-highlight-panel-2026-09-17.png`
+  - `docs/design-references/hidoc-m5-unlocated-2026-09-17.png`
+  - `docs/design-references/hidoc-m5-note-desktop-2026-09-17.png`
+  - `docs/design-references/hidoc-m5-note-heuristic-2026-09-17.png`
+  - `docs/design-references/hidoc-m5-mobile-2026-09-17.png`

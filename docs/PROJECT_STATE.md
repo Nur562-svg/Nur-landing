@@ -1,6 +1,6 @@
 # NUR LEARN — Canonical Project State
 
-Last updated: 2026-09-17 (Asia/Shanghai) — Hi doc M0–M4（四档会员、上传书架名额、目录识别修正、知识点萃取 SSE、学习页讲义与讲解对话）已完成，下一步 M5 划重点/批注/学霸笔记
+Last updated: 2026-09-17 (Asia/Shanghai) — Hi doc M0–M5（四档会员、上传书架名额、目录识别修正、知识点萃取 SSE、学习页讲义与讲解对话、划重点/批注与学霸笔记）已完成，下一步 M6 课题工作坊
 
 This file is the durable source of truth for continuing NUR LEARN when conversation history is unavailable. Update it after material product decisions, completed milestones, verification changes, or priority changes.
 
@@ -1540,3 +1540,30 @@ Answer: modern medicine also enters exam-answer and scoring training. The implem
 - 测试 320/320（新增 `tests/hidoc-lesson.test.ts` 19 项）；lint 0 error；typecheck 干净；`npm run build` 通过（hidoc 10 条路由）；390×844 无溢出；浏览器与 API 明细见 `design-qa.md`「Hi doc M4」节。
 
 **下一优先级**：M5 划重点/批注（`HiDocHighlight`：选中文本 → quote/color/note/anchor）与学霸笔记（`HiDocNote`：本章讲义 + 追问 + 划重点汇总导出），复用本期的讲义/对话契约与同一 provider-neutral 边界。
+
+## Hi doc 主线 M5（2026-09-17 完成）
+
+**验收达成**：选中文本 → 四色划线/批注 → 章级学霸笔记生成与导出（计划 §7 M5 验收标准）。
+
+### 数据与配额
+- Prisma `HiDocHighlight`（userId + kpId 级联、quote/prefix/suffix、color 四色枚举、note 可空、anchor Json 存 `{ lessonUpdatedAt }`、`@@index([userId, kpId])`）与 `HiDocNote`（userId + chapterId 级联、contentMd、generator、`@@unique([userId, chapterId])` 一章一份、重新生成即覆盖），迁移 `20260917141417_m5_hidoc_highlight_note`；全部私有挂 userId，不进官方课程目录。
+- 新配额资源 `hidocNotes`（free 3 / basic 10 / pro·max 无限）；模型笔记调用无论成败都计入 `usage.hidocNotes` 并写 `EventLog(hidoc_chapter_note)`（带 provider、model、outcome、知识点/讲义/划重点/追问计数）；启发式兜底不占模型额度，只写事件；额度不足 503 中文报错不静默放行。
+
+### 服务端（src/lib/hidoc/）
+- `highlight-rules.ts`（纯函数，客户端安全）：四色枚举与语义标签、创建/修改校验（quote 去空白 ≤500、note ≤1000、前后文各 ≤80 且保留靠近选区一侧）、每 kp 上限 100 的中文原因、anchor 解析与「讲义版本不一致即未定位」判定、讲义纯文本内的确定性定位匹配（精确匹配优先，失败后用去空白文本兜底，多候选由 prefix/suffix 消歧）。
+- `highlight-dom.ts`（浏览器端）：在渲染后的讲义 DOM 内用 TreeWalker + `splitText` + `insertBefore` 包裹 `<mark>`（禁止 innerHTML 拼接），只画 anchor 匹配的条目，定位失败的返回 `missingIds` 由 UI 如实放入「未定位」。
+- `highlights.ts`（server-only）：归属链从 userId 出发（教材 → 章节 → 知识点）；创建时 anchor 由服务端读取当前讲义 `generatedAt`（客户端无法伪造）；改色/改批注/删除均按 `{ id, userId }` 校验，跨账号 404。
+- `note.ts` + `note-heuristic.ts` + `note-provider.ts` + `providers/dashscope-note.ts`：章级笔记编排（聚合该章全部讲义 + 讲解追问 + 划重点/批注 → 模型流式汇总 + 结构校验，或启发式确定性拼装并标注「未接入模型」）；讲义以「定义/要点/易错点/自测题」压缩片段进上下文（每份 ≤2000 字，超出截断并如实说明）；笔记结构校验要求「章首导读」「自测题汇总」与至少一个知识点小节；缺失小节如实略去，不编造「你曾问到…」。
+- `study.ts` 学习页读取新增所选知识点的划重点与章级笔记；`client-api.ts` 抽出客户端 SSE 解析与失败读取（讲义/对话/笔记共用）。
+
+### API 与页面
+- `POST /api/hidoc/highlights`（201 返回视图）、`PATCH/DELETE /api/hidoc/highlights/[id]`、`POST /api/hidoc/textbooks/[id]/chapters/[order]/note`（SSE：progress → delta → result/error）；均为 thin adapter，业务在 `src/lib/hidoc/`。
+- 学习页 `/learn/hi-doc/t/[id]/c/[n]`：讲义区选中文字浮出四色划线气泡（含批注输入 ≤1000 字），「划重点」面板区分已定位/未定位（未定位以朱色标注「讲义已更新，暂无法定位」，可删除，绝不伪造位置）；同页新增「学霸笔记」区块（生成/重新生成 + 覆盖确认 + SSE 流式预览 + markdown 渲染 + 前端 Blob 下载 `{教材名}-{章节名}-学霸笔记.md`，不落服务器文件存储）。视觉沿用 hi-doc.module.css 体系，四色划线为低饱和度纸面用色。
+
+### 真实验证（2026-09-17，free 档验证账号 + 《卫生统计学练习册（M4 验证）》）
+- 划线：选中文本 → 朱砂 + 批注保存成功；刷新与独立无扩展 Chrome 中均按 anchor 重新定位；改青玉即时生效；讲义真实重生成（qwen3.7-plus）后旧划重点进入「未定位」且讲义中零 mark；新讲义上再划琥珀/黛蓝两条，四色齐备；未定位删除即时生效。
+- 学霸笔记：真实模型 533 个 SSE 事件、结构校验通过（章首导读 / 13 个知识点小节 / 自测题汇总），如实写明 11/13 个知识点未生成讲义；无 key 进程内启发式兜底标注「未接入模型」且不占额度；下载文件名与 Blob 内容（3621 字节、含自测题汇总）经点击探针核对。
+- 安全与配额：未登录 401；跨账号创建 404、他人划线 PATCH/DELETE 404；quote 501/note 1001/非法颜色 400；每 kp 第 101 条 503（临时夹具验后无残留）；笔记 3/3 时 0.24s 503 且未发起模型调用。
+- 测试 337/337（新增 `tests/hidoc-highlight.test.ts` 17 项）；lint 0 error；typecheck 干净；`npm run check`（build）通过（hidoc 新增 3 条路由：highlights、highlights/[id]、chapters/[order]/note）；390×844 无溢出；浏览器与 API 明细见 `design-qa.md`「Hi doc M5」节。
+
+**下一优先级**：M6 课题工作坊（`HiDocWorkshop` / `HiDocWorkshopFile`：≤100 页短材料 + AI 检索材料答疑，并替代「我的资料」本地快练），任务范围以 `docs/HI_DOC_PLAN.md` §5.6 与 §7 M6 行为准，任务书见 `docs/HI_DOC_CODEX_BRIEF.md`。

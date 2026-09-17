@@ -11,7 +11,6 @@ import {
   Sparkles,
 } from "lucide-react";
 import type {
-  HiDocApiFailure,
   HiDocChapterStudyView,
   HiDocChatEvent,
   HiDocChatMessage,
@@ -20,12 +19,15 @@ import type {
   HiDocLessonEvent,
   HiDocLessonView,
 } from "@/types/hidoc";
+import { consumeHiDocSse, readHiDocFailure } from "@/lib/hidoc/client-api";
 import { describeHiDocLessonGenerator } from "@/lib/hidoc/lesson-heuristic";
+import { HiDocHighlightLayer } from "./hi-doc-highlights";
 import { HiDocMarkdown } from "./hi-doc-markdown";
+import { HiDocNotePanel } from "./hi-doc-note";
 import styles from "./hi-doc.module.css";
 
 /**
- * Hi doc 学习页（客户端）：左侧知识点列表 + 右侧讲义（SSE 生成/流式预览）+ 底部讲解追问（SSE 流式）。
+ * Hi doc 学习页（客户端）：左侧知识点列表 + 右侧讲义（SSE 生成/流式预览）+ 划重点层 + 讲解追问（SSE 流式）+ 章级学霸笔记。
  * 所有生成都走服务端 API；这里只负责展示、确认覆盖与事件解析。
  */
 
@@ -41,45 +43,6 @@ const statusLabels: Record<HiDocChapterStudyView["chapter"]["status"], string> =
   extracted: "已萃取",
   failed: "萃取失败",
 };
-
-function readFailure(payload: unknown): string {
-  const candidate = payload as HiDocApiFailure | null;
-  return candidate?.error ?? "服务返回异常，请稍后重试。";
-}
-
-/** SSE 行解析（讲义生成与讲解对话共用）。 */
-async function consumeSse(
-  response: Response,
-  onEvent: (event: unknown) => void,
-): Promise<void> {
-  if (!response.body) {
-    onEvent({ type: "error", code: "server-error", error: "服务没有返回数据流，请稍后重试。" });
-    return;
-  }
-  const reader = response.body.getReader();
-  const decoder = new TextDecoder();
-  let buffer = "";
-  for (;;) {
-    const { value, done } = await reader.read();
-    if (done) {
-      break;
-    }
-    buffer += decoder.decode(value, { stream: true });
-    const parts = buffer.split("\n\n");
-    buffer = parts.pop() ?? "";
-    for (const part of parts) {
-      const dataLine = part.split("\n").find((line) => line.startsWith("data: "));
-      if (!dataLine) {
-        continue;
-      }
-      try {
-        onEvent(JSON.parse(dataLine.slice(6)));
-      } catch {
-        // 忽略无法解析的行
-      }
-    }
-  }
-}
 
 export function HiDocStudyRoom({ textbookId, chapter, selected }: HiDocStudyRoomProps) {
   const knowledgePoint = selected.knowledgePoint;
@@ -98,6 +61,7 @@ export function HiDocStudyRoom({ textbookId, chapter, selected }: HiDocStudyRoom
   const [chatNotes, setChatNotes] = useState<string[]>([]);
   const [streaming, setStreaming] = useState(false);
   const chatListRef = useRef<HTMLDivElement>(null);
+  const lessonBodyRef = useRef<HTMLDivElement>(null);
 
   async function onGenerateLesson() {
     if (generating) {
@@ -115,7 +79,7 @@ export function HiDocStudyRoom({ textbookId, chapter, selected }: HiDocStudyRoom
       if (!response.ok || !response.body) {
         let message = "讲义生成失败：服务暂时不可用，请稍后重试。";
         try {
-          message = readFailure(await response.json());
+          message = readHiDocFailure(await response.json());
         } catch {
           // 保持默认提示
         }
@@ -123,7 +87,7 @@ export function HiDocStudyRoom({ textbookId, chapter, selected }: HiDocStudyRoom
         setLessonDraft("");
         return;
       }
-      await consumeSse(response, (raw) => {
+      await consumeHiDocSse(response, (raw) => {
         const event = raw as HiDocLessonEvent;
         if (event.type === "progress") {
           setLessonLog((log) => [...log, event.message]);
@@ -170,14 +134,14 @@ export function HiDocStudyRoom({ textbookId, chapter, selected }: HiDocStudyRoom
       if (!response.ok || !response.body) {
         let message = "讲解失败：服务暂时不可用，请稍后重试。";
         try {
-          message = readFailure(await response.json());
+          message = readHiDocFailure(await response.json());
         } catch {
           // 保持默认提示
         }
         setChatError(message);
         return;
       }
-      await consumeSse(response, (raw) => {
+      await consumeHiDocSse(response, (raw) => {
         const event = raw as HiDocChatEvent;
         if (event.type === "delta") {
           answer += event.text;
@@ -352,8 +316,8 @@ export function HiDocStudyRoom({ textbookId, chapter, selected }: HiDocStudyRoom
               <HiDocMarkdown markdown={lessonDraft} />
             </div>
           ) : lesson ? (
-            <div className={styles.lessonBody}>
-              <HiDocMarkdown markdown={lesson.contentMd} />
+            <div className={styles.lessonBody} ref={lessonBodyRef}>
+              <HiDocMarkdown key={lesson.generatedAt} markdown={lesson.contentMd} />
             </div>
           ) : (
             <p className={styles.emptyState}>
@@ -362,6 +326,14 @@ export function HiDocStudyRoom({ textbookId, chapter, selected }: HiDocStudyRoom
             </p>
           )}
         </section>
+
+        <HiDocHighlightLayer
+          kpId={knowledgePoint.id}
+          lessonGeneratedAt={lesson?.generatedAt ?? null}
+          initialHighlights={selected.highlights}
+          bodyRef={lessonBodyRef}
+          regenerating={generating}
+        />
 
         <section className={styles.chatPanel} aria-labelledby="hidoc-chat-title">
           <div className={styles.panelHead}>
@@ -460,6 +432,15 @@ export function HiDocStudyRoom({ textbookId, chapter, selected }: HiDocStudyRoom
             </button>
           </form>
         </section>
+
+        <HiDocNotePanel
+          textbookId={textbookId}
+          textbookTitle={chapter.textbook.title}
+          chapter={chapter.chapter}
+          initialNote={chapter.note}
+          lessonCount={chapter.lessonCount}
+          knowledgePointCount={chapter.knowledgePoints.length}
+        />
 
         <p className={styles.footNote}>
           Hi doc 生成物为 AI 产品内容，不挂官方课的证据分级；知识点为模型萃取草稿，页码可溯源。

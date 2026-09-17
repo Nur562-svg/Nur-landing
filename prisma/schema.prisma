@@ -48,6 +48,9 @@ model User {
   hiDocTextbooks                HiDocTextbook[]
   // Hi doc M4: 讲解对话（kpId 可空，为 M6 课题工作坊预留）
   hiDocConversations            HiDocConversation[]
+  // Hi doc M5: 划重点/批注与章级学霸笔记（全部私有挂 userId）
+  hiDocHighlights               HiDocHighlight[]
+  hiDocNotes                    HiDocNote[]
 }
 
 /// M4: 会员订单（支付抽象层持久化）。provider 切换不影响已存订单。
@@ -136,6 +139,9 @@ model HiDocKnowledgePoint {
 
   lesson HiDocLesson?
 
+  // M5: 该知识点的划重点/批注
+  highlights HiDocHighlight[]
+
   @@index([chapterId, order])
 }
 
@@ -173,6 +179,51 @@ model HiDocConversation {
   @@index([userId, updatedAt])
 }
 
+/// Hi doc M5: 划重点/批注（私有挂 userId，随知识点级联删除）。
+/// quote/prefix/suffix 为讲义渲染文本中的选中文字与前后文定位上下文；anchor 存创建时的讲义版本（{ lessonUpdatedAt }），
+/// 讲义重新生成后失配的条目如实进入「未定位」，绝不伪造定位。
+model HiDocHighlight {
+  id     String @id @default(cuid())
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  kpId String
+  kp   HiDocKnowledgePoint @relation(fields: [kpId], references: [id], onDelete: Cascade)
+
+  quote  String
+  prefix String
+  suffix String
+  // 固定枚举："amber" | "cinnabar" | "slate" | "jade"（TS 类型约束保证可移植性）
+  color  String
+  // 批注（可空；空串按无批注处理）
+  note   String?
+  // 定位锚点：{ lessonUpdatedAt: string | null }，用于判断讲义是否已重生成
+  anchor Json
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([userId, kpId])
+}
+
+/// Hi doc M5: 学霸笔记（章级汇总：讲义 + 追问 + 划重点/批注；每用户每章一份，重新生成即覆盖）。
+model HiDocNote {
+  id     String @id @default(cuid())
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  chapterId String
+  chapter   HiDocChapter @relation(fields: [chapterId], references: [id], onDelete: Cascade)
+
+  contentMd String
+  // 生成方式："model:dashscope:qwen3.7-plus" | "heuristic"
+  generator String
+  generatedAt DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@unique([userId, chapterId])
+  @@index([userId, updatedAt])
+}
+
 /// Hi doc M2: 教材章节（目录识别结果 / 手动修正结果；页码为 PDF 页序，1 起）。
 model HiDocChapter {
   id         String       @id @default(cuid())
@@ -191,6 +242,8 @@ model HiDocChapter {
   updatedAt DateTime @updatedAt
 
   knowledgePoints HiDocKnowledgePoint[]
+  // M5: 该章的学霸笔记（每用户每章一份）
+  notes           HiDocNote[]
 
   @@index([textbookId, order])
 }

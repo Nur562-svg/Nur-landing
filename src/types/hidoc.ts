@@ -129,6 +129,7 @@ export type HiDocErrorCode =
   | "extraction-failed"
   | "lesson-failed"
   | "chat-failed"
+  | "note-failed"
   | "not-found"
   | "storage-unavailable"
   | "server-error";
@@ -203,12 +204,71 @@ export type HiDocChapterStudyView = {
   chapterTotal: number;
   knowledgePoints: HiDocKnowledgePointStudySummary[];
   lessonCount: number;
+  /** M5: 本章学霸笔记（每用户每章一份）。 */
+  note: HiDocNoteView | null;
 };
 
-/** 学习页当前选中知识点的完整视图（讲义 + 对话历史）。 */
+/** 学习页当前选中知识点的完整视图（讲义 + 对话历史 + 我的划重点）。 */
 export type HiDocKnowledgePointStudyView = {
   knowledgePoint: HiDocKnowledgePointView;
   chapterTitle: string;
   lesson: HiDocLessonView | null;
   messages: HiDocChatMessage[];
+  highlights: HiDocHighlightView[];
 };
+
+/* ---------------- M5：划重点/批注 + 学霸笔记 ---------------- */
+
+/** 四色划线（固定枚举；低饱和度，不抢正文）。 */
+export type HiDocHighlightColor = "amber" | "cinnabar" | "slate" | "jade";
+
+/** 划重点/批注视图（quote/prefix/suffix 为讲义渲染文本中的选中文字与前后文定位上下文）。 */
+export type HiDocHighlightView = {
+  id: string;
+  kpId: string;
+  quote: string;
+  prefix: string;
+  suffix: string;
+  color: HiDocHighlightColor;
+  note: string | null;
+  /** 创建时的讲义版本（ISO）；与当前讲义 generatedAt 不一致即失配，进入「未定位」。 */
+  anchorLessonUpdatedAt: string | null;
+  createdAt: string;
+  updatedAt: string;
+};
+
+/** 定位锚点（Json 列，按不可信输入解析）。 */
+export type HiDocHighlightAnchor = {
+  lessonUpdatedAt: string | null;
+};
+
+/** 已定位的划重点渲染项（客户端 DOM 定位用）。 */
+export type HiDocHighlightPaintItem = {
+  id: string;
+  color: HiDocHighlightColor;
+  quote: string;
+  prefix: string;
+  suffix: string;
+};
+
+/** 划线选区上下文（quote 去首尾空白，prefix/suffix 为选区前后文，服务端会再限长）。 */
+export type HiDocHighlightSelection = {
+  quote: string;
+  prefix: string;
+  suffix: string;
+};
+
+/** 章级学霸笔记视图（每用户每章一份，重新生成即覆盖）。 */
+export type HiDocNoteView = {
+  chapterId: string;
+  contentMd: string;
+  generator: HiDocLessonGenerator;
+  generatedAt: string;
+};
+
+/** 学霸笔记生成 SSE 事件（与讲义生成对齐：进度 → 增量 markdown → 结果）。 */
+export type HiDocNoteEvent =
+  | { type: "progress"; stage: "collect" | "generating" | "save"; message: string }
+  | { type: "delta"; text: string }
+  | { type: "result"; note: HiDocNoteView; notes: string[] }
+  | { type: "error"; code: HiDocErrorCode; error: string };

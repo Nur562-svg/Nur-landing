@@ -877,7 +877,9 @@
 }
 
 .lessonPanel,
-.chatPanel {
+.chatPanel,
+.highlightPanel,
+.notePanel {
   border: 1px solid var(--ink);
   padding: 22px;
 }
@@ -1118,7 +1120,9 @@
   }
 
   .lessonPanel,
-  .chatPanel {
+  .chatPanel,
+  .highlightPanel,
+  .notePanel {
     padding: 18px 16px;
   }
 
@@ -1131,4 +1135,333 @@
   .chatRowAssistant {
     max-width: 100%;
   }
+}
+
+/* ---------------- M5：划重点/批注 + 学霸笔记 ---------------- */
+
+/* 四色低饱和度划线（纸面用色；不抢正文）；变量类同时挂到划线 <mark>、色板与色块上 */
+.swatchAmber {
+  --hidoc-swatch-bg: rgb(214 168 74 / 26%);
+  --hidoc-swatch-line: rgb(164 120 36 / 72%);
+}
+
+.swatchCinnabar {
+  --hidoc-swatch-bg: rgb(191 33 24 / 14%);
+  --hidoc-swatch-line: rgb(191 33 24 / 60%);
+}
+
+.swatchSlate {
+  --hidoc-swatch-bg: rgb(59 84 124 / 17%);
+  --hidoc-swatch-line: rgb(59 84 124 / 58%);
+}
+
+.swatchJade {
+  --hidoc-swatch-bg: rgb(63 127 106 / 18%);
+  --hidoc-swatch-line: rgb(63 127 106 / 58%);
+}
+
+.lessonBody mark[data-hidoc-highlight-id] {
+  background: var(--hidoc-swatch-bg);
+  border-bottom: 1px solid var(--hidoc-swatch-line);
+  color: inherit;
+  cursor: pointer;
+  padding: 0.05em 0;
+}
+
+.lessonBody mark[data-hidoc-highlight-id]:hover {
+  filter: brightness(0.95);
+}
+
+.highlightHint {
+  color: var(--muted);
+  font-size: 12.5px;
+  line-height: 1.8;
+  margin: 12px 0 0;
+}
+
+.highlightEmpty {
+  border-top: 1px dashed var(--line-soft);
+  color: var(--muted);
+  font-size: 13px;
+  line-height: 1.8;
+  margin: 16px 0 0;
+  padding-top: 14px;
+}
+
+.highlightList {
+  border-top: 1px dashed var(--line-soft);
+  display: grid;
+  gap: 0;
+  list-style: none;
+  margin: 14px 0 0;
+  padding: 4px 0 0;
+}
+
+.highlightItem,
+.highlightItemFocus {
+  align-items: flex-start;
+  border-bottom: 1px solid var(--line-soft);
+  display: flex;
+  gap: 10px;
+  padding: 10px 4px;
+}
+
+.highlightItemFocus {
+  background: rgb(23 101 154 / 6%);
+}
+
+.highlightColorChip {
+  background: var(--hidoc-swatch-bg);
+  border-bottom: 3px solid var(--hidoc-swatch-line);
+  flex: 0 0 auto;
+  height: 14px;
+  margin-top: 4px;
+  width: 12px;
+}
+
+.highlightMain {
+  display: grid;
+  gap: 4px;
+  min-width: 0;
+}
+
+.highlightQuote {
+  font-size: 13.5px;
+  line-height: 1.7;
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+
+.highlightNote {
+  color: var(--ink);
+  font-size: 12.5px;
+  line-height: 1.7;
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+
+.highlightNote::before {
+  color: var(--muted);
+  content: "批注 · ";
+}
+
+.highlightMeta {
+  color: var(--muted);
+  font-size: 11.5px;
+  line-height: 1.6;
+  margin: 0;
+}
+
+.highlightActions {
+  display: flex;
+  flex: 0 0 auto;
+  gap: 4px;
+  margin-left: auto;
+}
+
+.iconButton {
+  align-items: center;
+  background: transparent;
+  border: 1px solid transparent;
+  color: var(--muted);
+  cursor: pointer;
+  display: inline-flex;
+  height: 38px;
+  justify-content: center;
+  width: 38px;
+}
+
+.iconButton:hover:not(:disabled) {
+  border-color: var(--line);
+  color: var(--ink);
+}
+
+.iconButton:disabled {
+  cursor: not-allowed;
+  opacity: 0.45;
+}
+
+.unlocatedBlock {
+  border-top: 1px dashed var(--line-soft);
+  margin-top: 18px;
+  padding-top: 12px;
+}
+
+.unlocatedHead {
+  color: var(--red);
+  font-size: 12.5px;
+  margin: 0;
+}
+
+.unlocatedHint {
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 1.7;
+  margin: 6px 0 0;
+}
+
+.selectionBubble {
+  background: var(--paper-bright);
+  border: 1px solid var(--ink);
+  box-shadow: 0 10px 24px rgb(16 16 15 / 12%);
+  display: grid;
+  gap: 10px;
+  padding: 14px 14px 12px;
+  position: fixed;
+  width: min(360px, calc(100vw - 24px));
+  z-index: 120;
+}
+
+.bubbleHead {
+  align-items: center;
+  display: flex;
+  justify-content: space-between;
+}
+
+.bubbleHead p {
+  font-family: var(--font-serif), "Times New Roman", serif;
+  font-size: 15px;
+  font-weight: 700;
+  margin: 0;
+}
+
+.bubbleClose {
+  align-items: center;
+  background: transparent;
+  border: none;
+  color: var(--muted);
+  cursor: pointer;
+  display: inline-flex;
+  height: 30px;
+  justify-content: center;
+  width: 30px;
+}
+
+.bubbleClose:hover {
+  color: var(--ink);
+}
+
+.bubbleQuote {
+  border-left: 2px solid var(--line);
+  color: var(--muted);
+  font-size: 12.5px;
+  line-height: 1.7;
+  margin: 0;
+  max-height: 76px;
+  overflow-y: auto;
+  overflow-wrap: anywhere;
+  padding: 2px 0 2px 10px;
+}
+
+.colorSwatchRow {
+  display: grid;
+  gap: 6px;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+
+.colorSwatch,
+.colorSwatchActive {
+  align-items: center;
+  background: transparent;
+  border: 1px solid var(--line-soft);
+  color: var(--muted);
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  font-size: 11px;
+  gap: 5px;
+  padding: 6px 4px;
+}
+
+.colorSwatch:hover {
+  border-color: var(--line);
+}
+
+.colorSwatchActive {
+  border-color: var(--ink);
+  color: var(--ink);
+}
+
+.colorSwatch span,
+.colorSwatchActive span {
+  background: var(--hidoc-swatch-bg);
+  border-bottom: 3px solid var(--hidoc-swatch-line);
+  display: block;
+  height: 12px;
+  width: 100%;
+}
+
+.bubbleField {
+  display: grid;
+  gap: 6px;
+}
+
+.bubbleField > span {
+  color: var(--muted);
+  font-size: 11.5px;
+  letter-spacing: 0.04em;
+}
+
+.bubbleTextarea {
+  background: var(--paper);
+  border: 1px solid var(--line);
+  color: var(--ink);
+  font: inherit;
+  font-size: 13px;
+  line-height: 1.7;
+  min-height: 62px;
+  padding: 8px 10px;
+  resize: vertical;
+  width: 100%;
+}
+
+.bubbleError {
+  align-items: flex-start;
+  color: var(--red);
+  display: flex;
+  font-size: 12px;
+  gap: 6px;
+  line-height: 1.7;
+  margin: 0;
+}
+
+.bubbleActions {
+  align-items: center;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.bubbleActions .primaryButton,
+.bubbleActions .ghostButton {
+  min-height: 38px;
+  padding: 0 14px;
+}
+
+.dangerButton {
+  align-items: center;
+  background: transparent;
+  border: 1px solid var(--red);
+  color: var(--red);
+  cursor: pointer;
+  display: inline-flex;
+  font-size: 12.5px;
+  gap: 7px;
+  min-height: 38px;
+  padding: 0 14px;
+}
+
+.dangerButton:disabled {
+  cursor: not-allowed;
+  opacity: 0.45;
+}
+
+.noteDownloadHint {
+  border-top: 1px dashed var(--line-soft);
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 1.7;
+  margin: 16px 0 0;
+  overflow-wrap: anywhere;
+  padding-top: 12px;
 }
