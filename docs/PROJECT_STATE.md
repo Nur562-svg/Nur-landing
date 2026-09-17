@@ -1,6 +1,6 @@
 # NUR LEARN — Canonical Project State
 
-Last updated: 2026-09-17 (Asia/Shanghai) — Hi doc M0–M5（四档会员、上传书架名额、目录识别修正、知识点萃取 SSE、学习页讲义与讲解对话、划重点/批注与学霸笔记）已完成，下一步 M6 课题工作坊
+Last updated: 2026-09-18 (Asia/Shanghai) — Hi doc M0–M5（四档会员、上传书架名额、目录识别修正、知识点萃取 SSE、学习页讲义与讲解对话、划重点/批注与学霸笔记）已完成，下一步 M6 课题工作坊；设计系统 v2（Claude 库适配版）已定案，M7 后随框架重构生效
 
 This file is the durable source of truth for continuing NUR LEARN when conversation history is unavailable. Update it after material product decisions, completed milestones, verification changes, or priority changes.
 
@@ -1567,3 +1567,35 @@ Answer: modern medicine also enters exam-answer and scoring training. The implem
 - 测试 337/337（新增 `tests/hidoc-highlight.test.ts` 17 项）；lint 0 error；typecheck 干净；`npm run check`（build）通过（hidoc 新增 3 条路由：highlights、highlights/[id]、chapters/[order]/note）；390×844 无溢出；浏览器与 API 明细见 `design-qa.md`「Hi doc M5」节。
 
 **下一优先级**：M6 课题工作坊（`HiDocWorkshop` / `HiDocWorkshopFile`：≤100 页短材料 + AI 检索材料答疑，并替代「我的资料」本地快练），任务范围以 `docs/HI_DOC_PLAN.md` §5.6 与 §7 M6 行为准，任务书见 `docs/HI_DOC_CODEX_BRIEF.md`。
+
+## Hi doc 主线 M6（2026-09-17 完成）
+
+**验收达成**：课题列表 + 新建 + ≤100 页短材料上传（文字层/页数校验，中文拒绝原因）+ 确定性检索材料答疑（SSE，命中片段带材料名与页码/行号）+ 「我的资料」替换接入（本地数据保留）（计划 §5.6 与 §7 M6 行）。
+
+### 数据与配额
+- Prisma `HiDocWorkshop`（userId Cascade、title ≤60、note 可空 ≤500、`@@index([userId, updatedAt])`）与 `HiDocWorkshopFile`（workshopId Cascade、fileName、storageKey @unique 复用 `hidoc/{userId}/workshops/…` 私有卷、sizeBytes、pageCount、hasTextLayer、status `uploaded|ready|failed`、ocrStatus 如实存 `not-attempted`、failureReason、`@@index([workshopId])`）；`HiDocConversation` 扩展可空 `workshopId` + `@@unique([userId, workshopId])`（kpId 路径与其唯一约束不变，M4 数据不受影响）；迁移 `20260917152647_m6_hidoc_workshop`。全部私有挂 userId，不进官方课程目录。
+- **限额取值决策（本期定案）**：工作坊数量 / 每课题材料数 = free 1/3、basic 3/10、pro 10/20、max 30/30（`src/lib/hidoc/workshop-rules.ts` `HIDOC_WORKSHOP_LIMITS`）；单份材料 ≤100 页（PDF 按页数、文本按 40 行/页折算，即 ≤4000 行）；字节上限沿用教材单文件上限。工作坊材料不占教材当月名额。
+- 新配额资源 `hidocWorkshopChats`（按轮模型调用计）：free 30 / basic 200 / pro·max 无限（`quotas.ts` 四档表，标签「Hi doc 课题工作坊答疑（模型）」）；模型调用无论成败计入 `usage.hidocWorkshopChats` 并写 `EventLog(hidoc_workshop_chat)`（带 provider、model、outcome、questionChars、answerChars、hitCount、relatedKnowledgePointCount）；**检索零命中不调模型、不占额度**（EventLog outcome `no-match` 如实记录）；材料上传不调模型、不占模型额度；无 key 明确报错（503，不记账不写事件）；额度不足 503 中文报错不静默放行。
+
+### 服务端（src/lib/hidoc/）
+- `workshop-rules.ts`（纯函数）：四档限额、文件名/格式识别（`.pdf`→pdf、`.md/.markdown/.txt`→text；图片与未知扩展 422 中文原因）、文本严格 UTF-8 解码（fatal、BOM、`\r\n` 归一、空文件/超 4000 行拒绝）、标题/说明校验、限额文案。
+- `workshop-search.ts`（纯函数）：确定性关键词检索（CJK 整段 2–10 字 + 二字滑窗 + 拉丁词、停用词过滤；评分=命中词种数×100+次数封顶 5，同分按 segmentIndex 稳定排序）；命中门槛：提问含 ≥3 字连续中文段时需命中长词（≥3 字）或 ≥2 个不同词且覆盖 ≥4 字（相邻滑窗叠合只算一个窗口，防止「的基+基本」式噪声命中），短提问命中 1 词即可；PDF 每页一条 segment、文本每 40 行一条；locator 如实标「第 N 页」/「第 A–B 行」；另提供本人教材知识点标题的只读关联（同门槛，关联不到不编造）。
+- `workshop-chat-prompt.ts`（纯函数）：系统提示约束回答只依据命中片段、引用写材料名+页码/行号、片段不足说「材料里没有相关内容」、不做临床诊断、中医/现代医学不等同。
+- `workshops.ts`（server-only 主编排）：列表/详情/新建（限额 503）/删除（级联+尽力清理存储）；上传走归属 404 → 格式 422 → 大小 413 / 页数 422 → 材料数 503 → 落盘 → PDF probe（>100 页 `page-limit`、无文字层 `unsupported-scan`，上传即拒绝不落库）或文本 decode → 事务二次校验落库；答疑编排（`sendHiDocWorkshopMessage`）：校验 → 归属 404 → 无就绪材料 422 → 无 provider 503 明确报错（工作坊答疑**无启发式兜底**，与讲义/笔记策略不同）→ 配额检查 → 检索 → 零命中固定文案落库（提问先落库）→ 命中走 provider-neutral 流式、finally 记账 + EventLog、成功后回答落库（失败不存半截回答）。
+
+### API 与页面
+- `/api/hidoc/workshops`（GET/POST/DELETE）、`/api/hidoc/workshops/[id]`（GET）、`/api/hidoc/workshops/[id]/files`（POST multipart / DELETE）、`/api/hidoc/workshops/[id]/chat`（POST SSE：progress search|answer|save → delta → result{conversation,citations,notes}/error）；均 thin adapter。
+- `/learn/hi-doc/w`（限额面板 + 新建 + 课题列表）与 `/learn/hi-doc/w/[id]`（上传面板 + 材料清单含失败原因 + SSE 追问 + 命中片段面板 + 发送中禁用）；视觉沿用 hi-doc.module.css（citation 面板纸面方框 + 蓝色来源标注，390px 无溢出）。
+- 「我的资料」替换接入（§7 注释）：`/learn/my-materials` 顶部迁移横幅（已并入 Hi doc 课题工作坊 + 前往链接 + 本地快练保留、本地数据不丢失），原 `PrivateMaterialsStudio` 不动；学习首页导航「导入 → /learn/my-materials」改为「工作坊 → /learn/hi-doc/w」；Hi doc 书架 headerMeta 加「课题工作坊」入口。
+
+### 真实验证（2026-09-17，free 档验证账号 + 真实短材料 + 真实 qwen3.7-plus）
+- 上传矩阵：md/带文字层 PDF ready；扫描版 PDF 422、PNG 422、101 页 PDF 422（均中文原因、不落库）；第 4 份材料 503（3/3）；free 第 2 个课题 503（1/1）。
+- 答疑：命中提问 38 个 SSE 事件，回答引用「材料《心衰讲义.pdf》第 1 页」，citationPanel 展示命中片段；零命中如实回答且不记账；额度 30/30 时 SSE error 0 delta；无 key（临时注释 `.env.local`/`.dev.vars` 密钥实测）SSE 首事件即 error，0 delta、不记账不写事件，测后恢复。
+- 归属：未登录 401；不存在/越权课题 GET/chat/files/DELETE 均 404。
+- 测试 357/357（新增 `tests/hidoc-workshop.test.ts` 20 项，含相邻滑窗叠合命中回归）；lint 0 error；typecheck 干净；`npm run check` 通过（新增 `/learn/hi-doc/w` 与 `/learn/hi-doc/w/[id]` 两条 ƒ 路由）；390×844 无溢出；浏览器与 API 明细见 `design-qa.md`「Hi doc M6」节。
+
+**下一优先级**：M7 支付打通（mock→支付宝，四档订阅真实生效），任务范围以 `docs/HI_DOC_PLAN.md` §2/§7 M7 与现有 `src/lib/payment/` 抽象为准，任务书见 `docs/HI_DOC_CODEX_BRIEF.md`。
+
+## 设计系统 v2（2026-09-18 定案，M7 后生效）
+
+用户拍板（方案 A）：整体框架重构（NUR Workspace 壳）采用 Claude 风格设计库的三层体系——token 层（7 组原色阶 + 语义层 + 暖炭灰暗色模式）、组件层（button/card/input/badge/chat-bubble/navigation 六件套）、组合层（website UIKit 为三栏壳排版基准）。**圆角采用库的 8/12/16/20/24px 完整体系，取代旧「方直边」规则**；字体本地化映射（Newsreader→宋体显示衬线、Lora→思源宋阅读面、Poppins→MiSans/苹方紧凑 UI，拉丁原字体作回退）；terracotta `#C96442` 为唯一主强调，现行黛蓝语义族保留。适配详情与铁律见 `docs/design-references/claude-v2/NUR-DESIGN-V2.md`（唯一真相源）；库资产已入 `docs/design-references/claude-v2/`（仅设计参考，不被业务代码 import，不进 public）。**M6–M7 期间现行 Design Rules 完全不变，不预改任何在跑页面**；框架重构排期仍后置于 Hi doc M0–M7 完成之后（桌面优先、移动后置、Agent 分体共享记忆的决定不变）。

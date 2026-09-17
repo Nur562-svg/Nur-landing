@@ -16,7 +16,8 @@ export type QuotaResource =
   | "hidocExtracts"      // Hi doc 知识点萃取（按章模型调用，M3 起）
   | "hidocLessons"       // Hi doc 知识点讲义生成（按知识点模型调用，M4 起）
   | "hidocChats"         // Hi doc 讲解对话（按轮模型调用，M4 起）
-  | "hidocNotes";        // Hi doc 学霸笔记生成（按章模型调用，M5 起）
+  | "hidocNotes"         // Hi doc 学霸笔记生成（按章模型调用，M5 起）
+  | "hidocWorkshopChats"; // Hi doc 课题工作坊答疑（按轮模型调用，M6 起；检索零命中不计）
 
 export type QuotaItem = {
   used: number;
@@ -45,6 +46,7 @@ export const TIER_QUOTAS: Record<MembershipTier, Record<QuotaResource, number | 
     hidocLessons: 5,
     hidocChats: 50,
     hidocNotes: 3,
+    hidocWorkshopChats: 30,
   },
   basic: {
     privateMaterials: 20,
@@ -56,6 +58,7 @@ export const TIER_QUOTAS: Record<MembershipTier, Record<QuotaResource, number | 
     hidocLessons: 20,
     hidocChats: 200,
     hidocNotes: 10,
+    hidocWorkshopChats: 200,
   },
   pro: {
     privateMaterials: "unlimited",
@@ -67,6 +70,7 @@ export const TIER_QUOTAS: Record<MembershipTier, Record<QuotaResource, number | 
     hidocLessons: "unlimited",
     hidocChats: "unlimited",
     hidocNotes: "unlimited",
+    hidocWorkshopChats: "unlimited",
   },
   max: {
     privateMaterials: "unlimited",
@@ -78,6 +82,7 @@ export const TIER_QUOTAS: Record<MembershipTier, Record<QuotaResource, number | 
     hidocLessons: "unlimited",
     hidocChats: "unlimited",
     hidocNotes: "unlimited",
+    hidocWorkshopChats: "unlimited",
   },
 };
 
@@ -142,6 +147,7 @@ export function getQuotaLabel(resource: QuotaResource): string {
     case "hidocLessons": return "Hi doc 讲义生成（模型）";
     case "hidocChats": return "Hi doc 讲解对话（模型）";
     case "hidocNotes": return "Hi doc 学霸笔记（模型）";
+    case "hidocWorkshopChats": return "Hi doc 课题工作坊答疑（模型）";
   }
 }
 

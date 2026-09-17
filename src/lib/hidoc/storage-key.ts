@@ -36,6 +36,23 @@ export function buildHiDocStorageKey(
   ].join("/");
 }
 
+/** 生成课题工作坊材料存储键：hidoc/{userId}/workshops/{workshopId}/{fileId}/{fileName}（目录按 userId 隔离）。 */
+export function buildHiDocWorkshopStorageKey(
+  userId: string,
+  workshopId: string,
+  fileId: string,
+  fileName: string,
+): string {
+  return [
+    KEY_PREFIX,
+    sanitizeHiDocSegment(userId),
+    "workshops",
+    sanitizeHiDocSegment(workshopId),
+    sanitizeHiDocSegment(fileId),
+    sanitizeHiDocFileName(fileName),
+  ].join("/");
+}
+
 /** 存储键安全校验：禁止空段、绝对路径、反斜杠、`..` 与 NUL。存储驱动落盘前必须通过。 */
 export function isSafeHiDocStorageKey(key: string): boolean {
   if (!key || key.startsWith("/") || key.includes("\\") || key.includes("\0")) {

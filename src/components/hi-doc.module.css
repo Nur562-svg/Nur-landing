@@ -1465,3 +1465,82 @@
   overflow-wrap: anywhere;
   padding-top: 12px;
 }
+
+/* ---------------- M6：课题工作坊命中片段 ---------------- */
+
+.citationPanel {
+  border: 1px solid var(--line);
+  background: var(--paper-bright);
+  margin-top: 16px;
+  padding: 14px 16px;
+}
+
+.citationTitle {
+  color: var(--ink);
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  margin: 0 0 10px;
+}
+
+.citationList {
+  display: grid;
+  gap: 10px;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.citationItem {
+  border-top: 1px dashed var(--line-soft);
+  display: grid;
+  gap: 4px;
+  padding-top: 10px;
+}
+
+.citationItem:first-child {
+  border-top: 0;
+  padding-top: 0;
+}
+
+.citationSource {
+  color: var(--blue);
+  font-size: 12px;
+  letter-spacing: 0.02em;
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+
+.citationExcerpt {
+  color: var(--muted);
+  font-size: 12.5px;
+  line-height: 1.75;
+  margin: 0;
+  overflow-wrap: anywhere;
+  white-space: pre-wrap;
+}
+
+/* 「我的资料」并入课题工作坊的迁移横幅（本地快练与数据保留）；该页不在 .page 作用域内，用字面色值 */
+.migrateBanner {
+  margin: 0 auto;
+  max-width: 960px;
+  padding: 20px 20px 0;
+}
+
+.migrateBanner p {
+  background: #fbf9f4;
+  border: 1px solid rgb(16 16 15 / 38%);
+  border-left: 3px solid #bf2118;
+  color: #6c6a66;
+  font-size: 13px;
+  line-height: 1.8;
+  margin: 0;
+  overflow-wrap: anywhere;
+  padding: 12px 16px;
+}
+
+.migrateBanner a {
+  border-bottom: 1px solid rgb(16 16 15 / 38%);
+  color: #10100f;
+  text-decoration: none;
+}

@@ -272,3 +272,82 @@ export type HiDocNoteEvent =
   | { type: "delta"; text: string }
   | { type: "result"; note: HiDocNoteView; notes: string[] }
   | { type: "error"; code: HiDocErrorCode; error: string };
+
+/* ---------------- M6：课题工作坊 ---------------- */
+
+/** 工作坊材料状态；M6 上传即同步检测，成功即 ready，不合格直接拒绝不落库。 */
+export type HiDocWorkshopFileStatus = "uploaded" | "ready" | "failed";
+
+/** 工作坊材料视图（pageCount：PDF 为真实页数，文本按行数折算）。 */
+export type HiDocWorkshopFileView = {
+  id: string;
+  fileName: string;
+  sizeBytes: number;
+  pageCount: number;
+  hasTextLayer: boolean;
+  status: HiDocWorkshopFileStatus;
+  /** M6 唯一取值为 "not-attempted"（OCR 后置）。 */
+  ocrStatus: string;
+  /** status=failed 时的中文原因（如实展示）。 */
+  failureReason: string | null;
+  createdAt: string;
+};
+
+/** 课题工作坊视图（列表项）。 */
+export type HiDocWorkshopView = {
+  id: string;
+  title: string;
+  note: string | null;
+  fileCount: number;
+  createdAt: string;
+  updatedAt: string;
+};
+
+/** 工作坊限额视图（按档位；工作坊材料不占教材当月名额）。 */
+export type HiDocWorkshopLimitsView = {
+  workshopUsed: number;
+  workshopLimit: number;
+  filesPerWorkshopLimit: number;
+  maxPagesPerFile: number;
+};
+
+/** 工作坊列表快照。 */
+export type HiDocWorkshopListView = {
+  workshops: HiDocWorkshopView[];
+  limits: HiDocWorkshopLimitsView;
+};
+
+/** 工作坊详情：工作坊 + 材料清单 + 答疑对话历史。 */
+export type HiDocWorkshopDetailView = {
+  workshop: HiDocWorkshopView;
+  files: HiDocWorkshopFileView[];
+  messages: HiDocChatMessage[];
+  limits: HiDocWorkshopLimitsView;
+};
+
+/** 检索命中的材料片段（答疑回答的引用来源；页码/行号为材料内定位）。 */
+export type HiDocWorkshopCitation = {
+  fileId: string;
+  fileName: string;
+  /** 中文定位标签，如「第 3 页」「第 41–80 行」。 */
+  locator: string;
+  excerpt: string;
+};
+
+/** 工作坊答疑对话视图（workshopId 维度）。 */
+export type HiDocWorkshopConversationView = {
+  workshopId: string;
+  messages: HiDocChatMessage[];
+};
+
+/** 工作坊答疑 SSE 事件（与 M4/M5 对齐：progress → delta → result/error）。 */
+export type HiDocWorkshopChatEvent =
+  | { type: "progress"; stage: "search" | "answer" | "save"; message: string }
+  | { type: "delta"; text: string }
+  | {
+      type: "result";
+      conversation: HiDocWorkshopConversationView;
+      citations: HiDocWorkshopCitation[];
+      notes: string[];
+    }
+  | { type: "error"; code: HiDocErrorCode; error: string };

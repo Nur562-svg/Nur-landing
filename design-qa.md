@@ -666,3 +666,30 @@ Playwright Chromium，视口 **1440×1000** 与 **390×844（isMobile）**，对
   - `docs/design-references/hidoc-m5-note-desktop-2026-09-17.png`
   - `docs/design-references/hidoc-m5-note-heuristic-2026-09-17.png`
   - `docs/design-references/hidoc-m5-mobile-2026-09-17.png`
+
+## Hi doc M6 — 课题工作坊（替代「我的资料」）（2026-09-17）
+
+playwright-core + 系统 Chrome（headless、无扩展、浅色），视口 **1440×900** 与 **390×844**；验证账号 `hidoc-m6-verify-1789661087@example.com`（free 档：课题 1 个 / 每课题 3 份材料 / 单份 ≤100 页 / 工作坊答疑 30 轮）；课题「心衰专题」（id `cmu5q2aof0000e1px62jzjauq`），材料为真实短材料：`心衰专题笔记.md`（1 页）+ `心衰讲义.pdf`（cupsfilter 生成的带文字层 PDF，1 页）；命中提问走真实 `dashscope / qwen3.7-plus`。
+
+- 课题列表（`/learn/hi-doc/w`）：限额面板「课题限额 · 当前档位 Trial / 免费试用 1/1 个课题」「每个课题最多 3 份材料 · 单份不超过 100 页 · 工作坊材料不占教材当月名额」；新建课题表单（名称 ≤60 字、说明可选 ≤500 字）；课题卡片含材料数与更新时间；页脚如实写「课题工作坊由原『我的资料』升级而来」。
+- 材料上传（`/learn/hi-doc/w/[id]`）：`.md` 与带文字层 PDF 上传即检测落库，状态「可检索」（status ready、ocrStatus `not-attempted` 如实记录）；上传面板固定提示「上传即检测：图片与扫描版（无文字层）PDF 会明确拒绝并说明原因，OCR 能力后续开放；材料存服务器且仅本人可见」。
+- 拒绝矩阵（API + 浏览器 alert/红色错误框一致）：扫描版 PDF（无内容流）→ 422 `unsupported-scan`「未检测到文字层：暂不支持扫描版 PDF。请上传带文字层的电子版 PDF（扫描件 OCR 后续开放）。」；PNG 图片 → 422 `invalid-file`「暂不支持图片材料（…）。扫描件 OCR 与图片识别后续开放，请改用带文字层的 PDF 或文本材料。」；101 页 PDF → 422 `page-limit`「…共 101 页，超过单份 100 页上限…」；以上均上传即拒绝、不落库（材料清单保持 2 份不变）。第 4 份材料 → 503「本课题的材料已达上限（3/3）…」；free 档新建第 2 个课题 → 503 `quota-exceeded`「课题数量已达当前档位上限（1/1）…」。
+- 命中提问（SSE，`POST /api/hidoc/workshops/[id]/chat`）：「心力衰竭的基本病因有哪些？」→ 38 个事件（progress 检索/生成 → delta 流式 → result），回答「根据材料，心力衰竭的基本病因包括：1. 原发性心肌损害…2. 心脏负荷过重…来源：（材料《心衰讲义.pdf》第 1 页）」；citationPanel「本轮命中 2 个材料片段」，条目含材料名 + 定位（「心衰讲义.pdf · 第 1 页」/「心衰专题笔记.md · 第 1–14 行」）+ 原文摘录；发送中输入与按钮禁用。
+- 零命中（确定性，不调模型）：「量子力学的基本原理是什么？」→ 回答「这份课题（心衰专题）的材料里没有检索到与你问题相关的内容。我没有调用模型作答，以免编造材料里不存在的内容。可以尝试：换一种问法（用材料中的原词）、补充上传相关材料，或到对应教材的知识点里追问。」；citations 为空；`usage.hidocWorkshopChats` 不变，EventLog outcome `no-match` 如实记录。
+- 无 key 明确报错（临时注释 `.env.local` 与 `.dev.vars` 的 `DASHSCOPE_API_KEY` 重启实测）：SSE 首个事件即 `error` / `chat-failed`「未配置答疑模型（DASHSCOPE_API_KEY / HIDOC_EXTRACT_PROVIDER），课题工作坊答疑暂不可用。」；0 条 delta、无启发式假回答；请求前后 EventLog 行数与 `usage.hidocWorkshopChats` 均不变（未调用模型不记账）。测后密钥与服务已恢复并复验正常。
+- 额度拦截：用量写满 30/30 后提问 → SSE 0.2s 内 `error` / `quota-exceeded`「Hi doc 课题工作坊答疑（模型） 已用完（30/30），本月额度已耗尽…」，0 条 delta、未发起模型调用。
+- 归属与越权（curl）：未登录 401「请先登录后再使用课题答疑。」；不存在的课题 GET/chat/DELETE 均 404「课题不存在或不属于当前账户。」；越权访问他人课题 GET/chat/files/DELETE 均 404（不泄露存在性）；删除材料后存储文件同步清理。
+- 记账语义：EventLog `hidoc_workshop_chat` 共 8 行（5 次 success 计额度、3 次 no-match 不计），props 带 provider/model/outcome/questionChars/answerChars/hitCount/relatedKnowledgePointCount；`usage.hidocWorkshopChats=5` 与 success 次数一致。
+- 「我的资料」替换接入：顶部横幅「『我的资料』已并入 Hi doc 课题工作坊：材料改存服务器、仅本人可见、可跨设备继续，并支持就材料追问答疑。前往课题工作坊。下方浏览器本地快练仍可继续使用，已保存的本地数据不会丢失。」；原 `PrivateMaterialsStudio` 本地快练完整保留未删数据；学习首页导航「导入 → /learn/my-materials」改为「工作坊 → /learn/hi-doc/w」，Hi doc 书架 headerMeta 增加「课题工作坊」入口。
+- 响应式：390×844 两页（列表/房间）`scrollWidth === clientWidth === 390`，无横向溢出；移动端上传面板、材料卡、聊天气泡、citation 面板均单列堆叠。
+- 控制台：仅两条预期内的 422 资源日志（故意触发的扫描件/图片拒绝），无 JS 错误。
+- 证据：
+  - `docs/design-references/hidoc-m6-workshop-list-2026-09-17.png`
+  - `docs/design-references/hidoc-m6-room-files-2026-09-17.png`
+  - `docs/design-references/hidoc-m6-reject-scan-2026-09-17.png`
+  - `docs/design-references/hidoc-m6-chat-hit-2026-09-17.png`
+  - `docs/design-references/hidoc-m6-chat-miss-2026-09-17.png`
+  - `docs/design-references/hidoc-m6-room-mobile-2026-09-17.png`
+  - `docs/design-references/hidoc-m6-chat-mobile-2026-09-17.png`
+  - `docs/design-references/hidoc-m6-list-mobile-2026-09-17.png`
+  - `docs/design-references/hidoc-m6-my-materials-banner-2026-09-17.png`

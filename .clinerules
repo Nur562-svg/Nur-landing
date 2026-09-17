@@ -2,9 +2,13 @@
      Run `bash scripts/sync-agent-rules.sh` to regenerate. -->
 
 <!-- BEGIN:nextjs-agent-rules -->
+
 # This is NOT the Next.js you know
 
-This version has breaking changes — APIs, conventions, and file structure may all differ from your training data. Read the relevant guide in `node_modules/next/dist/docs/` before writing any code. Heed deprecation notices.
+This version has breaking changes — APIs, conventions, and file structure may all differ from your training data. Read the relevant guide in `node_modules/next/dist/docs/` (resolved from this file's directory; in monorepos the `next` package may not be visible from the repo root) before writing any code. Heed deprecation notices.
+
+This block is written and re-added by `next dev` — verify at `node_modules/next/dist/server/lib/generate-agent-files.js`. Removing it from a diff only re-creates the uncommitted change; committing it with your work keeps the tree clean.
+
 <!-- END:nextjs-agent-rules -->
 
 # NUR LEARN — Project Instructions
@@ -59,15 +63,22 @@ The product must:
 - A strict versioned `MaterialAdmissionRecord` now reuses the material asset/family/artifact boundaries, persists only explicitly approved accepted excerpts and audit metadata in browser-local storage, and supports explicit JSON export without granting Course Builder, model-transfer, catalog, registry, or publication rights.
 - A live physiology private-overlay test exposed a product-boundary error: the UI could show an enabled, one-time-authorized build button while `runBuild` silently returned because only the TCM official base pack was allow-listed. DashScope and `qwen3.7-plus` were configured; no model request occurred. This is not merely a button bug: private-material analysis was incorrectly coupled to full official-pack compilation.
 - Latest `npm run check` and the official-pack baseline-only API regression passed on 2026-07-19; earlier Course Builder/material-admission desktop/mobile interactions, five added TCM lesson/writing routes, the synthetic spleen case, empty browser error log, and 390 × 844 no-overflow checks remain current because the official pack changed no visible UI.
-- The product is intentionally local-only for now; do not deploy unless the user explicitly changes that decision.
+- The product is now deployment-ready: standalone Dockerfile, Postgres + Caddy docker-compose, CI pipeline, payment abstraction (mock/wechat/alipay), password reset, email verification, and legal pages are complete. Deployment waits only on ICP filing and merchant account setup.
 
 ## Next Product Priority
 
-The `问诊 · 问饮食口味` loop, browser-local attempt/return memory, constrained local Agent, minimal material contract, second physiology knowledge/writing pressure test, known-pack Course Builder, private-material intake/DOCX review/one-time transfer, evidence-gated browser-local material admission, the first five-point deeper official TCM increment, and the course-wide official TCM material pack v1 are complete. Follow `docs/PROJECT_STATE.md` and `docs/CONTENT_ARCHITECTURE.md`.
+**Hi doc（2026-09-16 定案）是当前唯一实施主线**：NUR LEARN 内的 Mentrix 镜像级产品（用户上传教材 → 目录识别 → 知识点萃取 → 讲义+AI 教学追问 → 划重点/批注 → 学霸笔记 → 课题工作坊）。完整方案、数据模型、API、八期实施（M0–M7）与开源借鉴见 `docs/HI_DOC_PLAN.md`（唯一实施真相源）。已定案的四条决定：
 
-The next implementation priority is resolved: separate **private-material analysis** from **official-course compilation**. Any privacy-eligible, explicitly accepted excerpt set must be able to use an exact one-time authorization to ask Qwen for a bounded structured decomposition even when no official base pack exists or the material is insufficient for a complete course. Insufficiency becomes an honest result (`partial`, `insufficient`, or `unmapped`), not a pre-model blocker. A representative case is a learner importing roughly 20 short-answer questions and immediately receiving a usable private learning unit with normalized/grouped questions, clearly labeled Qwen/NUR reference-answer drafts, practice, favorites, rewrite, and redo paths.
+1. 教材存服务器（仅本人可见，跨设备可学），满血实现；
+2. 教材名额仅当月有效，跨月冻结、重占名额或升级档位；
+3. Hi doc 全面替代「我的资料」本地快练（替代前保留并挂提示）；
+4. 试点课（中医诊断学、生理学）对所有人免费，不占名额。
 
-Do not create a parallel course truth model. Reuse the existing material, course, knowledge-point, assessment, answer-authority, learning-memory, Course Builder, and Agent contracts. Treat model decomposition as an intermediate private draft that may compile into a partial private workspace; official-pack matching and deterministic publication-grade validation belong to the later optional compilation stage. Preserve exact transfer consent, privacy gates, raw-file exclusion, source/answer/scoring authority separation, human approval, and all publication/catalog/registry non-grants. Remove silent no-op paths and surface every blocker. Upgrade the bounded NUR Agent only after the partial-private-workspace path works: Qwen may be its reasoning engine, while typed tools and deterministic code own state changes such as favorites, confirmed attempts, and review scheduling. Do not build a broad CMS, database, authentication, synchronization, automatic publication, or server material store.
+会员档位迁移：`free|lite|pro` → `free(=trial)|basic|pro|max`（basic 权益=原 lite）。首页改为三入口：官方课程学习闭环（试点课免费）/ Hi doc / 传统刷题题库。Hi doc 的 AI 生成物按通用 AI 产品方式直接呈现，**不挂**官方课的证据分级（可关联/不可直接等同等标签只属于官方闭环）。实施时遵守下文全部 Core Code Boundaries：Hi doc 服务端代码放 `src/lib/hidoc/`（Tier 3 模式：provider-neutral、key 只在服务端、SSE 带 Bearer、配额不足明确报错不静默放行），页面放 `src/app/learn/hi-doc/`（thin adapters），数据模型进 `prisma/schema.prisma`（全部挂 userId 私有），类型进 `src/types/`。
+
+**进度（2026-09-17）**：M0 四档会员迁移+官方课名额+首页三入口、M1 上传/书架/当月名额、M2 目录识别+章节修正、M3 知识点萃取 SSE 带页码溯源、M4 学习页（每知识点讲义生成 + 讲解追问 SSE，含未接入模型启发式兜底）、M5 划重点/批注与学霸笔记、M6 课题工作坊替代「我的资料」（≤100 页短材料 + 确定性关键词检索答疑 SSE，扫描件/图片明确拒绝，无 key 明确报错不兜底）均已完成并验收（commits `36e8efc`/`2f41e98`/`1debd1a`/`93dfa6d`/`285c3d1` + M5/M6 提交；lint 0 error / test 357 / build 通过）。**当前任务：M7 支付打通（mock→支付宝，四档订阅真实生效）**，任务书在 `docs/HI_DOC_CODEX_BRIEF.md`。本节中「Do not ... server material store」等旧约束已被上述四条决定取代，Hi doc 实现以 `docs/HI_DOC_PLAN.md` 为准。
+
+历史主线（已完成）：private-material analysis 与 official-course compilation 分离、browser-local attempt memory、constrained local Agent 等见 `docs/PROJECT_STATE.md` 与 `docs/CONTENT_ARCHITECTURE.md`。原 Course Builder 对学生显示为建设中，Hi doc **不是**旧 course-builder 的换壳。
 
 ## Tech Stack
 
@@ -75,7 +86,7 @@ Do not create a parallel course truth model. Reuse the existing material, course
 - **Styling:** Tailwind CSS v4 plus CSS Modules for the approved product surfaces
 - **UI primitives:** shadcn/ui / Radix where useful
 - **Icons:** Lucide React, matching the current thin outline icon language
-- **Deployment target:** Vercel later; deployment is not the current milestone
+- **Deployment target:** 国内云（阿里云/腾讯云）+ Postgres 16 + Caddy 自动 HTTPS；standalone Docker 已就绪，待 ICP 备案后上线
 
 ## Commands
 

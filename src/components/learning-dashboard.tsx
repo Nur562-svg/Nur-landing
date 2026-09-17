@@ -394,8 +394,8 @@ export function LearningDashboard({ courses }: LearningDashboardProps) {
           <Link href="/learn/course-builder">
             建课
           </Link>
-          <Link href="/learn/my-materials">
-            导入
+          <Link href="/learn/hi-doc/w">
+            工作坊
           </Link>
           <Link href="/courses#question-banks">
             题库
@@ -703,7 +703,7 @@ export function LearningDashboard({ courses }: LearningDashboardProps) {
                 </span>
                 <span className={styles.entryCopy}>
                   <strong>Hi doc</strong>
-                  <small>上传教材，建立个人书架；目录识别 M2 后开放。</small>
+                  <small>上传教材建书架：目录识别、讲义追问、划重点与课题工作坊。</small>
                 </span>
                 <ArrowRight aria-hidden="true" size={18} strokeWidth={1.5} />
               </Link>

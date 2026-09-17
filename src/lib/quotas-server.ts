@@ -19,7 +19,8 @@ export async function recordServerUsage(
     | "hidocExtracts"
     | "hidocLessons"
     | "hidocChats"
-    | "hidocNotes",
+    | "hidocNotes"
+    | "hidocWorkshopChats",
 ): Promise<void> {
   const user = await prisma.user.findUnique({ where: { id: userId }, select: { usage: true } });
   const current: UserUsageRecord = ((user?.usage as UserUsageRecord) ?? {}) as UserUsageRecord;
@@ -63,6 +64,7 @@ export async function computeUserQuotas(userId: string): Promise<UserQuotas> {
   const serverHidocLessons = serverUsage.hidocLessons || 0;
   const serverHidocChats = serverUsage.hidocChats || 0;
   const serverHidocNotes = serverUsage.hidocNotes || 0;
+  const serverHidocWorkshopChats = serverUsage.hidocWorkshopChats || 0;
 
   const clientBuilds = getClientBump("courseBuilds");
   const clientAgent = getClientBump("agentCalls");
@@ -80,6 +82,7 @@ export async function computeUserQuotas(userId: string): Promise<UserQuotas> {
     hidocLessons: computeItem(serverHidocLessons, limits.hidocLessons),
     hidocChats: computeItem(serverHidocChats, limits.hidocChats),
     hidocNotes: computeItem(serverHidocNotes, limits.hidocNotes),
+    hidocWorkshopChats: computeItem(serverHidocWorkshopChats, limits.hidocWorkshopChats),
   };
 
   const periodNote = tier === "pro"

@@ -51,6 +51,8 @@ model User {
   // Hi doc M5: 划重点/批注与章级学霸笔记（全部私有挂 userId）
   hiDocHighlights               HiDocHighlight[]
   hiDocNotes                    HiDocNote[]
+  // Hi doc M6: 课题工作坊（短材料 + 检索答疑；私有挂 userId）
+  hiDocWorkshops                HiDocWorkshop[]
 }
 
 /// M4: 会员订单（支付抽象层持久化）。provider 切换不影响已存订单。
@@ -169,13 +171,17 @@ model HiDocConversation {
   userId String
   user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
 
-  kpId  String?
+  // kpId 维度（M4 讲解对话）与 workshopId 维度（M6 课题工作坊答疑）互斥：一条对话只属于其中一种
+  kpId        String?
+  workshopId  String?
+  workshop    HiDocWorkshop? @relation(fields: [workshopId], references: [id], onDelete: Cascade)
   // 对话消息 JSON（{ role, content, createdAt }[]），服务端裁剪保留最近若干轮
   messages  Json
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
   @@unique([userId, kpId])
+  @@unique([userId, workshopId])
   @@index([userId, updatedAt])
 }
 
@@ -222,6 +228,53 @@ model HiDocNote {
 
   @@unique([userId, chapterId])
   @@index([userId, updatedAt])
+}
+
+/// Hi doc M6: 课题工作坊（替代「我的资料」本地快练的短材料答疑空间；私有挂 userId）。
+/// 工作坊材料不占教材当月名额，但工作坊数量与每个工作坊的材料数按档位限制（见 src/lib/hidoc/workshop-rules.ts）。
+model HiDocWorkshop {
+  id     String @id @default(cuid())
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  title String
+  note  String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  files         HiDocWorkshopFile[]
+  conversations HiDocConversation[]
+
+  @@index([userId, updatedAt])
+}
+
+/// Hi doc M6: 课题工作坊材料（≤100 页短材料：有文字层 PDF / Markdown / 纯文本）。
+/// 服务器存储、按 userId 隔离（storageKey 复用 hidoc/{userId}/… 抽象）；上传即检测，不合格直接拒绝不落库。
+/// M6 不做 OCR：ocrStatus 如实存 "not-attempted"。
+model HiDocWorkshopFile {
+  id         String        @id @default(cuid())
+  workshopId String
+  workshop   HiDocWorkshop @relation(fields: [workshopId], references: [id], onDelete: Cascade)
+
+  fileName   String
+  // 存储抽象键（hidoc/{userId}/workshops/{workshopId}/{fileId}/{fileName}）
+  storageKey  String  @unique
+  sizeBytes   Int
+  // PDF 为真实页数；文本材料按行数折算（workshop-rules.ts 的行/页比）
+  pageCount   Int
+  hasTextLayer Boolean @default(true)
+  // "uploaded" | "ready" | "failed"（M6 上传流程同步完成检测，成功即 ready；拒绝的不落库）
+  status      String  @default("uploaded")
+  // "not-attempted"（M6 唯一取值；OCR 后置）
+  ocrStatus   String  @default("not-attempted")
+  // status=failed 时的中文原因（如实展示；M6 正常路径不产生 failed 行）
+  failureReason String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([workshopId])
 }
 
 /// Hi doc M2: 教材章节（目录识别结果 / 手动修正结果；页码为 PDF 页序，1 起）。

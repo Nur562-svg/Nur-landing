@@ -25,6 +25,9 @@ export default async function HiDocBookshelfPage() {
         </Link>
         <div className={styles.headerMeta}>
           {user ? <span>{user.displayName} · {getMembershipTierLabel(user.tier)}</span> : null}
+          <Link className={styles.headerLink} href="/learn/hi-doc/w">
+            课题工作坊
+          </Link>
           <Link className={styles.headerLink} href="/learn">
             返回学习首页
           </Link>
@@ -36,7 +39,8 @@ export default async function HiDocBookshelfPage() {
         <h1 className={styles.title}>教材学习书架</h1>
         <p className={styles.intro}>
           上传你自己的教材（文字版 PDF），NUR LEARN 会按当月名额为你保留书架位。
-          目录识别、知识点萃取与讲义生成将在后续版本逐步开放。
+          已开放：目录识别、知识点萃取、讲义生成与追问、划重点与学霸笔记；
+          短材料答疑请前往 <Link href="/learn/hi-doc/w">课题工作坊</Link>。
         </p>
 
         {user ? (
