@@ -249,9 +249,6 @@ export function NurAgentDock(props: NurAgentDockProps) {
           >
             <header className={styles.header}>
               <div className={styles.headerLeft}>
-                <span className={styles.headerOrb} aria-hidden="true">
-                  <NurAgentFace emotion={emotion} size={28} />
-                </span>
                 <h3>NUR Agent</h3>
                 <span className={styles.surfaceLabel}>{surfaceLabel}</span>
                 {emotion === "thinking" ? (
