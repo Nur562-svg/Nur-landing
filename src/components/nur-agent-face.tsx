@@ -26,10 +26,14 @@ const CX = 32;
 const CY = 32;
 const RING_RX = 27;
 const RING_RY = 9.2;
-const RING_TILT = -16;
 
 const ringBackPath = `M ${CX - RING_RX} ${CY} A ${RING_RX} ${RING_RY} 0 0 1 ${CX + RING_RX} ${CY}`;
 const ringFrontPath = `M ${CX - RING_RX} ${CY} A ${RING_RX} ${RING_RY} 0 0 0 ${CX + RING_RX} ${CY}`;
+/** 完整椭圆（上弧+下弧），供亮弧沿环绕行；pathLength=100 便于 dash 动画 */
+const ringLoopPath =
+  `M ${CX - RING_RX} ${CY} ` +
+  `A ${RING_RX} ${RING_RY} 0 0 1 ${CX + RING_RX} ${CY} ` +
+  `A ${RING_RX} ${RING_RY} 0 0 1 ${CX - RING_RX} ${CY}`;
 
 export function NurAgentFace({
   emotion = "idle",
@@ -88,11 +92,8 @@ export function NurAgentFace({
           </filter>
         </defs>
 
-        {/* 远端环：上半弧，在球后 */}
-        <g
-          className={styles.ringBack}
-          transform={`rotate(${RING_TILT} ${CX} ${CY})`}
-        >
+        {/* 远端环：上半弧，在球后；倾角由 CSS 动画驱动 */}
+        <g className={styles.ringBack}>
           <path
             d={ringBackPath}
             fill="none"
@@ -122,17 +123,21 @@ export function NurAgentFace({
           </g>
         </g>
 
-        {/* 近端环：下半弧，在球前，更亮更厚 + 光晕 */}
-        <g
-          className={styles.ringFront}
-          transform={`rotate(${RING_TILT} ${CX} ${CY})`}
-          filter={`url(#${ringGlow})`}
-        >
+        {/* 近端环 + 绕环亮弧（明显旋转感） */}
+        <g className={styles.ringFront} filter={`url(#${ringGlow})`}>
           <path
             d={ringFrontPath}
             fill="none"
             stroke="currentColor"
             strokeWidth={2.55}
+            strokeLinecap="round"
+          />
+          <path
+            className={styles.ringSpark}
+            d={ringLoopPath}
+            pathLength={100}
+            fill="none"
+            strokeWidth={2.4}
             strokeLinecap="round"
           />
         </g>

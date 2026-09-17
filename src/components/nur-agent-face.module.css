@@ -22,10 +22,52 @@
 .ringBack {
   color: color-mix(in srgb, var(--ring) 42%, #1a1a1a);
   opacity: 0.55;
+  transform-origin: 32px 32px;
+  transform-box: view-box;
+  transform: rotate(-16deg);
+  animation: ring-tilt 7s ease-in-out infinite;
 }
 
 .ringFront {
   color: var(--ring);
+  transform-origin: 32px 32px;
+  transform-box: view-box;
+  transform: rotate(-16deg);
+  animation: ring-tilt 7s ease-in-out infinite;
+}
+
+/* 绕环亮弧：dashoffset 走完 pathLength=100，读起来像环在转 */
+.ringSpark {
+  stroke: #ffffff;
+  opacity: 0.92;
+  stroke-dasharray: 22 78;
+  stroke-dashoffset: 0;
+  animation: ring-orbit 2.8s linear infinite;
+}
+
+.orb[data-dragging="true"] .ringBack,
+.orb[data-dragging="true"] .ringFront,
+.orb[data-dragging="true"] .ringSpark {
+  animation-play-state: paused;
+}
+
+@keyframes ring-tilt {
+  0%,
+  100% {
+    transform: rotate(-8deg);
+  }
+  50% {
+    transform: rotate(-32deg);
+  }
+}
+
+@keyframes ring-orbit {
+  from {
+    stroke-dashoffset: 0;
+  }
+  to {
+    stroke-dashoffset: -100;
+  }
 }
 
 /* 头部：球+高光+眼整体呼吸，环不跟缩 */
@@ -97,7 +139,10 @@
 
 @media (prefers-reduced-motion: reduce) {
   .head,
-  .eye {
+  .eye,
+  .ringBack,
+  .ringFront,
+  .ringSpark {
     animation: none !important;
   }
 }
