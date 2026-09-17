@@ -614,7 +614,7 @@ Playwright Chromium，视口 **1440×1000** 与 **390×844（isMobile）**，对
 - API/服务端端到端（curl + tsx 服务层直连）：未登录 401；第一章服务层直连萃取 11–13 个知识点（两次调用展示覆盖语义：重跑整体替换该章知识点）；HTTP SSE 第二章萃取 10 个（页码 p3–p5 全在章内）；`usage.hidocExtracts` 与真实模型调用次数严格一致（含失败尝试也记账，`EventLog(hidoc_chapter_extract)` 带 outcome）；GET `/chapters/[n]` 返回知识点列表。
 - 390×844：`scrollWidth === 390` 无横向溢出；知识点列表窄屏可读。
 - 控制台：无应用级 error；仅 Dark Reader 扩展注入属性造成的 hydration 差异（已知扩展副作用）。
-- 验证环境注记：本机 dev 的 better-sqlite3 崩溃（Node 24 + `@prisma/adapter-better-sqlite3` 内嵌 12.11.1 的 Statement GC 终结器断言）曾三次中断 SSE 落库；本地将适配器解析切到顶层 better-sqlite3 13.0.3 后完全稳定（node_modules 内重命名，未改任何项目依赖声明；`npm install` 会回退并复现崩溃，根治建议见 PROJECT_STATE）。
+- 验证环境注记（已修复）：`@prisma/adapter-better-sqlite3` 嵌套的 better-sqlite3 12.11.1 在 Node 24 下有 Statement GC 终结器断言崩溃，曾中断 SSE 落库；已通过 `package.json` 的 `overrides: better-sqlite3 ^13.0.3` 统一到 13.0.3（自带 prebuilds，免编译），12 轮 GC 压力 + 真实萃取流程复测零崩溃，详见 PROJECT_STATE。
 - 证据：
   - `docs/design-references/hidoc-kp-detail-2026-09-17.png`
   - `docs/design-references/hidoc-kp-list-2026-09-17.png`

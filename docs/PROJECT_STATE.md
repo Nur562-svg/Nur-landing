@@ -1501,9 +1501,10 @@ Answer: modern medicine also enters exam-answer and scoring training. The implem
 - `usage.hidocExtracts=6` 与真实模型调用次数（含 3 次被环境崩溃中断但已消耗 token 的尝试）严格一致。
 - 测试 301/301（新增 `tests/hidoc-extract.test.ts`）；lint 0 error；typecheck 干净；build 463 页通过；390×844 无溢出（见 design-qa.md「Hi doc M3」）。
 
-### 验证环境根因与建议（重要，面向后续开发）
-- 本机 dev（Node 24.19 + `@prisma/adapter-better-sqlite3@7.9.1` 内嵌 better-sqlite3 12.11.1）存在 Statement GC 终结器断言崩溃：查询产生垃圾 Statement → 大内存分配（模型响应解析）触发 GC → `RemoveEnvironmentCleanupHook(env=nullptr)` 断言 → dev 进程崩溃。M3 萃取流程（20k 字符输入 + 模型响应）必现。
-- 临时处置（本地 node_modules，未改依赖声明）：把 `node_modules/@prisma/adapter-better-sqlite3/node_modules/better-sqlite3` 重命名，使解析到顶层 better-sqlite3 13.0.3（prisma CLI 依赖）——实测完全稳定，全部 E2E 通过。`npm install` 会回退并复现崩溃。
-- 根治建议（待用户确认）：在 package.json 加 `"overrides": { "better-sqlite3": "^13.0.3" }`（或等 adapter 升级）；生产 Postgres 适配器不受影响。
+### 本地 dev 崩溃根因与修复（2026-09-17 已修）
+- 根因：`@prisma/adapter-better-sqlite3@7.9.1` 依赖 `better-sqlite3 ^12.6.0`，npm 因而在适配器下嵌套安装 12.11.1。该版本在 Node 24.19 下存在 Statement GC 终结器断言崩溃：查询产生垃圾 Statement → 大内存分配（模型响应解析）触发 GC → `RemoveEnvironmentCleanupHook(env=nullptr)` 断言 → 进程崩溃。M3 萃取流程（20k 字符输入 + 模型响应）必现，曾 4 次中断 SSE 落库。
+- 修复：`package.json` 增加 `"overrides": { "better-sqlite3": "^13.0.3" }`，使适配器与 prisma CLI 统一复用顶层 13.0.3（`npm ls` 显示三者 deduped，lock 中嵌套 12.x 树及其 prebuild-install 依赖被移除，-372 行）。13.x 自带 `prebuilds/`（darwin/linux/win32），运行时直接加载，不依赖 install 脚本，因此 Docker/Linux 部署同样免编译。
+- 验证：12 轮 GC 压力回归（Prisma 查询 + 大分配 + 强制 GC）零崩溃；原本 100% 崩溃的真实萃取流程（第四章 9–14 页，17 个知识点）经 HTTP SSE 全程通过且服务存活；`lint` 0 error / `typecheck` / `test` 301/301 / `build` 463 页通过。
+- 备选（若未来 13.x 与适配器出现不兼容）：等 `@prisma/adapter-better-sqlite3` 上游升级依赖（截至今日最新稳定 7.10.0 仍为 ^12.6.0）；生产 Postgres 适配器不受此问题影响。
 
 **下一优先级**：M4 学习页（`/learn/hi-doc/t/[id]/c/[n]`：知识点讲义生成 + NUR Agent 讲解对话），复用章节/知识点契约与同一 provider-neutral 边界。
