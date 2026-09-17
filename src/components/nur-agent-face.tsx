@@ -5,7 +5,8 @@ import type { BotEmotion } from "@/lib/bot-emotion";
 import styles from "./nur-agent-face.module.css";
 
 export type NurAgentFaceProps = {
-  emotion: BotEmotion;
+  /** 仅 idle；保留字段以兼容既有调用 */
+  emotion?: BotEmotion;
   wrongStreak?: number;
   lookX?: number;
   lookY?: number;
@@ -31,7 +32,7 @@ const ringBackPath = `M ${CX - RING_RX} ${CY} A ${RING_RX} ${RING_RY} 0 0 1 ${CX
 const ringFrontPath = `M ${CX - RING_RX} ${CY} A ${RING_RX} ${RING_RY} 0 0 0 ${CX + RING_RX} ${CY}`;
 
 export function NurAgentFace({
-  emotion,
+  emotion = "idle",
   lookX = 0,
   lookY = 0,
   size,
@@ -136,7 +137,6 @@ export function NurAgentFace({
           />
         </g>
       </svg>
-      <span className={styles.mark} />
     </div>
   );
 }

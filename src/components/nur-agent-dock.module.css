@@ -80,25 +80,6 @@
   color: #9b392c;
 }
 
-.thinkingLabel {
-  font-size: 11px;
-  color: #8b5cf6;
-  background: rgba(139, 92, 246, 0.12);
-  border-radius: 999px;
-  padding: 2px 8px;
-  animation: thinking-pulse 1.2s ease-in-out infinite;
-}
-
-@keyframes thinking-pulse {
-  0%,
-  100% {
-    opacity: 0.55;
-  }
-  50% {
-    opacity: 1;
-  }
-}
-
 .header h3 {
   margin: 0;
   font-family: var(--font-songti), "Songti SC", serif;

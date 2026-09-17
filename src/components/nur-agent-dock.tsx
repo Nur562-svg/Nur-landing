@@ -8,7 +8,6 @@ import type { FsrsCriterionSummary } from "@/types/nur-agent";
 import {
   getBotEmotionServerSnapshot,
   getBotEmotionSnapshot,
-  getBotWrongStreak,
   subscribeBotEmotion,
 } from "@/lib/bot-emotion";
 import { NurAgentFace } from "./nur-agent-face";
@@ -231,8 +230,7 @@ export function NurAgentDock(props: NurAgentDockProps) {
         onPointerLeave={() => setPressed(false)}
       >
         <NurAgentFace
-          emotion={emotion}
-          wrongStreak={getBotWrongStreak()}
+          emotion="idle"
           lookX={lookX}
           lookY={lookY}
           pressed={pressed}
@@ -251,9 +249,6 @@ export function NurAgentDock(props: NurAgentDockProps) {
               <div className={styles.headerLeft}>
                 <h3>NUR Agent</h3>
                 <span className={styles.surfaceLabel}>{surfaceLabel}</span>
-                {emotion === "thinking" ? (
-                  <span className={styles.thinkingLabel}>思考中</span>
-                ) : null}
               </div>
               <button
                 type="button"

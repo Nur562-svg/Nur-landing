@@ -9,7 +9,6 @@ import { recordAgentCallUsage } from "@/lib/quotas";
 import {
   getBotEmotionServerSnapshot,
   getBotEmotionSnapshot,
-  setBotEmotion,
   subscribeBotEmotion,
 } from "@/lib/bot-emotion";
 import { NurAgentFace } from "./nur-agent-face";
@@ -178,30 +177,6 @@ export function NurAgentChat(props: NurAgentChatProps) {
   const { messages, sendMessage, status, error, stop } = useChat({ transport });
   const isLoading = status === "submitted" || status === "streaming";
   const isThinking = status === "submitted";
-
-  // 请求中 → 珍珠球 thinking（抽屉头部迷你球可见）；仅在结束时恢复 idle
-  const wasLoadingRef = useRef(false);
-  useEffect(() => {
-    if (isLoading) {
-      wasLoadingRef.current = true;
-      setBotEmotion("thinking");
-      return;
-    }
-    if (wasLoadingRef.current) {
-      wasLoadingRef.current = false;
-      setBotEmotion("idle");
-    }
-  }, [isLoading]);
-
-  // 卸载时若仍在 thinking，避免卡住
-  useEffect(() => {
-    return () => {
-      if (wasLoadingRef.current) {
-        wasLoadingRef.current = false;
-        setBotEmotion("idle");
-      }
-    };
-  }, []);
 
   useEffect(() => {
     if (scrollRef.current) {
