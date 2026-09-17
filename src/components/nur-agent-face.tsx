@@ -38,12 +38,12 @@ const ringSparkFrontPath = `M ${CX + RING_RX} ${CY} A ${RING_RX} ${RING_RY} 0 0 
  * from 越负越靠顺时针前方（头）；from 接近 0 为尾（亮）。
  */
 const SPARK_STEPS = [
-  { o: 0.06, from: -14, dash: 2.0, w: 1.25 },
-  { o: 0.1, from: -11.5, dash: 2.4, w: 1.35 },
-  { o: 0.16, from: -9, dash: 2.9, w: 1.45 },
-  { o: 0.24, from: -6.5, dash: 3.4, w: 1.55 },
-  { o: 0.34, from: -4, dash: 3.9, w: 1.7 },
-  { o: 0.48, from: -1.5, dash: 4.4, w: 1.85 },
+  { o: 0.14, from: -16, dash: 2.6, w: 1.4 },
+  { o: 0.22, from: -13, dash: 3.2, w: 1.55 },
+  { o: 0.34, from: -10, dash: 3.8, w: 1.7 },
+  { o: 0.48, from: -7, dash: 4.4, w: 1.9 },
+  { o: 0.64, from: -4.2, dash: 5.0, w: 2.1 },
+  { o: 0.82, from: -1.6, dash: 5.6, w: 2.35 },
 ] as const;
 
 function SparkTrail({

@@ -42,7 +42,7 @@
 */
 .ringSparkBack,
 .ringSparkFront {
-  stroke: color-mix(in srgb, var(--ring) 30%, #ffffff);
+  stroke: color-mix(in srgb, var(--ring) 12%, #ffffff);
   stroke-dasharray: var(--spark-dash) 50;
 }
 
