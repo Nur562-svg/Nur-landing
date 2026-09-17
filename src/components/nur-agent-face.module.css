@@ -29,32 +29,36 @@
   color: var(--ring);
 }
 
-.sphere {
-  filter: drop-shadow(0 2px 4px rgb(16 16 15 / 16%));
+/* 头部：球+高光+眼作为一个整体做形变/位移，环不跟着缩 */
+.head {
   transform-origin: 32px 32px;
-  transform-box: fill-box;
+  transform-box: view-box;
 }
 
-.orb[data-press="true"] .sphere {
+.sphere {
+  filter: drop-shadow(0 2px 4px rgb(16 16 15 / 16%));
+}
+
+.orb[data-press="true"] .head {
   transform: scale(0.92);
   transition: transform 80ms ease-out;
 }
 
-.orb[data-emotion="idle"] .sphere,
-.orb[data-emotion="encourage"] .sphere {
+.orb[data-emotion="idle"] .head,
+.orb[data-emotion="encourage"] .head {
   animation: orb-breathe 3.6s ease-in-out infinite;
 }
 
-.orb[data-emotion="happy"] .sphere {
+.orb[data-emotion="happy"] .head {
   animation: orb-bounce 480ms cubic-bezier(0.34, 1.56, 0.64, 1);
 }
 
-.orb[data-emotion="sad"] .sphere,
-.orb[data-emotion="angry"] .sphere {
+.orb[data-emotion="sad"] .head,
+.orb[data-emotion="angry"] .head {
   animation: orb-shake 380ms ease-in-out;
 }
 
-.orb[data-emotion="surprised"] .sphere {
+.orb[data-emotion="surprised"] .head {
   animation: orb-pop 360ms cubic-bezier(0.34, 1.56, 0.64, 1);
 }
 
@@ -260,14 +264,14 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .sphere,
+  .head,
   .eye,
-  .orb[data-emotion="idle"] .sphere,
-  .orb[data-emotion="encourage"] .sphere,
-  .orb[data-emotion="happy"] .sphere,
-  .orb[data-emotion="sad"] .sphere,
-  .orb[data-emotion="angry"] .sphere,
-  .orb[data-emotion="surprised"] .sphere,
+  .orb[data-emotion="idle"] .head,
+  .orb[data-emotion="encourage"] .head,
+  .orb[data-emotion="happy"] .head,
+  .orb[data-emotion="sad"] .head,
+  .orb[data-emotion="angry"] .head,
+  .orb[data-emotion="surprised"] .head,
   .orb[data-emotion="idle"] .eye,
   .orb[data-emotion="thinking"] .eye {
     animation: none !important;

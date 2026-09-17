@@ -101,22 +101,24 @@ export function NurAgentFace({
           />
         </g>
 
-        {/* 球体；近端环会盖住下缘，形成环绕深度 */}
-        <circle
-          className={styles.sphere}
-          cx={CX}
-          cy={CY}
-          r={17.4}
-          fill={`url(#${sphereGrad})`}
-        />
-        <ellipse className={styles.highlight} cx={26} cy={25} rx={5.8} ry={3.4} />
+        {/* 头部整体：球 + 高光 + 眼，动画作用在这一组，避免「球动眼不动」 */}
+        <g className={styles.head}>
+          <circle
+            className={styles.sphere}
+            cx={CX}
+            cy={CY}
+            r={17.4}
+            fill={`url(#${sphereGrad})`}
+          />
+          <ellipse className={styles.highlight} cx={26} cy={25} rx={5.8} ry={3.4} />
 
-        <g
-          className={styles.eyes}
-          style={{ transform: `translate(${eyeX}px, ${eyeY}px)` }}
-        >
-          <rect className={styles.eye} x={24.4} y={26} width={4.2} height={9.4} rx={2.1} />
-          <rect className={styles.eye} x={35.4} y={26} width={4.2} height={9.4} rx={2.1} />
+          <g
+            className={styles.eyes}
+            style={{ transform: `translate(${eyeX}px, ${eyeY}px)` }}
+          >
+            <rect className={styles.eye} x={24.4} y={26} width={4.2} height={9.4} rx={2.1} />
+            <rect className={styles.eye} x={35.4} y={26} width={4.2} height={9.4} rx={2.1} />
+          </g>
         </g>
 
         {/* 近端环：下半弧，在球前，更亮更厚 + 光晕 */}
