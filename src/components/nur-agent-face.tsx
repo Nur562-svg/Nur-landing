@@ -1,6 +1,7 @@
 "use client";
 
 import { useId, useMemo } from "react";
+import type { CSSProperties } from "react";
 import type { BotEmotion } from "@/lib/bot-emotion";
 import styles from "./nur-agent-face.module.css";
 
@@ -29,8 +30,50 @@ const RING_RY = 9.2;
 
 const ringBackPath = `M ${CX - RING_RX} ${CY} A ${RING_RX} ${RING_RY} 0 0 1 ${CX + RING_RX} ${CY}`;
 const ringFrontPath = `M ${CX - RING_RX} ${CY} A ${RING_RX} ${RING_RY} 0 0 0 ${CX + RING_RX} ${CY}`;
-/** 亮弧下一段：近端下半椭圆，方向与绕行一致（右→左），接在远端上弧之后 */
+/** 亮弧下一段：近端下半椭圆，顺时针方向（右→左），接在远端上弧之后 */
 const ringSparkFrontPath = `M ${CX + RING_RX} ${CY} A ${RING_RX} ${RING_RY} 0 0 1 ${CX - RING_RX} ${CY}`;
+
+/**
+ * 彗尾分层：顺时针前方最亮，后方依次减弱。
+ * from/dash 基于 pathLength=50 的半环；from 越负越靠顺时针前方。
+ */
+const SPARK_STEPS = [
+  { o: 0.52, from: -11, dash: 2.2, w: 1.45 },
+  { o: 0.28, from: -7.5, dash: 3, w: 1.55 },
+  { o: 0.14, from: -4.2, dash: 3.8, w: 1.65 },
+  { o: 0.06, from: -1.2, dash: 4.6, w: 1.75 },
+] as const;
+
+function SparkTrail({
+  d,
+  half,
+}: {
+  d: string;
+  half: "back" | "front";
+}) {
+  return (
+    <>
+      {SPARK_STEPS.map((step) => (
+        <path
+          key={step.from}
+          className={half === "back" ? styles.ringSparkBack : styles.ringSparkFront}
+          d={d}
+          pathLength={50}
+          fill="none"
+          strokeLinecap="round"
+          strokeWidth={step.w}
+          style={
+            {
+              "--spark-o": step.o,
+              "--spark-from": step.from,
+              "--spark-dash": step.dash,
+            } as CSSProperties
+          }
+        />
+      ))}
+    </>
+  );
+}
 
 export function NurAgentFace({
   emotion = "idle",
@@ -98,13 +141,7 @@ export function NurAgentFace({
             strokeWidth={1.7}
             strokeLinecap="round"
           />
-          <path
-            className={styles.ringSparkBack}
-            d={ringBackPath}
-            pathLength={50}
-            fill="none"
-            strokeLinecap="round"
-          />
+          <SparkTrail d={ringBackPath} half="back" />
         </g>
 
         {/* 头部整体：球 + 高光 + 眼，不透明，挡住背后的环/亮弧 */}
@@ -136,13 +173,7 @@ export function NurAgentFace({
             strokeWidth={2.55}
             strokeLinecap="round"
           />
-          <path
-            className={styles.ringSparkFront}
-            d={ringSparkFrontPath}
-            pathLength={50}
-            fill="none"
-            strokeLinecap="round"
-          />
+          <SparkTrail d={ringSparkFrontPath} half="front" />
         </g>
       </svg>
     </div>
