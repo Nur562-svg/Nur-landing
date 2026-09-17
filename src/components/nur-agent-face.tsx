@@ -34,14 +34,16 @@ const ringFrontPath = `M ${CX - RING_RX} ${CY} A ${RING_RX} ${RING_RY} 0 0 0 ${C
 const ringSparkFrontPath = `M ${CX + RING_RX} ${CY} A ${RING_RX} ${RING_RY} 0 0 1 ${CX - RING_RX} ${CY}`;
 
 /**
- * 彗尾分层：顺时针前方最亮，后方依次减弱。
- * from/dash 基于 pathLength=50 的半环；from 越负越靠顺时针前方。
+ * 彗尾分层（6 层）：顺时针前方更淡更细，后方更亮更粗。
+ * from 越负越靠顺时针前方（头）；from 接近 0 为尾（亮）。
  */
 const SPARK_STEPS = [
-  { o: 0.52, from: -11, dash: 2.2, w: 1.45 },
-  { o: 0.28, from: -7.5, dash: 3, w: 1.55 },
-  { o: 0.14, from: -4.2, dash: 3.8, w: 1.65 },
-  { o: 0.06, from: -1.2, dash: 4.6, w: 1.75 },
+  { o: 0.06, from: -14, dash: 2.0, w: 1.25 },
+  { o: 0.1, from: -11.5, dash: 2.4, w: 1.35 },
+  { o: 0.16, from: -9, dash: 2.9, w: 1.45 },
+  { o: 0.24, from: -6.5, dash: 3.4, w: 1.55 },
+  { o: 0.34, from: -4, dash: 3.9, w: 1.7 },
+  { o: 0.48, from: -1.5, dash: 4.4, w: 1.85 },
 ] as const;
 
 function SparkTrail({
