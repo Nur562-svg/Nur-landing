@@ -29,11 +29,8 @@ const RING_RY = 9.2;
 
 const ringBackPath = `M ${CX - RING_RX} ${CY} A ${RING_RX} ${RING_RY} 0 0 1 ${CX + RING_RX} ${CY}`;
 const ringFrontPath = `M ${CX - RING_RX} ${CY} A ${RING_RX} ${RING_RY} 0 0 0 ${CX + RING_RX} ${CY}`;
-/** 完整椭圆（上弧+下弧），供亮弧沿环绕行；pathLength=100 便于 dash 动画 */
-const ringLoopPath =
-  `M ${CX - RING_RX} ${CY} ` +
-  `A ${RING_RX} ${RING_RY} 0 0 1 ${CX + RING_RX} ${CY} ` +
-  `A ${RING_RX} ${RING_RY} 0 0 1 ${CX - RING_RX} ${CY}`;
+/** 亮弧下一段：近端下半椭圆，方向与绕行一致（右→左），接在远端上弧之后 */
+const ringSparkFrontPath = `M ${CX + RING_RX} ${CY} A ${RING_RX} ${RING_RY} 0 0 1 ${CX - RING_RX} ${CY}`;
 
 export function NurAgentFace({
   emotion = "idle",
@@ -92,7 +89,7 @@ export function NurAgentFace({
           </filter>
         </defs>
 
-        {/* 远端环：上半弧，在球后；倾角由 CSS 动画驱动 */}
+        {/* 远端环：上半弧，在球后；亮弧后半程画这里，被球遮挡 */}
         <g className={styles.ringBack}>
           <path
             d={ringBackPath}
@@ -101,9 +98,16 @@ export function NurAgentFace({
             strokeWidth={1.7}
             strokeLinecap="round"
           />
+          <path
+            className={styles.ringSparkBack}
+            d={ringBackPath}
+            pathLength={50}
+            fill="none"
+            strokeLinecap="round"
+          />
         </g>
 
-        {/* 头部整体：球 + 高光 + 眼，动画作用在这一组，避免「球动眼不动」 */}
+        {/* 头部整体：球 + 高光 + 眼，不透明，挡住背后的环/亮弧 */}
         <g className={styles.head}>
           <circle
             className={styles.sphere}
@@ -123,7 +127,7 @@ export function NurAgentFace({
           </g>
         </g>
 
-        {/* 近端环 + 绕环亮弧（明显旋转感） */}
+        {/* 近端环：下半弧在球前；亮弧前半程画这里 */}
         <g className={styles.ringFront} filter={`url(#${ringGlow})`}>
           <path
             d={ringFrontPath}
@@ -133,9 +137,9 @@ export function NurAgentFace({
             strokeLinecap="round"
           />
           <path
-            className={styles.ringSpark}
-            d={ringLoopPath}
-            pathLength={100}
+            className={styles.ringSparkFront}
+            d={ringSparkFrontPath}
+            pathLength={50}
             fill="none"
             strokeLinecap="round"
           />
