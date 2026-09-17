@@ -620,3 +620,24 @@ Playwright Chromium，视口 **1440×1000** 与 **390×844（isMobile）**，对
   - `docs/design-references/hidoc-kp-list-2026-09-17.png`
   - `docs/design-references/hidoc-kp-extracted-2026-09-17.png`
   - `docs/design-references/hidoc-kp-mobile-2026-09-17.png`
+
+## Hi doc M4 — 学习页：讲义生成 + 讲解追问（2026-09-17）
+
+真实 Chromium（1440×900 桌面截图 + 390×844 设备模拟）与 API 端到端；验证账号为专门注册的 free 档账号（`hidoc-m4-verify-*`），教材为真实《卫生统计学_赵耐青练习册》（79 页，PDF 书签 19 章），第一章 13 个知识点为真实模型萃取结果。
+
+- `/learn/hi-doc/t/[id]/c/[n]` 未登录：显示「登录后开始学习」引导卡（去登录 `next` 回到本页 / 返回书架），不泄漏教材内容。
+- 左栏知识点列表：标题「知识点 / 13 个 · 讲义 2 份」，元信息「第 N/M 章《第一章》· 第 1–2 页 · 已萃取」，每条含序号（01–13）、标题、「第 N 页 · 已有讲义/未生成讲义」；当前选中项深色底高亮且带 `aria-current`。
+- 右侧讲义面板：真实 `qwen3.7-plus` 流式生成（progress「聚合原文片段 → 调用模型撰写讲义 → 保存讲义」，174 个 delta 分片，约 9 秒），落库后渲染 markdown：h1 标题 + 生成方式/风格/教材/依据页码四行元信息 + 定义/要点/易错点/自测题四小节（`<h2>`，`<ul>` 圆点、`<ol>` 1./2./3. 编号由浏览器生成），面板头显示「模型生成（dashscope · qwen3.7-plus）· 2026/9/17 20:33:30」。
+- 重新生成确认：点「重新生成讲义」出现红色提示「重新生成将覆盖当前讲义，确认继续？」+「确认重新生成 / 取消」；点取消后提示消失、讲义正文与生成时间戳逐字节不变。
+- 未接入模型兜底：第二个知识点（「个体变异」）在不配置密钥的进程内生成讲义，面板头显示「启发式整理 · 未接入模型」，讲义页首写明「生成方式：启发式整理 · 未接入模型」「本页未调用模型：内容由萃取结果与教材原文片段确定性地重排」，要点只引用含标题/术语的真实原文行，易错点如实写「未接入模型，无法生成易错点分析；以下为需人工核对的检查项」，自测题 3 道且答案可溯源（无先修时不编造先修关系）。
+- 讲解追问（真实模型，SSE）：输入问题按 Enter 发送 → 「正在思考…」占位 → 流式增量渲染 → 落库为「我 / NUR 讲解」两条气泡；回答引用教材页码并区分原文依据；刷新后讲义与 4 条气泡（2 组问答）完整保留；回答按 markdown 渲染（`<h3>` 小标题、`<strong>` 粗体、`<ul>/<li>` 列表），无 `#`/`**` 残留。
+- 安全与配额（API 端到端，curl）：未登录 401；跨账号 kpId 返回 404「知识点不存在或不属于当前账户。」；`hidocChats` 打到 50/50 时立即返回「Hi doc 讲解对话（模型）已用完（50/50），本轮提问已停止」（20ms，未发起模型调用，未落库提问）；额度不足不静默放行。`usage` 计数与真实调用一致（hidocExtracts 1 / hidocLessons 2 / hidocChats 1），`EventLog(hidoc_kp_lesson / hidoc_kp_chat)` 带 provider、model、outcome 与字符数；启发式兜底不消耗模型额度。
+- 390×844：`documentElement.scrollWidth === clientWidth === 390`，无横向滚动条、无溢出元素，布局单列堆叠（知识点列表在讲义之前）；已知小瑕疵：顶部导航三项在 390px 下换行（旧页面同样行为，未溢出）。
+- 控制台：干净配置文件下无 error（仅 React DevTools 与 HMR info）；内置浏览器里出现的 hydration 差异与 `ERR_ABORTED` 来自 Dark Reader 扩展注入属性与重载时被中断的 RSC 预取，非产品缺陷（与前几期一致）。
+- 证据：
+  - `docs/design-references/hidoc-study-desktop-2026-09-17.png`
+  - `docs/design-references/hidoc-study-lesson-markdown-2026-09-17.png`
+  - `docs/design-references/hidoc-study-chat-2026-09-17.png`
+  - `docs/design-references/hidoc-study-regenerate-confirm-2026-09-17.png`
+  - `docs/design-references/hidoc-study-heuristic-fallback-2026-09-17.png`
+  - `docs/design-references/hidoc-study-mobile-2026-09-17.png`

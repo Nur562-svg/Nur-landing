@@ -1,5 +1,5 @@
 /**
- * Hi doc 数据契约（M1：上传 + 书架 + 当月名额；M2：目录识别 + 手动修正）。
+ * Hi doc 数据契约（M1：上传 + 书架 + 当月名额；M2：目录识别 + 手动修正；M3：知识点萃取；M4：讲义 + 讲解对话）。
  * 教材与学习数据全部私有挂 userId，不进官方课程目录、不进 /courses。
  */
 
@@ -127,6 +127,8 @@ export type HiDocErrorCode =
   | "quota-exceeded"
   | "no-toc"
   | "extraction-failed"
+  | "lesson-failed"
+  | "chat-failed"
   | "not-found"
   | "storage-unavailable"
   | "server-error";
@@ -136,4 +138,77 @@ export type HiDocApiFailure = {
   ok: false;
   code: HiDocErrorCode;
   error: string;
+};
+
+/* ---------------- M4：讲义 + 讲解对话 ---------------- */
+
+/**
+ * 讲解风格（账户级 `User.hiDocLessonStyle`）。
+ * M4 只实现 `zh-primary`（中文为主、术语首次出现标注原文）；枚举留好供后续扩展。
+ */
+export type HiDocLessonStyle = "zh-primary";
+
+/** 讲义生成方式；启发式兜底必须能一眼看出「未接入模型」。 */
+export type HiDocLessonGenerator =
+  | { kind: "model"; provider: string; model: string }
+  | { kind: "heuristic" };
+
+/** 知识点讲义视图（每知识点至多一份，重新生成即覆盖）。 */
+export type HiDocLessonView = {
+  contentMd: string;
+  style: HiDocLessonStyle;
+  generator: HiDocLessonGenerator;
+  generatedAt: string;
+};
+
+/** 讲解对话消息（服务端持久化进 HiDocConversation.messages）。 */
+export type HiDocChatRole = "user" | "assistant";
+
+export type HiDocChatMessage = {
+  role: HiDocChatRole;
+  content: string;
+  createdAt: string;
+};
+
+/** 讲解对话视图（kpId 为 M6 课题工作坊预留可空）。 */
+export type HiDocConversationView = {
+  kpId: string;
+  messages: HiDocChatMessage[];
+};
+
+/** 讲义生成 SSE 事件（进度 → 增量 markdown → 结果）。 */
+export type HiDocLessonEvent =
+  | { type: "progress"; stage: "read" | "generating" | "save"; message: string }
+  | { type: "delta"; text: string }
+  | { type: "result"; lesson: HiDocLessonView; notes: string[] }
+  | { type: "error"; code: HiDocErrorCode; error: string };
+
+/** 讲解对话 SSE 事件（增量文本 → 结果含落库后的完整消息列表）。 */
+export type HiDocChatEvent =
+  | { type: "delta"; text: string }
+  | { type: "result"; conversation: HiDocConversationView; notes: string[] }
+  | { type: "error"; code: HiDocErrorCode; error: string };
+
+/** 学习页左侧知识点列表项：萃取结果 + 讲义状态。 */
+export type HiDocKnowledgePointStudySummary = HiDocKnowledgePointView & {
+  hasLesson: boolean;
+};
+
+/** 学习页章节视图（教材 + 章节 + 知识点列表）。 */
+export type HiDocChapterStudyView = {
+  textbook: { id: string; title: string; pageCount: number };
+  chapter: HiDocChapterView;
+  /** 当前章序（1 起）与总章数，供「第 N/M 章」显示。 */
+  chapterIndex: number;
+  chapterTotal: number;
+  knowledgePoints: HiDocKnowledgePointStudySummary[];
+  lessonCount: number;
+};
+
+/** 学习页当前选中知识点的完整视图（讲义 + 对话历史）。 */
+export type HiDocKnowledgePointStudyView = {
+  knowledgePoint: HiDocKnowledgePointView;
+  chapterTitle: string;
+  lesson: HiDocLessonView | null;
+  messages: HiDocChatMessage[];
 };

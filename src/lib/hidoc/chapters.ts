@@ -56,7 +56,8 @@ function toChapterView(row: HiDocChapterRowWithCount): HiDocChapterView {
   };
 }
 
-function toKnowledgePointView(row: {
+/** 知识点数据库行 → 对外视图（M4 讲义/对话模块共用）。 */
+export function toKnowledgePointView(row: {
   id: string;
   order: number;
   title: string;

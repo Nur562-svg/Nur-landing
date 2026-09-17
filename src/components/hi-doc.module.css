@@ -533,6 +533,16 @@
   white-space: nowrap;
 }
 
+.kpTitle a {
+  border-bottom: 1px solid transparent;
+  color: inherit;
+  text-decoration: none;
+}
+
+.kpTitle a:hover {
+  border-bottom-color: var(--ink);
+}
+
 .kpDescription {
   color: var(--ink);
   font-size: 13px;
@@ -708,5 +718,417 @@
 
   .chapterRow {
     flex-wrap: wrap;
+  }
+}
+
+/* ---------------- M4：学习页（知识点列表 + 讲义 + 讲解追问） ---------------- */
+
+.studyContent {
+  margin: 0 auto;
+  max-width: 1240px;
+  padding: 44px 28px 88px;
+}
+
+.studyLayout {
+  align-items: start;
+  display: grid;
+  gap: 26px;
+  grid-template-columns: 286px minmax(0, 1fr);
+  margin-top: 30px;
+}
+
+.studyAside {
+  border: 1px solid var(--ink);
+  padding: 18px 16px;
+  position: sticky;
+  top: 95px;
+}
+
+.studyAsideHead {
+  align-items: baseline;
+  display: flex;
+  gap: 10px;
+  justify-content: space-between;
+}
+
+.studyAsideHead h2 {
+  font-family: var(--font-serif), "Times New Roman", serif;
+  font-size: 18px;
+  font-weight: 700;
+  margin: 0;
+}
+
+.studyAsideHead span {
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.studyAsideMeta {
+  color: var(--muted);
+  font-size: 12.5px;
+  line-height: 1.7;
+  margin: 10px 0 0;
+}
+
+.studyAsideEmpty {
+  color: var(--muted);
+  font-size: 12.5px;
+  line-height: 1.8;
+  margin: 14px 0 0;
+}
+
+.studyAsideEmpty a,
+.footNote a {
+  border-bottom: 1px solid var(--line);
+  color: var(--ink);
+  text-decoration: none;
+}
+
+.kpNavList {
+  border-top: 1px dashed var(--line-soft);
+  display: grid;
+  gap: 0;
+  list-style: none;
+  margin: 14px 0 0;
+  padding: 6px 0 0;
+}
+
+.kpNavItem,
+.kpNavItemActive {
+  align-items: flex-start;
+  border-bottom: 1px solid var(--line-soft);
+  color: inherit;
+  display: flex;
+  gap: 10px;
+  padding: 10px 6px;
+  text-decoration: none;
+}
+
+.kpNavItem:hover {
+  background: rgb(16 16 15 / 4%);
+}
+
+.kpNavItemActive {
+  background: var(--ink);
+  color: var(--paper-bright);
+}
+
+.kpNavItemActive .kpNavIndex,
+.kpNavItemActive .kpNavMeta {
+  color: rgb(251 249 244 / 72%);
+}
+
+.kpNavIndex {
+  color: var(--muted);
+  font-family: var(--font-serif), "Times New Roman", serif;
+  font-size: 13px;
+  padding-top: 1px;
+}
+
+.kpNavMain {
+  display: grid;
+  gap: 4px;
+  min-width: 0;
+}
+
+.kpNavTitle {
+  font-size: 13.5px;
+  font-weight: 600;
+  line-height: 1.5;
+  overflow-wrap: anywhere;
+}
+
+.kpNavMeta {
+  color: var(--muted);
+  font-size: 11.5px;
+  line-height: 1.5;
+}
+
+.studyMain {
+  display: grid;
+  gap: 26px;
+  min-width: 0;
+}
+
+.studyKpHead {
+  border-bottom: 1px solid var(--ink);
+  padding-bottom: 18px;
+}
+
+.studyKpTitle {
+  font-family: var(--font-serif), "Times New Roman", serif;
+  font-size: clamp(24px, 3.4vw, 30px);
+  font-weight: 700;
+  margin: 10px 0 0;
+  overflow-wrap: anywhere;
+}
+
+.studyKpMeta {
+  color: var(--blue);
+  font-size: 12.5px;
+  line-height: 1.7;
+  margin: 10px 0 0;
+}
+
+.studyKpDescription {
+  font-size: 13.5px;
+  line-height: 1.9;
+  margin: 10px 0 0;
+}
+
+.lessonPanel,
+.chatPanel {
+  border: 1px solid var(--ink);
+  padding: 22px;
+}
+
+.lessonBody {
+  border-top: 1px dashed var(--line-soft);
+  margin-top: 18px;
+  padding-top: 16px;
+}
+
+.confirmNote {
+  align-items: center;
+  color: var(--red);
+  display: inline-flex;
+  font-size: 12.5px;
+  gap: 6px;
+}
+
+.markdown {
+  color: var(--ink);
+  font-size: 14px;
+  line-height: 1.95;
+  overflow-wrap: anywhere;
+}
+
+.markdown h1 {
+  font-family: var(--font-serif), "Times New Roman", serif;
+  font-size: 22px;
+  font-weight: 700;
+  margin: 0 0 12px;
+}
+
+.markdown h2 {
+  border-bottom: 1px solid var(--line-soft);
+  font-family: var(--font-serif), "Times New Roman", serif;
+  font-size: 17.5px;
+  font-weight: 700;
+  margin: 22px 0 8px;
+  padding-bottom: 6px;
+}
+
+.markdown h3 {
+  font-family: var(--font-serif), "Times New Roman", serif;
+  font-size: 15.5px;
+  font-weight: 700;
+  margin: 18px 0 6px;
+}
+
+.markdown p {
+  margin: 8px 0;
+}
+
+.markdown ul,
+.markdown ol {
+  display: grid;
+  gap: 6px;
+  margin: 8px 0;
+  padding-left: 22px;
+}
+
+.markdown ul {
+  list-style: disc;
+}
+
+.markdown ol {
+  list-style: decimal;
+}
+
+.markdown li::marker {
+  color: var(--muted);
+}
+
+.markdown blockquote {
+  border-left: 2px solid var(--line);
+  color: var(--muted);
+  font-size: 12.5px;
+  line-height: 1.8;
+  margin: 6px 0;
+  padding: 2px 0 2px 12px;
+}
+
+.markdown code {
+  background: rgb(16 16 15 / 6%);
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 12.5px;
+  padding: 1px 5px;
+}
+
+.chatList {
+  border-top: 1px dashed var(--line-soft);
+  display: grid;
+  gap: 12px;
+  margin-top: 16px;
+  max-height: 420px;
+  overflow-y: auto;
+  padding-top: 14px;
+}
+
+.chatEmpty {
+  color: var(--muted);
+  font-size: 12.5px;
+  line-height: 1.8;
+  margin: 0;
+}
+
+.chatRowUser,
+.chatRowAssistant {
+  display: grid;
+  gap: 5px;
+  max-width: 88%;
+}
+
+.chatRowUser {
+  justify-self: end;
+}
+
+.chatRowAssistant {
+  justify-self: start;
+}
+
+.chatRole {
+  color: var(--muted);
+  font-size: 11.5px;
+  margin: 0;
+}
+
+.chatBubble {
+  border: 1px solid var(--line);
+  font-size: 13.5px;
+  line-height: 1.85;
+  overflow-wrap: anywhere;
+  padding: 10px 12px;
+  white-space: pre-wrap;
+}
+
+.chatRowUser .chatBubble {
+  background: var(--ink);
+  border-color: var(--ink);
+  color: var(--paper-bright);
+}
+
+.chatRowAssistant .chatBubble {
+  background: var(--paper-bright);
+}
+
+/* 回答气泡里的 markdown：比讲义紧凑一档，标题不带分隔线 */
+.chatMarkdown {
+  white-space: normal;
+}
+
+.chatMarkdown .markdown {
+  font-size: 13.5px;
+  line-height: 1.85;
+}
+
+.chatMarkdown .markdown h1,
+.chatMarkdown .markdown h2,
+.chatMarkdown .markdown h3 {
+  border: none;
+  font-size: 14.5px;
+  margin: 10px 0 4px;
+  padding: 0;
+}
+
+.chatMarkdown .markdown p {
+  margin: 6px 0;
+}
+
+.chatMarkdown .markdown ul,
+.chatMarkdown .markdown ol {
+  gap: 4px;
+  margin: 4px 0;
+  padding-left: 20px;
+}
+
+.streamCaret {
+  animation: hidocCaret 900ms steps(2, start) infinite;
+  border-right: 2px solid var(--blue);
+  display: inline-block;
+  height: 1em;
+  margin-left: 3px;
+  vertical-align: text-bottom;
+}
+
+@keyframes hidocCaret {
+  50% {
+    border-color: transparent;
+  }
+}
+
+.chatForm {
+  align-items: flex-end;
+  display: flex;
+  gap: 12px;
+  margin-top: 16px;
+}
+
+.chatField {
+  display: grid;
+  flex: 1 1 auto;
+  gap: 6px;
+  min-width: 0;
+}
+
+.chatFieldLabel {
+  color: var(--muted);
+  font-size: 11.5px;
+  letter-spacing: 0.06em;
+}
+
+.chatInput {
+  background: var(--paper-bright);
+  border: 1px solid var(--line);
+  color: var(--ink);
+  min-height: 46px;
+  min-width: 0;
+  padding: 0 14px;
+  width: 100%;
+}
+
+.chatInput::placeholder {
+  color: var(--muted);
+}
+
+@media (max-width: 980px) {
+  .studyLayout {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .studyAside {
+    position: static;
+  }
+}
+
+@media (max-width: 760px) {
+  .studyContent {
+    padding: 32px 18px 72px;
+  }
+
+  .lessonPanel,
+  .chatPanel {
+    padding: 18px 16px;
+  }
+
+  .chatForm {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .chatRowUser,
+  .chatRowAssistant {
+    max-width: 100%;
   }
 }

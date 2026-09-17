@@ -342,7 +342,7 @@ export function HiDocTextbookDetailView({ initialDetail }: HiDocTextbookDetailPr
             {textbook.isFrozen ? ` · 已冻结（激活月 ${textbook.activeMonth}）` : ""}
           </p>
           <p className={styles.quotaNote}>
-            目录识别只读取书签与目录页文字，不改动 PDF 本身；知识点萃取将在 M3 开放。
+            目录识别只读取书签与目录页文字，不改动 PDF 本身；萃取出的知识点可点进学习页生成讲义并追问。
           </p>
         </div>
       </section>
@@ -547,7 +547,11 @@ export function HiDocTextbookDetailView({ initialDetail }: HiDocTextbookDetailPr
                       {knowledgePoints.map((knowledgePoint) => (
                         <li key={knowledgePoint.id} className={styles.kpItem}>
                           <p className={styles.kpTitle}>
-                            {String(knowledgePoint.order).padStart(2, "0")} · {knowledgePoint.title}
+                            <Link
+                              href={`/learn/hi-doc/t/${textbook.id}/c/${chapter.order}?kp=${knowledgePoint.id}`}
+                            >
+                              {String(knowledgePoint.order).padStart(2, "0")} · {knowledgePoint.title}
+                            </Link>
                             <span className={styles.kpPage}>第 {knowledgePoint.sourcePage} 页</span>
                           </p>
                           <p className={styles.kpDescription}>{knowledgePoint.description}</p>
@@ -560,7 +564,7 @@ export function HiDocTextbookDetailView({ initialDetail }: HiDocTextbookDetailPr
                         </li>
                       ))}
                       <li className={styles.kpFootNote}>
-                        知识点为模型萃取草稿，页码可溯源；讲义与教学对话将在 M4 开放。
+                        知识点为模型萃取草稿，页码可溯源；点标题进入学习页生成讲义并追问。
                       </li>
                     </ul>
                   ) : null}

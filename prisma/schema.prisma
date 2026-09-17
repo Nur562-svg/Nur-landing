@@ -24,6 +24,8 @@ model User {
   membershipExpiresAt DateTime?
   // 邮箱验证时间（null = 未验证）；收费前须完成验证
   emailVerifiedAt     DateTime?
+  // Hi doc 讲解风格（账户级；M4 仅实现 "zh-primary"，枚举见 src/types/hidoc.ts）
+  hiDocLessonStyle    String    @default("zh-primary")
   // M3: usage counters for quota (courseBuilds, agentCalls, etc.)
   usage               Json? // { courseBuilds?: number, agentCalls?: number }
   createdAt           DateTime  @default(now())
@@ -44,6 +46,8 @@ model User {
   courseEntitlements            CourseEntitlement[]
   // Hi doc: 用户私有教材（服务器存储，仅本人可见，不进官方课程目录）
   hiDocTextbooks                HiDocTextbook[]
+  // Hi doc M4: 讲解对话（kpId 可空，为 M6 课题工作坊预留）
+  hiDocConversations            HiDocConversation[]
 }
 
 /// M4: 会员订单（支付抽象层持久化）。provider 切换不影响已存订单。
@@ -130,7 +134,43 @@ model HiDocKnowledgePoint {
   sourcePage  Int
   createdAt   DateTime @default(now())
 
+  lesson HiDocLesson?
+
   @@index([chapterId, order])
+}
+
+/// Hi doc M4: 知识点讲义（每个知识点至多一份，重新生成即覆盖）。
+/// 生成方式如实入库（模型 id 或启发式兜底），原文片段一并保存供对话复用，避免每轮对话重解析 PDF。
+model HiDocLesson {
+  id     String @id @default(cuid())
+  kpId   String @unique
+  kp     HiDocKnowledgePoint @relation(fields: [kpId], references: [id], onDelete: Cascade)
+
+  contentMd    String
+  // 讲解风格："zh-primary"（M4 唯一实现）
+  style        String
+  // 生成方式："model:dashscope:qwen3.7-plus" | "heuristic"（未接入模型时的兜底）
+  generator    String
+  // 生成时聚合的教材原文片段（带【PDF 第 X 页】标记）
+  sourceExcerpt String
+  generatedAt  DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+}
+
+/// Hi doc M4: 讲解对话（私有挂 userId；kpId 可空，为 M6 课题工作坊预留）。
+model HiDocConversation {
+  id     String @id @default(cuid())
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  kpId  String?
+  // 对话消息 JSON（{ role, content, createdAt }[]），服务端裁剪保留最近若干轮
+  messages  Json
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([userId, kpId])
+  @@index([userId, updatedAt])
 }
 
 /// Hi doc M2: 教材章节（目录识别结果 / 手动修正结果；页码为 PDF 页序，1 起）。

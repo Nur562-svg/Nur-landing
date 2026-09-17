@@ -1,6 +1,6 @@
 # NUR LEARN — Canonical Project State
 
-Last updated: 2026-09-17 (Asia/Shanghai) — Hi doc M0–M3（四档会员、上传书架名额、目录识别修正、知识点萃取 SSE）已完成，下一步 M4 学习页讲义与讲解对话
+Last updated: 2026-09-17 (Asia/Shanghai) — Hi doc M0–M4（四档会员、上传书架名额、目录识别修正、知识点萃取 SSE、学习页讲义与讲解对话）已完成，下一步 M5 划重点/批注/学霸笔记
 
 This file is the durable source of truth for continuing NUR LEARN when conversation history is unavailable. Update it after material product decisions, completed milestones, verification changes, or priority changes.
 
@@ -1508,3 +1508,35 @@ Answer: modern medicine also enters exam-answer and scoring training. The implem
 - 备选（若未来 13.x 与适配器出现不兼容）：等 `@prisma/adapter-better-sqlite3` 上游升级依赖（截至今日最新稳定 7.10.0 仍为 ^12.6.0）；生产 Postgres 适配器不受此问题影响。
 
 **下一优先级**：M4 学习页（`/learn/hi-doc/t/[id]/c/[n]`：知识点讲义生成 + NUR Agent 讲解对话），复用章节/知识点契约与同一 provider-neutral 边界。
+
+## Hi doc 主线 M4（2026-09-17 完成）
+
+**验收达成**：学习页生成讲义并就讲义/原文追问（计划 §7 M4 验收标准）。
+
+### 数据与配额
+- Prisma `HiDocLesson`（kpId 唯一、contentMd、style、generator、sourceExcerpt、generatedAt）与 `HiDocConversation`（userId、kpId 可空、messages Json、`@@unique([userId, kpId])`），迁移 `20260917121655_m4_hidoc_lesson_conversation`；User 新增账户级 `hiDocLessonStyle`（默认 `zh-primary`，迁移 `20260917122459_m4_hidoc_lesson_style`）。
+- 新配额资源 `hidocLessons`（free 5 / basic 20 / pro·max 无限）与 `hidocChats`（free 50 / basic 200 / pro·max 无限）；模型调用无论成败都计入 `usage` 并写 `EventLog(hidoc_kp_lesson / hidoc_kp_chat)`（带 provider、model、outcome、字符数）。启发式兜底未消耗 token，不占模型额度，只记事件。
+
+### 服务端（src/lib/hidoc/）
+- `lesson-heuristic.ts`（纯函数）：风格解析（未知值回落 `zh-primary`）、生成方式 `model:{provider}:{model}` / `heuristic` 的格式化与解析、讲义结构校验（定义与要点必存、自测题 ≥3 道）、原文摘录选择（只取含标题/术语的真实句子）、启发式讲义构建（定义/要点/易错点/自测题 3 道，页首固定声明「未接入模型」）。
+- `lesson-markdown.ts`（纯函数，客户端安全）：讲义 markdown 受限子集解析（标题/段落/列表/引用/行内粗体与代码），渲染端构造 React 元素，不用 `dangerouslySetInnerHTML`。
+- `conversation.ts`（纯函数）：对话 Json 列的严格解析（非法条目丢弃）、追加与上限裁剪（保留最近 40 条）、送入模型的历史窗口（最近 12 条）。
+- `chat-prompt.ts`（纯函数）：Hi doc 讲解 system 提示词（讲义 + 原文片段 + 本章知识点清单 + 边界声明：非教师评分、不做临床诊断、超出教材即标注「通用医学知识」、不用表格/代码块）；模型消息 = system + 服务端读取的历史 + 本轮提问。
+- `source-excerpt.ts`：按 `sourcePage` ±1 页聚合 PDF 文字层（带【PDF 第 X 页】标记，≤8000 字，过少即失败），讲义与对话共用。
+- `lesson.ts`：讲义编排（归属校验 → 原文片段 → 有密钥则流式模型生成 + 结构校验，无密钥则启发式兜底 → upsert 覆盖并回放 notes），`loadHiDocLesson` 与 `toHiDocLessonView`。
+- `chat.ts`：对话编排（提问校验 → 归属校验 → 密钥/额度门控 → 读历史与讲义 → 提问先落库 → 流式回答 → 回答落库裁剪），失败时不保存半截回答；回答上下文优先复用讲义已存的原文片段，避免每轮重解析 PDF。
+- `knowledge-points.ts` / `study.ts`：知识点归属上下文、同章知识点标题、对话读写，与学习页只读视图（章节 + 知识点清单含讲义状态、单点讲义 + 对话历史）。
+- provider-neutral 边界：`lesson-provider.ts` / `chat-provider.ts` + `providers/dashscope-stream.ts`（共用流式补全：HTTPS aliyuncs 校验、SSE 解析、Bearer 密钥仅服务端）+ `providers/dashscope-lesson.ts` / `providers/dashscope-chat.ts`；默认 `qwen3.7-plus`，`HIDOC_LESSON_MODEL` / `HIDOC_CHAT_MODEL` 可覆盖。
+
+### API 与页面
+- `POST /api/hidoc/kp/[id]/lesson`（SSE：progress → delta → result/error）与 `POST /api/hidoc/kp/[id]/chat`（SSE：delta → result/error，仅接受本轮提问）；均为 thin adapter。
+- `/learn/hi-doc/t/[id]/c/[n]` 学习页：左栏知识点列表（序号、标题、页码、「已有讲义/未生成讲义」、当前项高亮），右栏讲义（生成/重新生成 + 覆盖确认、生成方式徽标、markdown 渲染）与讲解追问（Enter 发送、流式渲染、回答按 markdown 渲染）；教材详情页知识点标题改为可点进入学习页。
+
+### 真实验证（2026-09-17，免费档验证账号 + 《卫生统计学_赵耐青练习册》）
+- 讲义生成（真实 `qwen3.7-plus`）：174 个 delta、约 9 秒，结构校验通过，落库 `generator=model:dashscope:qwen3.7-plus`，要点/易错点均带页码；重新生成给出「本次生成覆盖了此前讲义」并保持单行覆盖。
+- 未接入模型兜底：空密钥进程内生成「个体变异」讲义，`generator=heuristic`，页首与面板均标注「未接入模型」，内容仅来自萃取结果与原文摘录，未消耗模型额度。
+- 讲解对话（真实模型）：117 个 delta、约 7 秒，回答引用教材页码与原文依据；对话落库 2 条并刷新后保留。
+- 安全与配额：未登录 401；跨账号 kpId 404；`hidocChats` 50/50 时 20ms 拒绝且未落库提问、未发起模型调用；`usage` 与真实调用次数一致。
+- 测试 320/320（新增 `tests/hidoc-lesson.test.ts` 19 项）；lint 0 error；typecheck 干净；`npm run build` 通过（hidoc 10 条路由）；390×844 无溢出；浏览器与 API 明细见 `design-qa.md`「Hi doc M4」节。
+
+**下一优先级**：M5 划重点/批注（`HiDocHighlight`：选中文本 → quote/color/note/anchor）与学霸笔记（`HiDocNote`：本章讲义 + 追问 + 划重点汇总导出），复用本期的讲义/对话契约与同一 provider-neutral 边界。
