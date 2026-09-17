@@ -11,6 +11,8 @@ export type NurAgentFaceProps = {
   lookY?: number;
   size?: number | undefined;
   pressed?: boolean;
+  /** 拖动中：闭眼，松手前保持 */
+  dragging?: boolean;
   className?: string;
 };
 
@@ -34,6 +36,7 @@ export function NurAgentFace({
   lookY = 0,
   size,
   pressed = false,
+  dragging = false,
   className,
 }: NurAgentFaceProps) {
   const rawId = useId().replace(/:/g, "");
@@ -55,6 +58,7 @@ export function NurAgentFace({
       className={rootClass}
       data-emotion={emotion}
       data-press={pressed ? "true" : "false"}
+      data-dragging={dragging ? "true" : "false"}
       style={size ? { width: size, height: size } : undefined}
       aria-hidden="true"
     >

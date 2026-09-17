@@ -236,6 +236,7 @@ export function NurAgentDock(props: NurAgentDockProps) {
           lookX={lookX}
           lookY={lookY}
           pressed={pressed}
+          dragging={dragging}
         />
       </button>
       {open ? (

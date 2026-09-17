@@ -113,6 +113,20 @@
   transform: scaleY(0.22) translateY(3px);
 }
 
+/* 拖动中：双眼闭合，覆盖各情绪眼型 */
+.orb[data-dragging="true"] .eye {
+  transform: scaleY(0.12) !important;
+  animation: none !important;
+}
+
+.orb[data-dragging="true"] .eyes {
+  transform: none !important;
+}
+
+.orb[data-dragging="true"] .mark {
+  opacity: 0 !important;
+}
+
 .orb[data-emotion="idle"] {
   --ring: #17659a;
 }
