@@ -39,6 +39,10 @@ export async function POST(request: Request): Promise<Response> {
     // 创建订单
     const orderResult = await createOrder(dbUser.id, planId);
     if (!orderResult.ok) {
+      // 通道密钥未配置完整：503 明确报错（中文原因），不静默回落 mock
+      if (orderResult.code === "channel_not_configured") {
+        return NextResponse.json(orderResult, { status: 503 });
+      }
       return NextResponse.json(orderResult, { status: 400 });
     }
 

@@ -33,6 +33,10 @@ export async function POST(request: Request): Promise<Response> {
 
     const result = await createOrder(dbUser.id, body.planId);
     if (!result.ok) {
+      // 通道密钥未配置完整：503 明确报错（中文原因），不静默回落 mock
+      if (result.code === "channel_not_configured") {
+        return NextResponse.json(result, { status: 503 });
+      }
       return NextResponse.json({ ok: false, error: result.error }, { status: 400 });
     }
 

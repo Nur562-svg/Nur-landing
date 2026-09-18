@@ -1,6 +1,6 @@
 # NUR LEARN — Canonical Project State
 
-Last updated: 2026-09-18 (Asia/Shanghai) — Hi doc M0–M5（四档会员、上传书架名额、目录识别修正、知识点萃取 SSE、学习页讲义与讲解对话、划重点/批注与学霸笔记）已完成，下一步 M6 课题工作坊；设计系统 v2（Claude 库适配版）已定案，M7 后随框架重构生效
+Last updated: 2026-09-19 (Asia/Shanghai) — Hi doc M0–M7 全部完成（M7 支付打通：支付宝沙箱四档订阅真实生效、计费页三列卡改版）；设计系统 v2（Claude 库适配版）已定案，随框架重构生效（排期后置）
 
 This file is the durable source of truth for continuing NUR LEARN when conversation history is unavailable. Update it after material product decisions, completed milestones, verification changes, or priority changes.
 
@@ -1595,6 +1595,49 @@ Answer: modern medicine also enters exam-answer and scoring training. The implem
 - 测试 357/357（新增 `tests/hidoc-workshop.test.ts` 20 项，含相邻滑窗叠合命中回归）；lint 0 error；typecheck 干净；`npm run check` 通过（新增 `/learn/hi-doc/w` 与 `/learn/hi-doc/w/[id]` 两条 ƒ 路由）；390×844 无溢出；浏览器与 API 明细见 `design-qa.md`「Hi doc M6」节。
 
 **下一优先级**：M7 支付打通（mock→支付宝，四档订阅真实生效），任务范围以 `docs/HI_DOC_PLAN.md` §2/§7 M7 与现有 `src/lib/payment/` 抽象为准，任务书见 `docs/HI_DOC_CODEX_BRIEF.md`。
+
+## Hi doc 主线 M7 — 支付打通（2026-09-19 完成）
+
+**验收达成**：`PAYMENT_PROVIDER=alipay` 正式生效（支付宝开放平台沙箱），四档订阅真实生效（下单 → 收银台 → notify 验签开通 → 档位/额度即时变化 → 续费叠加/高档覆盖/到期回退闭环）；计费页按用户 2026-09-18 定案改版为三列档位卡 + 月/季/年分段控件。正式定价（同日用户拍板）：Basic ¥19/月·¥49/季·¥149/年；Pro ¥49/月·¥129/季·¥399/年；Max ¥149/月·¥399/季·¥1299/年，`src/lib/payment/plans.ts` 为唯一价格真相源。
+
+### 通道与配置
+- 通道解析（`service.ts` `getCurrentPaymentChannel`）：显式 `mock|wechat|alipay`；未配置默认 mock（开发/演示语义保留）；未知值明确报错。**通道为 alipay 但 `ALIPAY_APP_ID/ALIPAY_PRIVATE_KEY/ALIPAY_PUBLIC_KEY` 任一缺失时，下单返回 503 + 中文原因「支付通道未配置完整（含缺失变量名）」，绝不静默回落 mock**（`createOrder` 配置校验先行，不落任何订单；`/api/pay/create-order` 与 `/api/auth/upgrade` 均映射 503）。密钥只在服务端 env，不渲染、不进 bundle、不进日志。
+- 网关：`ALIPAY_GATEWAY_URL` 读取，**默认沙箱** `https://openapi-sandbox.dl.alipaydev.com/gateway.do`；生产部署仅需改为 `https://openapi.alipay.com/gateway.do` 并换正式密钥，代码零改动。当前本地 `.env.local`/`.dev.vars`（已同步）指向**沙箱**。
+- notify 地址：`ALIPAY_NOTIFY_URL` 支持显式覆盖，缺省由 `NEXT_PUBLIC_SITE_URL` 拼装 `{base}/api/pay/notify/alipay`；return_url 由站点地址拼装 `{base}/account/billing?orderId=…`（回跳仅作结果展示，开通只认验签后的 notify 或主动查单）。本地 `.env.local` 已加 `NEXT_PUBLIC_SITE_URL=http://localhost:3000`（dev-only，不入库）。
+- **签名规则实证修正（重要）**：实测沙箱网关（2026-09-19，`alipay.trade.query` 返回 `isv.invalid-signature` 并附网关验签字符串）证明**当前网关的请求验签字符串包含 `sign_type`**、仅排除 `sign` 与空值；`buildSignString` 已按此修正（修正前 page.pay/queryOrder 签名实际无效）。notify 验签侧因本地收不到支付宝真实回调，实现为**双规范兼容**（排除 sign/sign_type 的经典 SDK 规范与仅排除 sign 的新规范都接受；两种私钥都只在支付宝手中，不降低防伪造强度），公网部署后按真实回调确认并固定。
+- 顺带证实 `.env.local`/`.dev.vars` 的 `ALIPAY_PUBLIC_KEY` 为**支付宝公钥**（用其验证网关 `alipay.trade.query` 响应签名通过），即验签密钥配置正确；沙箱收银台（`excashier-sandbox.dl.alipaydev.com/standard/auth.htm?payOrderId=…`，标题「支付宝 - 网上支付 安全快速！」）真实受理了我们的 page.pay 下单。
+
+### 下单与开通链路（`service.ts`）
+- `createOrder`：配置校验 → 幂等复用 pending 订单（同用户同 plan 同 channel；旧 lite-* 与 basic-* 同语义）→ provider 构造跳转 URL（含 return_url）。
+- `handleNotify`（alipay）：RSA2 验签（双规范）→ **app_id 必须存在且一致、out_trade_no/trade_no/total_amount 必须齐全** → 仅 `TRADE_SUCCESS/TRADE_FINISHED` 受理。
+- `applyPaymentSuccess`：**金额核对先于幂等判断**（无论订单状态，金额不一致一律拒绝 `amount_mismatch`，防篡改纵深）→ 事务内条件更新抢占（`updateMany where status=pending`，并发/重复 notify 只有一次成功，其余幂等返回，不重复延期）→ 会员更新。
+- **续费叠加与档位策略（本期定案并实现，纯函数 `computeMembershipRenewal` 可单测）**：
+  1. 新档 ≥ 当前生效档：立即生效为新档，到期时间在剩余有效期上叠加（不吞掉未到期时间）；
+  2. 新档 < 当前生效档（如 Pro 有效期内购买 Basic）：**档位保持高档不变直至其到期，购买时长追加在剩余有效期之后**（追加期间按高档享受；降档只通过到期自然回落生效）；
+  3. 当前会员已过期：视为 free，从现在起算新档；旧 `lite` 存量归一化为 basic 叠加。
+- 会员生效后四档额度即时变化（`computeUserQuotas` 读新档位：free hidocChats 50/hidocNotes 3/hidocWorkshopChats 30 → pro/max unlimited；教材当月名额 1/3/10、工作坊与官方课名额同步）；到期回退 free 后配额同步回落（`resolveEffectiveMembershipTier` 既有闭环，E2E 复验）。
+
+### 对账与关单
+- `reconcileOrder`（alipay 通道）：provider `queryOrder` 真实查单（`alipay.trade.query`），已支付则补偿开通；网关业务码 ≠10000（如 `ACQ.TRADE_NOT_EXIST`）如实透出 `queryError`，不吞错。**网关响应体未做签名校验**（需按支付宝原始 JSON 序列化逐字节还原，收益有限；调用走服务端 HTTPS 直连），已在代码注释声明。
+- `closeExpiredOrders`：**本地关单，未调用支付宝 `alipay.trade.close`**（网关侧订单由其自身超时机制处理）；cron 路由改为**先 reconcile 后 close 串行执行**（修正原 `Promise.all` 并行竞态：防「已支付但 notify 丢失」的订单被误关）。
+- `src/lib/prisma.ts`：`createLocalSqliteClient` 尊重显式 `file:` `DATABASE_URL`（与 CI `file:./prisma/test.db` 意图对齐，为测试隔离铺路；未配置时仍默认 `prisma/dev.db`，开发行为不变）。
+
+### 计费页改版（`src/components/billing-panel.tsx` + 新增 `billing-panel.module.css`，替代全内联样式）
+- 三列档位卡（Basic/Pro/Max，880px 以下退化为单列），卡片区头部右侧**月/季/年分段控件**（共享状态，价格/CTA/折合单价联动）；卡片层级：档位名 → 大号价格数字（40px 衬线）+ 灰色计费单位 → 通栏 CTA → 权益对勾清单；当前档位卡描边高亮 + 右上角「当前套餐」角标，CTA 变「续订当前档位」。
+- 权益数字全部引用配额真源头（`hidoc/limits.ts`、`hidoc/workshop-rules.ts`、`course-entitlement-policy.ts`、`quotas.ts`），页面零硬编码。
+- 支付面板：redirect 类型展示「前往支付宝支付」（新窗口）+ 轮询状态（pending 动点/paid 绿色/closed）；**每 3 次轮询触发一次 `/api/pay/reconcile` 主动查单补偿**（notify 丢失兜底），`/api/pay/status` 展示订单状态；return_url 回跳后按 `?orderId=` 自动进入同一轮询；mock 通道保留原自动模拟支付（开发语义）。订单记录表展示渠道（支付宝/微信/模拟）、金额、状态、时间，520px 以下隐藏渠道列防溢出。
+
+### 真实验证（2026-09-19）
+- 单测 378/378（新增 `tests/payment-service.test.ts` 22 项：notify 验签正/负/篡改/app_id 不一致/错误密钥/TRADE_FINISHED/双规范、幂等不重复延期、续费叠加、高档覆盖、到期回退、lite 兼容、无密钥 503 路径不落订单、reconcile 幂等、关单后 notify 拒绝、`computeMembershipRenewal` 纯函数 6 例），全部离线（临时 SQLite 库 `prisma db push` + 测试内生成 RSA 密钥对），不触网不碰 dev.db。
+- E2E 三阶段（方法与边界如实记入 `design-qa.md`「Hi doc M7」节）：① 真实沙箱密钥下单 → 收银台真实受理（payOrderId）→ reconcile 真实查单返回 `ACQ.TRADE_NOT_EXIST` 并透出；② 无密钥实例下单 503 中文报错；③ 换测试公钥（支付宝私钥仅其持有，本地无法伪造平台签名，加密强度等价）模拟合法签名 notify 全链路：开通 → 配额即时变化（free 50/3/30 → pro unlimited）→ 幂等 → 金额篡改（新订单与已支付订单均拒）→ 错误密钥拒 → app_id 不一致拒 → 续费叠加 +30.00d → 高档覆盖（max 有效期内买 basic 保持 max、时长追加）→ 到期回退 free 配额回落。测试账号与订单已全部清理。
+- 浏览器（系统 Chrome headless，1440×900 与 390×844）：三列卡/分段切换/支付面板 pending→paid 翻转/当前套餐角标/回跳轮询/订单表 7 张截图；程序化断言 1440 三列、390 单列、`scrollWidth===clientWidth===390` 无溢出、桌面与移动控制台 0 error。
+- `npm run lint`（0 error）/ `typecheck` / `test` 378 / `npm run check`（build）全绿。
+
+### 边界与后置（如实声明）
+- **真实支付宝服务器 notify 回调未验证**（本地无公网地址；沙箱验签公钥已证实正确，等待部署公网后用真实回调补验并固定 notify 验签规范）；微信支付未打通（provider 原样保留）；发票/退款未做。
+- 真实商户号、ICP 备案、生产密钥与生产网关配置是部署前置；生产切换仅改 env 不改代码。
+
+**下一优先级**：Hi doc M0–M7 全部完成。后续主线：设计系统 v2 框架重构（见下节，桌面优先）与部署上线准备（ICP 备案 + 真实商户号 + 生产密钥 + 公网 notify 补验）。
 
 ## 设计系统 v2（2026-09-18 定案，M7 后生效）
 

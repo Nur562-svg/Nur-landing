@@ -25,10 +25,9 @@ export async function POST(request: Request): Promise<Response> {
   }
 
   try {
-    const [reconcileResult, closeResult] = await Promise.all([
-      reconcilePendingOrders(10, 50),
-      closeExpiredOrders(100),
-    ]);
+    // 串行：先补偿（真实查单，防「已支付但 notify 丢失」被误关），再关闭超时订单。
+    const reconcileResult = await reconcilePendingOrders(10, 50);
+    const closeResult = await closeExpiredOrders(100);
 
     return NextResponse.json({
       ok: true,

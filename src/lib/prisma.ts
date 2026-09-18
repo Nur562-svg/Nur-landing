@@ -25,8 +25,11 @@ function isUsableD1(db: unknown): db is { prepare: (query: string) => unknown } 
 }
 
 function createLocalSqliteClient(): PrismaClient {
-  const dbPath = path.join(process.cwd(), "prisma", "dev.db");
-  const url = `file:${dbPath}`;
+  // 尊重显式配置的 file: DATABASE_URL（测试隔离 / 本地多库）；未配置时用默认开发库。
+  const envUrl = process.env.DATABASE_URL?.trim() ?? "";
+  const url = envUrl.startsWith("file:")
+    ? envUrl
+    : `file:${path.join(process.cwd(), "prisma", "dev.db")}`;
   return new PrismaClient({
     adapter: new PrismaBetterSqlite3({ url }),
   });

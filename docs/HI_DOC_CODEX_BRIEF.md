@@ -28,6 +28,11 @@ M7 验收（对应 `HI_DOC_PLAN.md` 分期表 M7「支付打通（mock→支付�
 - `PAYMENT_PROVIDER=alipay` 成为正式生效通道；通道为 alipay 但 `ALIPAY_APP_ID/ALIPAY_PRIVATE_KEY/ALIPAY_PUBLIC_KEY` 任一缺失时，下单**明确报错**（503 + 中文原因「支付通道未配置完整」），不静默回落 mock；mock 仅在显式 `PAYMENT_PROVIDER=mock` 时可用（开发/演示语义保留）
 - 密钥只存服务端 env，不渲染、不进客户端 bundle、不进日志；`ALIPAY_NOTIFY_URL` 支持显式覆盖，缺省由 `NEXT_PUBLIC_SITE_URL` 拼装
 - 支付宝网关地址支持沙箱/生产切换（env 区分），并在 `docs/PROJECT_STATE.md` 如实记录当前配置指向
+- **已定案（2026-09-18 用户拍板，实施时直接使用，勿改动）：**
+  1. **正式定价已落 `src/lib/payment/plans.ts`**：Basic ¥19/月、¥49/季、¥149/年；Pro ¥49/月、¥129/季、¥399/年；Max ¥149/月、¥399/季、¥1299/年（季 ≈ 月×8.8 折、年 ≈ 月×7 折，全部满足「周期越长单价越低」）。如发现与下单价不一致的硬编码价格，一律以 plans.ts 为唯一真相源。
+  2. **沙箱凭据已写入 `.env.local` 与 `.dev.vars`**（两处必须同步，`.dev.vars` 也是 Next 密钥源）：`PAYMENT_PROVIDER=alipay`、`ALIPAY_APP_ID=9021000168642019`、`ALIPAY_GATEWAY_URL=https://openapi-sandbox.dl.alipaydev.com/gateway.do`、`ALIPAY_PRIVATE_KEY`/`ALIPAY_PUBLIC_KEY`（沙箱 RSA2 密钥对）。网关地址已由 provider 内 `getGatewayUrl()` 读取 `ALIPAY_GATEWAY_URL` 实现，**默认沙箱**；生产部署时只需把 `ALIPAY_GATEWAY_URL` 改为 `https://openapi.alipay.com/gateway.do` 并换正式密钥，代码零改动。
+  3. **本地能做的沙箱验证边界（如实记录，不假装）**：下单签名与跳转 URL 构造可用真实沙箱密钥在本地验证（签名正确性可用支付宝沙箱收银台是否接受来检验）；但 notify 异步通知需要支付宝服务器能访问公网 URL——本地开发没有公网地址时，允许用「用沙箱密钥构造一条合法签名的 notify 表单 → POST 到 `/api/pay/notify/alipay` → 断言验签通过、订单变 paid、会员生效」的方式实测验签与开通链路，并在 `design-qa.md` 明确标注这是模拟 notify（非支付宝服务器真实回调）；真实回调待部署公网后补验。
+  4. **计费页改版（用户 2026-09-18 要求，参考用户提供的 Cursor 风格定价截图）**：现行 `/account/billing`（`src/components/billing-panel.tsx`，全内联样式、9 卡平铺、月/季/年纵向拉长页面）重构为——**三列档位卡（Basic / Pro / Max 横向排列），档位卡头部右侧放 月/季/年 分段控件（segmented control），切换后价格/按钮文案联动**；卡片内层级：档位名 → 大号价格数字 + 灰色计费单位 → 通栏 CTA → 权益清单（对勾列表，写清各档 Hi doc 教材名额/工作坊/官方课权益）；当前档位卡用描边或角标高亮「当前套餐」；订单记录保留在页面下方。**样式迁移到 CSS Modules**（`src/components/billing-panel.module.css`），遵守项目 no-inline-styles 规范；视觉沿用现有暖纸体系（方直边、纸色、朱/黛语义色），布局节奏参考截图的三列卡+分段控件+大价格数字。390px 时三列退化为单列、分段控件保持可用。
 
 **B. 下单与收银台**
 - `/account/billing` 在 alipay 通道下：选档下单 → 创建/复用 pending 订单 → 跳转支付宝收银台（redirect URL）；跳转失败给中文原因

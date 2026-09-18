@@ -49,10 +49,17 @@ export type CreateOrderInput = {
   channel: PaymentChannel;
 };
 
+/** 创建订单失败的结构化错误码（路由据此映射 HTTP 状态）。 */
+export type CreateOrderErrorCode =
+  | "invalid_plan"
+  /** 通道密钥未配置完整（503，不静默回落 mock）。 */
+  | "channel_not_configured"
+  | "unknown_channel";
+
 /** 创建订单结果。 */
 export type CreateOrderResult =
   | { ok: true; orderId: string; payment: PaymentParams }
-  | { ok: false; error: string };
+  | { ok: false; error: string; code?: CreateOrderErrorCode };
 
 /** 渠道返回的支付参数（前端渲染用）。 */
 export type PaymentParams =
@@ -91,19 +98,24 @@ export type OrderView = {
 
 /** 支付 provider 接口（仿 course-builder provider 模式）。 */
 export type PaymentProvider = {
-  /** 创建渠道订单，返回支付参数。 */
+  /** 创建渠道订单，返回支付参数。returnUrl 为支付完成后的浏览器回跳地址（渠道支持时使用）。 */
   createOrder(params: {
     orderId: string;
     plan: Plan;
     channel: PaymentChannel;
     notifyUrl: string;
+    returnUrl?: string;
   }): Promise<PaymentParams>;
 
   /** 验证异步回调通知签名，解析为结构化数据。 */
   verifyNotify(rawBody: string, headers: Record<string, string>): Promise<NotifyData | null>;
 
-  /** 查询订单支付状态（可选，主动查单）。 */
-  queryOrder?(orderId: string): Promise<{ paid: boolean; providerTradeNo?: string }>;
+  /** 查询订单支付状态（可选，主动查单）。queryError 携带网关侧失败原因（如实返回，不吞掉）。 */
+  queryOrder?(orderId: string): Promise<{
+    paid: boolean;
+    providerTradeNo?: string;
+    queryError?: string;
+  }>;
 
   /** 退款（可选，后期接入）。 */
   refund?(orderId: string, amountCents: number): Promise<{ ok: boolean; error?: string }>;

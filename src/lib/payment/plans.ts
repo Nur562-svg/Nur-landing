@@ -1,7 +1,7 @@
 /**
  * 套餐目录（代码常量，不建表）。
  * 9 个 SKU：Basic / Pro / Max × 月/季/年。
- * 价格为占位常量，待定价确认后修改。
+ * 价格：2026-09-18 用户确认的正式价（季 ≈ 月×10 折扣、年 ≈ 月×8 折扣）。
  * 旧 lite-* 请求/订单只作兼容识别，统一映射为 Basic。
  */
 import type { LegacyPlanId, Plan, PlanId, PlanTier } from "./types";
@@ -19,7 +19,7 @@ export const PLAN_CATALOG: Record<PlanId, Plan> = {
     id: "basic-quarter",
     tier: "basic",
     period: "quarter",
-    priceCents: 4900, // ¥49
+    priceCents: 4900, // ¥49（≈ ¥16.3/月）
     label: "Basic 会员",
     periodLabel: "季",
   },
@@ -27,7 +27,7 @@ export const PLAN_CATALOG: Record<PlanId, Plan> = {
     id: "basic-year",
     tier: "basic",
     period: "year",
-    priceCents: 14900, // ¥149
+    priceCents: 14900, // ¥149（≈ ¥12.4/月）
     label: "Basic 会员",
     periodLabel: "年",
   },
@@ -35,7 +35,7 @@ export const PLAN_CATALOG: Record<PlanId, Plan> = {
     id: "pro-month",
     tier: "pro",
     period: "month",
-    priceCents: 3900, // ¥39
+    priceCents: 4900, // ¥49
     label: "Pro 会员",
     periodLabel: "月",
   },
@@ -43,7 +43,7 @@ export const PLAN_CATALOG: Record<PlanId, Plan> = {
     id: "pro-quarter",
     tier: "pro",
     period: "quarter",
-    priceCents: 9900, // ¥99
+    priceCents: 12900, // ¥129（≈ ¥43/月）
     label: "Pro 会员",
     periodLabel: "季",
   },
@@ -51,7 +51,7 @@ export const PLAN_CATALOG: Record<PlanId, Plan> = {
     id: "pro-year",
     tier: "pro",
     period: "year",
-    priceCents: 29900, // ¥299
+    priceCents: 39900, // ¥399（≈ ¥33.3/月）
     label: "Pro 会员",
     periodLabel: "年",
   },
@@ -59,7 +59,7 @@ export const PLAN_CATALOG: Record<PlanId, Plan> = {
     id: "max-month",
     tier: "max",
     period: "month",
-    priceCents: 9900, // ¥99，占位价
+    priceCents: 14900, // ¥149
     label: "Max 会员",
     periodLabel: "月",
   },
@@ -67,7 +67,7 @@ export const PLAN_CATALOG: Record<PlanId, Plan> = {
     id: "max-quarter",
     tier: "max",
     period: "quarter",
-    priceCents: 25900, // ¥259，占位价
+    priceCents: 39900, // ¥399（≈ ¥133/月）
     label: "Max 会员",
     periodLabel: "季",
   },
@@ -75,7 +75,7 @@ export const PLAN_CATALOG: Record<PlanId, Plan> = {
     id: "max-year",
     tier: "max",
     period: "year",
-    priceCents: 79900, // ¥799，占位价
+    priceCents: 129900, // ¥1299（≈ ¥108.3/月）
     label: "Max 会员",
     periodLabel: "年",
   },

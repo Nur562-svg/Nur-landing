@@ -693,3 +693,30 @@ playwright-core + 系统 Chrome（headless、无扩展、浅色），视口 **14
   - `docs/design-references/hidoc-m6-chat-mobile-2026-09-17.png`
   - `docs/design-references/hidoc-m6-list-mobile-2026-09-17.png`
   - `docs/design-references/hidoc-m6-my-materials-banner-2026-09-17.png`
+
+## Hi doc M7 — 支付打通（支付宝沙箱，四档订阅真实生效）（2026-09-19）
+
+系统 Chrome（headless、无扩展、浅色）视口 **1440×900** 与 **390×844** + API 端到端（curl/Node fetch）；支付通道 `PAYMENT_PROVIDER=alipay`，网关 `ALIPAY_GATEWAY_URL=https://openapi-sandbox.dl.alipaydev.com/gateway.do`（沙箱，`.env.local` 与 `.dev.vars` 已同步）；正式定价（2026-09-18 用户拍板，`plans.ts` 唯一真相源）：Basic ¥19/月·¥49/季·¥149/年、Pro ¥49/月·¥129/季·¥399/年、Max ¥149/月·¥399/季·¥1299/年。
+
+**验证方式与边界（如实声明）**：支付宝异步 notify 用「支付宝公钥」验签（已实证 `.env.local`/`.dev.vars` 中的 `ALIPAY_PUBLIC_KEY` 确为支付宝公钥：用它验证沙箱网关 `alipay.trade.query` 响应签名通过），其配对私钥仅支付宝持有，**本地无法伪造平台签名**。因此本地 notify 链路验证采用「服务端 `ALIPAY_PUBLIC_KEY` 临时替换为本地测试密钥对公钥（进程 env 覆盖，加密强度等价）→ 用配对私钥构造合法签名的 notify 表单 → POST `/api/pay/notify/alipay`」的方式，**这是模拟 notify，非支付宝服务器真实回调**；真实回调待部署公网后补验（同时确认 notify 验签规范后固定，当前实现为双规范兼容）。下单签名与跳转则为真实沙箱验证（非模拟）。
+
+- **签名规则实证修正**：实测沙箱网关（`alipay.trade.query` 返回 `isv.invalid-signature` 并附网关验签字符串）证明当前网关请求验签字符串**包含 `sign_type`**、仅排除 `sign` 与空值；`buildSignString` 已修正（修正前签名实际无效）。
+- 真实沙箱下单：`POST /api/pay/create-order {planId:"pro-month"}` → 200，`payment.type=redirect`，跳转 URL 指向沙箱网关且 `app_id`/`method=alipay.trade.page.pay`/`sign_type=RSA2`/`sign` 齐全，`return_url=http://localhost:3000/account/billing?orderId=…`、`notify_url=http://localhost:3000/api/pay/notify/alipay`（由 `NEXT_PUBLIC_SITE_URL` 拼装），`biz_content` 的 `out_trade_no`/`total_amount=49.00` 与订单及 plans.ts 一致。
+- 沙箱收银台真实受理：GET 跳转 URL → 302 至 `excashier-sandbox.dl.alipaydev.com/standard/auth.htm?payOrderId=11571b11…`，页面标题「支付宝 - 网上支付 安全快速！」（含收银台/扫码/付款字样，无验签错误字样）。
+- reconcile 真实查单：`GET /api/pay/reconcile?orderId=…` → `{ok:true, paid:false, queryError:"alipay query code=40004 msg=Business Failed"}`（未支付订单 `ACQ.TRADE_NOT_EXIST` 如实透出，不吞错）。
+- 无密钥明确报错：以 `PAYMENT_PROVIDER=alipay` + 空 `ALIPAY_*` 密钥启动实例 → `create-order` **503** `{code:"channel_not_configured", error:"支付通道未配置完整（alipay 缺少 ALIPAY_APP_ID、ALIPAY_PRIVATE_KEY、ALIPAY_PUBLIC_KEY）…"}`，不静默回落 mock、不落订单。
+- 模拟 notify 全链路（测试公钥实例）：验签通过返回 `success` → 订单 paid（channel=alipay、providerTradeNo 落库）→ 会员 tier=pro 即时生效、到期 now+30d → `/api/auth/quotas` 读出 pro（hidocChats/hidocNotes/hidocWorkshopChats 由 free 50/3/30 → unlimited，前后对比成立）；**幂等**：同报文重复 notify 仍 200 success、到期时间不变；**金额篡改**：合法密钥重签 `total_amount=0.01` → 400 `amount_mismatch`，新订单保持 pending、用户保持未开通，已支付订单上的篡改同样被拒（金额核对先于幂等）；**错误密钥签名** → 400；**app_id 不一致**（签名合法）→ 400；`WAIT_BUYER_PAY` → 400、`TRADE_FINISHED` → 受理。
+- 续费叠加：第二单 notify 后到期时间 = 首单到期 +30.00d（不吞未到期时间）；**高档覆盖低档**：夹具设 max +10d 后购买 basic-month 并 notify → 档位保持 max、到期 = 原到期 +30.00d（追加在剩余期后，降档仅经到期自然回落）；**到期回退**：夹具置过期 → `/api/pay/subscription` 读出 free、配额回落（hidocChats=50）。
+- 订单列表：`/api/pay/orders` 如实展示渠道 alipay、金额 ¥49.00、状态 paid/pending、时间。
+- 计费页（`/account/billing`，`billing-panel.tsx` + `billing-panel.module.css`，全 CSS Modules 无内联样式）：三列档位卡（Basic/Pro/Max），头部右侧月/季/年分段控件（共享状态，切换后价格/CTA/折合 ¥/月 联动，季/年显示「折合约 ¥X.X/月」灰字）；卡片层级 档位名 → 40px 衬线大价格 + 灰色计费单位 → 通栏 CTA → 权益对勾清单（数字全部引用 `limits.ts`/`workshop-rules.ts`/`course-entitlement-policy.ts`/`quotas.ts` 真源头）；当前档位卡 2px 描边 + 右上「当前套餐」角标 + CTA「续订当前档位」；底部注记写明试点课免费、名额当月制、高档覆盖低档规则；订单记录表保留在页面下方（渠道列 520px 以下隐藏）。
+- 支付面板与回跳：点「订阅 Pro」→ 面板出现「前往支付宝支付」（新窗口）+ pending 动点轮询（每 3 次轮询触发一次 reconcile 主动查单）→ notify 后面板自动翻为「已支付 · 会员已生效」；`return_url` 回跳（`?orderId=`）后进入同一轮询并展示已支付；面板脚注如实写明「开通以服务端验签后的异步通知或主动查单为准，页面回跳仅作结果展示」。
+- 程序化布局断言：1440px `.cards` 三列（约 299px/列）、分段控件可见、价格 40px；390px 单列（358px）、分段控件可用（实测切「季」成功）；`documentElement.scrollWidth === clientWidth === 390` 无横向溢出；桌面与移动控制台 0 error。
+- 单测：`tests/payment-service.test.ts` 22 项全离线（临时 SQLite 库 + 测试内生成 RSA 密钥对，不触网不碰 dev.db）；`npm test` 378/378；`npm run lint` 0 error；`typecheck` 干净；`npm run check`（build）通过。
+- 证据：
+  - `docs/design-references/hidoc-m7-billing-cards-month-2026-09-19.png`
+  - `docs/design-references/hidoc-m7-billing-cards-year-2026-09-19.png`
+  - `docs/design-references/hidoc-m7-billing-pay-pending-2026-09-19.png`
+  - `docs/design-references/hidoc-m7-billing-pay-paid-2026-09-19.png`
+  - `docs/design-references/hidoc-m7-billing-current-pro-2026-09-19.png`
+  - `docs/design-references/hidoc-m7-billing-return-banner-2026-09-19.png`
+  - `docs/design-references/hidoc-m7-billing-mobile-2026-09-19.png`

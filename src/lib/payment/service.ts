@@ -1,13 +1,20 @@
 /**
  * 支付服务（server-only）。
- * - createOrder：幂等防重复下单 → 调用 provider → 返回支付参数
- * - handleNotify：验签 → 更新 Order → 事务内设置 membershipTier + membershipExpiresAt 续期累加
+ * - createOrder：通道配置校验（缺密钥 503 明确报错，不静默回落 mock）→ 幂等防重复下单 → 调用 provider → 返回支付参数
+ * - handleNotify：验签 → 金额核对 → 事务内条件更新 Order + 设置 membershipTier/membershipExpiresAt（续费叠加、高档覆盖低档）
  * - getSubscription：查询用户当前会员状态
  * - mockPay：mock 模式下手动触发支付成功
+ * - reconcileOrder / reconcilePendingOrders：主动查单补偿（notify 丢失兜底）
  */
 import { prisma } from "@/lib/prisma";
 import { randomUUID } from "node:crypto";
-import type { PaymentChannel, PaymentProvider, PaymentParams, NotifyData, OrderView } from "./types";
+import type {
+  PaymentChannel,
+  PaymentProvider,
+  NotifyData,
+  OrderView,
+  CreateOrderResult,
+} from "./types";
 import { getCompatiblePlanIds, getPlan, periodToDays } from "./plans";
 import { resolveEffectiveMembershipTier } from "@/lib/membership";
 import { mockProvider } from "./providers/mock";
@@ -25,9 +32,31 @@ function getProvider(channel: PaymentChannel): PaymentProvider {
   }
 }
 
-function getCurrentPaymentChannel(): PaymentChannel {
-  const p = process.env.PAYMENT_PROVIDER ?? "mock";
-  return p === "wechat" ? "wechat" : p === "alipay" ? "alipay" : "mock";
+/**
+ * 解析当前支付通道。
+ * - 显式 "mock"（或开发环境未配置）→ mock（开发/演示语义保留）
+ * - "alipay" / "wechat" → 对应通道；未配置密钥时由 assertChannelConfigured 明确报错，绝不静默回落 mock
+ * - 其它值 → 明确报错
+ */
+export function getCurrentPaymentChannel(): PaymentChannel {
+  const raw = process.env.PAYMENT_PROVIDER?.trim() ?? "";
+  if (raw === "" || raw === "mock") return "mock";
+  if (raw === "alipay") return "alipay";
+  if (raw === "wechat") return "wechat";
+  throw new Error(`PAYMENT_PROVIDER 配置不正确：${raw}（可选值 mock | wechat | alipay）`);
+}
+
+/** 各通道必需的服务端环境变量（只校验存在性，值不渲染、不进日志）。 */
+const CHANNEL_REQUIRED_ENV: Record<PaymentChannel, readonly string[]> = {
+  mock: [],
+  alipay: ["ALIPAY_APP_ID", "ALIPAY_PRIVATE_KEY", "ALIPAY_PUBLIC_KEY"],
+  wechat: ["WECHAT_PAY_MCHID", "WECHAT_PAY_APP_ID", "WECHAT_PAY_PRIVATE_KEY_PATH", "WECHAT_PAY_APIV3_KEY"],
+};
+
+/** 校验通道密钥配置；缺失返回缺失变量名列表（完整即返回 null）。 */
+export function getMissingChannelEnv(channel: PaymentChannel): string[] | null {
+  const missing = CHANNEL_REQUIRED_ENV[channel].filter((key) => !process.env[key]?.trim());
+  return missing.length > 0 ? missing : null;
 }
 
 /** 幂等：同用户同 plan 同 channel 的 pending 订单复用。 */
@@ -71,22 +100,51 @@ async function findOrCreateOrder(
   return { id: order.id, isNew: true };
 }
 
+function getSiteBaseUrl(): string {
+  return process.env.NEXT_PUBLIC_SITE_URL?.replace(/\/+$/, "") ?? "https://nur-learn.example.com";
+}
+
+/** 异步通知地址：ALIPAY_NOTIFY_URL 支持显式覆盖（部署于不同域名/端口时），缺省由站点地址拼装。 */
 function getNotifyUrl(channel: PaymentChannel): string {
-  const baseUrl = process.env.NEXT_PUBLIC_SITE_URL ?? "https://nur-learn.example.com";
-  return `${baseUrl}/api/pay/notify/${channel}`;
+  if (channel === "alipay") {
+    const explicit = process.env.ALIPAY_NOTIFY_URL?.trim();
+    if (explicit) return explicit;
+  }
+  return `${getSiteBaseUrl()}/api/pay/notify/${channel}`;
+}
+
+/** 支付完成后的浏览器回跳地址（回跳仅作结果展示，开通只认验签后的 notify 或主动查单）。 */
+function getReturnUrl(orderId: string): string {
+  return `${getSiteBaseUrl()}/account/billing?orderId=${encodeURIComponent(orderId)}`;
 }
 
 /** 创建订单并返回支付参数。 */
 export async function createOrder(
   userId: string,
   planId: string,
-): Promise<{ ok: true; orderId: string; payment: PaymentParams } | { ok: false; error: string }> {
+): Promise<CreateOrderResult> {
   try {
     const plan = getPlan(planId);
-    if (!plan) return { ok: false, error: "invalid_plan" };
+    if (!plan) return { ok: false, error: "invalid_plan", code: "invalid_plan" };
 
-    const channel = getCurrentPaymentChannel();
-    const { id: orderId, isNew } = await findOrCreateOrder(userId, plan.id, channel);
+    let channel: PaymentChannel;
+    try {
+      channel = getCurrentPaymentChannel();
+    } catch (e) {
+      return { ok: false, error: (e as Error).message, code: "unknown_channel" };
+    }
+
+    // 通道密钥未配置完整：明确报错（路由映射 503），绝不静默回落 mock
+    const missing = getMissingChannelEnv(channel);
+    if (missing) {
+      return {
+        ok: false,
+        error: `支付通道未配置完整（${channel} 缺少 ${missing.join("、")}），请联系管理员或检查服务端环境变量。`,
+        code: "channel_not_configured",
+      };
+    }
+
+    const { id: orderId } = await findOrCreateOrder(userId, plan.id, channel);
 
     const provider = getProvider(channel);
     const payment = await provider.createOrder({
@@ -94,6 +152,7 @@ export async function createOrder(
       plan,
       channel,
       notifyUrl: getNotifyUrl(channel),
+      returnUrl: getReturnUrl(orderId),
     });
 
     return { ok: true, orderId, payment };
@@ -135,70 +194,110 @@ export async function mockPay(orderId: string): Promise<{ ok: true } | { ok: fal
   }
 }
 
-/** 支付成功核心逻辑：金额校验 + 事务内更新订单 + 设置会员（续期累加）。 */
+/** 档位层级（用于「高档覆盖低档」的生效策略）。 */
+const TIER_RANK: Record<string, number> = { free: 0, basic: 1, pro: 2, max: 3 };
+
+/**
+ * 续费/升降档后的会员结果（纯函数，供单测直接覆盖）。
+ *
+ * 生效策略（同一时刻高档覆盖低档）：
+ * - 新档 ≥ 当前生效档：立即生效为新档；到期时间在剩余有效期上叠加（未到期时间不吞掉）。
+ * - 新档 < 当前生效档（如在 Pro 有效期内购买 Basic）：档位保持高档不变直至其到期，
+ *   购买时长追加在剩余有效期之后（追加期间按高档享受；降档只通过到期自然回落生效）。
+ * - 当前会员已过期：视为 free，从现在起算新档。
+ */
+export function computeMembershipRenewal(input: {
+  currentTier: string;
+  currentExpiresAt: Date | string | null;
+  planTier: "basic" | "pro" | "max";
+  period: string;
+  now?: Date;
+}): { tier: "basic" | "pro" | "max"; expiresAt: Date } {
+  const now = input.now ?? new Date();
+  const effectiveCurrent = resolveEffectiveMembershipTier({
+    membershipTier: input.currentTier,
+    membershipExpiresAt: input.currentExpiresAt,
+    now,
+  });
+  const currentRank = TIER_RANK[effectiveCurrent] ?? 0;
+  const newRank = TIER_RANK[input.planTier] ?? 0;
+
+  const expiryTime =
+    typeof input.currentExpiresAt === "string"
+      ? Date.parse(input.currentExpiresAt)
+      : input.currentExpiresAt?.getTime() ?? null;
+  // 剩余有效期上叠加：未到期时间不吞掉；已过期（或无到期时间）则从现在起算
+  const base =
+    expiryTime !== null && Number.isFinite(expiryTime) && expiryTime > now.getTime()
+      ? expiryTime
+      : now.getTime();
+
+  const tier = currentRank > newRank ? effectiveCurrent : input.planTier;
+  return {
+    tier: tier as "basic" | "pro" | "max",
+    expiresAt: new Date(base + periodToDays(input.period) * 24 * 60 * 60 * 1000),
+  };
+}
+
+/**
+ * 支付成功核心逻辑：金额校验 + 事务内（条件更新抢占 Order → 更新会员）。
+ * 幂等与并发安全：Order 仅在 status=pending 时被条件更新为 paid（updateMany），
+ * 重复/并发 notify 只有一次能抢占成功，其余直接返回成功，不重复延期。
+ */
 async function applyPaymentSuccess(
   orderId: string,
   providerTradeNo: string,
   expectedAmountCents: number,
 ): Promise<void> {
-  // 幂等检查：订单已支付则跳过
   const order = await prisma.order.findUnique({ where: { id: orderId } });
   if (!order) throw new Error("order_not_found");
-  if (order.status === "paid") return; // 幂等
-  if (order.status === "closed" || order.status === "refunded") {
-    throw new Error(`order_status_${order.status}`);
-  }
 
-  // 金额校验：回调金额必须与订单金额一致，防止篡改
+  // 金额校验先行：无论订单状态，金额不一致一律拒绝（防篡改，先于幂等判断）
   if (expectedAmountCents !== order.amountCents) {
     throw new Error(
       `amount_mismatch: expected=${order.amountCents} got=${expectedAmountCents}`,
     );
   }
 
+  if (order.status === "paid") return; // 幂等：重复 notify 直接成功，不重复延期
+  if (order.status !== "pending") throw new Error(`order_status_${order.status}`);
+
   const plan = getPlan(order.planId);
   if (!plan) throw new Error("plan_not_found");
 
-  // 事务：更新订单 + 设置会员
-  await prisma.$transaction([
-    prisma.order.update({
-      where: { id: orderId },
-      data: {
-        status: "paid",
-        providerTradeNo,
-        paidAt: new Date(),
-      },
-    }),
-    prisma.user.update({
+  await prisma.$transaction(async (tx) => {
+    // 条件更新抢占：仅 pending → paid 成功一次（并发回调安全）
+    const claimed = await tx.order.updateMany({
+      where: { id: orderId, status: "pending" },
+      data: { status: "paid", providerTradeNo, paidAt: new Date() },
+    });
+    if (claimed.count === 0) {
+      // 已被并发处理：paid 视为幂等成功，其余状态如实报错
+      const latest = await tx.order.findUnique({ where: { id: orderId }, select: { status: true } });
+      if (latest?.status === "paid") return;
+      throw new Error(`order_status_${latest?.status ?? "unknown"}`);
+    }
+
+    const user = await tx.user.findUnique({
+      where: { id: order.userId },
+      select: { membershipTier: true, membershipExpiresAt: true },
+    });
+
+    const renewal = computeMembershipRenewal({
+      currentTier: user?.membershipTier ?? "free",
+      currentExpiresAt: user?.membershipExpiresAt ?? null,
+      planTier: plan.tier,
+      period: plan.period,
+    });
+
+    await tx.user.update({
       where: { id: order.userId },
       data: {
-        membershipTier: plan.tier,
-        // 续期累加：如果当前会员未过期，从到期时间往后加；否则从现在加
-        membershipExpiresAt: await computeExpiry(order.userId, plan.tier, plan.period),
+        membershipTier: renewal.tier,
+        membershipExpiresAt: renewal.expiresAt,
       },
-    }),
-  ]);
-}
-
-/** 计算会员到期时间（续期累加）。 */
-async function computeExpiry(
-  userId: string,
-  _tier: string,
-  period: string,
-): Promise<Date> {
-  const now = new Date();
-  const days = periodToDays(period);
-
-  // 查当前到期时间
-  const user = await prisma.user.findUnique({
-    where: { id: userId },
-    select: { membershipExpiresAt: true },
+    });
   });
-
-  const currentExpiry = user?.membershipExpiresAt;
-  // 如果当前会员未过期，从到期时间往后加
-  const base = currentExpiry && currentExpiry > now ? currentExpiry : now;
-  return new Date(base.getTime() + days * 24 * 60 * 60 * 1000);
 }
 
 /** 查询用户当前订阅状态。 */
@@ -276,12 +375,12 @@ export async function getUserOrders(userId: string, limit = 20): Promise<OrderVi
 /**
  * 对单个 pending 订单主动查单。
  * 调用 provider.queryOrder 检查是否已支付；若已支付则走 applyPaymentSuccess。
- * 用于回调丢失场景（如网络抖动、服务重启）。
+ * 用于回调丢失场景（如网络抖动、服务重启）。查单失败如实返回原因（queryError）。
  */
-export async function reconcileOrder(orderId: string): Promise<{
-  ok: true;
-  paid: boolean;
-} | { ok: false; error: string }> {
+export async function reconcileOrder(orderId: string): Promise<
+  | { ok: true; paid: boolean; queryError?: string }
+  | { ok: false; error: string }
+> {
   try {
     const order = await prisma.order.findUnique({ where: { id: orderId } });
     if (!order) return { ok: false, error: "order_not_found" };
@@ -301,7 +400,7 @@ export async function reconcileOrder(orderId: string): Promise<{
       return { ok: true, paid: true };
     }
 
-    return { ok: true, paid: false };
+    return { ok: true, paid: false, queryError: result.queryError };
   } catch (e) {
     return { ok: false, error: (e as Error)?.message ?? "reconcile_failed" };
   }
@@ -355,6 +454,10 @@ const ORDER_TIMEOUT_MINUTES = 30;
 /**
  * 关闭超时未支付的 pending 订单。
  * 防止订单无限占用、用户重复创建。
+ *
+ * 注意（如实声明）：本地关单，未调用支付宝 alipay.trade.close —— 沙箱/生产网关侧订单
+ * 由其自身超时机制处理；调用方（cron）必须先 reconcile 再 close，保证「已支付但 notify
+ * 丢失」的订单先被补偿开通，不被误关。
  */
 export async function closeExpiredOrders(limit = 100): Promise<{ closed: number }> {
   const cutoff = new Date(Date.now() - ORDER_TIMEOUT_MINUTES * 60 * 1000);

@@ -1,0 +1,466 @@
+/* M7 计费页（三列档位卡 + 月/季/年分段控件）。
+ * 视觉沿用既有暖纸体系：方直边、纸色、朱/黛语义色（对齐 hi-doc.module.css 的 token）。 */
+
+.page {
+  --ink: #10100f;
+  --paper: #f7f4ee;
+  --paper-bright: #fbf9f4;
+  --muted: #6c6a66;
+  --line: rgb(16 16 15 / 38%);
+  --line-soft: rgb(16 16 15 / 16%);
+  --red: #bf2118;
+  --blue: #17659a;
+  --jade: #2d7a2d;
+  background: var(--paper);
+  color: var(--ink);
+  min-height: 100dvh;
+  overflow-x: clip;
+}
+
+.page button {
+  font: inherit;
+}
+
+.page :where(a, button):focus-visible {
+  outline: 2px solid var(--blue);
+  outline-offset: 3px;
+}
+
+.container {
+  margin: 0 auto;
+  max-width: 980px;
+  padding: 44px 24px 88px;
+}
+
+.kicker {
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.16em;
+  margin: 0;
+}
+
+.title {
+  font-family: var(--font-serif), "Times New Roman", serif;
+  font-size: clamp(28px, 4vw, 36px);
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  margin: 10px 0 0;
+}
+
+.statusLine {
+  color: var(--muted);
+  font-size: 14px;
+  margin: 12px 0 0;
+}
+
+.statusTier {
+  font-weight: 600;
+}
+
+.statusTierBasic {
+  color: #8a6d3b;
+}
+
+.statusTierPro {
+  color: var(--blue);
+}
+
+.statusTierMax {
+  color: var(--jade);
+}
+
+/* ---------- 错误与等待面板 ---------- */
+
+.errorBanner {
+  background: rgb(191 33 24 / 6%);
+  border-left: 3px solid var(--red);
+  color: var(--red);
+  font-size: 13px;
+  line-height: 1.7;
+  margin: 24px 0 0;
+  padding: 10px 14px;
+}
+
+.payPanel {
+  background: var(--paper-bright);
+  border: 1px solid var(--line);
+  margin: 24px 0 0;
+  padding: 20px 22px;
+}
+
+.payPanelTitle {
+  font-size: 15px;
+  font-weight: 600;
+  margin: 0;
+}
+
+.payPanelMeta {
+  color: var(--muted);
+  font-size: 13px;
+  margin: 6px 0 0;
+}
+
+.payPanelStatus {
+  align-items: center;
+  display: flex;
+  font-size: 13px;
+  gap: 8px;
+  margin: 14px 0 0;
+}
+
+.payPanelStatusDot {
+  animation: pulse 1.4s ease-in-out infinite;
+  background: var(--red);
+  border-radius: 999px;
+  display: inline-block;
+  height: 7px;
+  width: 7px;
+}
+
+@keyframes pulse {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.25;
+  }
+}
+
+.payPanelActions {
+  align-items: center;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 14px;
+  margin: 16px 0 0;
+}
+
+.payPanelNote {
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 1.7;
+  margin: 12px 0 0;
+}
+
+.alipayLink {
+  align-items: center;
+  background: var(--ink);
+  color: var(--paper);
+  display: inline-flex;
+  gap: 8px;
+  font-size: 14px;
+  padding: 11px 22px;
+  text-decoration: none;
+}
+
+.alipayLink:hover {
+  background: #2a2a27;
+}
+
+.statusPaid {
+  color: var(--jade);
+  font-weight: 600;
+}
+
+.statusPending {
+  color: #8a6d3b;
+  font-weight: 600;
+}
+
+.statusClosed {
+  color: var(--muted);
+  font-weight: 600;
+}
+
+/* ---------- 定价区 ---------- */
+
+.pricing {
+  margin-top: 44px;
+}
+
+.pricingHead {
+  align-items: flex-end;
+  border-bottom: 1px solid var(--ink);
+  display: flex;
+  flex-wrap: wrap;
+  gap: 14px;
+  justify-content: space-between;
+  padding-bottom: 14px;
+}
+
+.pricingTitle {
+  font-family: var(--font-serif), "Times New Roman", serif;
+  font-size: 21px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  margin: 0;
+}
+
+.pricingHint {
+  color: var(--muted);
+  font-size: 12px;
+  margin: 6px 0 0;
+}
+
+/* 分段控件（月/季/年） */
+.segment {
+  border: 1px solid var(--line);
+  display: inline-flex;
+  padding: 3px;
+}
+
+.segmentButton {
+  background: transparent;
+  border: 0;
+  color: var(--muted);
+  cursor: pointer;
+  font-size: 13px;
+  padding: 6px 16px;
+}
+
+.segmentButton:hover {
+  color: var(--ink);
+}
+
+.segmentButtonActive {
+  background: var(--ink);
+  color: var(--paper);
+}
+
+.segmentButtonActive:hover {
+  color: var(--paper);
+}
+
+.cards {
+  display: grid;
+  gap: 18px;
+  grid-template-columns: repeat(3, 1fr);
+  margin-top: 22px;
+}
+
+.card {
+  background: var(--paper-bright);
+  border: 1px solid var(--line);
+  display: flex;
+  flex-direction: column;
+  padding: 22px 22px 24px;
+}
+
+/* 当前套餐：描边高亮 + 顶部角标 */
+.cardCurrent {
+  border: 2px solid var(--ink);
+  position: relative;
+}
+
+.cardCurrent::before {
+  background: var(--ink);
+  color: var(--paper);
+  content: "当前套餐";
+  font-size: 11px;
+  letter-spacing: 0.12em;
+  padding: 3px 10px;
+  position: absolute;
+  right: -2px;
+  top: -2px;
+}
+
+.cardHead {
+  align-items: baseline;
+  display: flex;
+  gap: 8px;
+}
+
+.cardName {
+  font-family: var(--font-serif), "Times New Roman", serif;
+  font-size: 19px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  margin: 0;
+}
+
+.cardSub {
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.priceRow {
+  align-items: baseline;
+  display: flex;
+  gap: 6px;
+  margin-top: 18px;
+}
+
+.priceNum {
+  font-family: var(--font-serif), "Times New Roman", serif;
+  font-size: 40px;
+  font-weight: 700;
+  letter-spacing: 0.01em;
+  line-height: 1;
+}
+
+.priceUnit {
+  color: var(--muted);
+  font-size: 13px;
+}
+
+.priceHint {
+  color: var(--muted);
+  font-size: 12px;
+  margin: 8px 0 0;
+}
+
+.cta {
+  background: var(--ink);
+  border: 1px solid var(--ink);
+  color: var(--paper);
+  cursor: pointer;
+  font-size: 14px;
+  margin-top: 18px;
+  padding: 11px 0;
+  width: 100%;
+}
+
+.cta:hover {
+  background: #2a2a27;
+}
+
+.cta:disabled {
+  cursor: wait;
+  opacity: 0.55;
+}
+
+.cardCurrent .cta {
+  background: transparent;
+  color: var(--ink);
+}
+
+.cardCurrent .cta:hover {
+  background: rgb(16 16 15 / 6%);
+}
+
+.benefits {
+  border-top: 1px solid var(--line-soft);
+  display: grid;
+  gap: 10px;
+  list-style: none;
+  margin: 20px 0 0;
+  padding: 18px 0 0;
+}
+
+.benefit {
+  align-items: flex-start;
+  display: flex;
+  font-size: 13px;
+  gap: 8px;
+  line-height: 1.55;
+}
+
+.benefitIcon {
+  color: var(--blue);
+  flex: none;
+  margin-top: 2px;
+}
+
+.pricingNote {
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 1.8;
+  margin: 18px 0 0;
+}
+
+/* ---------- 订单记录 ---------- */
+
+.orders {
+  margin-top: 48px;
+}
+
+.ordersTitle {
+  border-bottom: 1px solid var(--ink);
+  font-family: var(--font-serif), "Times New Roman", serif;
+  font-size: 18px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  margin: 0;
+  padding-bottom: 12px;
+}
+
+.ordersTable {
+  border-collapse: collapse;
+  font-size: 13px;
+  margin-top: 14px;
+  width: 100%;
+}
+
+.ordersTable th {
+  border-bottom: 1px solid var(--line);
+  color: var(--muted);
+  font-weight: 600;
+  padding: 8px 6px;
+  text-align: left;
+}
+
+.ordersTable td {
+  border-bottom: 1px solid var(--line-soft);
+  padding: 9px 6px;
+}
+
+.ordersTime {
+  color: var(--muted);
+  white-space: nowrap;
+}
+
+.ordersEmpty {
+  color: var(--muted);
+  font-size: 13px;
+  margin-top: 14px;
+}
+
+.loading {
+  display: flex;
+  justify-content: center;
+  padding: 64px 0;
+}
+
+.loadingSpinner {
+  animation: spin 0.9s linear infinite;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* ---------- 响应式（390px 单列，无横向溢出） ---------- */
+
+@media (max-width: 880px) {
+  .cards {
+    grid-template-columns: 1fr;
+  }
+
+  .pricingHead {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+}
+
+@media (max-width: 520px) {
+  .container {
+    padding: 32px 16px 64px;
+  }
+
+  .ordersTable {
+    font-size: 12px;
+  }
+
+  .ordersTable th,
+  .ordersTable td {
+    padding: 8px 4px;
+  }
+
+  /* 窄屏隐藏渠道列，避免横向溢出（渠道信息在支付面板与订单创建时均如实展示） */
+  .colChannel {
+    display: none;
+  }
+}
