@@ -11,10 +11,21 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  cursor: pointer;
+  cursor: grab;
   z-index: 240;
   padding: 0;
   -webkit-tap-highlight-color: transparent;
+  touch-action: none;
+}
+
+.fab:active,
+.fab[data-dragging="true"] {
+  cursor: grabbing;
+}
+
+.fab[data-dragging="true"] {
+  z-index: 250;
+  filter: drop-shadow(0 10px 18px rgb(16 16 15 / 22%));
 }
 
 .fab:focus-visible {
@@ -67,33 +78,6 @@
 
 .headerLeft svg {
   color: #9b392c;
-}
-
-.headerOrb {
-  width: 28px;
-  height: 28px;
-  flex-shrink: 0;
-  display: grid;
-  place-items: center;
-}
-
-.thinkingLabel {
-  font-size: 11px;
-  color: #8b5cf6;
-  background: rgba(139, 92, 246, 0.12);
-  border-radius: 999px;
-  padding: 2px 8px;
-  animation: thinking-pulse 1.2s ease-in-out infinite;
-}
-
-@keyframes thinking-pulse {
-  0%,
-  100% {
-    opacity: 0.55;
-  }
-  50% {
-    opacity: 1;
-  }
 }
 
 .header h3 {

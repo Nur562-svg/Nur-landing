@@ -2,11 +2,16 @@
 
 import { useChat } from "@ai-sdk/react";
 import { DefaultChatTransport, isTextUIPart, isToolUIPart, type UIMessage } from "ai";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState, useSyncExternalStore } from "react";
 import type { FsrsCriterionSummary } from "@/types/nur-agent";
 import styles from "./nur-agent-chat.module.css";
 import { recordAgentCallUsage } from "@/lib/quotas";
-import { setBotEmotion } from "@/lib/bot-emotion";
+import {
+  getBotEmotionServerSnapshot,
+  getBotEmotionSnapshot,
+  subscribeBotEmotion,
+} from "@/lib/bot-emotion";
+import { NurAgentFace } from "./nur-agent-face";
 
 type TaskContext = {
   version: 1;
@@ -173,30 +178,6 @@ export function NurAgentChat(props: NurAgentChatProps) {
   const isLoading = status === "submitted" || status === "streaming";
   const isThinking = status === "submitted";
 
-  // 请求中 → 珍珠球 thinking（抽屉头部迷你球可见）；仅在结束时恢复 idle
-  const wasLoadingRef = useRef(false);
-  useEffect(() => {
-    if (isLoading) {
-      wasLoadingRef.current = true;
-      setBotEmotion("thinking");
-      return;
-    }
-    if (wasLoadingRef.current) {
-      wasLoadingRef.current = false;
-      setBotEmotion("idle");
-    }
-  }, [isLoading]);
-
-  // 卸载时若仍在 thinking，避免卡住
-  useEffect(() => {
-    return () => {
-      if (wasLoadingRef.current) {
-        wasLoadingRef.current = false;
-        setBotEmotion("idle");
-      }
-    };
-  }, []);
-
   useEffect(() => {
     if (scrollRef.current) {
       scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
@@ -211,11 +192,20 @@ export function NurAgentChat(props: NurAgentChatProps) {
     setInput("");
   };
 
+  const emotion = useSyncExternalStore(
+    subscribeBotEmotion,
+    getBotEmotionSnapshot,
+    getBotEmotionServerSnapshot,
+  );
+
   return (
     <div className={styles.container}>
       <div className={styles.messageList} ref={scrollRef}>
         {messages.length === 0 ? (
           <div className={styles.empty}>
+            <div className={styles.emptyOrb} aria-hidden="true">
+              <NurAgentFace emotion={emotion} size={96} />
+            </div>
             <p>问任何医学或学习相关问题。</p>
             <p className={styles.emptyHint}>
               例如：&ldquo;什么是细胞膜？&rdquo;、&ldquo;舌质淡白什么意思？&rdquo;、&ldquo;帮我检查答案&rdquo;

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState, useSyncExternalStore } from "react";
+import { useCallback, useEffect, useMemo, useState, useSyncExternalStore } from "react";
 import { createPortal } from "react-dom";
 import { MessageSquare, ScanText, X } from "lucide-react";
 import type { LearningAttemptSurface, LearningMemoryState } from "@/types/learning";
@@ -8,11 +8,11 @@ import type { FsrsCriterionSummary } from "@/types/nur-agent";
 import {
   getBotEmotionServerSnapshot,
   getBotEmotionSnapshot,
-  getBotWrongStreak,
   subscribeBotEmotion,
 } from "@/lib/bot-emotion";
 import { NurAgentFace } from "./nur-agent-face";
 import { useNearPointer } from "./use-near-pointer";
+import { useDraggableFab } from "./use-draggable-fab";
 import { NurAgentPilot } from "./nur-agent-pilot";
 import { NurAgentChat } from "./nur-agent-chat";
 import styles from "./nur-agent-dock.module.css";
@@ -87,10 +87,27 @@ export function NurAgentDock(props: NurAgentDockProps) {
     getBotEmotionSnapshot,
     getBotEmotionServerSnapshot,
   );
-  const [fabRef, pointer] = useNearPointer<HTMLButtonElement>({
+  const [nearRef, pointer] = useNearPointer<HTMLButtonElement>({
     radius: 320,
     fullAt: 100,
   });
+  const {
+    ref: dragRef,
+    dragging,
+    justDragged,
+    onPointerDown: onFabPointerDown,
+    style: fabDragStyle,
+  } = useDraggableFab<HTMLButtonElement>({
+    margin: 12,
+    dragThreshold: 6,
+    storageKey: "nur-learn:agent-fab-pos",
+    defaultInset: { right: 28, bottom: 28 },
+    enabled: mounted,
+  });
+  const setFabRef = useCallback((el: HTMLButtonElement | null) => {
+    nearRef.current = el;
+    dragRef.current = el;
+  }, [nearRef, dragRef]);
   const { surface } = props;
   const isKnowledgePoint = surface === "knowledge-point";
   const isPlatform = surface === "platform";
@@ -190,24 +207,34 @@ export function NurAgentDock(props: NurAgentDockProps) {
   return createPortal(
     <>
       <button
-        ref={fabRef}
+        ref={setFabRef}
         className={styles.fab}
-        onClick={() => setOpen(true)}
+        onClick={() => {
+          if (justDragged || dragging) {
+            return;
+          }
+          setOpen(true);
+        }}
         aria-label={`打开 NUR Agent（当前表情：${emotion}）`}
         type="button"
         data-open={open}
         data-emotion={emotion}
         data-over={pointer.over ? "true" : undefined}
-        onPointerDown={() => setPressed(true)}
+        data-dragging={dragging ? "true" : undefined}
+        style={fabDragStyle}
+        onPointerDown={(event) => {
+          setPressed(true);
+          onFabPointerDown(event);
+        }}
         onPointerUp={() => setPressed(false)}
         onPointerLeave={() => setPressed(false)}
       >
         <NurAgentFace
-          emotion={emotion}
-          wrongStreak={getBotWrongStreak()}
+          emotion="idle"
           lookX={lookX}
           lookY={lookY}
           pressed={pressed}
+          dragging={dragging}
         />
       </button>
       {open ? (
@@ -220,14 +247,8 @@ export function NurAgentDock(props: NurAgentDockProps) {
           >
             <header className={styles.header}>
               <div className={styles.headerLeft}>
-                <span className={styles.headerOrb} aria-hidden="true">
-                  <NurAgentFace emotion={emotion} size={28} />
-                </span>
                 <h3>NUR Agent</h3>
                 <span className={styles.surfaceLabel}>{surfaceLabel}</span>
-                {emotion === "thinking" ? (
-                  <span className={styles.thinkingLabel}>思考中</span>
-                ) : null}
               </div>
               <button
                 type="button"
