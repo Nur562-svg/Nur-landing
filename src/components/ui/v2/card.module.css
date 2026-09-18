@@ -1,0 +1,87 @@
+/* V2 Card — 移植自 docs/design-references/claude-v2/components.css「Card」。 */
+.card {
+  background: var(--v2-popover);
+  border: 1px solid var(--v2-border);
+  border-radius: var(--v2-radius);
+  box-shadow: var(--v2-shadow-sm);
+  display: flex;
+  flex-direction: column;
+  min-height: 150px;
+  overflow: hidden;
+  padding: 18px;
+  transition:
+    transform 0.16s ease,
+    box-shadow 0.16s ease,
+    border-color 0.16s ease;
+  width: 100%;
+}
+
+.card:hover {
+  box-shadow: var(--v2-shadow-lg);
+  transform: translateY(-1px);
+}
+
+.eyebrow {
+  color: var(--v2-muted-foreground);
+  font: 600 10px/1.2 var(--v2-font-serif);
+  letter-spacing: 0.12em;
+  margin: 0 0 10px;
+  text-transform: uppercase;
+}
+
+.title {
+  color: var(--v2-foreground);
+  font: 600 21px/1.18 var(--v2-font-sans);
+  margin: 0 0 10px;
+}
+
+.body {
+  color: var(--v2-secondary-foreground);
+  flex: 1;
+  font-size: 14px;
+  line-height: 1.6;
+  margin: 0;
+}
+
+/* 嵌入/凹陷面：不与主响应争抢层级 */
+.sunken {
+  background: var(--v2-card);
+  box-shadow: none;
+}
+
+.sunken .body {
+  color: var(--v2-foreground);
+}
+
+/* 强调面：最强对比与最深阴影 */
+.emphasis {
+  background: var(--v2-foreground);
+  border-color: transparent;
+  box-shadow: var(--v2-shadow-xl);
+  color: var(--v2-background);
+}
+
+.emphasis .eyebrow {
+  color: var(--v2-secondary);
+}
+
+.emphasis .body,
+.emphasis .title {
+  color: var(--v2-background);
+}
+
+/* 禁用：降调不降可读性 */
+.disabled {
+  background: var(--v2-card);
+  border-color: var(--v2-border);
+  box-shadow: none;
+  pointer-events: none;
+}
+
+.disabled .eyebrow {
+  color: var(--v2-muted-foreground);
+}
+
+.disabled .body {
+  color: var(--v2-muted-foreground);
+}

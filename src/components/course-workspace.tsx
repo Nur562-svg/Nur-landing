@@ -56,7 +56,7 @@ import type {
   UserExamStructure,
   UserExamStructureRow,
 } from "@/types/learning";
-import { NurAgentDock } from "./nur-agent-dock";
+import { PLATFORM_DOCK_PROPS, useNurAgentDockProps } from "@/lib/agent-dock-props";
 import styles from "./course-workspace.module.css";
 
 type CourseWorkspaceProps = {
@@ -92,6 +92,7 @@ function StudySessionIcon({ routeId }: { routeId: LearningRouteId }) {
 }
 
 export function CourseWorkspace({ course, learnerState }: CourseWorkspaceProps) {
+  useNurAgentDockProps(PLATFORM_DOCK_PROPS);
   const currentKnowledgePoint = selectKnowledgePointById(
     course,
     learnerState.currentKnowledgePointId,
@@ -893,7 +894,6 @@ export function CourseWorkspace({ course, learnerState }: CourseWorkspaceProps) 
           </aside>
         </div>
       ) : null}
-      <NurAgentDock surface="platform" />
     </main>
   );
 }

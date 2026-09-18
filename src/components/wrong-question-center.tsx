@@ -16,7 +16,7 @@ import {
 import { QUESTION_KIND_OPTIONS } from "@/lib/question-kind-labels";
 import styles from "./wrong-question-center.module.css";
 import { SyncStatusBadge } from "./sync-status-badge";
-import { NurAgentDock } from "./nur-agent-dock";
+import { PLATFORM_DOCK_PROPS, useNurAgentDockProps } from "@/lib/agent-dock-props";
 
 type WrongQuestionCenterProps = {
   courses: readonly CourseDefinition[];
@@ -80,6 +80,7 @@ function fsrsEntry(item: FsrsHighRiskItem): { href: string; label: string } {
 
 export function WrongQuestionCenter({ courses }: WrongQuestionCenterProps) {
   const data = useWrongQuestionCenter(courses);
+  useNurAgentDockProps(PLATFORM_DOCK_PROPS);
   const [activeTab, setActiveTab] = useState<CenterTab>("objective");
 
   const tabs: readonly { id: CenterTab; label: string; count: number }[] = [
@@ -438,7 +439,6 @@ export function WrongQuestionCenter({ courses }: WrongQuestionCenterProps) {
           </section>
         </div>
       ) : null}
-      <NurAgentDock surface="platform" />
     </div>
   );
 }

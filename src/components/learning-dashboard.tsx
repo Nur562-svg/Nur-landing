@@ -39,7 +39,7 @@ import {
 } from "@/lib/export-learner-data";
 import type { UserQuotas } from "@/lib/quotas";
 import { getMembershipTierLabel } from "@/lib/membership";
-import { NurAgentDock } from "./nur-agent-dock";
+import { PLATFORM_DOCK_PROPS, useNurAgentDockProps } from "@/lib/agent-dock-props";
 import styles from "./learning-dashboard.module.css";
 
 const PROFILE_STORAGE_KEY = "nur-learn:profile:v1";
@@ -155,6 +155,7 @@ type LearningDashboardProps = {
 
 export function LearningDashboard({ courses }: LearningDashboardProps) {
   const { user, loading: sessionLoading, logout } = useSession();
+  useNurAgentDockProps(PLATFORM_DOCK_PROPS);
   const [activeStep, setActiveStep] = useState(0);
   const [planOpen, setPlanOpen] = useState(false);
   const [accountOpen, setAccountOpen] = useState(false);
@@ -910,7 +911,6 @@ export function LearningDashboard({ courses }: LearningDashboardProps) {
           </div>
         </aside>
       ) : null}
-      <NurAgentDock surface="platform" />
     </main>
   );
 }

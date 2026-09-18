@@ -1,0 +1,70 @@
+/* V2 Badge — 移植自 docs/design-references/claude-v2/components.css「Badge」。 */
+.badge {
+  align-items: center;
+  border-radius: var(--v2-radius);
+  border: 1px solid transparent;
+  display: inline-flex;
+  font: 600 12px/1 var(--v2-font-sans);
+  justify-content: center;
+  letter-spacing: 0.01em;
+  min-height: 32px;
+  padding: 0 calc(var(--v2-spacing) * 3.5);
+  transition:
+    transform 0.16s ease,
+    box-shadow 0.16s ease,
+    background-color 0.16s ease,
+    color 0.16s ease,
+    border-color 0.16s ease;
+  white-space: nowrap;
+}
+
+.badge:hover {
+  transform: translateY(-1px);
+}
+
+.filled {
+  background: var(--v2-primary);
+  border: 1px solid transparent;
+  box-shadow: var(--v2-shadow-xs);
+  color: var(--v2-primary-foreground);
+}
+
+.filled:hover {
+  box-shadow: var(--v2-shadow-sm);
+}
+
+.muted {
+  background: var(--v2-muted);
+  border: 1px solid transparent;
+  color: var(--v2-foreground);
+}
+
+.outline {
+  background: var(--v2-popover);
+  border: 1px solid var(--v2-border);
+  color: var(--v2-foreground);
+}
+
+/* 禁用：降调不降可读性 */
+.filledIsDisabled {
+  background: var(--v2-secondary);
+  border-color: var(--v2-border);
+  color: var(--v2-muted-foreground);
+  box-shadow: none;
+  pointer-events: none;
+}
+
+.mutedIsDisabled {
+  background: var(--v2-card);
+  border-color: transparent;
+  color: var(--v2-muted-foreground);
+  box-shadow: none;
+  pointer-events: none;
+}
+
+.outlineIsDisabled {
+  background: var(--v2-background);
+  color: var(--v2-muted-foreground);
+  box-shadow: none;
+  pointer-events: none;
+}

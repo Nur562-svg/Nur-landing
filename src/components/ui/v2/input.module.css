@@ -1,0 +1,75 @@
+/* V2 Input — 移植自 docs/design-references/claude-v2/components.css「Input」。
+   field = 独立输入框；bar = 内嵌式输入条（右侧状态点）。 */
+.field {
+  background: var(--v2-background);
+  border: 1px solid var(--v2-border);
+  border-radius: var(--v2-radius);
+  box-shadow: var(--v2-shadow-sm);
+  color: var(--v2-foreground);
+  font: inherit;
+  height: 40px;
+  padding: 0 calc(var(--v2-spacing) * 3);
+}
+
+.field::placeholder,
+.bar input::placeholder {
+  color: var(--v2-muted-foreground);
+}
+
+.field:focus {
+  border-color: var(--v2-ring);
+  box-shadow: var(--v2-shadow-sm);
+  outline: none;
+}
+
+.field:disabled {
+  background: var(--v2-card);
+  color: var(--v2-muted-foreground);
+  box-shadow: none;
+}
+
+.bar {
+  align-items: center;
+  background: var(--v2-card);
+  border: 1px solid transparent;
+  border-radius: var(--v2-radius);
+  box-shadow: var(--v2-shadow-sm);
+  display: flex;
+  gap: 8px;
+  height: 40px;
+  padding: 0 calc(var(--v2-spacing) * 3);
+}
+
+.bar:focus-within {
+  border-color: var(--v2-ring);
+  box-shadow: var(--v2-shadow-sm);
+  outline: none;
+}
+
+.bar input {
+  background: transparent;
+  border: 0;
+  color: inherit;
+  flex: 1;
+  font: inherit;
+  min-width: 0;
+  outline: none;
+}
+
+.bar.disabled {
+  background: var(--v2-card);
+  box-shadow: none;
+  color: var(--v2-muted-foreground);
+}
+
+.bar.disabled input {
+  cursor: not-allowed;
+}
+
+.dot {
+  background: var(--v2-muted-foreground);
+  border-radius: var(--v2-radius-full);
+  height: 8px;
+  opacity: 0.5;
+  width: 8px;
+}

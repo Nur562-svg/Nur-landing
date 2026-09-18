@@ -40,7 +40,7 @@ import {
   CurrentAnswerAssistance,
   LearningMemoryPanel,
 } from "./learning-memory-panel";
-import { NurAgentDock } from "./nur-agent-dock";
+import { useNurAgentDockProps } from "@/lib/agent-dock-props";
 import styles from "./case-reasoning-room.module.css";
 
 type CaseReasoningRoomProps = {
@@ -161,6 +161,30 @@ export function CaseReasoningRoom({
     .sort()
     .join(",")}`;
   const currentVersionConfirmed = confirmedSignatures[activeStep.id] === activeSignature;
+  // R1：dock 收敛为壳级单实例，这里只上报 props（行为与原就地挂载一致）。
+  useNurAgentDockProps({
+    state: memoryState,
+    courseId: course.id,
+    courseSlug: course.slug,
+    courseVersionId: course.version.id,
+    offeringId: course.examBlueprint.id,
+    knowledgePointId: knowledgePoint.id,
+    surface: "case-reasoning",
+    taskId: caseDefinition.id,
+    segmentId: activeStep.id,
+    currentText: activeAnswerText,
+    selfCheckStarted: activeRevealed,
+    onApplyRewrite: (rewrittenText) => {
+      if (activeDraft.trim().length === 0) return;
+      // 与写作室一致的智能合并：保留学生原句、把提案作为补充插入；
+      // 草稿过短或与提案无关时才整体替换。
+      const { merged } = mergeRewriteIntoDraft(activeDraft, rewrittenText);
+      setRewriteUndo({ stepId: activeStep.id, beforeText: activeDraft });
+      setDrafts((current) => ({ ...current, [activeStep.id]: merged }));
+      // 应用后本步回到未确认状态（与手动编辑行为一致），学生仍需自行自核确认
+      setConfirmedStageIds((current) => current.filter((item) => item !== activeStep.id));
+    },
+  });
   const progress = completedStages.length * 25;
   const nextStep = orderedSteps[activeStepIndex + 1] ?? null;
   const previousStep = orderedSteps[activeStepIndex - 1] ?? null;
@@ -441,30 +465,6 @@ export function CaseReasoningRoom({
                 ))}
                 criterionLabels={activeCriteria}
                 state={memoryState}
-              />
-
-              <NurAgentDock
-                state={memoryState}
-                courseId={course.id}
-                courseSlug={course.slug}
-                courseVersionId={course.version.id}
-                offeringId={course.examBlueprint.id}
-                knowledgePointId={knowledgePoint.id}
-                surface="case-reasoning"
-                taskId={caseDefinition.id}
-                segmentId={activeStep.id}
-                currentText={activeAnswerText}
-                selfCheckStarted={activeRevealed}
-                onApplyRewrite={(rewrittenText) => {
-                  if (activeDraft.trim().length === 0) return;
-                  // 与写作室一致的智能合并：保留学生原句、把提案作为补充插入；
-                  // 草稿过短或与提案无关时才整体替换。
-                  const { merged } = mergeRewriteIntoDraft(activeDraft, rewrittenText);
-                  setRewriteUndo({ stepId: activeStep.id, beforeText: activeDraft });
-                  setDrafts((current) => ({ ...current, [activeStep.id]: merged }));
-                  // 应用后本步回到未确认状态（与手动编辑行为一致），学生仍需自行自核确认
-                  setConfirmedStageIds((current) => current.filter((item) => item !== activeStep.id));
-                }}
               />
 
               {rewriteUndo && rewriteUndo.stepId === activeStep.id ? (

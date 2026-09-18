@@ -4,6 +4,7 @@ import {
   SITE_NAME,
   SITE_URL,
 } from "@/lib/site-config";
+import { NurAgentDockHost } from "@/components/nur-agent-dock-host";
 import "./globals.css";
 
 export const metadata: Metadata = {
@@ -37,7 +38,11 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="zh-CN" data-scroll-behavior="smooth" className="h-full antialiased">
-      <body className="min-h-full flex flex-col">{children}</body>
+      <body className="min-h-full flex flex-col">
+        {children}
+        {/* NUR Agent Dock 壳级单实例（R1 收敛：原先 9 处各自挂载） */}
+        <NurAgentDockHost />
+      </body>
     </html>
   );
 }

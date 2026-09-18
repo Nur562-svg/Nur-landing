@@ -1642,3 +1642,29 @@ Answer: modern medicine also enters exam-answer and scoring training. The implem
 ## 设计系统 v2（2026-09-18 定案，M7 后生效）
 
 用户拍板（方案 A）：整体框架重构（NUR Workspace 壳）采用 Claude 风格设计库的三层体系——token 层（7 组原色阶 + 语义层 + 暖炭灰暗色模式）、组件层（button/card/input/badge/chat-bubble/navigation 六件套）、组合层（website UIKit 为三栏壳排版基准）。**圆角采用库的 8/12/16/20/24px 完整体系，取代旧「方直边」规则**；字体本地化映射（Newsreader→宋体显示衬线、Lora→思源宋阅读面、Poppins→MiSans/苹方紧凑 UI，拉丁原字体作回退）；terracotta `#C96442` 为唯一主强调，现行黛蓝语义族保留。适配详情与铁律见 `docs/design-references/claude-v2/NUR-DESIGN-V2.md`（唯一真相源）；库资产已入 `docs/design-references/claude-v2/`（仅设计参考，不被业务代码 import，不进 public）。**M6–M7 期间现行 Design Rules 完全不变，不预改任何在跑页面**；框架重构排期仍后置于 Hi doc M0–M7 完成之后（桌面优先、移动后置、Agent 分体共享记忆的决定不变）。
+
+## 设计系统 v2 R1 — 壳 + Token（2026-09-19 完成）
+
+R1 只做「壳 + token 并存」，不动任何业务页面的视觉与逻辑；`docs/PROJECT_STATE.md` 本节为摘要，验收证据见 `design-qa.md`「Design System R1」节。
+
+### A. Token 层（`src/app/globals.css`）
+- 7 组原色阶 brand/text/bg/icon/border/success/error 各 50–900 按库原值落地 `:root` 与 `.dark`（含暖炭灰暗色整套）。
+- 语义层/字体/圆角/阴影/间距以 **`--v2-*` 前缀**并存：库语义名（--primary/--card/--sidebar 等）与现有 shadcn token 同名冲突，且 R1 不得改动既有值（--paper/--ink/--background/--primary 等正被各 CSS module 消费），故 terracotta 主强调落在 `--v2-primary`，`--sidebar #F5F4EE` 落在 `--v2-sidebar`，页面底 `--bg-100 #FAF9F5` 落在 `--v2-background`；R2 逐面切换消费方时再绑定。字体栈按定案：`--v2-font-display`（宋体显示 + Newsreader 拉丁回退）/`--v2-font-serif`（思源宋阅读 + Lora 回退）/`--v2-font-sans`（MiSans/苹方 + Poppins 回退）/mono 不变；`--v2-radius-sm/md/xl/2xl` = 8/12/20/24px、`--v2-radius` = 16px；`--v2-spacing` 4px 节奏；`--v2-shadow-2xs…2xl`。**既有 token 零删除、零重命名、零改值。**
+
+### B. 六件套（新建 `src/components/ui/v2/`）
+- button/card/input/badge/chat-bubble/navigation 共 6 个 tsx + 6 个 module.css，从 `components.css` + `preview/*.html` 移植为 React + CSS Modules；只消费 `--v2-*` token、4px 间距节奏、hover/focus-visible（`--v2-ring`）/disabled 齐全；纯展示层、零业务逻辑、无 "use client"（可同时用于服务端/客户端树）、未引第三方 UI 依赖。既有 `src/components/ui/button.tsx`（shadcn）原样保留。
+- `V2Button` 未保留参考预览里「≤560px 强制全宽」的示例容器样式（组合层职责，非组件契约）。
+
+### C. NUR Workspace 壳
+- 路由组 `src/app/(workspace)/`：`learn/`、`courses/`、`question-bank/`、`account/` 四目录整体 `git mv` 迁入，**URL 全部不变**；新增 `src/app/(workspace)/layout.tsx`。
+- 壳组件 `src/components/workspace/`（workspace-shell + command-palette + shell-data，CSS Modules）：248px 左侧栏（品牌 + 主入口 Hi doc/官方课程/题库/会员 + 最近学习：书架最近教材（登录后拉取 `/api/hidoc/textbooks`，未登录不请求）+ 进行中课程（中医诊断学、生理学））、顶部细条（搜索占位 + ⌘K、用户/会员状态 chip 复用 `useSession`）、⌘K 命令面板（壳 + 输入 + ↑↓/Enter 跳转；数据 = 三入口/学习主页/试点课静态聚合 + 书架教材前 6 本，不做全局检索）、≤900px 侧栏收起为抽屉（汉堡 + scrim + Esc/路由点击收起）；内容区**不加内边距/背景/字体**，业务页面自身渲染不受壳影响。Agent 浮球（dock FAB）天然退化为浮球。
+- **NurAgentDock 收敛为壳级单实例**：新增 `src/lib/agent-dock-props.ts`（props 外部 store + `useNurAgentDockProps` 上报 hook + `PLATFORM_DOCK_PROPS`）与 `src/components/nur-agent-dock-host.tsx`（根布局唯一挂载，`useSyncExternalStore` 读 store）；原 8 个挂载组件（learning-dashboard、course-workspace、knowledge-point-lesson、subjective-writing-room、case-reasoning-room、question-bank-practice、private-materials-studio、wrong-question-center）改为上报 props，dock 自身 createPortal 到 body 的机制与全部交互（对话/结构分析/改写应用/撤销）不变。挂在根布局而非 (workspace) 布局：`/wrong-questions` 在路由组外、历史上也有 dock，根布局单实例可同时覆盖。
+- `/design-system`（`src/app/(workspace)/design-system/`）：仅登录可见（未登录 redirect 到 /login），不在导航露出；展示 7 组色板 + 语义 token + 六件套全变体 + 字体样张 + 明暗切换开关。
+
+### R1 验证（2026-09-19）
+- 单测 385/385（379 既有 + 新增 `tests/ui-v2-smoke.test.ts` 6 项六件套纯渲染冒烟，经 `tests/helpers/css-module-hooks.mjs` 加载钩子免打包器渲染）；`npm run lint` 0 error（新文件 0 警告；顺手修复 pre-existing 的 `use-draggable-fab` set-state-in-effect error——rAF 包裹，dock 定位行为不变）；typecheck 干净；`npm run check` exit 0。
+- 浏览器（playwright-core + 系统 Chrome headless，1440×900 与 390×844，dev 与 `next start` 生产构建双环境）：/learn、/courses、/question-bank、/account/billing、/learn/hi-doc、/learn/hi-doc/w、/wrong-questions 全 200、0 控制台错误、390 无横向溢出；⌘K 开合正常、390 抽屉正常、/design-system 明暗两态正常、登录态壳用户/会员 chip 正常；Agent dock 逐旧挂载点探针：/learn、/courses/tcm-diagnostics、知识点、写作室、推理室、单题练习、错题本、我的资料均单实例 FAB + 正确 surface 标签（平台/知识点/写作室/推理室）+ 开合正常。
+- 像素对比口径（如实声明）：壳是 R1 交付物本身，业务页被 248px 侧栏 + 顶栏包围后视口宽度收窄必然回流，「整页像素级不变」在物理上不成立；已按「业务页面自身 DOM/样式零改动、内容区无壳注入样式」执行并留档迁移前基线截图（r1-baseline-\*）与迁移后截图（r1-after-\*）对照。
+- 已知事项（R2 处理）：① 库自带暗色缺陷——secondary 按钮/标签暗色下浅底浅字（token 原值照搬，需 R2 评审修正）；② dev 冷编译多路由并行首次访问偶发 manifest `JSON.parse` 500（仅 dev、重试即好，生产构建复验无此问题）；③ 生产 `next start` 因「生产强制 Postgres」护栏无法本地注册账号，登录态检查以 dev 服务为准。
+
+**下一优先级**：R2 = Hi doc 面切换（卡片/按钮/对话气泡换 v2 组件 + 启用暗色，评审并修正 secondary 暗色对比）；R3 = 官方课 + 题库面切换；R4 = ⌘K 全局检索与移动端深化。

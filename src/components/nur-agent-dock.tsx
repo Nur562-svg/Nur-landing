@@ -3,13 +3,14 @@
 import { useCallback, useEffect, useMemo, useState, useSyncExternalStore } from "react";
 import { createPortal } from "react-dom";
 import { MessageSquare, ScanText, X } from "lucide-react";
-import type { LearningAttemptSurface, LearningMemoryState } from "@/types/learning";
+import type { LearningAttemptSurface } from "@/types/learning";
 import type { FsrsCriterionSummary } from "@/types/nur-agent";
 import {
   getBotEmotionServerSnapshot,
   getBotEmotionSnapshot,
   subscribeBotEmotion,
 } from "@/lib/bot-emotion";
+import type { NurAgentDockProps } from "@/lib/agent-dock-props";
 import { NurAgentFace } from "./nur-agent-face";
 import { useNearPointer } from "./use-near-pointer";
 import { useDraggableFab } from "./use-draggable-fab";
@@ -38,22 +39,6 @@ type TaskContext = {
   }[];
   privateRef?: "nur-qwen-private-ref" | null;
 } | null;
-
-type NurAgentDockProps = {
-  surface: LearningAttemptSurface | "knowledge-point" | "platform";
-  state?: LearningMemoryState;
-  courseId?: string;
-  courseSlug?: string;
-  courseVersionId?: string;
-  offeringId?: string;
-  knowledgePointId?: string;
-  taskId?: string;
-  segmentId?: string | null;
-  currentText?: string;
-  selfCheckStarted?: boolean;
-  privateRef?: "nur-qwen-private-ref" | null;
-  onApplyRewrite?: (rewrittenText: string, criterionId: string) => void;
-};
 
 type TabId = "chat" | "analysis";
 

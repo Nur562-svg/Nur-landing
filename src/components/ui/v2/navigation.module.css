@@ -1,0 +1,139 @@
+/* V2 Navigation — 移植自 docs/design-references/claude-v2/components.css「Navigation」。
+   tabs = 页签条；rail = 侧栏列表；bottom-nav = 底部导航。 */
+.tabs,
+.rail,
+.bottomNav {
+  border: 1px solid var(--v2-border);
+  border-radius: var(--v2-radius);
+  box-shadow: var(--v2-shadow-xs);
+}
+
+.tabs {
+  background: var(--v2-card);
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  max-width: 100%;
+  padding: 6px;
+}
+
+.tab,
+.item,
+.navItem {
+  appearance: none;
+  background: transparent;
+  border: 1px solid transparent;
+  color: var(--v2-muted-foreground);
+  cursor: pointer;
+  font: 600 13px/1.1 var(--v2-font-sans);
+  transition:
+    background-color 0.16s ease,
+    color 0.16s ease,
+    border-color 0.16s ease,
+    box-shadow 0.16s ease;
+}
+
+.tab {
+  border-radius: calc(var(--v2-radius) - 6px);
+  padding: 11px 15px;
+}
+
+.tab:hover,
+.navItem:hover {
+  background: var(--v2-popover);
+  color: var(--v2-foreground);
+}
+
+.item:hover {
+  background: var(--v2-sidebar-accent);
+  color: var(--v2-foreground);
+}
+
+.tab:focus-visible,
+.item:focus-visible,
+.navItem:focus-visible {
+  outline: 2px solid var(--v2-ring);
+  outline-offset: 2px;
+}
+
+.tab.active,
+.navItem.active {
+  background: var(--v2-popover);
+  border-color: var(--v2-border);
+  box-shadow: var(--v2-shadow-xs);
+  color: var(--v2-foreground);
+}
+
+.tab.active {
+  box-shadow: var(--v2-shadow-sm);
+}
+
+.tab:disabled,
+.item:disabled,
+.navItem:disabled {
+  background: transparent;
+  box-shadow: none;
+  color: var(--v2-muted-foreground);
+  cursor: not-allowed;
+}
+
+.rail {
+  background: var(--v2-sidebar);
+  color: var(--v2-sidebar-foreground);
+  max-width: 100%;
+  padding: 14px;
+  width: 236px;
+}
+
+.brand {
+  color: var(--v2-sidebar-foreground);
+  font: 600 11px/1.2 var(--v2-font-serif);
+  letter-spacing: 0.14em;
+  margin: 0 0 12px;
+  text-transform: uppercase;
+}
+
+.stack {
+  display: grid;
+  gap: 8px;
+}
+
+.item {
+  border-radius: calc(var(--v2-radius) - 8px);
+  color: var(--v2-sidebar-foreground);
+  padding: 12px 13px;
+  text-align: left;
+  width: 100%;
+}
+
+.item.active {
+  background: var(--v2-popover);
+  border-color: var(--v2-sidebar-border);
+  box-shadow: var(--v2-shadow-xs);
+  color: var(--v2-foreground);
+}
+
+.bottomNav {
+  background: var(--v2-popover);
+  display: grid;
+  gap: 8px;
+  grid-template-columns: repeat(3, 1fr);
+  padding: 8px;
+  width: min(100%, 420px);
+}
+
+.navItem {
+  border-radius: calc(var(--v2-radius) - 6px);
+  display: grid;
+  gap: 4px;
+  justify-items: center;
+  padding: 12px 10px;
+}
+
+@media (max-width: 640px) {
+  .tabs,
+  .rail,
+  .bottomNav {
+    width: 100%;
+  }
+}

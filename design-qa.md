@@ -720,3 +720,22 @@ playwright-core + 系统 Chrome（headless、无扩展、浅色），视口 **14
   - `docs/design-references/hidoc-m7-billing-current-pro-2026-09-19.png`
   - `docs/design-references/hidoc-m7-billing-return-banner-2026-09-19.png`
   - `docs/design-references/hidoc-m7-billing-mobile-2026-09-19.png`
+
+## Design System R1 — Workspace 壳 + Token 并存（2026-09-19）
+
+playwright-core + 系统 Chrome（headless、无扩展、浅色），视口 **1440×900** 与 **390×844**；dev 服务与 `next start` 生产构建双环境各跑一轮全量脚本（`scripts/design-r1-check.mjs`，需 `npm i --no-save playwright-core`）。R1 范围：v2 token 落 globals.css（`--v2-*` 与既有 token 并存，既有值零改动）+ 六件套组件（`src/components/ui/v2/`）+ `(workspace)` 路由组壳（learn/courses/question-bank/account 迁入，URL 不变）+ `/design-system` 预览页 + NurAgentDock 收敛壳级单实例。**未改动任何业务页面的 DOM/样式；未碰 Tier 1/2/3。**
+
+- Token 层：7 组原色阶（brand/text/bg/icon/border/success/error 50–900）+ `--v2-*` 语义层/字体（宋体显示/思源宋阅读/MiSans 紧凑 UI，拉丁回退）/圆角 8–24px/阴影/4px 间距，明暗两套完整落地；语义名与既有 shadcn token 冲突故加 `--v2-` 前缀（terracotta 主强调= `--v2-primary #C96442`、侧栏 `--v2-sidebar #F5F4EE`、页面底 `--v2-background #FAF9F5`），R2 逐面切换时再绑定。
+- 路由迁移后全部 200 且 0 控制台错误、390 视口 `scrollWidth===clientWidth===390` 无横向溢出（dev 与生产各 14 项断言）；**像素对比口径如实声明**：壳（248px 侧栏 + 顶栏）是 R1 交付物，业务页内容宽度收窄必然回流，整页像素级不变物理上不成立；验收执行为「业务页面自身零改样式、内容区无壳注入样式」，留档迁移前 `r1-baseline-*` 与迁移后 `r1-after-*` 截图对照（页面自身配色/字体/组件样式一致，仅画框变化）。
+- 壳：248px 侧栏（NUR LEARN 品牌 + 主入口 Hi doc/官方课程/题库/会员 + 最近学习：书架最近教材（登录后拉取，未登录不请求书架 API——修复过未登录 401 资源错误）+ 进行中课程两门试点课）；顶部细条（搜索占位 + ⌘K 徽标 + 用户/会员 chip「R1 验证 · Trial / 免费试用」或登录按钮）；⌘K 命令面板开/合正常（含 Esc、↑↓/Enter、静态入口聚合 + 书架教材），390 下侧栏收起为抽屉（汉堡开、scrim/Esc/点导航收）正常；1440 与 390 布局正确。
+- `/design-system`（仅登录可见，未登录实见登录页；不在导航露出）：7 组色板逐格渲染正常、语义 token 卡、六件套全变体（Button 三变体×禁用/Badge 三变体×禁用/Card 四变体/Input field+bar×禁用/Chat Bubble user+assistant+禁用+Thread/Navigation tabs+rail+bottom-nav）、字体四样张、明暗切换开关实测 `documentElement.dark` 生效且暖炭灰整套生效（明暗两态截图）。
+- Agent dock 收敛验证（逐旧挂载点探针，脚本断言「单实例 FAB + 点击开 + 正确 surface 标签 + 关闭」）：/learn 平台、/courses/tcm-diagnostics 平台、知识点页知识点、subjective-writing 写作室、case-reasoning 推理室、单题练习（/courses/tcm-diagnostics/question-bank/introduction/assessment-a1-introduction-principles）平台、/wrong-questions 平台、/learn/my-materials 平台——全部通过、pageerror=0；全局 /question-bank 页历史上就无 dock（dock 原挂在单题练习组件），行为未变。
+- 顺带修复 pre-existing lint error：`use-draggable-fab.ts` set-state-in-effect（rAF 包裹，FAB 定位时序不变）。
+- 已知事项（如实声明，R2 处理）：① 库自带暗色缺陷——secondary 按钮/标签暗色下浅底浅字（token 原值照搬，R2 需评审修正）；② dev 冷编译并行首访偶发 manifest `JSON.parse` 500（仅 dev、重试即好；生产构建验证无此问题）；③ 生产 `next start` 本地因「生产强制 Postgres」护栏注册 500，登录态相关检查以 dev 服务为准（脚本自动降级并如实报告）。
+- 单测 385/385（379 既有 + `tests/ui-v2-smoke.test.ts` 六件套纯渲染冒烟 6 项）；`npm run lint` 0 error；typecheck 干净；`npm run check` exit 0。
+- 证据：
+  - 迁移前基线：`docs/design-references/r1-baseline-learn-1440.png`、`r1-baseline-courses-1440.png`、`r1-baseline-question-bank-1440.png`、`r1-baseline-account-billing-1440.png`、`r1-baseline-learn-hi-doc-1440.png`、`r1-baseline-learn-390.png`
+  - 迁移后（壳 + 页面）：`docs/design-references/r1-after-learn-1440.png`、`r1-after-courses-1440.png`、`r1-after-question-bank-1440.png`、`r1-after-account-billing-1440.png`、`r1-after-learn-hi-doc-1440.png`、`r1-after-learn-390.png`
+  - 壳交互：`docs/design-references/r1-after-palette-open-1440.png`、`r1-after-drawer-open-390.png`、`r1-after-shell-authed-learn-1440.png`
+  - 设计系统预览：`docs/design-references/r1-after-design-system-1440.png`、`r1-after-design-system-dark-1440.png`、`r1-after-design-system-full-1440.png`
+  - 生产构建复验：`docs/design-references/r1-prod-learn-1440.png`、`r1-prod-question-bank-390.png`

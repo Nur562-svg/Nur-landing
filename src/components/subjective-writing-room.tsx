@@ -39,7 +39,7 @@ import {
   CurrentAnswerAssistance,
   LearningMemoryPanel,
 } from "./learning-memory-panel";
-import { NurAgentDock } from "./nur-agent-dock";
+import { useNurAgentDockProps } from "@/lib/agent-dock-props";
 import styles from "./subjective-writing-room.module.css";
 
 type SubjectiveWritingRoomProps = {
@@ -141,6 +141,41 @@ const activeItem = writingItems.find((item) => item.id === activeItemId) ?? firs
   const activeAnswerText = activeRevision.trim().length > 0 ? activeRevision : activeDraft;
   const activeSignature = `${activeAnswerText.trim()}|${[...activeCriterionIds].sort().join(",")}`;
   const currentVersionConfirmed = confirmedSignatures[activeItem.id] === activeSignature;
+  // R1：dock 收敛为壳级单实例，这里只上报 props（行为与原就地挂载一致）。
+  useNurAgentDockProps({
+    state: memoryState,
+    courseId: course.id,
+    courseSlug: course.slug,
+    courseVersionId: course.version.id,
+    offeringId: course.examBlueprint.id,
+    knowledgePointId: knowledgePoint.id,
+    surface: "subjective-writing",
+    taskId: activeItem.id,
+    segmentId: null,
+    currentText: activeAnswerText,
+    selfCheckStarted: answerRevealed,
+    onApplyRewrite: (text) => {
+      if (activeAnswerText.trim().length === 0) return;
+      // 应用目标 = activeAnswerText 的来源区：改写区有内容时写改写区，否则写第一稿
+      const target: "draft" | "revision" = activeRevision.trim().length > 0 ? "revision" : "draft";
+      const currentText = target === "revision" ? activeRevision : activeDraft;
+      const { merged } = mergeRewriteIntoDraft(currentText, text);
+      setRewriteUndo({ itemId: activeItem.id, beforeText: currentText, target });
+      if (target === "revision") {
+        setRevisions((current) => ({ ...current, [activeItem.id]: merged }));
+      } else {
+        setDrafts((current) => ({ ...current, [activeItem.id]: merged }));
+      }
+      setTimeout(() => {
+        const ta = draftTextareaRef.current;
+        if (ta && target === "draft") {
+          ta.focus();
+          ta.scrollIntoView({ behavior: "smooth", block: "center" });
+          ta.setSelectionRange(merged.length, merged.length);
+        }
+      }, 40);
+    },
+  });
   const selectedScore = activeScoring.criteria
     .filter((criterion) => activeCriterionIds.includes(criterion.id))
     .reduce((total, criterion) => total + criterion.points, 0);
@@ -398,41 +433,6 @@ const activeItem = writingItems.find((item) => item.id === activeItemId) ?? firs
                 placeholder="先独立写。把定义、证据、推理或边界写成完整句子，不只堆关键词……"
               />
             </section>
-
-            <NurAgentDock
-              state={memoryState}
-              courseId={course.id}
-              courseSlug={course.slug}
-              courseVersionId={course.version.id}
-              offeringId={course.examBlueprint.id}
-              knowledgePointId={knowledgePoint.id}
-              surface="subjective-writing"
-              taskId={activeItem.id}
-              segmentId={null}
-              currentText={activeAnswerText}
-              selfCheckStarted={answerRevealed}
-              onApplyRewrite={(text) => {
-                if (activeAnswerText.trim().length === 0) return;
-                // 应用目标 = activeAnswerText 的来源区：改写区有内容时写改写区，否则写第一稿
-                const target: "draft" | "revision" = activeRevision.trim().length > 0 ? "revision" : "draft";
-                const currentText = target === "revision" ? activeRevision : activeDraft;
-                const { merged } = mergeRewriteIntoDraft(currentText, text);
-                setRewriteUndo({ itemId: activeItem.id, beforeText: currentText, target });
-                if (target === "revision") {
-                  setRevisions((current) => ({ ...current, [activeItem.id]: merged }));
-                } else {
-                  setDrafts((current) => ({ ...current, [activeItem.id]: merged }));
-                }
-                setTimeout(() => {
-                  const ta = draftTextareaRef.current;
-                  if (ta && target === "draft") {
-                    ta.focus();
-                    ta.scrollIntoView({ behavior: "smooth", block: "center" });
-                    ta.setSelectionRange(merged.length, merged.length);
-                  }
-                }, 40);
-              }}
-            />
 
             {rewriteUndo && rewriteUndo.itemId === activeItem.id ? (
               <div className={styles.rewriteUndoBar}>

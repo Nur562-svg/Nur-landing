@@ -30,7 +30,7 @@ import type {
   SourceType,
 } from "@/types/learning";
 import styles from "./knowledge-point-lesson.module.css";
-import { NurAgentDock } from "./nur-agent-dock";
+import { useNurAgentDockProps } from "@/lib/agent-dock-props";
 
 type KnowledgePointLessonProps = {
   course: CourseDefinition;
@@ -83,6 +83,11 @@ export function KnowledgePointLesson({
   referenceSources,
   transferCase,
 }: KnowledgePointLessonProps) {
+  // R1：dock 收敛为壳级单实例，这里只上报 props（行为与原就地挂载一致）。
+  useNurAgentDockProps(useMemo(
+    () => ({ surface: "knowledge-point" as const, courseSlug: course.slug, knowledgePointId: knowledgePoint.id }),
+    [course.slug, knowledgePoint.id],
+  ));
   const lesson = knowledgePoint.lesson;
   if (!lesson) {
     throw new Error(`Knowledge point has no lesson: ${knowledgePoint.id}`);
@@ -572,11 +577,6 @@ export function KnowledgePointLesson({
           </aside>
         </div>
       </div>
-      <NurAgentDock
-        surface="knowledge-point"
-        courseSlug={course.slug}
-        knowledgePointId={knowledgePoint.id}
-      />
     </main>
   );
 }

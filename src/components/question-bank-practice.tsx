@@ -18,7 +18,7 @@ import type {
   CourseDefinition,
 } from "@/types/learning";
 import styles from "./question-bank-practice.module.css";
-import { NurAgentDock } from "./nur-agent-dock";
+import { PLATFORM_DOCK_PROPS, useNurAgentDockProps } from "@/lib/agent-dock-props";
 import { notifyQuizResult } from "@/lib/bot-emotion";
 import {
   matchQuestionBankFill,
@@ -66,6 +66,7 @@ export function QuestionBankPractice({
   items,
   currentIndex,
 }: QuestionBankPracticeProps) {
+  useNurAgentDockProps(PLATFORM_DOCK_PROPS);
   const item = items[currentIndex];
   const [selectedIndex, setSelectedIndex] = useState<number | null>(null);
   const [draft, setDraft] = useState("");
@@ -376,7 +377,6 @@ export function QuestionBankPractice({
           </span>
         </div>
       </div>
-      <NurAgentDock surface="platform" />
     </div>
   );
 }

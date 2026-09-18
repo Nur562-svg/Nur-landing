@@ -27,7 +27,7 @@ import type {
 } from "@/types/course-builder";
 import type { ReviewedMaterialOverlayDraft } from "@/types/material-parsing";
 import { MaterialIntakeReview } from "./material-intake-review";
-import { NurAgentDock } from "./nur-agent-dock";
+import { PLATFORM_DOCK_PROPS, useNurAgentDockProps } from "@/lib/agent-dock-props";
 import { PrivatePracticeRoom } from "./private-practice-room";
 import styles from "./private-materials-studio.module.css";
 
@@ -37,6 +37,7 @@ type ProviderStatus = {
 };
 
 export function PrivateMaterialsStudio() {
+  useNurAgentDockProps(PLATFORM_DOCK_PROPS);
   const intakeCourseOptions = useMemo(() => [privateWorkspaceIntakeCourseOption()], []);
   const parsingCourseOptions = useMemo(() => [privateWorkspaceParsingCourseOption()], []);
   const [overlay, setOverlay] = useState<ReviewedMaterialOverlayDraft | null>(null);
@@ -290,7 +291,6 @@ export function PrivateMaterialsStudio() {
         </section>
       ) : null}
       </div>
-      <NurAgentDock surface="platform" />
     </div>
   );
 }

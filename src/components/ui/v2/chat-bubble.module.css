@@ -1,0 +1,80 @@
+/* V2 Chat Bubble — 移植自 docs/design-references/claude-v2/components.css「Chat Bubble」。
+   user = 主色实底；assistant = 纸卡 + 边框；thread = 会话线程容器。 */
+.bubble {
+  border-radius: calc(var(--v2-radius) + 2px);
+  box-shadow: var(--v2-shadow-sm);
+  display: grid;
+  gap: 8px;
+  max-width: 280px;
+  padding: calc(var(--v2-spacing) * 3.5) calc(var(--v2-spacing) * 4);
+}
+
+.user {
+  background: var(--v2-primary);
+  color: var(--v2-primary-foreground);
+}
+
+.assistant {
+  background: var(--v2-popover);
+  border: 1px solid var(--v2-border);
+  color: var(--v2-card-foreground);
+}
+
+.meta {
+  display: block;
+  font: 500 11px/1.3 var(--v2-font-sans);
+  letter-spacing: 0.01em;
+}
+
+.user .meta {
+  color: var(--v2-primary-foreground);
+  opacity: 0.78;
+}
+
+.assistant .meta {
+  color: var(--v2-muted-foreground);
+}
+
+.copy {
+  font-size: 14px;
+  line-height: 1.6;
+  margin: 0;
+}
+
+/* 禁用态（排队/不可用消息） */
+.userDisabled {
+  background: var(--v2-secondary);
+  box-shadow: none;
+  color: var(--v2-secondary-foreground);
+}
+
+.userDisabled .meta {
+  color: var(--v2-secondary-foreground);
+  opacity: 1;
+}
+
+.assistantDisabled {
+  background: var(--v2-card);
+  box-shadow: none;
+  color: var(--v2-muted-foreground);
+}
+
+/* 会话线程容器 */
+.thread {
+  background: var(--v2-popover);
+  border: 1px solid var(--v2-border);
+  border-radius: calc(var(--v2-radius) + 6px);
+  box-shadow: var(--v2-shadow-sm);
+  display: grid;
+  gap: 12px;
+  padding: calc(var(--v2-spacing) * 4);
+  width: min(100%, 360px);
+}
+
+@media (max-width: 640px) {
+  .bubble,
+  .thread {
+    max-width: 100%;
+    width: 100%;
+  }
+}

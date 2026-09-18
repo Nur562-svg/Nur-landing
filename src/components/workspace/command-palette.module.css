@@ -1,0 +1,125 @@
+/* ⌘K 命令面板 — v2 语义 token。 */
+.overlay {
+  align-items: flex-start;
+  background: rgba(20, 18, 12, 0.4);
+  display: flex;
+  inset: 0;
+  justify-content: center;
+  padding: 12vh 16px 16px;
+  position: fixed;
+  z-index: 100;
+}
+
+.panel {
+  background: var(--v2-popover);
+  border: 1px solid var(--v2-border);
+  border-radius: var(--v2-radius-xl);
+  box-shadow: var(--v2-shadow-xl);
+  color: var(--v2-popover-foreground);
+  overflow: hidden;
+  width: min(100%, 560px);
+}
+
+.inputRow {
+  align-items: center;
+  border-bottom: 1px solid var(--v2-border);
+  color: var(--v2-muted-foreground);
+  display: flex;
+  gap: calc(var(--v2-spacing) * 2.5);
+  padding: calc(var(--v2-spacing) * 3.5) calc(var(--v2-spacing) * 4);
+}
+
+.inputIcon {
+  flex-shrink: 0;
+}
+
+.input {
+  background: transparent;
+  border: none;
+  color: var(--v2-foreground);
+  flex: 1;
+  font: 400 15px/1.4 var(--v2-font-sans);
+  min-width: 0;
+  outline: none;
+}
+
+.input::placeholder {
+  color: var(--v2-muted-foreground);
+}
+
+.kbd {
+  background: var(--v2-muted);
+  border-radius: 6px;
+  color: var(--v2-muted-foreground);
+  flex-shrink: 0;
+  font: 400 11px/1 var(--v2-font-mono);
+  padding: 2px 7px;
+}
+
+.list {
+  list-style: none;
+  margin: 0;
+  max-height: 46vh;
+  overflow-y: auto;
+  padding: calc(var(--v2-spacing) * 2);
+}
+
+.group {
+  color: var(--v2-muted-foreground);
+  font: 600 10px/1.2 var(--v2-font-sans);
+  letter-spacing: 0.14em;
+  margin: calc(var(--v2-spacing) * 2) calc(var(--v2-spacing) * 2) calc(var(--v2-spacing) * 1);
+  text-transform: uppercase;
+}
+
+.item {
+  align-items: center;
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: var(--v2-radius-md);
+  color: var(--v2-foreground);
+  cursor: pointer;
+  display: flex;
+  font: 400 14px/1.4 var(--v2-font-sans);
+  gap: calc(var(--v2-spacing) * 3);
+  justify-content: space-between;
+  padding: calc(var(--v2-spacing) * 2.5) calc(var(--v2-spacing) * 3);
+  text-align: left;
+  width: 100%;
+}
+
+.itemActive {
+  background: var(--v2-muted);
+}
+
+.item:focus-visible {
+  outline: 2px solid var(--v2-ring);
+  outline-offset: 2px;
+}
+
+.itemLabel {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.itemHint {
+  color: var(--v2-muted-foreground);
+  flex-shrink: 0;
+  font-size: 12px;
+}
+
+.empty {
+  color: var(--v2-muted-foreground);
+  font: 400 13px/1.5 var(--v2-font-sans);
+  padding: calc(var(--v2-spacing) * 4);
+}
+
+.foot {
+  border-top: 1px solid var(--v2-border);
+  color: var(--v2-muted-foreground);
+  font: 400 11px/1.4 var(--v2-font-sans);
+  margin: 0;
+  padding: calc(var(--v2-spacing) * 2.5) calc(var(--v2-spacing) * 4);
+}

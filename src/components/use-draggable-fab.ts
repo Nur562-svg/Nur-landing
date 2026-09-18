@@ -131,10 +131,17 @@ export function useDraggableFab<T extends HTMLElement>(
     if (!el) {
       return;
     }
-    const rect = el.getBoundingClientRect();
-    const size = { w: rect.width || 64, h: rect.height || 64 };
-    const stored = readStored(storageKey);
-    setPos(stored ? clampPos(stored, size, margin) : defaultPos(size, defaultInset, margin));
+    // rAF：把 setState 移出 effect 同步体（react-hooks/set-state-in-effect），
+    // 首帧后定位，视觉时序与原先一致（effect 本就在首次绘制后运行）。
+    const frame = window.requestAnimationFrame(() => {
+      const rect = el.getBoundingClientRect();
+      const size = { w: rect.width || 64, h: rect.height || 64 };
+      const stored = readStored(storageKey);
+      setPos(stored ? clampPos(stored, size, margin) : defaultPos(size, defaultInset, margin));
+    });
+    return () => {
+      window.cancelAnimationFrame(frame);
+    };
   }, [enabled, storageKey, margin, defaultInset.right, defaultInset.bottom]);
 
   // resize / orientation 后夹回视口
