@@ -144,7 +144,7 @@ function CommandPaletteOpen({ onClose, onNavigate, textbooks }: Omit<CommandPale
             })}
           </ul>
         )}
-        <p className={styles.foot}>↑↓ 选择 · Enter 跳转 · R1 为壳，暂不做全局内容检索</p>
+        <p className={styles.foot}>↑↓ 选择 · Enter 跳转 · 仅页面导航，全文检索将在后续版本提供</p>
       </div>
     </div>
   );

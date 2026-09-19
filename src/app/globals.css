@@ -403,8 +403,10 @@ button:not(.icon-only-large),
   --v2-popover-foreground: #e5e5e2;
   --v2-primary: var(--brand-500);
   --v2-primary-foreground: #141413;
-  --v2-secondary: var(--text-900);
-  --v2-secondary-foreground: var(--bg-300);
+  /* R2-1 修正：库自带暗色缺陷——原值 text-900 底 + bg-300 字均为浅色，暗色下浅底浅字不可读。
+     改为 bg-300 底 + text-800 字（亮色值一律不动）。 */
+  --v2-secondary: var(--bg-300);
+  --v2-secondary-foreground: var(--text-800);
   --v2-muted-foreground: var(--text-500);
   --v2-accent: #1a1915;
   --v2-accent-foreground: #f5f4ee;

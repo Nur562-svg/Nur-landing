@@ -285,6 +285,12 @@
   padding: 3px 8px;
 }
 
+/* R2-1：暗色下 brand-100 底 + brand-700 字对比度压线，反转为深底浅字 */
+:global(.dark) .tierBadge {
+  background: var(--brand-700);
+  color: var(--brand-100);
+}
+
 .loginLink {
   background: var(--v2-primary);
   border-radius: var(--v2-radius-md);
