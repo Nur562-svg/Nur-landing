@@ -1,6 +1,6 @@
 # NUR LEARN — Canonical Project State
 
-Last updated: 2026-09-19 (Asia/Shanghai) — Hi doc M0–M7 全部完成；设计系统 v2 R1（壳+token）与 R2（Hi doc 五面换装 + 全局暗色基建）完成，R3（官方课+题库+计费面）待做
+Last updated: 2026-09-20 (Asia/Shanghai) — Hi doc M0–M7 全部完成；设计系统 v2 R1（壳+token）、R2（Hi doc 五面换装 + 全局暗色基建）与 R3（官方课+题库+计费+私人过渡面换装、错题中心归壳）完成，R4（⌘K 真检索 + 移动端深化）待做
 
 This file is the durable source of truth for continuing NUR LEARN when conversation history is unavailable. Update it after material product decisions, completed milestones, verification changes, or priority changes.
 
@@ -1693,4 +1693,37 @@ R2 = R2-1 修复小包（commit `64925f5`）+ R2-2 Hi doc 主体换装与全局�
 - 暗色对比度审计（`scripts/design-r2-dark-audit.mjs`）：五确认面逐文本元素 WCAG 有效对比度 <2.5 为 0；过程修复 design-system emphasis 卡内说明字浅底浅字一处。
 - 已知事项：dev 冷编译 manifest JSON.parse 500 游走（R1 已知②，脚本按签名自动重试，生产无此问题）。
 
-**下一优先级**：R3 = 官方课工作台 + 题库 + 计费面 v2 换装（含 `/learn` 仪表盘与 my-materials 内容面收尾暗色）；R4 = ⌘K 全局检索与移动端深化；并行推进部署上线准备（ICP 备案 + 真实商户号 + 生产密钥/网关 + 公网 notify 补验）。
+**下一优先级**：R4 = ⌘K 全局检索与移动端深化；并行推进部署上线准备（ICP 备案 + 真实商户号 + 生产密钥/网关 + 公网 notify 补验）。
+
+## 设计系统 v2 R3 — 官方课 + 题库 + 计费 + 私人过渡面换装，错题中心归壳（2026-09-20 完成）
+
+R3 沿用 R2 已验证的 **token 桥接**机制（改局部 token 定义值、引用点不动），覆盖 17 个 CSS module；本节为摘要，验收证据见 `design-qa.md`「Design System R3」节。
+
+### A. 范围与机制
+- **A 组官方课面**：`course-catalog`、`course-landing`、`course-workspace`、`knowledge-point-lesson`、`subjective-writing-room`、`case-reasoning-room`。
+- **B 组题库/考试面**：`question-bank-global`、`question-bank-home`、`question-bank-chapter`、`question-bank-practice`、`mock-exam-room`、`wrong-question-center`。
+- **C 组计费/账户面**：`billing-panel`、`learning-memory-panel`。
+- **D 组 /learn 与私人过渡态**：`learning-dashboard`、`private-materials-studio`、`private-practice-room`。
+- 桥接口径与 R2 一致（`--ink`→text-900、`--paper`→bg-200、`--paper-bright`→bg-100、`--muted`→text-500、`--line`→color-mix(text-900 38%)、`--soft-line`/`--line-soft`/`--rule`→16%、`--red`→error-600、`--blue`→**v2-ring**）；R3 新增两处：`--cinnabar`（仅错题中心）→ `--brand-600`、`--jade`（仅计费）→ `--success-600`。散落中性黑 `rgb(16 16 15 / x%)` 一律改 `color-mix(text-900 x%)`；反色面上的 `rgb(255 255 255 / x%)` 改 `color-mix(paper-bright x%)`（`.dark` 下 `--ink` 翻浅、`--paper-bright` 翻深，仍可读）。
+- 内容语义色保持字面值不动：证据分级关系标签仍由 `--red`/`--blue` 承接（语义未变，仅换皮）。
+- `learning-memory-panel` 无局部 token 块，直接桥接其 20 处字面值（暖黑/纸底/朱砂系 → text-900/bg-100/brand-600，黛蓝系 → v2-ring，橄榄绿 → success-600）。
+- 附带修复：`/learn/my-materials` 内嵌的 `material-intake-review` 用了全局旧 token `--paper-light`（`:root` 仅浅色值、`.dark` 未覆盖），暗色下上传 dropzone 浅底浅字 → 在该子树改引 `--bg-100`，两态等价。
+
+### B. 六件套替换（仅纯展示层，宁少勿滥）
+- `billing-panel`：档位卡 CTA → `V2Button`（当前档位 `secondary`、其余 `primary`）；「当前套餐」角标由 CSS `::before` 改为 `V2Badge(muted)`（新增 `.currentBadge` 只补绝对定位）。
+- `mock-exam-room`：交卷/开始模考/继续模考/再来一次/确认交卷 → `V2Button(primary)`；CSS 中对应按钮的视觉声明删除，仅保留尺寸/间距/图标对齐（`.container .xxx` 提高权重）。
+- `wrong-question-center`：题型徽章 → `V2Badge(outline)`；CSS 保留行内尺寸覆盖，窄屏 `display:none` 规则同步提到 `.container .wrongItemKind` 以保持同权。
+- **刻意不换**：`course-catalog`/`course-landing` 课程卡片（Link 主导 + 分区页脚布局，与 `V2Card` 固定内边距/`overflow:hidden`/`min-height` 冲突，换后行为存疑 → 退回 token-only）；`question-bank-practice` 提交按钮（该 `.tsx` 有未提交的用户逻辑改动，无法干净提交 → 退回 token-only，仅在 CSS 保留原按钮样式）；写作间/推理间/讲义页全部保留原 DOM（自核勾选、证据选择、阶段草稿的键盘与焦点逻辑不动）；错题中心 tab/统计数字保留原 DOM（其 tab 是 `button` 角色切换 + 计数，非静态徽章）。
+
+### C. 过渡期收尾
+- **错题中心归壳**：`src/app/wrong-questions/`（page/error/loading）整体 `git mv` 入 `src/app/(workspace)/wrong-questions/`，URL 不变（本期唯一路由目录变更）。归壳后获得侧栏/顶栏/暗色；`robots.ts` 与各处 `/wrong-questions` 链接均为绝对路径，无需改动。
+- ⌘K 面板数据源复查：`PRIMARY_ENTRIES`/`ACTIVE_COURSE_ENTRIES`/书架教材均为现行路由，无指向旧过渡面的死链；未新增检索功能（R4 范围）。
+
+### R3 验证（2026-09-20）
+- `npm run lint` 0 error（188 条既有 warning 未增）/ typecheck 干净 / `npm run test` 385/385 / `npm run check` exit 0。
+- 浏览器（`scripts/design-r3-check.mjs`）：15 条路由 × 亮/暗 × 1440/390 共 60 组全 200、控制台 0 错误、390 无横向溢出；明暗切换 + reload 保持实测通过；`/wrong-questions` 归壳断言（页面内容 + 侧栏「主入口」导航 + 主题切换按钮）通过。
+- 暗色对比度审计（`scripts/design-r3-dark-audit.mjs`）：15 面逐文本元素 WCAG 有效对比度 <2.5 为 0（修复 my-materials 内嵌 dropzone 一处后达成）。
+- 已知事项：dev 冷编译 manifest JSON.parse 500 游走（R1 已知②，生产无此问题）；截图在整轮高负载下偶发字体加载超时，脚本已改为截图超时不计入判定（属脚手架留档，非页面缺陷）。
+- **未纳入提交**：`question-bank-chapter.tsx/.css`、`question-bank-practice.tsx/.module.css` 中含工作区既有未提交逻辑改动（题型筛选/进度索引），R3 在其上做了叠加式 token 桥接但不单独提交，留待用户与其逻辑改动一并处理。
+
+**下一优先级**：R4 = ⌘K 接章节/知识点真检索 + 移动端深化（390 抽屉/底部导航已在 R1 做过一轮，R4 做触控与密度深化），设计系统 v2 主线收官后回到部署上线准备（ICP 备案 + 真实商户号 + 生产密钥/网关 + 公网 notify 补验）。

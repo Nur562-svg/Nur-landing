@@ -770,3 +770,65 @@ playwright-core + 系统 Chrome（headless、无扩展），视口 **1440×900 /
 - 水合修复：防闪烁脚本预挂 `.dark` 与 SSR 输出 className 不一致触发 hydration 警告（首轮矩阵 19 处失败均此因）→ `<html suppressHydrationWarning>` 后 0。
 - 已知事项（如实声明）：① dev 冷编译偶发 manifest `JSON.parse` 500（R1 已知②，本轮两整轮重跑确认失败路由游走、签名一致，脚本已按签名自动整页重试一次，终轮全绿；生产构建无此问题）；② `/learn` 周计划仪表盘内容面与 `/learn/my-materials` 本地快练内容面仍为 v1 浅色皮（R3 范围，暗色下呈现「暗壳 + 浅色内容」过渡态，壳与 Hi doc 五面已成套变暗无此问题）；③ 生产 `next start` 注册接口 500 为环境护栏，登录态检查以 dev 为准（同 R1）。
 - 证据（`docs/design-references/`）：亮色 `r2-learn-hi-doc-1440.png`、`r2-learn-hi-doc-t-1440.png`、`r2-learn-hi-doc-t-c-1-1440.png`、`r2-learn-hi-doc-w-1440.png`、`r2-learn-hi-doc-w-room-1440.png`、`r2-learn-1440.png`、`r2-design-system-1440.png` 及对应 `-390.png`；暗色同名 `-dark` 全套（14 张）；切换交互 `r2-toggled-dark-bookshelf-1440.png`、`r2-toggled-dark-bookshelf-reload-1440.png`；R2-1 `r2-1-design-system-dark-1440.png`。
+
+## Design System R3 — 官方课 + 题库 + 计费 + 私人过渡面换装，错题中心归壳（2026-09-20）
+
+playwright-core + 系统 Chrome（headless、无扩展），视口 **1440×900 / 390×844**，dev 服务（`next dev --webpack`）；脚本 `scripts/design-r3-check.mjs`（复用 R2 登录脚手架；动态路由所需 Hi doc 教材由脚本向 dev SQLite 插入后级联删除）+ `scripts/design-r3-dark-audit.mjs`（15 面暗色逐文本元素 WCAG 有效对比度审计）。**暗色走真实链路**：`context.addInitScript` 写 `localStorage["nur-theme"]="dark"` → 根 layout 防闪烁脚本挂 `.dark`。范围：17 个 CSS module（A 官方课 6 / B 题库考试 6 / C 计费账户 2 / D /learn 与私人过渡态 3）+ 错题中心路由归壳。`src/lib/`、`src/content/`、`prisma/` 零改动；官方课证据分级文案与语义零改动；385 项测试守护行为无回归。
+
+### 逐 module 桥接 token 数与散落字面值
+
+| module | 局部 token | 散落字面值桥接处 |
+|---|---:|---:|
+| `course-catalog` | 7 | 0 |
+| `course-landing` | 7 | 0 |
+| `course-workspace` | 8 | 15（中性黑 5/8/9/22/7/6/10% 等 14 处 + 反色白 3 处 + `#080808` 头像 3 处 + `#e16861` 3 处 + 朱砂浅底 2 处） |
+| `knowledge-point-lesson` | 8 | 4（中性黑 12/10% + 反色白 2 处 + `#080808` 3 处 + 纸底/朱砂底） |
+| `subjective-writing-room` | 8 | 8（同上模式 + 纸卡半透明 + placeholder 次级墨） |
+| `case-reasoning-room` | 8 | 7（同上模式 + 石板蓝确认条 7%） |
+| `question-bank-global` | 8 | 4（中性黑 8/4/4/7%） |
+| `question-bank-home` | 7 | 0 |
+| `question-bank-chapter` | 7 | 1（中性黑 4%） |
+| `question-bank-practice` | 7 | 2（朱砂浅底 6%/4%） |
+| `mock-exam-room` | 7 | 5（中性黑 6/7/40% + 黛蓝 8% + 朱砂 8%） |
+| `wrong-question-center` | 5（含 `--rule`/`--cinnabar`） | 4（白色提亮覆盖 35/60/40/40%） |
+| `billing-panel` | 9（含 `--jade`） | 5（`#8a6d3b` 2 处 + `#2a2a27` 墨底 hover 2 处 + 中性黑 6%） |
+| `learning-memory-panel` | 0（无局部 token 块） | 20（暖黑/纸底/朱砂系 → text-900/bg-100/brand-600；黛蓝 → v2-ring；橄榄绿 → success-600） |
+| `learning-dashboard` | 7 | 10（中性黑 10/26/2.8% + 反色白 2 处 + `#080808` 3 处 + 纸底 96/72/55% + 纯黑 62/2/4%） |
+| `private-materials-studio` | 6 | 3（`#fffaf0` → bg-100、`#666` → text-500 2 处、`var(--border)`→v2-border、`var(--accent)`→v2-ring） |
+| `private-practice-room` | 7 | 1（中性黑 4%） |
+| `material-intake-review`（附带修复） | 1（`--paper-light`→bg-100） | 0 |
+
+桥接口径：`--ink`→`var(--text-900)`、`--paper`→`var(--bg-200)`、`--paper-bright`→`var(--bg-100)`、`--muted`→`var(--text-500)`、`--line`→`color-mix(in srgb, var(--text-900) 38%, transparent)`、`--soft-line`/`--line-soft`/`--rule`→同式 16%、`--red`→`var(--error-600)`、`--blue`→`var(--v2-ring)`（聚焦/状态强调统一 terracotta，设计决策非等值替换）、`--cinnabar`→`var(--brand-600)`、`--jade`→`var(--success-600)`。反色面（`background: var(--ink)`）上的 `rgb(255 255 255 / x%)` 改 `color-mix(in srgb, var(--paper-bright) x%, transparent)`——`.dark` 下 `--ink` 翻浅、`--paper-bright` 翻深，反色强调语义仍成立（与 R2 `kpNavItemActive` 同手法）。**证据分级关系标签**（`relationshipList strong[data-relationship]` 的 `related`/`learning-aid`）仍由 `--red`/`--blue` 承接，语义未变（只换皮不换内容）。
+
+### 六件套替换点清单
+
+| 位置 | 替换 | 说明 |
+|---|---|---|
+| `billing-panel` 档位卡 CTA ×3 | → `V2Button` | 当前档位 `secondary`、其余 `primary`；CSS 只留 `margin-top/width`（`.page .cta` 0,2,0）与 `.page .v2Button` 字体断言 |
+| `billing-panel` 「当前套餐」角标 | → `V2Badge(muted)` | 原为 `.cardCurrent::before` 生成内容；新增 `.card .currentBadge` 仅补绝对定位 |
+| `mock-exam-room` 交卷 | → `V2Button(primary)` | `.container .abandonButton` 只留 gap/padding |
+| `mock-exam-room` 确认交卷 | → `V2Button(primary)` | `.container .modalPrimary` 只留与次按钮一致的尺寸 |
+| `mock-exam-room` 继续模考 | → `V2Button(primary)` | `.container .resumeButton` 只留尺寸 |
+| `mock-exam-room` 开始模考 / 再来一次 | → `V2Button(primary)` | `.container .startButton` 只留尺寸（原 hover 反色规则删除，交给六件套） |
+| `wrong-question-center` 题型徽章 | → `V2Badge(outline)` | `.container .wrongItemKind` 覆盖行内尺寸；窄屏 `display:none` 同步提权保隐藏 |
+
+**刻意不换（退回 token-only，注明原因）**：
+- `course-catalog` / `course-landing` 课程卡片：现有卡片是 `Link` 主导 + 通栏分隔页脚两区布局，`V2Card` 的固定 18px 内边距 / `overflow:hidden` / `min-height:150px` 与「页脚需通栏贴边」冲突，换后布局行为存疑 → 退回 token-only。
+- `question-bank-practice` 提交按钮：`question-bank-practice.tsx` 含工作区未提交的用户逻辑改动（题型筛选 query 透传 / 进度索引），换 `V2Button` 需改该文件 → 退回 token-only（CSS 保留原按钮样式），避免把用户逻辑混入 R3 提交。
+- 写作间 / 推理间 / 讲义页：全部保留原 DOM（自核勾选、证据选择、阶段草稿的键盘与焦点逻辑不动），仅吃 token 重皮。
+- 错题中心 tab 与统计数字：tab 是 `button[role=tab]` 切换 + 计数徽标，非静态展示，保留原 DOM。
+
+### 过渡期收尾
+- **错题中心归壳（本期唯一路由目录变更）**：`git mv src/app/wrong-questions src/app/(workspace)/wrong-questions`（page/error/loading 三文件），URL `/wrong-questions` 不变。归壳前：裸页面，无侧栏/顶栏，暗色下整页仍为浅色皮；归壳后：侧栏「主入口」导航 + 顶栏（含主题切换）+ 暗色成套生效。`robots.ts` 与 dashboard/课程页的 `/wrong-questions` 链接均为绝对路径，零改动。
+- ⌘K 面板数据源复查：`shell-data.ts` 的 `PRIMARY_ENTRIES`（Hi doc/官方课程/题库/会员）、`ACTIVE_COURSE_ENTRIES`（两门试点课）、`fetchRecentTextbooks` 书架教材全部指向现行路由，无旧过渡面死链；本期不新增检索（R4）。
+
+### R3 验证（2026-09-20）
+
+- 命令套件：`npm run lint` 0 error（188 条既有 warning 未增）/ typecheck 干净 / `npm run test` 385/385 / `npm run check` exit 0（build 通过）。
+- 浏览器矩阵（`design-r3-check.mjs` 终轮 `ALL CHECKS PASSED`）：15 条路由 × 亮/暗 × 1440/390 **共 60 组全部 200**、控制台 0 错误、390 视口 `scrollWidth===clientWidth===390` 无横向溢出；暗色组全部经真实防闪烁链路生效（`dark=true`）。
+- 错题归壳断言：`[wrong-questions-shell] content=true sidebarNav=true themeToggle=true errors=0`（页面 H1 含「错题」+ 侧栏 `nav[aria-label='主入口']` 存在 + 顶栏主题切换按钮存在）。
+- 明暗切换交互：壳按钮 aria-label 初值「切换暗色」→ 点击后 `.dark` 挂载 + `nur-theme=dark` → **reload 后保持暗色** → 再点恢复亮色 `nur-theme=light`（截图 `r3-toggled-dark-learn-1440.png` / `r3-toggled-dark-learn-reload-1440.png`）。
+- 暗色对比度审计（`design-r3-dark-audit.mjs`）：15 面逐可见文本元素算有效前景×背景 WCAG 对比度，<2.5 标记；首轮抓到 2 处真实缺陷——`/learn/my-materials` 内嵌 `material-intake-review` 上传 dropzone（`<strong>选择 Word 或 PDF</strong>` fg=rgb(250,249,245) bg=rgb(247,244,238) ratio=1.04、提示行 ratio=1.88），根因是该 module 消费全局旧 token `--paper-light`（`:root` 仅浅色值、`.dark` 未覆盖）→ 在该子树 `.intake` 改引 `var(--bg-100)`；修复后终轮 15 面全部 0 个。
+- 已知事项（如实声明）：① dev 冷编译偶发 manifest `JSON.parse` 500（R1 已知②，脚本按签名自动整页重试一次；生产构建无此问题）；② 整轮 60 次页面加载后浏览器高负载下 `page.screenshot` 偶发字体加载超时（首轮 mock-exam @390 dark 命中），脚本已改为截图超时仅告警不计入判定——属证据留档脚手架时序，非页面缺陷（同轮该路由 200、0 错误、无溢出）；③ 生产 `next start` 注册接口 500 为环境护栏，登录态检查以 dev 为准（同 R1/R2）。
+- 未纳入提交：`question-bank-chapter.tsx/.module.css`、`question-bank-practice.tsx/.module.css` 含工作区既有未提交逻辑改动（题型筛选/进度索引），R3 已在其上做叠加式 token 桥接（改定义值、不回滚逻辑），但按边界要求不纳入任何 R3 commit，留待用户与其逻辑改动一并处理；infectious-* 全套同样未纳入。
+- 证据（`docs/design-references/`，共 63 张）：亮色 `r3-learn-1440.png`、`r3-learn-my-materials-1440.png`、`r3-courses-1440.png`、`r3-course-workspace-1440.png`、`r3-knowledge-point-1440.png`、`r3-subjective-writing-1440.png`、`r3-case-reasoning-1440.png`、`r3-question-bank-global-1440.png`、`r3-question-bank-home-1440.png`、`r3-question-bank-chapter-1440.png`、`r3-question-bank-practice-1440.png`、`r3-mock-exam-1440.png`、`r3-wrong-questions-1440.png`、`r3-account-billing-1440.png`、`r3-design-system-1440.png` 及对应 `-390.png`；暗色同名 `-dark` 全套（30 张）；归壳 `r3-wrong-questions-in-shell-1440.png`；切换交互 `r3-toggled-dark-learn-1440.png`、`r3-toggled-dark-learn-reload-1440.png`。
