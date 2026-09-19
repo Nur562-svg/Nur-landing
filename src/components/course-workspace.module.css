@@ -1,12 +1,14 @@
 .appShell {
-  --ink: #10100f;
-  --paper: #f7f4ee;
-  --paper-bright: #fbf9f4;
-  --muted: #6c6a66;
-  --line: rgb(16 16 15 / 36%);
-  --soft-line: rgb(16 16 15 / 14%);
-  --red: #bf2118;
-  --blue: #17659a;
+  /* R3 token 桥接：局部 token 改引 v2 全局 token（映射口径见 design-qa.md R3 节）；.dark 自动翻转。
+     --blue → --v2-ring（聚焦描边统一 terracotta）为设计决策，非等值替换。 */
+  --ink: var(--text-900);
+  --paper: var(--bg-200);
+  --paper-bright: var(--bg-100);
+  --muted: var(--text-500);
+  --line: color-mix(in srgb, var(--text-900) 38%, transparent);
+  --soft-line: color-mix(in srgb, var(--text-900) 16%, transparent);
+  --red: var(--error-600);
+  --blue: var(--v2-ring);
   background: var(--paper);
   color: var(--ink);
   min-height: 100dvh;
@@ -25,7 +27,7 @@
 
 .header {
   align-items: center;
-  background: rgb(247 244 238 / 96%);
+  background: color-mix(in srgb, var(--bg-200) 96%, transparent);
   border-bottom: 1px solid var(--ink);
   display: grid;
   grid-template-columns: minmax(210px, 1fr) auto minmax(210px, 1fr);
@@ -106,11 +108,11 @@
 
 .avatar {
   align-items: center;
-  background: #080808;
-  border: 1px solid #080808;
+  background: var(--ink);
+  border: 1px solid var(--ink);
   border-radius: 50%;
-  box-shadow: inset 0 0 0 5px #080808, inset 0 0 0 6px rgb(255 255 255 / 80%);
-  color: #fff;
+  box-shadow: inset 0 0 0 5px var(--ink), inset 0 0 0 6px color-mix(in srgb, var(--paper-bright) 80%, transparent);
+  color: var(--paper-bright);
   display: flex;
   font-family: var(--font-serif), Georgia, serif;
   font-size: 27px;
@@ -128,7 +130,7 @@
 .accountPanel {
   background: var(--paper-bright);
   border: 1px solid var(--ink);
-  box-shadow: 8px 8px 0 rgb(16 16 15 / 10%);
+  box-shadow: 8px 8px 0 color-mix(in srgb, var(--text-900) 10%, transparent);
   display: grid;
   gap: 18px;
   padding: 20px;
@@ -179,7 +181,7 @@
 }
 
 .ghostWordmark {
-  color: rgb(16 16 15 / 2.8%);
+  color: color-mix(in srgb, var(--text-900) 2.8%, transparent);
   font-family: var(--font-sans);
   font-size: clamp(116px, 13vw, 196px);
   font-weight: 760;
@@ -445,7 +447,7 @@
 }
 
 .guidedPathLinks > a:hover > span {
-  color: #e16861;
+  color: var(--brand-400);
 }
 
 .guidedPathLinks strong {
@@ -464,7 +466,7 @@
 }
 
 .guidedPathLinks > a:hover small {
-  color: rgb(255 255 255 / 70%);
+  color: color-mix(in srgb, var(--paper-bright) 70%, transparent);
 }
 
 .scopeBar {
@@ -509,7 +511,7 @@
 }
 
 .scopeTrigger:hover {
-  background: rgb(16 16 15 / 5%);
+  background: color-mix(in srgb, var(--text-900) 5%, transparent);
   border-color: var(--ink);
 }
 
@@ -552,7 +554,7 @@
   background: var(--paper-bright);
   border: 1px solid var(--ink);
   /* 软阴影：紧贴边框、向外柔化，避免硬偏移方块越界 */
-  box-shadow: 0 2px 6px rgb(16 16 15 / 6%), 0 1px 2px rgb(16 16 15 / 4%);
+  box-shadow: 0 2px 6px color-mix(in srgb, var(--text-900) 6%, transparent), 0 1px 2px color-mix(in srgb, var(--text-900) 4%, transparent);
   display: grid;
   grid-auto-flow: column;
   grid-auto-columns: minmax(72px, auto);
@@ -598,12 +600,12 @@
 }
 
 .scopeOption:hover {
-  background: rgb(16 16 15 / 5%);
+  background: color-mix(in srgb, var(--text-900) 5%, transparent);
 }
 
 /* 激活态：用极浅朱砂 + 右侧 1.5px 实色阶，让"自成一格"但不溢出框架 */
 .scopeOption.scopeActive {
-  background: #f5e8e6;
+  background: color-mix(in srgb, var(--red) 12%, transparent);
   box-shadow: inset -1.5px 0 0 var(--red);
   color: var(--red);
   font-weight: 650;
@@ -614,7 +616,7 @@
 }
 
 .scopeOption.scopeActive:hover {
-  background: #f0ddd9;
+  background: color-mix(in srgb, var(--red) 20%, transparent);
   box-shadow: inset -1.5px 0 0 var(--red);
   color: var(--red);
 }
@@ -676,7 +678,7 @@
 
 
 .chapterList button:hover {
-  background: rgb(16 16 15 / 5%);
+  background: color-mix(in srgb, var(--text-900) 5%, transparent);
 }
 
 .chapterList .chapterActive {
@@ -691,7 +693,7 @@
 }
 
 .chapterActive .chapterIndex {
-  color: #e16861;
+  color: var(--brand-400);
 }
 
 .chapterName {
@@ -710,7 +712,7 @@
 }
 
 .chapterActive .chapterName small {
-  color: rgb(255 255 255 / 56%);
+  color: color-mix(in srgb, var(--paper-bright) 56%, transparent);
 }
 
 .chapterPercent {
@@ -793,7 +795,7 @@
 }
 
 .routeTabs button:hover {
-  background: rgb(16 16 15 / 4%);
+  background: color-mix(in srgb, var(--text-900) 4%, transparent);
 }
 
 .routeTabs button > span {
@@ -819,11 +821,11 @@
 }
 
 .routeTabs .routeActive > span {
-  color: #e16861;
+  color: var(--brand-400);
 }
 
 .routeTabs .routeActive small {
-  color: rgb(255 255 255 / 56%);
+  color: color-mix(in srgb, var(--paper-bright) 56%, transparent);
 }
 
 .unitHeading {
@@ -877,12 +879,12 @@
 }
 
 .unitList button:hover {
-  background: rgb(16 16 15 / 4%);
+  background: color-mix(in srgb, var(--text-900) 4%, transparent);
   padding-left: 12px;
 }
 
 .unitList .unitActive {
-  background: rgb(149 51 42 / 7%);
+  background: color-mix(in srgb, var(--red) 7%, transparent);
   box-shadow: inset 3px 0 0 var(--red);
   padding-left: 12px;
 }
@@ -997,8 +999,8 @@
 }
 
 .selectedAction > button:disabled {
-  background: rgb(16 16 15 / 8%);
-  border-color: rgb(16 16 15 / 8%);
+  background: color-mix(in srgb, var(--text-900) 8%, transparent);
+  border-color: color-mix(in srgb, var(--text-900) 8%, transparent);
   color: var(--muted);
   cursor: not-allowed;
 }
@@ -1105,7 +1107,7 @@
 
 .examRows progress {
   appearance: none;
-  background: rgb(16 16 15 / 9%);
+  background: color-mix(in srgb, var(--text-900) 9%, transparent);
   border: 0;
   display: block;
   height: 5px;
@@ -1113,7 +1115,7 @@
 }
 
 .examRows progress::-webkit-progress-bar {
-  background: rgb(16 16 15 / 9%);
+  background: color-mix(in srgb, var(--text-900) 9%, transparent);
 }
 
 .examRows progress::-webkit-progress-value {
@@ -1178,7 +1180,7 @@
   align-items: center;
   background: var(--red);
   border: 1px solid var(--red);
-  color: #fff;
+  color: var(--paper-bright);
   cursor: pointer;
   display: flex;
   font-size: 11px;
@@ -1223,15 +1225,15 @@
 }
 
 .examLink {
-  color: #fff;
+  color: var(--paper-bright);
   border-color: var(--blue);
   margin-top: 10px;
 }
 
 .examLink:hover {
-  background: rgb(23 101 154 / 12%);
+  background: color-mix(in srgb, var(--v2-ring) 12%, transparent);
   border-color: var(--blue);
-  color: #fff;
+  color: var(--paper-bright);
 }
 
 .trainingShortcuts {
@@ -1291,7 +1293,7 @@
 
 .sessionBackdrop {
   align-items: stretch;
-  background: rgb(16 16 15 / 22%);
+  background: color-mix(in srgb, var(--text-900) 22%, transparent);
   display: flex;
   inset: 0;
   justify-content: flex-end;
@@ -1303,7 +1305,7 @@
   animation: drawer-in 260ms cubic-bezier(0.22, 1, 0.36, 1);
   background: var(--paper-bright);
   border-left: 1px solid var(--ink);
-  box-shadow: -12px 0 0 rgb(16 16 15 / 7%);
+  box-shadow: -12px 0 0 color-mix(in srgb, var(--text-900) 7%, transparent);
   display: flex;
   flex-direction: column;
   max-width: 100%;
@@ -1393,7 +1395,7 @@
   align-items: center;
   background: var(--red);
   border-radius: 50%;
-  color: #fff;
+  color: var(--paper-bright);
   display: flex;
   height: 52px;
   justify-content: center;
@@ -2001,5 +2003,5 @@
 }
 
 .appShell :where(button, a):active {
-  background-color: rgba(16,16,15,0.06);
+  background-color: color-mix(in srgb, var(--text-900) 6%, transparent);
 }

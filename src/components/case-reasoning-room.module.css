@@ -1,12 +1,14 @@
 .appShell {
-  --ink: #10100f;
-  --paper: #f7f4ee;
-  --paper-bright: #fbf9f4;
-  --muted: #6c6a66;
-  --line: rgb(16 16 15 / 36%);
-  --soft-line: rgb(16 16 15 / 14%);
-  --red: #bf2118;
-  --blue: #17659a;
+  /* R3 token 桥接：局部 token 改引 v2 全局 token（映射口径见 design-qa.md R3 节）；.dark 自动翻转。
+     --blue → --v2-ring（聚焦描边统一 terracotta）为设计决策，非等值替换。 */
+  --ink: var(--text-900);
+  --paper: var(--bg-200);
+  --paper-bright: var(--bg-100);
+  --muted: var(--text-500);
+  --line: color-mix(in srgb, var(--text-900) 38%, transparent);
+  --soft-line: color-mix(in srgb, var(--text-900) 16%, transparent);
+  --red: var(--error-600);
+  --blue: var(--v2-ring);
   background: var(--paper);
   color: var(--ink);
   min-height: 100dvh;
@@ -25,7 +27,7 @@
 
 .header {
   align-items: center;
-  background: rgb(247 244 238 / 96%);
+  background: color-mix(in srgb, var(--bg-200) 96%, transparent);
   border-bottom: 1px solid var(--ink);
   display: grid;
   grid-template-columns: minmax(210px, 1fr) auto minmax(210px, 1fr);
@@ -103,11 +105,11 @@
 
 .avatar {
   align-items: center;
-  background: #080808;
-  border: 1px solid #080808;
+  background: var(--ink);
+  border: 1px solid var(--ink);
   border-radius: 50%;
-  box-shadow: inset 0 0 0 5px #080808, inset 0 0 0 6px rgb(255 255 255 / 80%);
-  color: #fff;
+  box-shadow: inset 0 0 0 5px var(--ink), inset 0 0 0 6px color-mix(in srgb, var(--paper-bright) 80%, transparent);
+  color: var(--paper-bright);
   display: flex;
   font-family: var(--font-serif), Georgia, serif;
   font-size: 27px;
@@ -125,7 +127,7 @@
 .accountPanel {
   background: var(--paper-bright);
   border: 1px solid var(--ink);
-  box-shadow: 8px 8px 0 rgb(16 16 15 / 10%);
+  box-shadow: 8px 8px 0 color-mix(in srgb, var(--text-900) 10%, transparent);
   display: grid;
   gap: 18px;
   padding: 20px;
@@ -176,7 +178,7 @@
 }
 
 .ghostWordmark {
-  color: rgb(16 16 15 / 2.8%);
+  color: color-mix(in srgb, var(--text-900) 2.8%, transparent);
   font-family: var(--font-sans);
   font-size: clamp(120px, 15vw, 218px);
   font-weight: 760;
@@ -242,7 +244,7 @@
 }
 
 .learningPath > a:hover {
-  background: rgb(16 16 15 / 5%);
+  background: color-mix(in srgb, var(--text-900) 5%, transparent);
 }
 
 .learningPath > :is(a, span) > span {
@@ -268,7 +270,7 @@
 }
 
 .learningPathCurrent small {
-  color: rgb(255 255 255 / 60%);
+  color: color-mix(in srgb, var(--paper-bright) 60%, transparent);
 }
 
 .hero {
@@ -491,7 +493,7 @@
 .stageList .stageActive > span,
 .stageList .stageActive small,
 .stageList .stageActive b {
-  color: rgb(255 255 255 / 62%);
+  color: color-mix(in srgb, var(--paper-bright) 62%, transparent);
 }
 
 .evidenceSummary {
@@ -560,7 +562,7 @@
 .caseHeader span:first-child {
   background: var(--ink);
   border-color: var(--ink);
-  color: #fff;
+  color: var(--paper-bright);
 }
 
 .caseHeader small {
@@ -622,14 +624,14 @@
 }
 
 .reasoningSteps span[data-active="true"] {
-  background: rgb(191 33 24 / 8%);
+  background: color-mix(in srgb, var(--red) 8%, transparent);
   color: var(--red);
   font-weight: 700;
 }
 
 .reasoningSteps span[data-complete="true"] {
   background: var(--ink);
-  color: #fff;
+  color: var(--paper-bright);
 }
 
 .activeStage {
@@ -734,21 +736,21 @@
 .evidenceGrid .evidenceSelected {
   background: var(--ink);
   border-color: var(--ink);
-  color: #fff;
+  color: var(--paper-bright);
 }
 
 .evidenceGrid .evidenceSelected > span {
-  border-color: rgb(255 255 255 / 48%);
+  border-color: color-mix(in srgb, var(--paper-bright) 48%, transparent);
 }
 
 .evidenceGrid .evidenceSelected small,
 .evidenceGrid .evidenceSelected p {
-  color: rgb(255 255 255 / 62%);
+  color: color-mix(in srgb, var(--paper-bright) 62%, transparent);
 }
 
 .stagePrompt {
   align-items: flex-start;
-  background: rgb(23 101 154 / 6%);
+  background: color-mix(in srgb, var(--v2-ring) 6%, transparent);
   border-left: 3px solid var(--blue);
   display: flex;
   gap: 11px;
@@ -811,7 +813,7 @@
   align-items: center;
   background: var(--ink);
   border: 1px solid var(--ink);
-  color: #fff;
+  color: var(--paper-bright);
   cursor: pointer;
   display: flex;
   justify-content: space-between;
@@ -973,12 +975,12 @@
 .rubricList .rubricSelected {
   background: var(--ink);
   border-color: var(--ink);
-  color: #fff;
+  color: var(--paper-bright);
 }
 
 .confirmationSection {
   align-items: center;
-  background: rgb(102 121 139 / 7%);
+  background: color-mix(in srgb, var(--v2-ring) 7%, transparent);
   border-top: 1px solid var(--ink);
   display: grid;
   gap: 20px;
@@ -1010,7 +1012,7 @@
   align-items: center;
   background: var(--ink);
   border: 1px solid var(--ink);
-  color: #fff;
+  color: var(--paper-bright);
   cursor: pointer;
   display: flex;
   font-size: 10px;
@@ -1029,16 +1031,16 @@
 }
 
 .rubricSelected .rubricCheck {
-  border-color: rgb(255 255 255 / 48%);
+  border-color: color-mix(in srgb, var(--paper-bright) 48%, transparent);
 }
 
 .rubricSelected .rubricCopy small,
 .rubricSelected .rubricPerspective {
-  color: rgb(255 255 255 / 68%);
+  color: color-mix(in srgb, var(--paper-bright) 68%, transparent);
 }
 
 .rubricSelected .rubricPerspective {
-  border-color: rgb(255 255 255 / 38%);
+  border-color: color-mix(in srgb, var(--paper-bright) 38%, transparent);
 }
 
 .deskFooter {
@@ -1063,7 +1065,7 @@
 
 .deskFooter > :last-child {
   background: var(--ink);
-  color: #fff;
+  color: var(--paper-bright);
 }
 
 .diagnosticRail {
@@ -1145,7 +1147,7 @@
 
 .noRepair {
   align-items: flex-start;
-  background: rgb(23 101 154 / 6%);
+  background: color-mix(in srgb, var(--v2-ring) 6%, transparent);
   color: var(--blue);
   display: flex;
   gap: 9px;
@@ -1444,7 +1446,7 @@
   margin: 10px 0 4px;
   padding: 8px 12px;
   border: 1px solid var(--soft-line);
-  background: rgba(255, 250, 240, 0.6);
+  background: color-mix(in srgb, var(--bg-100) 60%, transparent);
 }
 
 .rewriteUndoBar span {

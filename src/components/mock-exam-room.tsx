@@ -40,6 +40,7 @@ import {
   subscribeToMockExamSessions,
 } from "@/lib/mock-exam-store";
 import { selectKnowledgePointById } from "@/lib/course-selectors";
+import { V2Button } from "@/components/ui/v2/button";
 import styles from "./mock-exam-room.module.css";
 import { SyncStatusBadge } from "./sync-status-badge";
 
@@ -411,9 +412,9 @@ export function MockExamRoom({ course }: MockExamRoomProps) {
         </div>
 
         <footer className={styles.footer}>
-          <button type="button" className={styles.abandonButton} onClick={() => setConfirmSubmit(true)}>
+          <V2Button className={styles.abandonButton} onClick={() => setConfirmSubmit(true)}>
             <Flag size={15} aria-hidden="true" /> 交卷
-          </button>
+          </V2Button>
           <span className={styles.footerHint}>
             客观题即时判定；主观题计入待核对清单
           </span>
@@ -436,9 +437,9 @@ export function MockExamRoom({ course }: MockExamRoomProps) {
                 <button type="button" className={styles.modalSecondary} onClick={() => setConfirmSubmit(false)}>
                   继续答题
                 </button>
-                <button type="button" className={styles.modalPrimary} onClick={() => finishExam(false)}>
+                <V2Button className={styles.modalPrimary} onClick={() => finishExam(false)}>
                   <Send size={15} aria-hidden="true" /> 确认交卷
-                </button>
+                </V2Button>
                 <button
                   type="button"
                   className={styles.modalDanger}
@@ -520,9 +521,9 @@ export function MockExamRoom({ course }: MockExamRoomProps) {
             <p>倒计时与已用时长会按原卷恢复；已作答内容不持久化，继续后从第一题重新作答。</p>
           </div>
           <div className={styles.resumeActions}>
-            <button type="button" className={styles.resumeButton} onClick={resumeExam}>
+            <V2Button className={styles.resumeButton} onClick={resumeExam}>
               继续模考 <SyncStatusBadge /> <ArrowRight size={15} aria-hidden="true" />
-            </button>
+            </V2Button>
             <button type="button" className={styles.discardButton} onClick={discardActiveAndStart}>
               放弃并重新开始
             </button>
@@ -531,9 +532,9 @@ export function MockExamRoom({ course }: MockExamRoomProps) {
       ) : null}
 
       <div className={styles.startRow}>
-        <button type="button" className={styles.startButton} onClick={startExam}>
+        <V2Button className={styles.startButton} onClick={startExam}>
           开始模考 <SyncStatusBadge /> <ArrowRight size={17} aria-hidden="true" />
-        </button>
+        </V2Button>
         <span className={styles.startHint}>建议时长 {120} 分钟</span>
       </div>
 
@@ -683,9 +684,9 @@ function ReportView({
       <p className={styles.reportNotice}>{report.notice}</p>
 
       <div className={styles.reportActions}>
-        <button type="button" className={styles.startButton} onClick={onRestart}>
+        <V2Button className={styles.startButton} onClick={onRestart}>
           <RotateCcw size={16} aria-hidden="true" /> 再来一次
-        </button>
+        </V2Button>
         <Link className={styles.reportLink} href={`/courses/${course.slug}/question-bank`}>
           去题库补练 <ArrowRight size={16} aria-hidden="true" />
         </Link>

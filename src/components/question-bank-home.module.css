@@ -1,11 +1,13 @@
 .container {
-  --ink: #10100f;
-  --paper: #f7f4ee;
-  --muted: #6c6a66;
-  --line: rgb(16 16 15 / 36%);
-  --soft-line: rgb(16 16 15 / 14%);
-  --red: #bf2118;
-  --blue: #17659a;
+  /* R3 token 桥接：局部 token 改引 v2 全局 token（映射口径见 design-qa.md R3 节）；.dark 自动翻转。
+     --blue → --v2-ring 为设计决策，非等值替换。 */
+  --ink: var(--text-900);
+  --paper: var(--bg-200);
+  --muted: var(--text-500);
+  --line: color-mix(in srgb, var(--text-900) 38%, transparent);
+  --soft-line: color-mix(in srgb, var(--text-900) 16%, transparent);
+  --red: var(--error-600);
+  --blue: var(--v2-ring);
   background: var(--paper);
   color: var(--ink);
   min-height: 100dvh;

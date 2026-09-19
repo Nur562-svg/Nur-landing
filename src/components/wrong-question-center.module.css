@@ -1,11 +1,12 @@
 .container {
   /* Local editorial tokens — override global shadcn --muted (near-white bg token)
-     so secondary copy stays readable on warm ivory. Matches /learn, QB, course shell. */
-  --ink: #10100f;
-  --paper: #f7f4ee;
-  --muted: #6c6a66;
-  --rule: rgb(16 16 15 / 22%);
-  --cinnabar: #a04545;
+     so secondary copy stays readable on warm ivory. Matches /learn, QB, course shell.
+     R3 token 桥接：定义值改引 v2 全局 token（映射口径见 design-qa.md R3 节）；.dark 自动翻转。 */
+  --ink: var(--text-900);
+  --paper: var(--bg-200);
+  --muted: var(--text-500);
+  --rule: color-mix(in srgb, var(--text-900) 16%, transparent);
+  --cinnabar: var(--brand-600);
   max-width: 1280px;
   margin: 0 auto;
   padding: 48px 64px 96px;
@@ -172,7 +173,7 @@
   gap: 12px;
   padding: 20px 24px;
   border: 1px solid var(--rule);
-  background: rgba(255, 255, 255, 0.35);
+  background: color-mix(in srgb, var(--text-900) 35%, transparent);
   text-decoration: none;
   color: inherit;
   transition: border-color 0.15s, background 0.15s;
@@ -180,7 +181,7 @@
 
 .weakKpCard:hover {
   border-color: var(--ink);
-  background: rgba(255, 255, 255, 0.6);
+  background: color-mix(in srgb, var(--text-900) 60%, transparent);
 }
 
 .weakKpCardTop {
@@ -262,7 +263,7 @@
 }
 
 .wrongItem:hover {
-  background: rgba(255, 255, 255, 0.4);
+  background: color-mix(in srgb, var(--text-900) 40%, transparent);
 }
 
 .wrongItemIndex {
@@ -293,12 +294,11 @@
   color: var(--muted);
 }
 
-.wrongItemKind {
+/* V2Badge（outline）承接题型徽章；此处只补行内尺寸（0,2,0 盖过六件套默认 32px 高/内边距） */
+.container .wrongItemKind {
   font-size: 11px;
-  color: var(--muted);
-  padding: 2px 8px;
-  border: 1px solid var(--rule);
-  white-space: nowrap;
+  min-height: 24px;
+  padding: 0 8px;
 }
 
 .wrongItemStats {
@@ -340,7 +340,7 @@
 }
 
 .weaknessItem:hover {
-  background: rgba(255, 255, 255, 0.4);
+  background: color-mix(in srgb, var(--text-900) 40%, transparent);
 }
 
 .weaknessMain {
@@ -458,7 +458,8 @@
     font-size: 13px;
   }
 
-  .wrongItemKind {
+  /* 与上方 .container .wrongItemKind (0,2,0) 同权，保证窄屏仍隐藏（题型徽章在 390 下列已由索引/统计承接） */
+  .container .wrongItemKind {
     display: none;
   }
 

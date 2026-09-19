@@ -14,6 +14,7 @@ import {
   type StructuralWeakness,
 } from "@/lib/wrong-questions";
 import { QUESTION_KIND_OPTIONS } from "@/lib/question-kind-labels";
+import { V2Badge } from "@/components/ui/v2/badge";
 import styles from "./wrong-question-center.module.css";
 import { SyncStatusBadge } from "./sync-status-badge";
 import { PLATFORM_DOCK_PROPS, useNurAgentDockProps } from "@/lib/agent-dock-props";
@@ -238,9 +239,9 @@ export function WrongQuestionCenter({ courses }: WrongQuestionCenterProps) {
                           </span>
                           <span className={styles.wrongItemCourse}>{q.courseTitle}</span>
                         </span>
-                        <span className={styles.wrongItemKind}>
+                        <V2Badge className={styles.wrongItemKind} variant="outline">
                           {getKindLabel(q.questionKind)}
-                        </span>
+                        </V2Badge>
                         <span className={styles.wrongItemStats}>
                           {q.wrongCount} 错 / {q.totalAttempts} 次
                         </span>

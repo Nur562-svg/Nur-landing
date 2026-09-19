@@ -1,11 +1,13 @@
 .container {
-  --ink: #10100f;
-  --paper: #f7f4ee;
-  --muted: #6c6a66;
-  --line: rgb(16 16 15 / 36%);
-  --soft-line: rgb(16 16 15 / 14%);
-  --red: #bf2118;
-  --blue: #17659a;
+  /* R3 token 桥接：局部 token 改引 v2 全局 token（映射口径见 design-qa.md R3 节）；.dark 自动翻转。
+     --blue → --v2-ring 为设计决策，非等值替换。 */
+  --ink: var(--text-900);
+  --paper: var(--bg-200);
+  --muted: var(--text-500);
+  --line: color-mix(in srgb, var(--text-900) 38%, transparent);
+  --soft-line: color-mix(in srgb, var(--text-900) 16%, transparent);
+  --red: var(--error-600);
+  --blue: var(--v2-ring);
   background: var(--paper);
   color: var(--ink);
   min-height: 100dvh;
@@ -228,17 +230,17 @@
 
 .choiceSelected {
   border-color: var(--ink);
-  background: rgb(16 16 15 / 6%);
+  background: color-mix(in srgb, var(--text-900) 6%, transparent);
 }
 
 .choiceCorrect {
   border-color: var(--blue);
-  background: rgb(23 101 154 / 8%);
+  background: color-mix(in srgb, var(--v2-ring) 8%, transparent);
 }
 
 .choiceWrong {
   border-color: var(--red);
-  background: rgb(191 33 24 / 8%);
+  background: color-mix(in srgb, var(--red) 8%, transparent);
 }
 
 .choice:disabled {
@@ -368,7 +370,7 @@
 }
 
 .numberDone {
-  background: rgb(16 16 15 / 7%);
+  background: color-mix(in srgb, var(--text-900) 7%, transparent);
 }
 
 .numberCorrect {
@@ -418,14 +420,8 @@
   padding-top: 18px;
 }
 
-.abandonButton {
-  align-items: center;
-  background: var(--ink);
-  border: 1px solid var(--ink);
-  color: var(--paper);
-  cursor: pointer;
-  display: inline-flex;
-  font-size: 14px;
+/* V2Button（六件套）承接主按钮视觉；此处只补尺寸/间距与图标对齐 */
+.container .abandonButton {
   gap: 8px;
   padding: 10px 20px;
 }
@@ -437,7 +433,7 @@
 
 .modalBackdrop {
   align-items: center;
-  background: rgb(16 16 15 / 40%);
+  background: color-mix(in srgb, var(--text-900) 40%, transparent);
   display: flex;
   inset: 0;
   justify-content: center;
@@ -485,9 +481,10 @@
   padding: 9px 16px;
 }
 
-.modalPrimary {
-  background: var(--ink);
-  color: var(--paper);
+/* V2Button（primary）承接确认交卷；此处只补与次按钮一致的尺寸 */
+.container .modalPrimary {
+  gap: 6px;
+  padding: 9px 16px;
 }
 
 .modalSecondary {
@@ -633,14 +630,8 @@
   gap: 10px;
 }
 
-.resumeButton {
-  align-items: center;
-  background: var(--ink);
-  border: 1px solid var(--ink);
-  color: var(--paper);
-  cursor: pointer;
-  display: inline-flex;
-  font-size: 14px;
+/* V2Button（primary）承接继续模考；此处只补尺寸/间距与图标对齐 */
+.container .resumeButton {
   gap: 6px;
   padding: 10px 18px;
 }
@@ -659,21 +650,10 @@
   color: var(--red);
 }
 
-.startButton {
-  align-items: center;
-  background: var(--ink);
-  border: 1px solid var(--ink);
-  color: var(--paper);
-  cursor: pointer;
-  display: inline-flex;
-  font-size: 15px;
+/* V2Button（primary）承接开始模考/再来一次；此处只补尺寸/间距与图标对齐 */
+.container .startButton {
   gap: 8px;
   padding: 12px 24px;
-}
-
-.startButton:hover {
-  background: transparent;
-  color: var(--ink);
 }
 
 .startHint {

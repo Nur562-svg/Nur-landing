@@ -1,12 +1,14 @@
 .appShell {
-  --ink: #10100f;
-  --paper: #f7f4ee;
-  --paper-bright: #fbf9f4;
-  --muted: #6c6a66;
-  --line: rgb(16 16 15 / 36%);
-  --soft-line: rgb(16 16 15 / 14%);
-  --red: #bf2118;
-  --blue: #17659a;
+  /* R3 token 桥接：局部 token 改引 v2 全局 token（映射口径见 design-qa.md R3 节）；.dark 自动翻转。
+     --blue → --v2-ring（聚焦描边统一 terracotta）为设计决策，非等值替换。 */
+  --ink: var(--text-900);
+  --paper: var(--bg-200);
+  --paper-bright: var(--bg-100);
+  --muted: var(--text-500);
+  --line: color-mix(in srgb, var(--text-900) 38%, transparent);
+  --soft-line: color-mix(in srgb, var(--text-900) 16%, transparent);
+  --red: var(--error-600);
+  --blue: var(--v2-ring);
   background: var(--paper);
   color: var(--ink);
   min-height: 100dvh;
@@ -25,7 +27,7 @@
 
 .header {
   align-items: center;
-  background: rgb(247 244 238 / 96%);
+  background: color-mix(in srgb, var(--bg-200) 96%, transparent);
   border-bottom: 1px solid var(--ink);
   display: grid;
   grid-template-columns: minmax(210px, 1fr) auto minmax(210px, 1fr);
@@ -103,11 +105,11 @@
 
 .avatar {
   align-items: center;
-  background: #080808;
-  border: 1px solid #080808;
+  background: var(--ink);
+  border: 1px solid var(--ink);
   border-radius: 50%;
-  box-shadow: inset 0 0 0 5px #080808, inset 0 0 0 6px rgb(255 255 255 / 80%);
-  color: #fff;
+  box-shadow: inset 0 0 0 5px var(--ink), inset 0 0 0 6px color-mix(in srgb, var(--paper-bright) 80%, transparent);
+  color: var(--paper-bright);
   display: flex;
   font-family: var(--font-serif), Georgia, serif;
   font-size: 27px;
@@ -125,7 +127,7 @@
 .accountPanel {
   background: var(--paper-bright);
   border: 1px solid var(--ink);
-  box-shadow: 8px 8px 0 rgb(16 16 15 / 10%);
+  box-shadow: 8px 8px 0 color-mix(in srgb, var(--text-900) 10%, transparent);
   display: grid;
   gap: 18px;
   padding: 20px;
@@ -176,7 +178,7 @@
 }
 
 .ghostWordmark {
-  color: rgb(16 16 15 / 2.8%);
+  color: color-mix(in srgb, var(--text-900) 2.8%, transparent);
   font-family: var(--font-sans);
   font-size: clamp(116px, 13vw, 196px);
   font-weight: 760;
@@ -319,7 +321,7 @@
 
 .heroProgress > progress::-webkit-progress-bar,
 .sessionCard > progress::-webkit-progress-bar {
-  background: rgb(16 16 15 / 12%);
+  background: color-mix(in srgb, var(--text-900) 12%, transparent);
 }
 
 .heroProgress > progress::-webkit-progress-value,
@@ -763,7 +765,7 @@
 
 .scoringNotice {
   align-items: flex-start;
-  background: rgb(191 33 24 / 6%);
+  background: color-mix(in srgb, var(--red) 6%, transparent);
   border: 1px solid var(--red);
   display: flex;
   font-size: 10px;
@@ -789,7 +791,7 @@
 }
 
 .answerPrompt span {
-  color: rgb(251 249 244 / 64%);
+  color: color-mix(in srgb, var(--bg-100) 64%, transparent);
   font-size: 9px;
   font-weight: 700;
   letter-spacing: 0.1em;
@@ -842,7 +844,7 @@
 }
 
 .answerArea textarea::placeholder {
-  color: rgb(108 106 102 / 65%);
+  color: color-mix(in srgb, var(--text-500) 65%, transparent);
 }
 
 .answerArea > span {
