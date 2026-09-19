@@ -245,6 +245,28 @@
   padding: 2px 7px;
 }
 
+.themeToggle {
+  align-items: center;
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: var(--v2-radius-md);
+  color: var(--v2-foreground);
+  cursor: pointer;
+  display: inline-flex;
+  height: 40px;
+  justify-content: center;
+  width: 40px;
+}
+
+.themeToggle:hover {
+  background: var(--v2-muted);
+}
+
+.themeToggle:focus-visible {
+  outline: 2px solid var(--v2-ring);
+  outline-offset: 2px;
+}
+
 .userChip {
   align-items: center;
   background: var(--v2-card);

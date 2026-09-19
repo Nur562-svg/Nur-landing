@@ -26,6 +26,7 @@ import type {
   HiDocTextbookDetail,
   HiDocTocEvent,
 } from "@/types/hidoc";
+import { V2Button } from "@/components/ui/v2/button";
 import styles from "./hi-doc.module.css";
 
 /**
@@ -358,9 +359,8 @@ export function HiDocTextbookDetailView({ initialDetail }: HiDocTextbookDetailPr
         </div>
         <div className={styles.actionRow}>
           {!editing ? (
-            <button
-              type="button"
-              className={styles.primaryButton}
+            <V2Button
+              className={styles.v2Button}
               disabled={recognizing}
               onClick={onRecognize}
             >
@@ -370,7 +370,7 @@ export function HiDocTextbookDetailView({ initialDetail }: HiDocTextbookDetailPr
                 <ScanSearch aria-hidden="true" size={16} strokeWidth={1.6} />
               )}
               {recognizing ? "识别中" : chapters.length > 0 ? "重新识别目录" : "识别目录"}
-            </button>
+            </V2Button>
           ) : null}
           {!editing ? (
             <button
@@ -384,14 +384,14 @@ export function HiDocTextbookDetailView({ initialDetail }: HiDocTextbookDetailPr
             </button>
           ) : (
             <>
-              <button type="button" className={styles.primaryButton} disabled={saving} onClick={onSave}>
+              <V2Button className={styles.v2Button} disabled={saving} onClick={onSave}>
                 {saving ? (
                   <Loader2 className={styles.spin} aria-hidden="true" size={16} strokeWidth={1.8} />
                 ) : (
                   <Save aria-hidden="true" size={16} strokeWidth={1.6} />
                 )}
                 保存章节
-              </button>
+              </V2Button>
               <button
                 type="button"
                 className={styles.ghostButton}

@@ -1,7 +1,5 @@
 "use client";
 
-import { useState } from "react";
-
 import { V2Badge } from "@/components/ui/v2/badge";
 import { V2Button } from "@/components/ui/v2/button";
 import { V2Card } from "@/components/ui/v2/card";
@@ -60,14 +58,6 @@ const BOTTOM_NAV_ITEMS = [
 ] as const;
 
 export function DesignSystemPreview() {
-  const [dark, setDark] = useState(false);
-
-  const toggleDark = () => {
-    const next = !dark;
-    setDark(next);
-    document.documentElement.classList.toggle("dark", next);
-  };
-
   return (
     <div className={styles.page}>
       <header className={styles.head}>
@@ -77,9 +67,9 @@ export function DesignSystemPreview() {
           <p className={styles.lead}>
             暖纸体系 v2：terracotta 主强调、宋体显示标题、8–24px 圆角。
             本页是后续逐面迁移（R2/R3）的对照基准；token 唯一来源是 globals.css。
+            明暗切换用壳顶栏右侧的日/月按钮（R2-2 起全局生效）。
           </p>
         </div>
-        <V2Button variant="secondary" onClick={toggleDark}>{dark ? "切换亮色" : "切换暗色"}</V2Button>
       </header>
 
       <section className={styles.section} aria-label="原色阶">
@@ -148,7 +138,7 @@ export function DesignSystemPreview() {
             <p className={styles.sectionNote}>sunken</p>
           </V2Card>
           <V2Card variant="emphasis" eyebrow="NUR LEARN" title="发布前复核" body="最高优先级提示使用最强对比与最深阴影。">
-            <p className={styles.sectionNote}>emphasis</p>
+            <p className={`${styles.sectionNote} ${styles.emphasisNote}`}>emphasis</p>
           </V2Card>
           <V2Card variant="disabled" eyebrow="Context locked" title="暂不可用" body="禁用态降调不降可读性，保持同一套间距与圆角。">
             <p className={styles.sectionNote}>disabled</p>

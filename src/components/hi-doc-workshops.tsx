@@ -6,6 +6,7 @@ import { CircleAlert, FolderOpen, Loader2, Plus, Trash2 } from "lucide-react";
 import type { MembershipTier } from "@/types/auth";
 import type { HiDocApiFailure, HiDocWorkshopListView, HiDocWorkshopView } from "@/types/hidoc";
 import { getMembershipTierLabel } from "@/lib/membership";
+import { V2Button } from "@/components/ui/v2/button";
 import styles from "./hi-doc.module.css";
 
 /**
@@ -139,9 +140,8 @@ export function HiDocWorkshopList({ initialList, tier }: HiDocWorkshopListProps)
             disabled={busy !== null}
             onChange={(event) => setNote(event.target.value)}
           />
-          <button
-            type="button"
-            className={styles.primaryButton}
+          <V2Button
+            className={styles.v2Button}
             disabled={title.trim().length === 0 || busy !== null}
             onClick={onCreate}
           >
@@ -151,7 +151,7 @@ export function HiDocWorkshopList({ initialList, tier }: HiDocWorkshopListProps)
               <Plus aria-hidden="true" size={16} strokeWidth={1.8} />
             )}
             {busy === "create" ? "创建中" : "新建课题"}
-          </button>
+          </V2Button>
         </div>
         {error ? (
           <p className={styles.errorBox} role="alert">

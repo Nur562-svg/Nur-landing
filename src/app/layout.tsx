@@ -37,7 +37,22 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="zh-CN" data-scroll-behavior="smooth" className="h-full antialiased">
+    <html
+      lang="zh-CN"
+      data-scroll-behavior="smooth"
+      className="h-full antialiased"
+      /* 防闪烁脚本会在 hydration 前按 localStorage 给 <html> 加 .dark，属预期的属性不一致 */
+      suppressHydrationWarning
+    >
+      <head>
+        {/* R2-2 暗色防闪烁：hydration 前按 localStorage(nur-theme) 挂 .dark；与壳顶栏明暗切换共用该键（默认 light） */}
+        <script
+          dangerouslySetInnerHTML={{
+            __html:
+              'try{if(localStorage["nur-theme"]==="dark")document.documentElement.classList.add("dark")}catch(e){}',
+          }}
+        />
+      </head>
       <body className="min-h-full flex flex-col">
         {children}
         {/* NUR Agent Dock 壳级单实例（R1 收敛：原先 9 处各自挂载） */}

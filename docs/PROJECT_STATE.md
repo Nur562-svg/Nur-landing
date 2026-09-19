@@ -1,6 +1,6 @@
 # NUR LEARN — Canonical Project State
 
-Last updated: 2026-09-19 (Asia/Shanghai) — Hi doc M0–M7 全部完成（M7 支付打通：支付宝沙箱四档订阅真实生效、计费页三列卡改版）；设计系统 v2（Claude 库适配版）已定案，随框架重构生效（排期后置）
+Last updated: 2026-09-19 (Asia/Shanghai) — Hi doc M0–M7 全部完成；设计系统 v2 R1（壳+token）与 R2（Hi doc 五面换装 + 全局暗色基建）完成，R3（官方课+题库+计费面）待做
 
 This file is the durable source of truth for continuing NUR LEARN when conversation history is unavailable. Update it after material product decisions, completed milestones, verification changes, or priority changes.
 
@@ -1667,4 +1667,30 @@ R1 只做「壳 + token 并存」，不动任何业务页面的视觉与逻辑�
 - 像素对比口径（如实声明）：壳是 R1 交付物本身，业务页被 248px 侧栏 + 顶栏包围后视口宽度收窄必然回流，「整页像素级不变」在物理上不成立；已按「业务页面自身 DOM/样式零改动、内容区无壳注入样式」执行并留档迁移前基线截图（r1-baseline-\*）与迁移后截图（r1-after-\*）对照。
 - 已知事项（R2 处理）：① 库自带暗色缺陷——secondary 按钮/标签暗色下浅底浅字（token 原值照搬，需 R2 评审修正）；② dev 冷编译多路由并行首次访问偶发 manifest `JSON.parse` 500（仅 dev、重试即好，生产构建复验无此问题）；③ 生产 `next start` 因「生产强制 Postgres」护栏无法本地注册账号，登录态检查以 dev 服务为准。
 
-**下一优先级**：R2 = Hi doc 面切换（卡片/按钮/对话气泡换 v2 组件 + 启用暗色，评审并修正 secondary 暗色对比）；R3 = 官方课 + 题库面切换；R4 = ⌘K 全局检索与移动端深化。
+**R1 后续**：R2 = Hi doc 面切换（卡片/按钮/对话气泡换 v2 组件 + 启用暗色，评审并修正 secondary 暗色对比）已完成（见下节）；R3 = 官方课 + 题库面切换；R4 = ⌘K 全局检索与移动端深化。
+
+## 设计系统 v2 R2 — Hi doc 面换装 + 暗色模式启用（2026-09-19 完成）
+
+R2 = R2-1 修复小包（commit `64925f5`）+ R2-2 Hi doc 主体换装与全局暗色基建；本节为摘要，验收证据见 `design-qa.md`「Design System R2」节。
+
+### A. R2-1 修复小包
+- `.dark` 段 `--v2-secondary` → `var(--bg-300)`、`--v2-secondary-foreground` → `var(--text-800)`：修复库自带暗色缺陷（R1 已知事项①）——secondary 按钮/标签暗色下浅底浅字；亮色值与组件 css 零改动，实测对比 ≈11.7:1。
+- 壳 `.tierBadge` 暗色反转（brand-700 底 + brand-100 字）；⌘K 面板底部文案去内部备注泄漏。
+
+### B. Hi doc 五路由 token 换装（核心机制：token 桥接，非重写 CSS）
+- `hi-doc.module.css` `.page` 8 个局部 token 改引全局 v2 token（`--ink`→text-900、`--paper`→bg-200、`--paper-bright`→bg-100、`--muted`→text-500、`--line(-soft)`→color-mix(text-900 x%)、`--red`→error-600、`--blue`→**v2-ring**——聚焦/状态强调统一 terracotta，设计决策非等值替换），约 160 处引用点自动生效且 `.dark` 自动翻转；29 处散落硬编码按同口径收敛，`--hidoc-swatch-*` 四色划线族字面值保留（内容语义色）。
+- 对话气泡升级 v2 两级模式（user=主色实底/assistant=纸卡+边框，NUR-DESIGN-V2 §3），保留原 DOM 不换 `V2ChatBubble`（markdown 嵌套 + 流式 caret + 滚动 ref 风险，宁少勿滥）。
+- 六件套替换（仅纯展示层）：`V2Button(primary)` ×9（各面主操作按钮）、`V2Badge(muted)` ×4（教材/材料状态）；ghost/danger/icon 按钮、学习页 tab、划重点气泡按钮保留原 DOM 吃 token 重皮；`.page .v2Button` 字体断言防页面 button 重置盖掉组件字体。
+- 范围边界：`src/lib/hidoc/`、`src/content/`、`src/lib/payment/` 零改动；385 项测试守护行为无回归。
+
+### C. 全局暗色基建
+- 根 layout `<head>` 内联防闪烁脚本（`localStorage["nur-theme"]==="dark"` 则预挂 `.dark`）+ `<html suppressHydrationWarning>`；壳顶栏 Sun/Moon 切换按钮（aria-label/aria-pressed，写 localStorage，默认 light）；`/design-system` 预览页局部切换移除、统一走壳全局切换。
+- 现状口径：壳 + Hi doc 五面成套变暗；`/learn` 周计划仪表盘与 `/learn/my-materials` 内容面仍为 v1 浅色皮（R3 范围，暗色下为「暗壳 + 浅色内容」过渡态）。
+
+### R2 验证（2026-09-19）
+- `npm run lint` 0 error / typecheck 干净 / `npm run test` 385/385 / `npm run check` exit 0。
+- 浏览器（`scripts/design-r2-check.mjs`，dev SQLite 造数 + 级联清理；暗色走真实防闪烁链路）：5 条 Hi doc 路由 + /learn + /design-system × 亮/暗 × 1440/390 共 28 组全 200、0 控制台错误、390 无横向溢出；明暗切换 + reload 保持实测通过。
+- 暗色对比度审计（`scripts/design-r2-dark-audit.mjs`）：五确认面逐文本元素 WCAG 有效对比度 <2.5 为 0；过程修复 design-system emphasis 卡内说明字浅底浅字一处。
+- 已知事项：dev 冷编译 manifest JSON.parse 500 游走（R1 已知②，脚本按签名自动重试，生产无此问题）。
+
+**下一优先级**：R3 = 官方课工作台 + 题库 + 计费面 v2 换装（含 `/learn` 仪表盘与 my-materials 内容面收尾暗色）；R4 = ⌘K 全局检索与移动端深化；并行推进部署上线准备（ICP 备案 + 真实商户号 + 生产密钥/网关 + 公网 notify 补验）。

@@ -6,6 +6,7 @@ import type { HiDocChapterView, HiDocNoteEvent, HiDocNoteView } from "@/types/hi
 import { consumeHiDocSse, readHiDocFailure } from "@/lib/hidoc/client-api";
 import { describeHiDocLessonGenerator } from "@/lib/hidoc/lesson-heuristic";
 import { buildHiDocNoteFileName } from "@/lib/hidoc/note-heuristic";
+import { V2Button } from "@/components/ui/v2/button";
 import { HiDocMarkdown } from "./hi-doc-markdown";
 import styles from "./hi-doc.module.css";
 
@@ -135,10 +136,10 @@ export function HiDocNotePanel({
             confirmingRegenerate ? (
               <>
                 <span className={styles.confirmNote}>重新生成将覆盖当前学霸笔记，确认继续？</span>
-                <button type="button" className={styles.primaryButton} onClick={() => void onGenerateNote()}>
+                <V2Button className={styles.v2Button} onClick={() => void onGenerateNote()}>
                   <RefreshCw aria-hidden="true" size={15} strokeWidth={1.6} />
                   确认重新生成
-                </button>
+                </V2Button>
                 <button
                   type="button"
                   className={styles.ghostButton}
@@ -157,17 +158,17 @@ export function HiDocNotePanel({
                   <RefreshCw aria-hidden="true" size={15} strokeWidth={1.6} />
                   重新生成学霸笔记
                 </button>
-                <button type="button" className={styles.primaryButton} onClick={onDownloadNote}>
+                <V2Button className={styles.v2Button} onClick={onDownloadNote}>
                   <Download aria-hidden="true" size={15} strokeWidth={1.6} />
                   下载 .md
-                </button>
+                </V2Button>
               </>
             )
           ) : (
-            <button type="button" className={styles.primaryButton} onClick={() => void onGenerateNote()}>
+            <V2Button className={styles.v2Button} onClick={() => void onGenerateNote()}>
               <Sparkles aria-hidden="true" size={16} strokeWidth={1.6} />
               生成学霸笔记
-            </button>
+            </V2Button>
           )
         ) : (
           <span className={styles.confirmNote}>

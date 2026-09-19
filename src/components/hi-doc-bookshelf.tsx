@@ -14,6 +14,8 @@ import {
 import type { MembershipTier } from "@/types/auth";
 import type { HiDocApiFailure, HiDocShelf, HiDocTextbookView } from "@/types/hidoc";
 import { getMembershipTierLabel } from "@/lib/membership";
+import { V2Badge } from "@/components/ui/v2/badge";
+import { V2Button } from "@/components/ui/v2/button";
 import styles from "./hi-doc.module.css";
 
 type HiDocBookshelfProps = {
@@ -203,17 +205,12 @@ export function HiDocBookshelf({ initialShelf, tier }: HiDocBookshelfProps) {
             disabled={busy !== null}
             onChange={(event) => setTitle(event.target.value)}
           />
-          <button
-            type="button"
-            className={styles.primaryButton}
-            disabled={!file || busy !== null}
-            onClick={onUpload}
-          >
+          <V2Button className={styles.v2Button} disabled={!file || busy !== null} onClick={onUpload}>
             {busy === "upload" ? (
               <Loader2 className={styles.spin} aria-hidden="true" size={16} strokeWidth={1.8} />
             ) : null}
             {busy === "upload" ? "上传并检测中" : "上传教材"}
-          </button>
+          </V2Button>
         </div>
         <p className={styles.uploadHint}>
           上传即检测文字层：扫描版 PDF 会明确拒绝并提示，暂不做 OCR；目录识别与知识点萃取在后续版本开放。
@@ -245,7 +242,9 @@ export function HiDocBookshelf({ initialShelf, tier }: HiDocBookshelfProps) {
                     {textbook.fileName} · {textbook.pageCount} 页 · {formatSize(textbook.sizeBytes)} · 上传于{" "}
                     {textbook.createdAt.slice(0, 10)}
                   </p>
-                  <p className={styles.textbookState}>{describeState(textbook)}</p>
+                  <V2Badge variant="muted" className={styles.stateBadge}>
+                    {describeState(textbook)}
+                  </V2Badge>
                 </div>
                 <div className={styles.textbookActions}>
                   <Link className={styles.ghostButton} href={`/learn/hi-doc/t/${textbook.id}`}>
@@ -289,7 +288,9 @@ export function HiDocBookshelf({ initialShelf, tier }: HiDocBookshelfProps) {
                     {textbook.fileName} · {textbook.pageCount} 页 · {formatSize(textbook.sizeBytes)} · 激活月{" "}
                     {textbook.activeMonth}
                   </p>
-                  <p className={styles.textbookState}>已冻结 · 重新激活将占用本月名额</p>
+                  <V2Badge variant="muted" className={styles.stateBadge}>
+                    已冻结 · 重新激活将占用本月名额
+                  </V2Badge>
                 </div>
                 <div className={styles.textbookActions}>
                   <button

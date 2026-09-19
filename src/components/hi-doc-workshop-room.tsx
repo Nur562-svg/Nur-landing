@@ -21,6 +21,8 @@ import type {
 } from "@/types/hidoc";
 import { consumeHiDocSse, readHiDocFailure } from "@/lib/hidoc/client-api";
 import { HiDocMarkdown } from "./hi-doc-markdown";
+import { V2Badge } from "@/components/ui/v2/badge";
+import { V2Button } from "@/components/ui/v2/button";
 import styles from "./hi-doc.module.css";
 
 /**
@@ -231,9 +233,8 @@ export function HiDocWorkshopRoom({ initialDetail }: HiDocWorkshopRoomProps) {
               onChange={(event) => setFile(event.target.files?.[0] ?? null)}
             />
           </label>
-          <button
-            type="button"
-            className={styles.primaryButton}
+          <V2Button
+            className={styles.v2Button}
             disabled={!file || uploading || streaming}
             onClick={onUpload}
           >
@@ -241,7 +242,7 @@ export function HiDocWorkshopRoom({ initialDetail }: HiDocWorkshopRoomProps) {
               <Loader2 className={styles.spin} aria-hidden="true" size={16} strokeWidth={1.8} />
             ) : null}
             {uploading ? "上传并检测中" : "上传材料"}
-          </button>
+          </V2Button>
         </div>
         <p className={styles.uploadHint}>
           上传即检测：图片与扫描版（无文字层）PDF 会明确拒绝并说明原因，OCR 能力后续开放；材料存服务器且仅本人可见。
@@ -273,7 +274,9 @@ export function HiDocWorkshopRoom({ initialDetail }: HiDocWorkshopRoomProps) {
                   <p className={styles.textbookMeta}>
                     {item.pageCount} 页 · {formatSize(item.sizeBytes)} · 上传于 {item.createdAt.slice(0, 10)}
                   </p>
-                  <p className={styles.textbookState}>{describeFileState(item)}</p>
+                  <V2Badge variant="muted" className={styles.stateBadge}>
+                    {describeFileState(item)}
+                  </V2Badge>
                 </div>
                 <div className={styles.textbookActions}>
                   <button
@@ -408,9 +411,9 @@ export function HiDocWorkshopRoom({ initialDetail }: HiDocWorkshopRoomProps) {
               }}
             />
           </label>
-          <button
+          <V2Button
+            className={styles.v2Button}
             type="submit"
-            className={styles.primaryButton}
             disabled={chatDraft.trim().length === 0 || streaming || readyFileCount === 0}
           >
             {streaming ? (
@@ -419,7 +422,7 @@ export function HiDocWorkshopRoom({ initialDetail }: HiDocWorkshopRoomProps) {
               <CornerDownLeft aria-hidden="true" size={16} strokeWidth={1.8} />
             )}
             {streaming ? "检索与回答中" : "发送"}
-          </button>
+          </V2Button>
         </form>
       </section>
 

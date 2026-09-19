@@ -10,8 +10,10 @@ import {
   GraduationCap,
   ListChecks,
   Menu,
+  Moon,
   Search,
   Stethoscope,
+  Sun,
 } from "lucide-react";
 
 import { useSession } from "@/hooks/use-session";
@@ -129,6 +131,27 @@ export function WorkspaceShell({ children }: { children: React.ReactNode }) {
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [paletteOpen, setPaletteOpen] = useState(false);
   const [textbooks, setTextbooks] = useState<readonly ShellTextbook[]>([]);
+  const [dark, setDark] = useState(false);
+
+  // R2-2 明暗切换：挂载后读当前主题（根 layout 的防闪烁脚本可能已在 hydration 前挂上 .dark）。
+  // rAF 包裹避免 set-state-in-effect 级联渲染（仓库既有惯例，见 use-draggable-fab.ts）。
+  useEffect(() => {
+    const raf = requestAnimationFrame(() => {
+      setDark(document.documentElement.classList.contains("dark"));
+    });
+    return () => cancelAnimationFrame(raf);
+  }, []);
+
+  const toggleTheme = () => {
+    const next = !document.documentElement.classList.contains("dark");
+    document.documentElement.classList.toggle("dark", next);
+    setDark(next);
+    try {
+      window.localStorage.setItem("nur-theme", next ? "dark" : "light");
+    } catch {
+      // localStorage 不可用（隐私模式等）：仅当前会话生效
+    }
+  };
 
   // 登录后才拉书架最近教材（未登录请求书架 API 会得到 401，避免产生资源错误）
   useEffect(() => {
@@ -209,6 +232,19 @@ export function WorkspaceShell({ children }: { children: React.ReactNode }) {
             </button>
           </div>
           <div className={styles.topbarRight}>
+            <button
+              type="button"
+              className={styles.themeToggle}
+              onClick={toggleTheme}
+              aria-label={dark ? "切换亮色" : "切换暗色"}
+              aria-pressed={dark}
+            >
+              {dark ? (
+                <Sun size={16} strokeWidth={1.6} aria-hidden="true" />
+              ) : (
+                <Moon size={16} strokeWidth={1.6} aria-hidden="true" />
+              )}
+            </button>
             {user && tier ? (
               <Link className={styles.userChip} href="/account/billing" data-user-chip="">
                 <span className={styles.userName}>{user.displayName}</span>

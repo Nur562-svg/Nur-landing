@@ -57,6 +57,12 @@
   margin: 0;
 }
 
+/* emphasis 卡是反色强调面（亮暗两态都反色）：卡内说明字继承卡 color，避免暗色下浅底浅字 */
+.emphasisNote {
+  color: inherit;
+  opacity: 0.82;
+}
+
 /* ---------- 色板 ---------- */
 .scaleGroup {
   border: 1px solid var(--v2-border);

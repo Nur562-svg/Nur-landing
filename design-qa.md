@@ -739,3 +739,34 @@ playwright-core + 系统 Chrome（headless、无扩展、浅色），视口 **14
   - 壳交互：`docs/design-references/r1-after-palette-open-1440.png`、`r1-after-drawer-open-390.png`、`r1-after-shell-authed-learn-1440.png`
   - 设计系统预览：`docs/design-references/r1-after-design-system-1440.png`、`r1-after-design-system-dark-1440.png`、`r1-after-design-system-full-1440.png`
   - 生产构建复验：`docs/design-references/r1-prod-learn-1440.png`、`r1-prod-question-bank-390.png`
+
+## Design System R2 — Hi doc 面换装 + 暗色模式启用（2026-09-19）
+
+playwright-core + 系统 Chrome（headless、无扩展），视口 **1440×900 / 390×844**，dev 服务；脚本 `scripts/design-r2-check.mjs`（复用 R1 登录脚手架；动态路由 t/[id]、c/[n]、w/[id] 由脚本向 dev SQLite 插入临时教材/章节/知识点/讲义/课题造数，跑完级联删除）+ `scripts/design-r2-dark-audit.mjs`（暗色逐文本元素 WCAG 有效前景/背景对比度审计）。**暗色走真实链路**：`context.addInitScript` 写 `localStorage["nur-theme"]="dark"` → 根 layout 防闪烁脚本挂 `.dark`，不是脚本手动加类。
+
+### R2-1 修复小包（先做先验，commit `64925f5`）
+
+- 暗色 secondary 对比度（R1 已知事项①收口）：`.dark` 段 `--v2-secondary` `var(--text-900)`→`var(--bg-300)`、`--v2-secondary-foreground` `var(--bg-300)`→`var(--text-800)`；亮色值零改动、组件 css 零改动，button/badge 的 `.secondary`/`.muted` 全链路生效。`/design-system` 暗色实测 secondary 按钮 `rgb(48,48,46)` 底 + `rgb(241,241,239)` 字 ≈ 11.7:1（截图 `r2-1-design-system-dark-1440.png`，脚本 `scripts/design-r21-check.mjs`）。
+- 壳 Trial 徽章 `.tierBadge`：暗色下 brand-100 底 + brand-700 字 ≈3:1 压线，` :global(.dark) .tierBadge` 反转为 `var(--brand-700)` 底 + `var(--brand-100)` 字（暗色下 brand 阶整体翻转，即深棕底浅字）。
+- ⌘K 面板底部文案去内部备注泄漏：「R1 为壳，暂不做全局内容检索」→「仅页面导航，全文检索将在后续版本提供」。
+- 验证：lint 0 error / typecheck 干净 / test 385 全绿。
+
+### R2-2 Hi doc 面换装
+
+范围：`/learn/hi-doc`（书架）、`/learn/hi-doc/t/[id]`（目录）、`/learn/hi-doc/t/[id]/c/[n]`（学习页）、`/learn/hi-doc/w`（工作坊列表）、`/learn/hi-doc/w/[id]`（工作坊房间）。`src/lib/hidoc/`、`src/content/`、`src/lib/payment/` 零改动；SSE/划线定位/配额/M0–M7 行为由 385 项测试守护未回归。
+
+- **token 桥接（核心机制，非重写 CSS）**：`hi-doc.module.css` `.page` 上 8 个页面局部 token 改引 globals.css 全局 v2 token，约 160 处引用点自动生效、`.dark` 自动翻转：`--ink`→`var(--text-900)`、`--paper`→`var(--bg-200)`、`--paper-bright`→`var(--bg-100)`、`--muted`→`var(--text-500)`、`--line`→`color-mix(in srgb, var(--text-900) 38%, transparent)`、`--line-soft`→同式 16%、`--red`→`var(--error-600)`、`--blue`→`var(--v2-ring)`（聚焦描边统一 terracotta 为设计决策非等值替换：状态字/页码徽标/引用来源/流式 caret 由黛蓝转 terracotta 强调）。
+- **散落硬编码 29 处**：`header` 半透明纸底→`color-mix(bg-200 96%)`；`errorBox` 红底→`color-mix(error-600 6%)`；`kpNavItem` hover 4%、`markdown code` 6%、`selectionBubble` 阴影 12% 均改 `color-mix(text-900 x%)`；`kpNavItemActive` 元字 72%→`color-mix(bg-100 72%)`（暗色下 active 项为浅底深字反色强调，语义成立）；`highlightItemFocus` 蓝底→`color-mix(v2-ring 6%)`；`migrateBanner`（/learn/my-materials，.page 作用域外）全部字面值改引全局 v2 token 随暗色翻转。`--hidoc-swatch-*` 四色划线族**字面值原样保留**（内容语义色，不属 v2 色板；暗色实测为低饱和暗彩，不刺眼，未加降饱和覆盖）。
+- **对话气泡 v2 两级模式**（NUR-DESIGN-V2 §3，token 重皮不换 DOM）：user 气泡 ink 实底→`--v2-primary` 实底 + `--v2-primary-foreground` 字，assistant 纸卡→`--v2-card` 底 + `--v2-border` 边。不换 `V2ChatBubble` DOM 的原因：气泡内嵌 markdown 渲染 div 会落入组件 `<p>` 造成非法嵌套，且 280px max-width/流式 caret/滚动 ref 集成有回归风险（宁少勿滥）。
+- **组件替换清单**（仅 props 全透传纯展示层）：`V2Button(primary)` ×9——书架「上传教材」、课题「新建课题」、房间「上传材料/发送(type=submit)」、目录「识别目录/重新识别目录/保存章节」、学习页「生成讲义/确认重新生成/发送(type=submit)」、笔记「生成学霸笔记/确认重新生成/下载 .md」；`V2Badge(muted)` ×4——书架在用/冻结教材状态、房间材料状态（原 `.textbookState` `<p>`）。刻意不换：ghost/danger/icon 按钮与划重点气泡内按钮（38px 紧凑规格 + Link 元素，token 重皮足够）；学习页讲义/追问/笔记 tab 保留原 DOM；`workshops.note` 仍为正文非徽章。`.page .v2Button` 字体断言（0,2,0）防 `.page button font:inherit` 重置（0,1,1）盖掉六件套字体。
+- **暗色基建（全局）**：根 layout `<head>` 内联防闪烁脚本 `try{if(localStorage["nur-theme"]==="dark")...add("dark")}`，`<html suppressHydrationWarning>`（预期属性不一致）；壳顶栏右侧 Sun/Moon icon button（aria-label 切换暗色/亮色 + aria-pressed），点击写 `localStorage["nur-theme"]`，默认 light，挂载后 rAF 读当前态；`/design-system` 预览页移除自带局部切换（防与壳全局切换状态失同步），统一走壳按钮。
+
+### R2 验证（2026-09-19）
+
+- 命令套件：`npm run lint` 0 error / typecheck 干净 / `npm run test` 385/385 / `npm run check` exit 0。
+- 浏览器矩阵（`design-r2-check.mjs` 终轮全绿）：5 条 Hi doc 路由 + `/learn` + `/design-system` × 亮/暗 × 1440/390 共 28 组全部 200、控制台 0 错误、390 无横向溢出；暗色组全部经真实防闪烁链路生效（`dark=true`）。
+- 明暗切换交互：壳按钮 aria-label 初值「切换暗色」→ 点击后 `.dark` 挂载 + `nur-theme=dark` → **reload 后保持暗色**（防闪烁脚本 + localStorage）→ 再点恢复亮色 `nur-theme=light`（截图 `r2-toggled-dark-bookshelf-1440.png` / `r2-toggled-dark-bookshelf-reload-1440.png`）。
+- 暗色对比度审计（`design-r2-dark-audit.mjs`）：书架/目录/学习页/工作坊房间/design-system 五面逐可见文本元素算有效前景×背景 WCAG 对比度，<2.5 标记；终轮 0 个。过程中抓到并修复 1 处：design-system 预览页 emphasis 卡（反色强调面）内的自定义 `.sectionNote` 说明字浅底浅字 → 加 `.emphasisNote { color: inherit }` 随卡面继承。
+- 水合修复：防闪烁脚本预挂 `.dark` 与 SSR 输出 className 不一致触发 hydration 警告（首轮矩阵 19 处失败均此因）→ `<html suppressHydrationWarning>` 后 0。
+- 已知事项（如实声明）：① dev 冷编译偶发 manifest `JSON.parse` 500（R1 已知②，本轮两整轮重跑确认失败路由游走、签名一致，脚本已按签名自动整页重试一次，终轮全绿；生产构建无此问题）；② `/learn` 周计划仪表盘内容面与 `/learn/my-materials` 本地快练内容面仍为 v1 浅色皮（R3 范围，暗色下呈现「暗壳 + 浅色内容」过渡态，壳与 Hi doc 五面已成套变暗无此问题）；③ 生产 `next start` 注册接口 500 为环境护栏，登录态检查以 dev 为准（同 R1）。
+- 证据（`docs/design-references/`）：亮色 `r2-learn-hi-doc-1440.png`、`r2-learn-hi-doc-t-1440.png`、`r2-learn-hi-doc-t-c-1-1440.png`、`r2-learn-hi-doc-w-1440.png`、`r2-learn-hi-doc-w-room-1440.png`、`r2-learn-1440.png`、`r2-design-system-1440.png` 及对应 `-390.png`；暗色同名 `-dark` 全套（14 张）；切换交互 `r2-toggled-dark-bookshelf-1440.png`、`r2-toggled-dark-bookshelf-reload-1440.png`；R2-1 `r2-1-design-system-dark-1440.png`。

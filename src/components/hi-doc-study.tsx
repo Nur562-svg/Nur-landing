@@ -21,6 +21,7 @@ import type {
 } from "@/types/hidoc";
 import { consumeHiDocSse, readHiDocFailure } from "@/lib/hidoc/client-api";
 import { describeHiDocLessonGenerator } from "@/lib/hidoc/lesson-heuristic";
+import { V2Button } from "@/components/ui/v2/button";
 import { HiDocHighlightLayer } from "./hi-doc-highlights";
 import { HiDocMarkdown } from "./hi-doc-markdown";
 import { HiDocNotePanel } from "./hi-doc-note";
@@ -253,10 +254,10 @@ export function HiDocStudyRoom({ textbookId, chapter, selected }: HiDocStudyRoom
                 confirmingRegenerate ? (
                   <>
                     <span className={styles.confirmNote}>重新生成将覆盖当前讲义，确认继续？</span>
-                    <button type="button" className={styles.primaryButton} onClick={onGenerateLesson}>
+                    <V2Button className={styles.v2Button} onClick={onGenerateLesson}>
                       <RefreshCw aria-hidden="true" size={15} strokeWidth={1.6} />
                       确认重新生成
-                    </button>
+                    </V2Button>
                     <button
                       type="button"
                       className={styles.ghostButton}
@@ -276,10 +277,10 @@ export function HiDocStudyRoom({ textbookId, chapter, selected }: HiDocStudyRoom
                   </button>
                 )
               ) : (
-                <button type="button" className={styles.primaryButton} onClick={onGenerateLesson}>
+                <V2Button className={styles.v2Button} onClick={onGenerateLesson}>
                   <Sparkles aria-hidden="true" size={16} strokeWidth={1.6} />
                   生成讲义
-                </button>
+                </V2Button>
               )
             ) : (
               <span className={styles.confirmNote}>
@@ -418,9 +419,9 @@ export function HiDocStudyRoom({ textbookId, chapter, selected }: HiDocStudyRoom
                 onChange={(event) => setChatDraft(event.target.value)}
               />
             </label>
-            <button
+            <V2Button
+              className={styles.v2Button}
               type="submit"
-              className={styles.primaryButton}
               disabled={streaming || chatDraft.trim().length === 0}
             >
               {streaming ? (
@@ -429,7 +430,7 @@ export function HiDocStudyRoom({ textbookId, chapter, selected }: HiDocStudyRoom
                 <CornerDownLeft aria-hidden="true" size={16} strokeWidth={1.6} />
               )}
               {streaming ? "回答中" : "发送"}
-            </button>
+            </V2Button>
           </form>
         </section>
 
