@@ -2,15 +2,17 @@
  * 视觉沿用既有暖纸体系：方直边、纸色、朱/黛语义色（对齐 hi-doc.module.css 的 token）。 */
 
 .page {
-  --ink: #10100f;
-  --paper: #f7f4ee;
-  --paper-bright: #fbf9f4;
-  --muted: #6c6a66;
-  --line: rgb(16 16 15 / 38%);
-  --line-soft: rgb(16 16 15 / 16%);
-  --red: #bf2118;
-  --blue: #17659a;
-  --jade: #2d7a2d;
+  /* R3 token 桥接：局部 token 改引 v2 全局 token（映射口径见 design-qa.md R3 节）；.dark 自动翻转。
+     --blue → --v2-ring（聚焦描边统一 terracotta）、--jade → --success-600 为设计决策，非等值替换。 */
+  --ink: var(--text-900);
+  --paper: var(--bg-200);
+  --paper-bright: var(--bg-100);
+  --muted: var(--text-500);
+  --line: color-mix(in srgb, var(--text-900) 38%, transparent);
+  --line-soft: color-mix(in srgb, var(--text-900) 16%, transparent);
+  --red: var(--error-600);
+  --blue: var(--v2-ring);
+  --jade: var(--success-600);
   background: var(--paper);
   color: var(--ink);
   min-height: 100dvh;
@@ -59,7 +61,7 @@
 }
 
 .statusTierBasic {
-  color: #8a6d3b;
+  color: var(--brand-600);
 }
 
 .statusTierPro {
@@ -73,7 +75,7 @@
 /* ---------- 错误与等待面板 ---------- */
 
 .errorBanner {
-  background: rgb(191 33 24 / 6%);
+  background: color-mix(in srgb, var(--red) 6%, transparent);
   border-left: 3px solid var(--red);
   color: var(--red);
   font-size: 13px;
@@ -155,7 +157,7 @@
 }
 
 .alipayLink:hover {
-  background: #2a2a27;
+  background: color-mix(in srgb, var(--ink) 90%, var(--paper));
 }
 
 .statusPaid {
@@ -164,7 +166,7 @@
 }
 
 .statusPending {
-  color: #8a6d3b;
+  color: var(--brand-600);
   font-weight: 600;
 }
 
@@ -247,19 +249,14 @@
   padding: 22px 22px 24px;
 }
 
-/* 当前套餐：描边高亮 + 顶部角标 */
+/* 当前套餐：描边高亮 + 顶部角标（角标为 V2Badge，见 .currentBadge） */
 .cardCurrent {
   border: 2px solid var(--ink);
   position: relative;
 }
 
-.cardCurrent::before {
-  background: var(--ink);
-  color: var(--paper);
-  content: "当前套餐";
-  font-size: 11px;
-  letter-spacing: 0.12em;
-  padding: 3px 10px;
+/* V2Badge 定位；0,2,0 盖过六件套默认 inline-flex 盒模型之外仅补位置 */
+.card .currentBadge {
   position: absolute;
   right: -2px;
   top: -2px;
@@ -310,33 +307,19 @@
   margin: 8px 0 0;
 }
 
-.cta {
-  background: var(--ink);
-  border: 1px solid var(--ink);
-  color: var(--paper);
-  cursor: pointer;
-  font-size: 14px;
+/* V2Button（六件套）自带字体；此断言（0,2,0）盖过上面的 .page button 重置（0,1,1） */
+.page .v2Button {
+  font: 600 14px/1.1 var(--v2-font-sans);
+}
+
+/* V2Button 承接档位 CTA 视觉；此处只补档位卡布局与宽度 */
+.page .cta {
   margin-top: 18px;
-  padding: 11px 0;
   width: 100%;
 }
 
-.cta:hover {
-  background: #2a2a27;
-}
-
-.cta:disabled {
+.page .cta:disabled {
   cursor: wait;
-  opacity: 0.55;
-}
-
-.cardCurrent .cta {
-  background: transparent;
-  color: var(--ink);
-}
-
-.cardCurrent .cta:hover {
-  background: rgb(16 16 15 / 6%);
 }
 
 .benefits {

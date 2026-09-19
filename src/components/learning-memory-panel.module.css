@@ -5,8 +5,8 @@
 
 .panelStack > section,
 .currentAssistance {
-  border: 1px solid rgba(20, 19, 17, 0.22);
-  background: rgba(250, 247, 239, 0.72);
+  border: 1px solid color-mix(in srgb, var(--text-900) 22%, transparent);
+  background: color-mix(in srgb, var(--bg-100) 72%, transparent);
 }
 
 .panelStack > section {
@@ -32,7 +32,7 @@
 .memoryHeading small {
   display: block;
   margin-bottom: 3px;
-  color: #777269;
+  color: var(--text-500);
   font-size: 9px;
   font-weight: 700;
   letter-spacing: 0.14em;
@@ -46,9 +46,9 @@
 }
 
 .memoryHeading > span {
-  border: 1px solid rgba(20, 19, 17, 0.18);
+  border: 1px solid color-mix(in srgb, var(--text-900) 18%, transparent);
   padding: 3px 6px;
-  color: #69645c;
+  color: var(--text-500);
   font-size: 9px;
   white-space: nowrap;
 }
@@ -57,7 +57,7 @@
 .historyCard > p,
 .reviewCard > p {
   margin: 14px 0 0;
-  color: #6d685f;
+  color: var(--text-500);
   font-size: 12px;
   line-height: 1.65;
 }
@@ -65,7 +65,7 @@
 .preferenceList {
   display: grid;
   margin-top: 14px;
-  border-top: 1px solid rgba(20, 19, 17, 0.14);
+  border-top: 1px solid color-mix(in srgb, var(--text-900) 14%, transparent);
 }
 
 .preferenceList > button {
@@ -75,7 +75,7 @@
   gap: 12px;
   width: 100%;
   border: 0;
-  border-bottom: 1px solid rgba(20, 19, 17, 0.14);
+  border-bottom: 1px solid color-mix(in srgb, var(--text-900) 14%, transparent);
   padding: 12px 0;
   background: transparent;
   color: inherit;
@@ -89,7 +89,7 @@
 .historyExcerpt button:focus-visible,
 .reviewProposal button:focus-visible,
 .returnLinks a:focus-visible {
-  outline: 2px solid #66798b;
+  outline: 2px solid var(--v2-ring);
   outline-offset: 2px;
 }
 
@@ -107,7 +107,7 @@
   width: 24px;
   height: 24px;
   border: 1px solid currentColor;
-  color: #8e3d2d;
+  color: var(--brand-600);
   font-family: Georgia, serif;
   font-size: 12px;
 }
@@ -119,25 +119,25 @@
 
 .preferenceList > button > span > small {
   margin-top: 2px;
-  color: #777269;
+  color: var(--text-500);
   font-size: 10px;
   line-height: 1.4;
 }
 
 .preferenceList > button > em {
   min-width: 45px;
-  border: 1px solid rgba(20, 19, 17, 0.2);
+  border: 1px solid color-mix(in srgb, var(--text-900) 20%, transparent);
   padding: 4px 6px;
-  color: #666159;
+  color: var(--text-600);
   font-size: 9px;
   font-style: normal;
   text-align: center;
 }
 
 .preferenceList > button[aria-checked="true"] > em {
-  border-color: #20201d;
-  background: #20201d;
-  color: #faf7ef;
+  border-color: var(--text-900);
+  background: var(--text-900);
+  color: var(--bg-100);
 }
 
 .preferenceList > .subPreference {
@@ -155,8 +155,8 @@
 }
 
 .historySuggestion {
-  border-color: rgba(142, 61, 45, 0.5) !important;
-  box-shadow: inset 3px 0 0 #8e3d2d;
+  border-color: color-mix(in srgb, var(--brand-600) 50%, transparent) !important;
+  box-shadow: inset 3px 0 0 var(--brand-600);
 }
 
 .historySuggestion > div:first-child {
@@ -172,7 +172,7 @@
 
 .historySuggestion p {
   margin: 10px 0 14px;
-  color: #625d55;
+  color: var(--text-600);
   font-size: 12px;
   line-height: 1.6;
 }
@@ -187,9 +187,9 @@
 .historySuggestion button,
 .reviewProposal button {
   min-height: 34px;
-  border: 1px solid #24231f;
-  background: #24231f;
-  color: #faf7ef;
+  border: 1px solid var(--text-900);
+  background: var(--text-900);
+  color: var(--bg-100);
   font-size: 11px;
   cursor: pointer;
 }
@@ -197,23 +197,23 @@
 .historySuggestion button:last-child,
 .reviewProposal button:last-child {
   background: transparent;
-  color: #24231f;
+  color: var(--text-900);
 }
 
 .historyExcerpt {
   margin-top: 14px;
-  border-top: 1px solid rgba(20, 19, 17, 0.14);
+  border-top: 1px solid color-mix(in srgb, var(--text-900) 14%, transparent);
   padding-top: 12px;
 }
 
 .historyExcerpt > small {
-  color: #777269;
+  color: var(--text-500);
   font-size: 10px;
 }
 
 .historyExcerpt > p {
   margin: 8px 0;
-  color: #2b2a26;
+  color: var(--text-900);
   font-family: var(--font-songti, "Songti SC", "STSong", serif);
   font-size: 13px;
   line-height: 1.8;
@@ -225,7 +225,7 @@
   border-bottom: 1px solid currentColor;
   padding: 0;
   background: transparent;
-  color: #6f3840;
+  color: var(--brand-600);
   font-size: 10px;
   cursor: pointer;
 }
@@ -242,9 +242,9 @@
 
 .historyExcerpt li,
 .reviewProposal li {
-  border-left: 2px solid #8e3d2d;
+  border-left: 2px solid var(--brand-600);
   padding-left: 8px;
-  color: #5f352d;
+  color: var(--brand-600);
   font-size: 11px;
   line-height: 1.45;
 }
@@ -252,7 +252,7 @@
 .historyExcerpt > strong {
   display: block;
   margin-top: 11px;
-  color: #43584f;
+  color: var(--success-600);
   font-size: 11px;
 }
 
@@ -260,7 +260,7 @@
 .acceptedReview,
 .completedReview {
   margin-top: 14px;
-  border-top: 1px solid rgba(20, 19, 17, 0.14);
+  border-top: 1px solid color-mix(in srgb, var(--text-900) 14%, transparent);
   padding-top: 12px;
 }
 
@@ -273,7 +273,7 @@
 .reviewProposal > p,
 .acceptedReview > p {
   margin: 10px 0 12px;
-  color: #6d685f;
+  color: var(--text-500);
   font-size: 11px;
   line-height: 1.6;
 }
@@ -287,7 +287,7 @@
 
 .acceptedReview > div:first-child strong {
   grid-column: 2;
-  color: #8e3d2d;
+  color: var(--brand-600);
   font-family: Georgia, serif;
   font-size: 14px;
 }
@@ -296,14 +296,14 @@
   display: flex;
   align-items: center;
   gap: 7px;
-  border: 1px solid rgba(20, 19, 17, 0.14);
+  border: 1px solid color-mix(in srgb, var(--text-900) 14%, transparent);
   padding: 8px;
-  color: #49463f;
+  color: var(--text-700);
   font-size: 11px;
 }
 
 .acceptedReview li[data-resolved="true"] {
-  color: #43584f;
+  color: var(--success-600);
   text-decoration: line-through;
 }
 
@@ -319,9 +319,9 @@
   align-items: center;
   justify-content: space-between;
   min-height: 34px;
-  border: 1px solid #24231f;
+  border: 1px solid var(--text-900);
   padding: 0 10px;
-  color: #24231f;
+  color: var(--text-900);
   font-size: 11px;
   text-decoration: none;
 }
@@ -330,7 +330,7 @@
   display: flex;
   align-items: flex-start;
   gap: 8px;
-  color: #43584f;
+  color: var(--success-600);
 }
 
 .completedReview p {
@@ -342,13 +342,13 @@
 .currentAssistance {
   margin: 0 0 18px;
   padding: 18px;
-  border-color: rgba(93, 114, 132, 0.45);
-  box-shadow: inset 3px 0 0 #66798b;
+  border-color: color-mix(in srgb, var(--v2-ring) 45%, transparent);
+  box-shadow: inset 3px 0 0 var(--v2-ring);
 }
 
 .assistanceBoundary {
   margin: 12px 0 0;
-  color: #6c6963;
+  color: var(--text-500);
   font-size: 11px;
   line-height: 1.6;
 }
@@ -363,12 +363,12 @@
   display: grid;
   grid-template-columns: minmax(0, 1fr) auto;
   gap: 8px 12px;
-  border-top: 1px solid rgba(20, 19, 17, 0.14);
+  border-top: 1px solid color-mix(in srgb, var(--text-900) 14%, transparent);
   padding-top: 10px;
 }
 
 .missingRuleList article > div > span {
-  color: #8e3d2d;
+  color: var(--brand-600);
   font-size: 9px;
   font-weight: 700;
   letter-spacing: 0.1em;
@@ -384,13 +384,13 @@
 .missingRuleList article > div > small {
   display: block;
   margin: 4px 0 0;
-  color: #6d685f;
+  color: var(--text-500);
   font-size: 10px;
   line-height: 1.55;
 }
 
 .missingRuleList article > div > small {
-  color: #4f6374;
+  color: var(--v2-ring);
 }
 
 .missingRuleList article > button {
@@ -398,10 +398,10 @@
   display: flex;
   align-items: center;
   gap: 4px;
-  border: 1px solid rgba(20, 19, 17, 0.25);
+  border: 1px solid color-mix(in srgb, var(--text-900) 25%, transparent);
   padding: 5px 7px;
   background: transparent;
-  color: #5f352d;
+  color: var(--brand-600);
   font-size: 10px;
   cursor: pointer;
 }
@@ -409,13 +409,13 @@
 .missingRuleList blockquote {
   grid-column: 1 / -1;
   margin: 0;
-  border-left: 2px solid #8e3d2d;
+  border-left: 2px solid var(--brand-600);
   padding: 8px 10px;
-  background: rgba(142, 61, 45, 0.05);
+  background: color-mix(in srgb, var(--brand-600) 5%, transparent);
 }
 
 .missingRuleList blockquote b {
-  color: #8e3d2d;
+  color: var(--brand-600);
   font-size: 9px;
 }
 
@@ -431,9 +431,9 @@
   align-items: flex-start;
   gap: 8px;
   margin-top: 14px;
-  border-top: 1px solid rgba(20, 19, 17, 0.14);
+  border-top: 1px solid color-mix(in srgb, var(--text-900) 14%, transparent);
   padding-top: 11px;
-  color: #43584f;
+  color: var(--success-600);
 }
 
 .structureClear p {

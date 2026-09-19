@@ -10,6 +10,8 @@ import { HIDOC_MONTHLY_TEXTBOOK_LIMITS } from "@/lib/hidoc/limits";
 import { HIDOC_WORKSHOP_LIMITS } from "@/lib/hidoc/workshop-rules";
 import { getCourseEntitlementLimit } from "@/lib/course-entitlement-policy";
 import { TIER_QUOTAS } from "@/lib/quotas";
+import { V2Badge } from "@/components/ui/v2/badge";
+import { V2Button } from "@/components/ui/v2/button";
 import styles from "./billing-panel.module.css";
 
 type SubscriptionState = {
@@ -414,6 +416,9 @@ export function BillingPanel() {
                   key={tier}
                   className={isCurrent ? `${styles.card} ${styles.cardCurrent}` : styles.card}
                 >
+                  {isCurrent ? (
+                    <V2Badge className={styles.currentBadge} variant="muted">当前套餐</V2Badge>
+                  ) : null}
                   <div className={styles.cardHead}>
                     <h3 className={styles.cardName}>{name}</h3>
                     <span className={styles.cardSub}>{sub}</span>
@@ -427,14 +432,14 @@ export function BillingPanel() {
                       ? "按月计费，可随时续订"
                       : `折合约 ¥${(priceYuan / PERIOD_MONTHS[period]).toFixed(1)}/月`}
                   </p>
-                  <button
-                    type="button"
+                  <V2Button
                     className={styles.cta}
-                    onClick={() => handleCreateOrder(plan.id)}
                     disabled={!!creating}
+                    onClick={() => handleCreateOrder(plan.id)}
+                    variant={isCurrent ? "secondary" : "primary"}
                   >
                     {creating === plan.id ? "创建中…" : ctaText}
-                  </button>
+                  </V2Button>
                   <ul className={styles.benefits}>
                     {BENEFITS[tier].map((line) => (
                       <li key={line} className={styles.benefit}>

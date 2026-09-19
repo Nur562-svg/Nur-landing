@@ -1,10 +1,12 @@
 .container {
-  --ink: #10100f;
-  --paper: #f7f4ee;
-  --muted: #6c6a66;
-  --line: rgb(16 16 15 / 36%);
-  --red: #bf2118;
-  --blue: #17659a;
+  /* R3 token 桥接：局部 token 改引 v2 全局 token（映射口径见 design-qa.md R3 节）；.dark 自动翻转。
+     --blue → --v2-ring 为设计决策，非等值替换。 */
+  --ink: var(--text-900);
+  --paper: var(--bg-200);
+  --muted: var(--text-500);
+  --line: color-mix(in srgb, var(--text-900) 38%, transparent);
+  --red: var(--error-600);
+  --blue: var(--v2-ring);
   align-items: center;
   background: var(--paper);
   color: var(--ink);
@@ -154,7 +156,7 @@
   justify-content: space-between;
   align-items: center;
   padding: 10px 12px;
-  border: 1px solid var(--border);
+  border: 1px solid var(--v2-border);
   background: var(--paper);
   text-align: left;
   font-size: 13px;
@@ -162,17 +164,17 @@
 }
 
 .historyItem:hover {
-  border-color: var(--accent);
+  border-color: var(--v2-ring);
 }
 
 .historyItemActive {
   border-color: var(--red);
-  background: #fffaf0;
+  background: var(--paper-bright);
 }
 
 .historyMeta {
   font-size: 11px;
-  color: #666;
+  color: var(--muted);
   display: flex;
   gap: 6px;
   align-items: center;
@@ -185,7 +187,7 @@
 
 .clearHistory {
   font-size: 12px;
-  color: #666;
+  color: var(--muted);
   background: none;
   border: none;
   padding: 4px 0;

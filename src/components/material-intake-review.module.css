@@ -1,4 +1,8 @@
 .intake {
+  /* R3 token 桥接：--paper-light 是全局旧 token（:root 仅浅色值，.dark 未覆盖），
+     在此子树改引 v2 --bg-100（浅色下等价，暗色下翻深，随全局暗色成套）。其余 --ink/--muted
+     等已由宿主 private-materials-studio 桥接。 */
+  --paper-light: var(--bg-100);
   border-bottom: 1px solid var(--ink);
   margin: 0 auto;
   max-width: 1600px;
