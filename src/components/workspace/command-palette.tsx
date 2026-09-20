@@ -4,24 +4,30 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Search } from "lucide-react";
 
+import { publishedCourses } from "@/content/courses";
+import {
+  buildCourseSearchEntries,
+  buildPageEntries,
+  buildShelfChapterEntries,
+  flattenSearchGroups,
+  searchEntries,
+  type SearchEntry,
+  type SearchResultGroup,
+} from "@/lib/search-index";
 import { ACTIVE_COURSE_ENTRIES, PRIMARY_ENTRIES, type ShellTextbook } from "./shell-data";
 import styles from "./command-palette.module.css";
 
-type PaletteItem = {
-  id: string;
-  label: string;
-  hint?: string;
-  href: string;
-  group: string;
-};
+type PaletteItem = SearchEntry;
 
-const STATIC_ITEMS: readonly PaletteItem[] = [
-  ...PRIMARY_ENTRIES.map((entry) => ({ ...entry, group: "主入口" })),
-  { id: "learn-home", label: "学习主页", href: "/learn", group: "主入口" },
-  ...ACTIVE_COURSE_ENTRIES.map((entry) => ({ ...entry, group: "官方课程" })),
-];
+// R4 页面入口：R1 的全部静态条目原样保留，只换分组（主入口 + 官方课程页统一入「页面」）。
+const STATIC_ITEMS: readonly SearchEntry[] = buildPageEntries([
+  ...PRIMARY_ENTRIES,
+  { id: "learn-home", label: "学习主页", href: "/learn" },
+  ...ACTIVE_COURSE_ENTRIES,
+]);
 
-const MAX_TEXTBOOK_ITEMS = 6;
+// R4 课程索引：课件定义是构建期静态 import，模块级构建一次；条目只取 title/note/slug/href 派生字段。
+const COURSE_ITEMS: readonly SearchEntry[] = buildCourseSearchEntries(publishedCourses);
 
 export type CommandPaletteProps = {
   open: boolean;
@@ -31,7 +37,7 @@ export type CommandPaletteProps = {
   textbooks: readonly ShellTextbook[];
 };
 
-/** ⌘K 命令面板（R1 只做壳）：静态入口聚合 + 书架教材列表，不做全局检索。 */
+/** ⌘K 命令面板（R4）：站内内容检索 —— 官方课章节/知识点 + 题库章节 + 书架教材章节 + 页面入口。 */
 export function CommandPalette({ open, ...rest }: CommandPaletteProps) {
   if (!open) {
     return null;
@@ -45,19 +51,18 @@ function CommandPaletteOpen({ onClose, onNavigate, textbooks }: Omit<CommandPale
   const [activeIndex, setActiveIndex] = useState(0);
   const inputRef = useRef<HTMLInputElement>(null);
 
-  const items = useMemo<readonly PaletteItem[]>(() => {
-    const textbookItems: readonly PaletteItem[] = textbooks.slice(0, MAX_TEXTBOOK_ITEMS).map((book) => ({
-      id: `textbook-${book.id}`,
-      label: book.title,
-      hint: book.isFrozen ? "书架教材 · 已冻结" : `书架教材 · ${book.chapterCount} 章`,
-      href: `/learn/hi-doc/t/${book.id}`,
-      group: "书架教材",
-    }));
-    const all = [...STATIC_ITEMS, ...textbookItems];
-    const keyword = query.trim().toLowerCase();
-    if (!keyword) return all;
-    return all.filter((item) => item.label.toLowerCase().includes(keyword));
-  }, [query, textbooks]);
+  // 书架教材为登录后客户端拉取的私有内存数据；索引随教材列表增量重建（仅教材变化时）。
+  const shelfItems = useMemo<readonly PaletteItem[]>(
+    () => buildShelfChapterEntries(textbooks),
+    [textbooks],
+  );
+
+  const groups = useMemo<readonly SearchResultGroup[]>(() => {
+    const all = [...COURSE_ITEMS, ...shelfItems, ...STATIC_ITEMS];
+    return searchEntries(all, query);
+  }, [query, shelfItems]);
+
+  const items = useMemo<readonly PaletteItem[]>(() => flattenSearchGroups(groups), [groups]);
 
   // items 收缩时夹住高亮下标（渲染期派生，避免 effect 级联 setState）
   const currentIndex = items.length === 0 ? 0 : Math.min(activeIndex, items.length - 1);
@@ -114,37 +119,53 @@ function CommandPaletteOpen({ onClose, onNavigate, textbooks }: Omit<CommandPale
               setActiveIndex(0);
             }}
             onKeyDown={onKeyDown}
-            placeholder="跳转到课程、教材、题库…"
+            placeholder="搜索课程、章节、知识点、教材…"
             aria-label="搜索跳转目标"
           />
           <span className={styles.kbd}>ESC</span>
         </div>
         {items.length === 0 ? (
-          <p className={styles.empty}>没有匹配的入口。</p>
+          <p className={styles.empty}>没有匹配的内容。</p>
         ) : (
           <ul className={styles.list}>
-            {items.map((item, index) => {
-              const previous = index > 0 ? items[index - 1].group : null;
-              return (
-                <li key={item.id}>
-                  {item.group !== previous ? <p className={styles.group}>{item.group}</p> : null}
-                  <button
-                    type="button"
-                    className={[styles.item, index === currentIndex ? styles.itemActive : ""]
-                      .filter(Boolean)
-                      .join(" ")}
-                    onClick={() => go(item)}
-                    onMouseEnter={() => setActiveIndex(index)}
-                  >
-                    <span className={styles.itemLabel}>{item.label}</span>
-                    {item.hint ? <span className={styles.itemHint}>{item.hint}</span> : null}
-                  </button>
-                </li>
-              );
-            })}
+            {(() => {
+              let offset = 0;
+              return groups.map((group) => {
+                const groupStart = offset;
+                offset += group.items.length;
+                return (
+                  <li key={group.group} role="group" aria-label={group.label}>
+                    <p className={styles.group}>{group.label}</p>
+                    <ul className={styles.groupList}>
+                      {group.items.map((item, itemIndex) => {
+                        const index = groupStart + itemIndex;
+                        return (
+                          <li key={item.id}>
+                            <button
+                              type="button"
+                              className={[styles.item, index === currentIndex ? styles.itemActive : ""]
+                                .filter(Boolean)
+                                .join(" ")}
+                              onClick={() => go(item)}
+                              onMouseEnter={() => setActiveIndex(index)}
+                            >
+                              <span className={styles.itemLabel}>{item.label}</span>
+                              {item.hint ? <span className={styles.itemHint}>{item.hint}</span> : null}
+                            </button>
+                          </li>
+                        );
+                      })}
+                    </ul>
+                    {group.overflow > 0 ? (
+                      <p className={styles.overflow}>还有 {group.overflow} 条，输入更精确的关键词</p>
+                    ) : null}
+                  </li>
+                );
+              });
+            })()}
           </ul>
         )}
-        <p className={styles.foot}>↑↓ 选择 · Enter 跳转 · 仅页面导航，全文检索将在后续版本提供</p>
+        <p className={styles.foot}>↑↓ 选择 · Enter 跳转 · Esc 关闭</p>
       </div>
     </div>
   );
