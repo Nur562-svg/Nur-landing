@@ -42,20 +42,25 @@ type QuestionBankPracticeProps = {
   chapter: ChapterDefinition;
   items: AssessmentItemDefinition[];
   currentIndex: number;
+  progressItems?: AssessmentItemDefinition[];
+  kindsQuery?: string | null;
 };
 
 function markChapterProgress(
   courseId: string,
   chapterId: string,
-  currentIndex: number,
+  sourceIndex: number,
 ) {
+  if (sourceIndex < 0) {
+    return;
+  }
   const progressStore = getQBProgress(courseId);
   const chapterProgress = progressStore[chapterId];
   const completedIndices = new Set(chapterProgress?.completedIndices ?? []);
-  completedIndices.add(currentIndex);
+  completedIndices.add(sourceIndex);
   saveQBProgress(courseId, chapterId, {
     chapterId,
-    lastIndex: currentIndex,
+    lastIndex: sourceIndex,
     completedIndices: Array.from(completedIndices),
   });
 }
@@ -65,6 +70,8 @@ export function QuestionBankPractice({
   chapter,
   items,
   currentIndex,
+  progressItems,
+  kindsQuery = null,
 }: QuestionBankPracticeProps) {
   useNurAgentDockProps(PLATFORM_DOCK_PROPS);
   const item = items[currentIndex];
@@ -118,6 +125,8 @@ export function QuestionBankPractice({
 
   const prevItem = currentIndex > 0 ? items[currentIndex - 1] : null;
   const nextItem = currentIndex < total - 1 ? items[currentIndex + 1] : null;
+  const progressSourceItems = progressItems ?? items;
+  const progressSourceIndex = progressSourceItems.findIndex((entry) => entry.id === item.id);
 
   function handleSelect(index: number) {
     if (isSubmitted) return;
@@ -130,7 +139,7 @@ export function QuestionBankPractice({
       attemptedAt: new Date().toISOString(),
     });
     notifyQuizResult(correct);
-    markChapterProgress(course.id, chapter.id, currentIndex);
+    markChapterProgress(course.id, chapter.id, progressSourceIndex);
   }
 
   function handleWrittenSubmit() {
@@ -138,7 +147,7 @@ export function QuestionBankPractice({
       return;
     }
     setWrittenSubmitted(true);
-    markChapterProgress(course.id, chapter.id, currentIndex);
+    markChapterProgress(course.id, chapter.id, progressSourceIndex);
     const fillAnswerAvailable = item.answer.status === "available";
     if (
       shouldRecordQuestionBankAttempt({
@@ -166,7 +175,8 @@ export function QuestionBankPractice({
   }
 
   function getNavUrl(index: number): string {
-    return `/courses/${course.slug}/question-bank/${chapter.slug}/${items[index].id}`;
+    const path = `/courses/${course.slug}/question-bank/${chapter.slug}/${items[index].id}`;
+    return kindsQuery ? `${path}?kinds=${kindsQuery}` : path;
   }
 
   const answerSourceLabel =

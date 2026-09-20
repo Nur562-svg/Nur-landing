@@ -4,10 +4,6 @@ import { useMemo, useState } from "react";
 import Link from "next/link";
 import { ArrowLeft, ArrowRight, Star } from "lucide-react";
 import {
-  selectKnowledgePointById,
-  selectSubjectiveWritingHref,
-} from "@/lib/course-selectors";
-import {
   getQBProgress,
   getQBAttemptStats,
   isQBFavorite,
@@ -21,7 +17,7 @@ import type {
   QuestionKind,
 } from "@/types/learning";
 import type { ChapterQBProgress } from "@/types/question-bank";
-import { QUESTION_KIND_OPTIONS } from "@/lib/question-kind-labels";
+import { QUESTION_KIND_OPTIONS, questionKindShortLabel, serializeQuestionBankKindQuery, filterQuestionBankItemsByKinds } from "@/lib/question-kind-labels";
 import styles from "./question-bank-chapter.module.css";
 
 function getAnswerStatusLabel(
@@ -74,16 +70,36 @@ export function QuestionBankChapter({
   }
 
   const filteredItems = useMemo(() => {
-    if (selectedKinds.size === 0) {
-      return items;
-    }
-    return items.filter((item) => selectedKinds.has(item.questionKind));
+    return filterQuestionBankItemsByKinds(items, [...selectedKinds]);
   }, [items, selectedKinds]);
 
-  const firstUnstartedIndex = useMemo(() => {
-    const completedSet = new Set(progress?.completedIndices ?? []);
-    return items.findIndex((_, idx) => !completedSet.has(idx));
-  }, [items, progress]);
+  const completedSet = useMemo(
+    () => new Set(progress?.completedIndices ?? []),
+    [progress],
+  );
+
+  function originalIndex(questionId: string): number {
+    return items.findIndex((item) => item.id === questionId);
+  }
+
+  function firstUnstarted(queue: AssessmentItemDefinition[]): AssessmentItemDefinition | null {
+    if (queue.length === 0) {
+      return null;
+    }
+    return queue.find((item) => !completedSet.has(originalIndex(item.id))) ?? queue[0];
+  }
+
+  const startAllItem = firstUnstarted(filterQuestionBankItemsByKinds(items, []));
+  const startFilteredItem = selectedKinds.size > 0 ? firstUnstarted(filteredItems) : null;
+  const kindsQuery = serializeQuestionBankKindQuery(selectedKinds);
+
+  function practiceHref(questionId: string, withKinds: boolean): string {
+    const path = `/courses/${course.slug}/question-bank/${chapter.slug}/${questionId}`;
+    if (!withKinds || !kindsQuery) {
+      return path;
+    }
+    return `${path}?kinds=${kindsQuery}`;
+  }
 
   function handleToggleFavorite(questionId: string) {
     const isNow = toggleQBFavorite(questionId);
@@ -134,65 +150,50 @@ export function QuestionBankChapter({
             {shortLabel}
           </button>
         ))}
-        {firstUnstartedIndex >= 0 ? (
-          <Link
-            className={styles.startButton}
-            href={`/courses/${course.slug}/question-bank/${chapter.slug}/${items[firstUnstartedIndex].id}`}
-          >
-            开始刷题
-            <ArrowRight size={16} />
-          </Link>
-        ) : stats.total > 0 ? (
-          <Link
-            className={styles.startButton}
-            href={`/courses/${course.slug}/question-bank/${chapter.slug}/${items[0].id}`}
-          >
-            重新开始
-            <ArrowRight size={16} />
-          </Link>
-        ) : null}
+        <div className={styles.startActions}>
+          {startFilteredItem ? (
+            <Link
+              className={styles.startFilteredButton}
+              href={practiceHref(startFilteredItem.id, true)}
+            >
+              可开始
+              <ArrowRight size={16} />
+            </Link>
+          ) : null}
+          {startAllItem ? (
+            <Link
+              className={styles.startButton}
+              href={practiceHref(startAllItem.id, false)}
+            >
+              {stats.done >= stats.total && stats.total > 0 ? "重新开始" : "开始刷题"}
+              <ArrowRight size={16} />
+            </Link>
+          ) : null}
+        </div>
       </div>
 
       {filteredItems.length > 0 ? (
         <div className={styles.itemList}>
           {filteredItems.map((item, index) => {
-            const hasChoices = (item.choices && item.choices.length > 0)
-              || item.questionKind === "b1"
-              || item.questionKind === "b2";
-            const isTermOrShort =
-              item.questionKind === "term" ||
-              item.questionKind === "short-answer";
-            const hasScoring = isTermOrShort && item.scoring;
-            const kp = selectKnowledgePointById(course, item.knowledgePointId);
             const answerStatus = getAnswerStatusLabel(item);
             const attemptStats = getQBAttemptStats(item.id);
             const fav = favorites[item.id] ?? isQBFavorite(item.id);
-            const isClickable = hasChoices;
+            const href = practiceHref(item.id, selectedKinds.size > 0);
 
             return (
               <div
                 key={item.id}
-                className={`${styles.itemRow} ${
-                  isClickable ? styles.itemRowClickable : ""
-                }`}
-                role={isClickable ? "link" : undefined}
-                tabIndex={isClickable ? 0 : undefined}
-                onClick={
-                  isClickable
-                    ? () => {
-                        window.location.href = `/courses/${course.slug}/question-bank/${chapter.slug}/${item.id}`;
-                      }
-                    : undefined
-                }
-                onKeyDown={
-                  isClickable
-                    ? (e) => {
-                        if (e.key === "Enter") {
-                          window.location.href = `/courses/${course.slug}/question-bank/${chapter.slug}/${item.id}`;
-                        }
-                      }
-                    : undefined
-                }
+                className={`${styles.itemRow} ${styles.itemRowClickable}`}
+                role="link"
+                tabIndex={0}
+                onClick={() => {
+                  window.location.href = href;
+                }}
+                onKeyDown={(event) => {
+                  if (event.key === "Enter") {
+                    window.location.href = href;
+                  }
+                }}
               >
                 <span className={styles.itemIndex}>{index + 1}</span>
                 <span className={styles.itemPrompt}>
@@ -200,7 +201,7 @@ export function QuestionBankChapter({
                     ? item.prompt.slice(0, 69) + "..."
                     : item.prompt}
                 </span>
-                <span className={styles.itemKind}>{item.questionKind}</span>
+                <span className={styles.itemKind}>{questionKindShortLabel(item.questionKind)}</span>
                 <span className={styles.itemAnswerStatus}>{answerStatus}</span>
                 <div className={styles.itemActions}>
                   {attemptStats.count > 0 ? (
@@ -220,8 +221,8 @@ export function QuestionBankChapter({
                     className={`${styles.favoriteStar} ${
                       fav ? styles.favoriteStarActive : ""
                     }`}
-                    onClick={(e) => {
-                      e.stopPropagation();
+                    onClick={(event) => {
+                      event.stopPropagation();
                       handleToggleFavorite(item.id);
                     }}
                     aria-label={fav ? "取消收藏" : "收藏"}
@@ -231,18 +232,6 @@ export function QuestionBankChapter({
                       fill={fav ? "currentColor" : "none"}
                     />
                   </button>
-                  {hasScoring ? (
-                    <Link
-                      className={styles.practiceLink}
-                      href={selectSubjectiveWritingHref(course, kp!)}
-                      onClick={(e) => e.stopPropagation()}
-                    >
-                      去练习
-                      <ArrowRight size={12} />
-                    </Link>
-                  ) : isTermOrShort ? (
-                    <span className={styles.readonlyLabel}>待建</span>
-                  ) : null}
                 </div>
               </div>
             );

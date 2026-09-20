@@ -7,12 +7,19 @@ import {
   selectChapterBySlug,
   selectQuestionById,
 } from "@/lib/course-selectors";
+import {
+  filterQuestionBankItemsByKinds,
+  parseQuestionBankKindQuery,
+} from "@/lib/question-kind-labels";
 
 type QuestionBankPracticePageProps = {
   params: Promise<{
     courseSlug: string;
     chapterSlug: string;
     questionId: string;
+  }>;
+  searchParams: Promise<{
+    kinds?: string | string[];
   }>;
 };
 
@@ -47,8 +54,10 @@ export async function generateMetadata({
 
 export default async function QuestionBankPracticePage({
   params,
+  searchParams,
 }: QuestionBankPracticePageProps) {
   const { courseSlug, chapterSlug, questionId } = await params;
+  const query = await searchParams;
   const course = getPublishedCourseBySlug(courseSlug);
   if (!course) {
     notFound();
@@ -64,7 +73,10 @@ export default async function QuestionBankPracticePage({
     notFound();
   }
 
-  const items = selectAssessmentItemsForChapter(course, chapter.id);
+  const kindsValue = Array.isArray(query.kinds) ? query.kinds[0] : query.kinds;
+  const kinds = parseQuestionBankKindQuery(kindsValue);
+  const chapterItems = selectAssessmentItemsForChapter(course, chapter.id);
+  const items = filterQuestionBankItemsByKinds(chapterItems, kinds);
   const currentIndex = items.findIndex((item) => item.id === questionId);
   if (currentIndex === -1) {
     notFound();
@@ -76,6 +88,8 @@ export default async function QuestionBankPracticePage({
       chapter={chapter}
       items={items}
       currentIndex={currentIndex}
+      progressItems={chapterItems}
+      kindsQuery={kinds.length > 0 ? kinds.join(",") : null}
     />
   );
 }
