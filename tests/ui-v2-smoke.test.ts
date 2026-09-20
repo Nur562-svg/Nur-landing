@@ -20,14 +20,16 @@ function h(component: (props: AnyProps) => React.ReactElement, props: AnyProps =
 
 describe("Design System v2 six-piece components (pure render smoke)", () => {
   before(async () => {
-    const [button, card, input, badge, chatBubble, navigation] = await Promise.all([
-      import("../src/components/ui/v2/button"),
-      import("../src/components/ui/v2/card"),
-      import("../src/components/ui/v2/input"),
-      import("../src/components/ui/v2/badge"),
-      import("../src/components/ui/v2/chat-bubble"),
-      import("../src/components/ui/v2/navigation"),
-    ]);
+    // R4 顺手修复并发 flake：Promise.all 的 6 个动态 import 与 register() 的 ESM 钩子
+    // 存在时序竞态（偶发 CSS 被当 JS 解析 → 6 cancelled）。先空转一次 stub import
+    // 让出事件循环确保钩子 attach，再串行 import 组件。
+    await import("./helpers/css-module-stub.mjs");
+    const button = await import("../src/components/ui/v2/button");
+    const card = await import("../src/components/ui/v2/card");
+    const input = await import("../src/components/ui/v2/input");
+    const badge = await import("../src/components/ui/v2/badge");
+    const chatBubble = await import("../src/components/ui/v2/chat-bubble");
+    const navigation = await import("../src/components/ui/v2/navigation");
     components = {
       V2Button: button.V2Button as unknown as (props: AnyProps) => React.ReactElement,
       V2Card: card.V2Card as unknown as (props: AnyProps) => React.ReactElement,

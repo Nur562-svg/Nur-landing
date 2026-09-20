@@ -4,13 +4,13 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Search } from "lucide-react";
 
-import { publishedCourses } from "@/content/courses";
 import {
   buildCourseSearchEntries,
   buildPageEntries,
   buildShelfChapterEntries,
   flattenSearchGroups,
   searchEntries,
+  type CourseSearchSource,
   type SearchEntry,
   type SearchResultGroup,
 } from "@/lib/search-index";
@@ -26,15 +26,17 @@ const STATIC_ITEMS: readonly SearchEntry[] = buildPageEntries([
   ...ACTIVE_COURSE_ENTRIES,
 ]);
 
-// R4 课程索引：课件定义是构建期静态 import，模块级构建一次；条目只取 title/note/slug/href 派生字段。
-const COURSE_ITEMS: readonly SearchEntry[] = buildCourseSearchEntries(publishedCourses);
-
 export type CommandPaletteProps = {
   open: boolean;
   onClose: () => void;
   /** 面板内跳转后的额外回调（例如收起移动端抽屉）。 */
   onNavigate?: () => void;
   textbooks: readonly ShellTextbook[];
+  /**
+   * R4 课程检索输入：服务端薄适配层以 CourseSearchSource 字段裁剪投影传入
+   * （严禁在客户端顶层 import publishedCourses——会把 9k+ 题库 item 打进 bundle）。
+   */
+  courseSearchSources: readonly CourseSearchSource[];
 };
 
 /** ⌘K 命令面板（R4）：站内内容检索 —— 官方课章节/知识点 + 题库章节 + 书架教材章节 + 页面入口。 */
@@ -45,11 +47,17 @@ export function CommandPalette({ open, ...rest }: CommandPaletteProps) {
   return <CommandPaletteOpen {...rest} />;
 }
 
-function CommandPaletteOpen({ onClose, onNavigate, textbooks }: Omit<CommandPaletteProps, "open">) {
+function CommandPaletteOpen({ onClose, onNavigate, textbooks, courseSearchSources }: Omit<CommandPaletteProps, "open">) {
   const router = useRouter();
   const [query, setQuery] = useState("");
   const [activeIndex, setActiveIndex] = useState(0);
   const inputRef = useRef<HTMLInputElement>(null);
+
+  // 课程索引：输入是服务端裁剪过的轻量投影，memo 一次构建（不随按键重建）。
+  const courseItems = useMemo<readonly PaletteItem[]>(
+    () => buildCourseSearchEntries(courseSearchSources),
+    [courseSearchSources],
+  );
 
   // 书架教材为登录后客户端拉取的私有内存数据；索引随教材列表增量重建（仅教材变化时）。
   const shelfItems = useMemo<readonly PaletteItem[]>(
@@ -58,9 +66,9 @@ function CommandPaletteOpen({ onClose, onNavigate, textbooks }: Omit<CommandPale
   );
 
   const groups = useMemo<readonly SearchResultGroup[]>(() => {
-    const all = [...COURSE_ITEMS, ...shelfItems, ...STATIC_ITEMS];
+    const all = [...courseItems, ...shelfItems, ...STATIC_ITEMS];
     return searchEntries(all, query);
-  }, [query, shelfItems]);
+  }, [query, courseItems, shelfItems]);
 
   const items = useMemo<readonly PaletteItem[]>(() => flattenSearchGroups(groups), [groups]);
 

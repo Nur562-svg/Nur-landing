@@ -832,3 +832,33 @@ playwright-core + 系统 Chrome（headless、无扩展），视口 **1440×900 /
 - 已知事项（如实声明）：① dev 冷编译偶发 manifest `JSON.parse` 500（R1 已知②，脚本按签名自动整页重试一次；生产构建无此问题）；② 整轮 60 次页面加载后浏览器高负载下 `page.screenshot` 偶发字体加载超时（首轮 mock-exam @390 dark 命中），脚本已改为截图超时仅告警不计入判定——属证据留档脚手架时序，非页面缺陷（同轮该路由 200、0 错误、无溢出）；③ 生产 `next start` 注册接口 500 为环境护栏，登录态检查以 dev 为准（同 R1/R2）。
 - 未纳入提交：`question-bank-chapter.tsx/.module.css`、`question-bank-practice.tsx/.module.css` 含工作区既有未提交逻辑改动（题型筛选/进度索引），R3 已在其上做叠加式 token 桥接（改定义值、不回滚逻辑），但按边界要求不纳入任何 R3 commit，留待用户与其逻辑改动一并处理；infectious-* 全套同样未纳入。
 - 证据（`docs/design-references/`，共 63 张）：亮色 `r3-learn-1440.png`、`r3-learn-my-materials-1440.png`、`r3-courses-1440.png`、`r3-course-workspace-1440.png`、`r3-knowledge-point-1440.png`、`r3-subjective-writing-1440.png`、`r3-case-reasoning-1440.png`、`r3-question-bank-global-1440.png`、`r3-question-bank-home-1440.png`、`r3-question-bank-chapter-1440.png`、`r3-question-bank-practice-1440.png`、`r3-mock-exam-1440.png`、`r3-wrong-questions-1440.png`、`r3-account-billing-1440.png`、`r3-design-system-1440.png` 及对应 `-390.png`；暗色同名 `-dark` 全套（30 张）；归壳 `r3-wrong-questions-in-shell-1440.png`；切换交互 `r3-toggled-dark-learn-1440.png`、`r3-toggled-dark-learn-reload-1440.png`。
+## Design System R4 — ⌘K 真检索 + 移动端深化，设计系统 v2 主线收官（2026-09-20）
+
+两个独立提交：**R4-1** `feat(design): R4 command palette content search`（`src/lib/search-index.ts` + 命令面板 + 单测 + 浏览器脚本）与 **R4-2** `feat(design): R4 mobile touch deepening + v2-smoke flake fix`（触控/抽屉/⌘K 底部弹出 + 顺手项）。`src/content/`、`prisma/`、`src/lib/` 其余文件零改动；不新增路由、不新增依赖、不搜题库题目正文、不新增网络请求。工作区既有未提交改动（question-bank-chapter/practice、bot-blob-shapes、infectious-* 等）保留原样、未纳入任何 R4 commit。
+
+### R4-1 ⌘K 真检索（页面跳转器 → 站内内容检索）
+
+- 新增 `src/lib/search-index.ts`（纯函数、无 React、无网络、无磁盘）：四类条目——①章节（每门已发布课每章；闭环课走课程工作台 `/courses/{slug}`（章节目录为页内状态）、题库课走 `/courses/{slug}/question-bank/{chapterSlug}`）②知识点（仅闭环课、`lesson !== null`；title + note 参与匹配；href 即知识点讲义路由；题库课 `lesson` 全为 null 故不出知识点条目）③Hi doc 教材章节（书架内存数据派生，`/learn/hi-doc/t/{id}/c/{n}`，不上送不写盘）④页面入口（R1 全部静态条目）。分组顺序 官方课程→题库→书架教材→页面，每组 8 条截断 + 「还有 N 条，输入更精确的关键词」，空态「没有匹配的内容」，页脚「↑↓ 选择 · Enter 跳转 · Esc 关闭」。归一化：NFKC 全半角折叠 + 小写 + 去空白，未引入拼音依赖。
+- **bundle 教训（实测，勿回退）**：在客户端组件顶层 `import publishedCourses` 会把整个课程树（含 9k+ 题库 item）打进客户端 bundle——实测 (workspace)/layout chunk 膨胀至 ≈9.5MB。最终方案：服务端薄适配层（`(workspace)/layout.tsx`）经 `selectCourseSearchSource` 把课程投影为最小字段（slug/title/catalogLabel + 章节 slug/indexLabel/title + KP slug/title/note/hasLesson/预计算 chapterTitle；不带任何长 id、不带 focus、不带 knowledgePointIds），客户端 `CommandPalette` 仅在 useMemo 里以该投影构建条目。实测：/learn 客户端 JS 增量 **+1.0KB gzip**（远低于 30KB 预算）；HTML RSC 载荷增量 +17.0KB gzip（385 → 400 章/KP 文本投影，多为 KP note，属检索功能必要数据，如实记录）。
+- 页脚快捷键说明兑现 R1 承诺：删除「全文检索将在后续版本提供」，改为「↑↓ 选择 · Enter 跳转 · Esc 关闭」。
+- 新增单测 `tests/search-index.test.ts`（10 例）：四类条目构建、NFKC 归一化、includes 匹配、分组与每组 8 条截断/overflow、`lesson: null` 跳过、空查询/空结果、`selectCourseSearchSource` 最小字段裁剪（不带重型字段与长 id、chapterTitle 与 `selectChapterForKnowledgePoint` 口径一致、JSON 可序列化）。
+
+### R4-2 移动端深化（只动 CSS module 与壳组件，零业务逻辑）
+
+- 触控目标 ≥44×44（≤900px 段，min-* 手法不动桌面）：壳内 `.brand/.navLink/.hamburger/.searchTrigger/.themeToggle/.userChip/.loginLink`、⌘K 面板 `.item`（≤900）、V2 六件套 `.tab/.item/.navItem`（≤640 段，含 display:inline-flex/flex 修正）。V2Button 本就有 `min-height:44px`；V2Badge 为非交互展示件（错题题型徽章、计费角标）无交互变体使用点，不改并在此注明。
+- 抽屉交互补完：Esc 关闭（R1 已有，本轮浏览器验证）；新增 **body 滚锁**（documentElement `overflow:hidden`，关闭还原原值）与**焦点管理**（打开→焦点入抽屉第一个条目，关闭→还给汉堡按钮；`react-hooks/exhaustive-deps` 要求下在 effect 内捕获 hamburger 引用）。
+- ⌘K 面板 ≤480px（390）：全宽底部弹出（贴底 gap=0、圆角仅上沿 20px、`max-height:70dvh`、list flex 滚动），条目高度 44px；≥481px 居中浮层不变。
+- 密度审计（390×844）：主内容页（/learn、课程工作台、题库练习）截图逐张核对——上下留白与卡片间距均衡，**未发现失衡，未改动任何间距数值**（按约定不为凑工作量动数值）。
+- Agent 浮球 390 复核：默认落位 (306,760) 56×56，与课程工作台主 CTA（`sessionStartLink`）包围盒无交集（`intersects=false`），不遮抽屉边缘手势区，维持现状不动。
+- 顺手项（v2-smoke flake 修复，仅动 `tests/`）：`before()` 中 `Promise.all` 6 个动态 import 与 `register()` 的 ESM 钩子存在时序竞态（偶发 CSS 被当 JS 解析 → 6 cancelled）。修复：`register()` 后先空转 `await import("./helpers/css-module-stub.mjs")` 让出事件循环确保钩子 attach，再把 6 个 import 改为**串行 await**；`npx tsx --test tests/ui-v2-smoke.test.ts` 连跑 3 次 6/6 pass。
+
+### R4 验证（2026-09-20）
+
+- 命令套件：`npm run lint` 0 error（188 条既有 warning 未增）/ typecheck 干净 / `npm run test` **395/395**（385 基线 + 10 新检索测试）/ `npm run check` exit 0。
+- Bundle 对比（git worktree @R3 基线 HEAD vs 本期，同机两次 `next build`）：/learn 客户端 JS **+1.0KB gzip**（150.3→151.3KB，远低于 30KB 预算）；/learn HTML RSC 载荷 +17.0KB gzip（63.3 → 80.3KB，课程 title/slug/note 投影，详见上）。
+- 浏览器（`scripts/design-r4-check.mjs`，playwright-core + 系统 Chrome，`--only search,touch,fab` / `--only matrix` 分段防 dev 长跑内存重启）：⌘K 检索「寒热」命中知识点「问寒热」→ Enter 跳 `/courses/tcm-diagnostics/knowledge-points/cold-and-heat`；检索「八纲辨证」→ 章节条目 → 课程工作台；「不存在的东西」空态；书架教材按名命中 → `/learn/hi-doc/t/{id}/c/1`；页脚快捷键文案断言通过。390 触控：hamburger/搜索触发/主题切换/用户卡全部 44×44；抽屉打开（滚锁 + 焦点入抽屉 + 条目 44px）/ Esc（滚锁还原 + 焦点还汉堡）/ scrim 关闭全过；⌘K 面板 x=0 w=390 bottomGap=0 h=591≤70dvh 上沿圆角 20px、条目 44px；浮球 (306,760) 56×56 与主 CTA 无交集。矩阵 **15 路由 × 亮/暗 × 1440/390 共 60 组全部 200**、0 控制台错误、390 `scrollWidth===clientWidth===390`、暗色全走真实防闪烁链路。
+- 390 密度审计：/learn、课程工作台、题库练习、Hi doc 学习页截图逐张核对，上下留白与卡片间距无过稀/过挤，按约定未改任何间距数值。
+- 已知事项（如实声明）：① dev 长跑（连续 60+ 页面加载）会触发 Next dev 内存阈值自动重启 → `ERR_CONNECTION_RESET`，脚本支持 `--only` 分段（search,touch,fab / matrix）规避，非页面缺陷；② dev 冷编译 manifest 竞态有两种报错文案（`Unexpected end of JSON input` / `Manifest file is empty`），脚本两者均自动整页重试一次；③ 题库章节页/刷题间（`question-bank-chapter/practice`）含工作区未提交逻辑改动，其内纯文本回链未做 44px 命中区补足，留待用户逻辑改动一并处理。
+- 未纳入提交：`question-bank-*` 既有未提交改动、`infectious-*` 全套、`docs/QUESTION_BANK_EXTRACTION.md`、R1/R2 截图刷新（工作区既有状态，全部保留）。
+- 证据（`docs/design-references/`，共 65 张）：⌘K 交互 `r4-palette-search-hanre-1440.png`、`r4-palette-empty-1440.png`、`r4-palette-shelf-1440.png`；390 触控 `r4-drawer-open-390.png`、`r4-palette-390.png`；R3 回归矩阵 15 路由 × 亮/暗 × 1440/390 共 60 张（`r4-{route}-{viewport}[-dark].png`）。
+

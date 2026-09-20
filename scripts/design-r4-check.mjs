@@ -26,6 +26,12 @@ const OUT = resolve(arg("out", "docs/design-references"));
 const TAG = arg("tag", "r4");
 const DB = resolve(arg("db", "prisma/dev.db"));
 const CHROME = "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome";
+// 分段跑（dev 服务器长跑会触发内存阈值自动重启 → 连接重置）：
+//   --only search,touch,fab   检索 + 390 触控 + 浮球复核
+//   --only matrix             R3 15 路由 × 亮/暗 × 1440/390 回归
+// 缺省（不传）= 全部段。
+const ONLY = arg("only", "");
+const only = (section) => ONLY === "" || ONLY.split(",").includes(section);
 
 const VIEWPORTS = [
   { name: "1440", width: 1440, height: 900 },
@@ -156,17 +162,32 @@ async function shoot(page, file) {
   }
 }
 
+/** 打开 ⌘K：冷编译后首次水合可能晚于 networkidle，按键重试直到面板可见（同 R3 水合等待思路）。 */
+async function openPalette(page) {
+  const palette = page.locator("[data-command-palette]");
+  for (let attempt = 0; attempt < 6; attempt += 1) {
+    await page.keyboard.press("Control+k");
+    try {
+      await palette.waitFor({ state: "visible", timeout: 1500 });
+      return palette;
+    } catch {
+      // 未挂载时按键是 no-op；等待后重试
+      await page.waitForTimeout(1000);
+    }
+  }
+  await palette.waitFor({ state: "visible", timeout: 10000 });
+  return palette;
+}
+
 // ── ⌘K 检索交互（1440）─────────────────────────────────────
-{
+if (only("search")) {
   const { context, page, errors } = await newPage(VIEWPORTS[0]);
   try {
     await page.goto(`${BASE}/learn`, { waitUntil: "networkidle", timeout: 60000 });
     await page.waitForTimeout(500);
 
     // 打开命令面板（⌘K / Ctrl+K）
-    await page.keyboard.press("Control+k");
-    const palette = page.locator("[data-command-palette]");
-    await palette.waitFor({ state: "visible", timeout: 10000 });
+    const palette = await openPalette(page);
     const foot = (await palette.locator("p").last().textContent()) ?? "";
     console.log(`[palette-open] foot="${foot.trim()}"`);
     if (!foot.includes("Esc 关闭")) {
@@ -184,39 +205,37 @@ async function shoot(page, file) {
     if (targetCount === 0) {
       fail("⌘K 检索「寒热」无命中");
     } else {
-      // 命中 2 条：章节「八纲辨证」（课程工作台）在前、知识点「问寒热」在后。
-      // Enter 走高亮首条 → 章节课入口（课程工作台路由）。
+      // 命中 1 条：知识点「问寒热」（章节按 title 匹配，其 focus 文本不参与）。
+      // Enter 走高亮首条 → 知识点讲义路由。
       await input.press("Enter");
-      await page.waitForURL("**/courses/tcm-diagnostics", { timeout: 15000 });
+      await page.waitForURL("**/courses/tcm-diagnostics/knowledge-points/cold-and-heat", { timeout: 15000 });
       await page.waitForLoadState("networkidle");
-      console.log(`[palette-enter-chapter] url=${page.url()}`);
-      if (page.url().includes("knowledge-points")) {
-        fail(`⌘K Enter 高亮首条应为章节入口：${page.url()}`);
+      const headings = (await page.getByRole("heading").allTextContents()).join(" ");
+      console.log(`[palette-enter-kp] url=${page.url()} headings="${headings.slice(0, 60)}"`);
+      if (!page.url().includes("/courses/tcm-diagnostics/knowledge-points/cold-and-heat")) {
+        fail(`⌘K Enter 知识点跳转错误：${page.url()}`);
       }
 
-      // 重新打开并点击知识点条目 → 应跳知识点讲义路由
-      await page.keyboard.press("Control+k");
-      await palette.waitFor({ state: "visible", timeout: 10000 });
-      await palette.locator("input").fill("寒热");
+      // 章节课入口：按章节名检索 → Enter → 课程工作台（闭环课章节走页内目录）
+      await openPalette(page);
+      await palette.locator("input").fill("八纲辨证");
       await page.waitForTimeout(300);
-      const kpItem = palette.locator("button", { hasText: "问寒热" });
-      if ((await kpItem.count()) === 0) {
-        fail("⌘K 检索「寒热」未命中官方课知识点「问寒热」");
+      const chapterItem = palette.locator("button", { hasText: "八纲辨证" });
+      if ((await chapterItem.count()) === 0) {
+        fail("⌘K 检索「八纲辨证」未命中的章节条目");
       } else {
-        await kpItem.first().click();
-        await page.waitForURL("**/courses/tcm-diagnostics/knowledge-points/cold-and-heat", { timeout: 15000 });
+        await chapterItem.first().click();
+        await page.waitForURL("**/courses/tcm-diagnostics", { timeout: 15000 });
         await page.waitForLoadState("networkidle");
-        const headings = (await page.getByRole("heading").allTextContents()).join(" ");
-        console.log(`[palette-enter-kp] url=${page.url()} headings="${headings.slice(0, 60)}"`);
-        if (!page.url().includes("/courses/tcm-diagnostics/knowledge-points/cold-and-heat")) {
-          fail(`⌘K 知识点跳转错误：${page.url()}`);
+        console.log(`[palette-enter-chapter] url=${page.url()}`);
+        if (page.url().includes("knowledge-points")) {
+          fail(`⌘K 章节跳转错误：${page.url()}`);
         }
       }
     }
 
     // 空态：「不存在的东西」
-    await page.keyboard.press("Control+k");
-    await palette.waitFor({ state: "visible", timeout: 10000 });
+    await openPalette(page);
     await palette.locator("input").fill("不存在的东西");
     await page.waitForTimeout(300);
     const emptyText = (await palette.textContent()) ?? "";
@@ -229,8 +248,7 @@ async function shoot(page, file) {
     await palette.waitFor({ state: "hidden", timeout: 5000 }).catch(() => fail("⌘K Esc 未关闭面板"));
 
     // 书架教材章节：按教材名命中，跳 /learn/hi-doc/t/{id}/c/1
-    await page.keyboard.press("Control+k");
-    await palette.waitFor({ state: "visible", timeout: 10000 });
+    await openPalette(page);
     await palette.locator("input").fill("R4 验证教材");
     await page.waitForTimeout(400);
     const shelfHit = palette.locator("button", { hasText: "第 1 章" });
@@ -250,6 +268,243 @@ async function shoot(page, file) {
     }
   } catch (error) {
     fail(`palette-search: ${error}`);
+  } finally {
+    await context.close();
+  }
+}
+
+// ── R4-2：390 触控（抽屉开合/Esc/scrim/滚锁/焦点 + 面板底部弹出 + 命中区抽查）──
+if (only("touch")) {
+  const { context, page, errors } = await newPage(VIEWPORTS[1]);
+  try {
+    await page.goto(`${BASE}/learn`, { waitUntil: "networkidle", timeout: 60000 });
+    await page.waitForTimeout(500);
+
+    // 顶栏命中区抽查（≥44×44）
+    const targets = await page.evaluate(() => {
+      const read = (el) => {
+        const rect = el?.getBoundingClientRect();
+        return rect ? { w: Math.round(rect.width), h: Math.round(rect.height) } : null;
+      };
+      return {
+        hamburger: read(document.querySelector("button[aria-label='打开导航']")),
+        searchTrigger: read(document.querySelector("button[aria-label='打开命令面板（⌘K）']")),
+        themeToggle: read(document.querySelector("button[aria-label='切换暗色'], button[aria-label='切换亮色']")),
+        userChip: read(document.querySelector("[data-user-chip]")),
+      };
+    });
+    console.log(`[touch-targets] ${JSON.stringify(targets)}`);
+    for (const [name, size] of Object.entries(targets)) {
+      if (!size) continue; // userChip 未登录时可能不存在
+      if (size.w < 44 || size.h < 44) fail(`触控目标 ${name} 命中区不足 44×44：${size.w}×${size.h}`);
+    }
+
+    // 抽屉：汉堡打开 → 焦点入抽屉 → body 滚锁 → Esc 关闭 → 焦点还汉堡 → 滚锁还原
+    const hamburger = page.locator("button[aria-label='打开导航']");
+    await hamburger.click();
+    await page.waitForTimeout(400);
+    const drawerState = await page.evaluate(() => ({
+      drawerVisible: document.querySelector("aside[aria-label='工作台导航']")?.getAttribute("data-shell-drawer") === "open",
+      bodyLocked: document.documentElement.style.overflow === "hidden",
+      focusInDrawer: document.querySelector("aside[aria-label='工作台导航']")?.contains(document.activeElement) ?? false,
+      navLinkMinH: (() => {
+        const link = document.querySelector("aside[aria-label='工作台导航'] a");
+        return link ? Math.round(link.getBoundingClientRect().height) : 0;
+      })(),
+    }));
+    await shoot(page, resolve(OUT, `${TAG}-drawer-open-390.png`));
+    console.log(`[drawer-open] ${JSON.stringify(drawerState)}`);
+    if (!drawerState.drawerVisible) fail("抽屉未打开");
+    if (!drawerState.bodyLocked) fail("抽屉打开时 body 未滚锁");
+    if (!drawerState.focusInDrawer) fail("抽屉打开时焦点未进入抽屉");
+    if (drawerState.navLinkMinH < 44) fail(`抽屉条目命中高度不足 44px：${drawerState.navLinkMinH}`);
+
+    await page.keyboard.press("Escape");
+    await page.waitForTimeout(300);
+    const afterEsc = await page.evaluate(() => ({
+      drawerVisible: document.querySelector("aside[aria-label='工作台导航']")?.getAttribute("data-shell-drawer") === "open",
+      bodyLocked: document.documentElement.style.overflow === "hidden",
+      focusOnHamburger: document.activeElement?.getAttribute("aria-label") === "打开导航",
+    }));
+    console.log(`[drawer-esc] ${JSON.stringify(afterEsc)}`);
+    if (afterEsc.drawerVisible) fail("Esc 未关闭抽屉");
+    if (afterEsc.bodyLocked) fail("抽屉关闭后滚锁未还原");
+    if (!afterEsc.focusOnHamburger) fail("抽屉关闭后焦点未还给汉堡按钮");
+
+    // scrim 点击关闭
+    await hamburger.click();
+    await page.waitForTimeout(400);
+    await page.locator("div[class*='scrim']").click({ position: { x: 340, y: 400 } });
+    await page.waitForTimeout(300);
+    const afterScrim = await page.evaluate(() =>
+      document.querySelector("aside[aria-label='工作台导航']")?.getAttribute("data-shell-drawer") === "open",
+    );
+    console.log(`[drawer-scrim] open=${afterScrim}`);
+    if (afterScrim) fail("scrim 点击未关闭抽屉");
+
+    // ⌘K 面板 390 底部弹出：贴底 + 全宽 + ≤70dvh
+    const palette = await openPalette(page);
+    await page.waitForTimeout(300);
+    await shoot(page, resolve(OUT, `${TAG}-palette-390.png`));
+    const panelBox = await palette.evaluate((el) => {
+      const rect = el.getBoundingClientRect();
+      return {
+        x: Math.round(rect.x),
+        w: Math.round(rect.width),
+        bottomGap: Math.round(window.innerHeight - rect.bottom),
+        h: Math.round(rect.height),
+        vh: window.innerHeight,
+        borderTopRadius: getComputedStyle(el).borderTopLeftRadius,
+      };
+    });
+    console.log(`[palette-390] ${JSON.stringify(panelBox)}`);
+    if (panelBox.x !== 0 || panelBox.w !== 390) fail(`⌘K 390 面板未全宽：x=${panelBox.x} w=${panelBox.w}`);
+    if (panelBox.bottomGap > 1) fail(`⌘K 390 面板未贴底：gap=${panelBox.bottomGap}`);
+    if (panelBox.h > Math.ceil(panelBox.vh * 0.7) + 2) fail(`⌘K 390 面板超高 70dvh：${panelBox.h}/${panelBox.vh}`);
+    if (parseFloat(panelBox.borderTopRadius) <= 0) fail("⌘K 390 面板缺上沿圆角");
+
+    // 面板条目命中高度 ≥44
+    const itemH = await palette.evaluate((el) => {
+      const item = el.querySelector("ul button");
+      return item ? Math.round(item.getBoundingClientRect().height) : 0;
+    });
+    console.log(`[palette-390-item] height=${itemH}`);
+    if (itemH < 44) fail(`⌘K 390 条目高度不足 44px：${itemH}`);
+    await page.keyboard.press("Escape");
+
+    // 390 无横向溢出复核
+    const overflow = await page.evaluate(() => ({
+      scrollWidth: document.documentElement.scrollWidth,
+      clientWidth: document.documentElement.clientWidth,
+    }));
+    if (overflow.scrollWidth > overflow.clientWidth) {
+      fail(`390 横向溢出：${overflow.scrollWidth}/${overflow.clientWidth}`);
+    }
+    if (errors.length > 0) {
+      fail(`390 触控流程存在控制台错误：${errors.slice(0, 3).join(" | ")}`);
+    }
+  } catch (error) {
+    fail(`mobile-touch: ${error}`);
+  } finally {
+    await context.close();
+  }
+}
+
+// ── R3 回归矩阵：15 路由 × 亮/暗 × 1440/390（确认本期 CSS 未破坏既有面）──────
+const KP = "diet-and-taste";
+const ROUTES = [
+  { name: "learn", path: "/learn" },
+  { name: "learn-my-materials", path: "/learn/my-materials" },
+  { name: "courses", path: "/courses" },
+  { name: "course-workspace", path: "/courses/tcm-diagnostics" },
+  { name: "knowledge-point", path: `/courses/tcm-diagnostics/knowledge-points/${KP}` },
+  { name: "subjective-writing", path: `/courses/tcm-diagnostics/knowledge-points/${KP}/subjective-writing` },
+  { name: "case-reasoning", path: `/courses/tcm-diagnostics/knowledge-points/${KP}/case-reasoning` },
+  { name: "question-bank-global", path: "/question-bank" },
+  { name: "question-bank-home", path: "/courses/tcm-diagnostics/question-bank" },
+  { name: "question-bank-chapter", path: "/courses/tcm-diagnostics/question-bank/introduction" },
+  { name: "question-bank-practice", path: "/courses/tcm-diagnostics/question-bank/introduction/assessment-a1-introduction-principles" },
+  { name: "mock-exam", path: "/courses/tcm-diagnostics/mock-exam" },
+  { name: "wrong-questions", path: "/wrong-questions" },
+  { name: "account-billing", path: "/account/billing" },
+  { name: "design-system", path: "/design-system" },
+];
+
+/** 已知 dev 竞态签名：冷编译偶发 manifest 500（"Unexpected end of JSON input" 或 "Manifest file is empty"；生产构建无此问题）。 */
+function isKnownDevRace(status, errors) {
+  return status === 500 && errors.some((text) =>
+    text.includes("Unexpected end of JSON input") || text.includes("Manifest file is empty"),
+  );
+}
+
+/** 打开页面并采样（状态/暗色/溢出/控制台错误）；已知 dev 竞态自动整页重试一次。 */
+async function openAndSample(page, route, viewport, theme) {
+  for (let attempt = 1; attempt <= 2; attempt += 1) {
+    const response = await page.goto(`${BASE}${route.path}`, { waitUntil: "networkidle", timeout: 60000 });
+    const status = response?.status() ?? 0;
+    await page.waitForTimeout(500);
+    const sample = {
+      status,
+      errors: [...page.__errors],
+      dark: theme === "dark" ? await page.evaluate(() => document.documentElement.classList.contains("dark")) : null,
+      overflow:
+        viewport.name === "390"
+          ? await page.evaluate(() => ({
+              scrollWidth: document.documentElement.scrollWidth,
+              clientWidth: document.documentElement.clientWidth,
+            }))
+          : null,
+    };
+    if (attempt === 1 && isKnownDevRace(status, sample.errors)) {
+      page.__errors.length = 0;
+      await page.waitForTimeout(1200);
+      continue; // 整页重试一次
+    }
+    return sample;
+  }
+  throw new Error("unreachable");
+}
+
+for (const theme of ["light", "dark"]) {
+  for (const viewport of VIEWPORTS) {
+    for (const route of only("matrix") ? ROUTES : []) {
+      const { context, page, errors } = await newPage(viewport, { dark: theme === "dark" });
+      page.__errors = errors;
+      try {
+        const sample = await openAndSample(page, route, viewport, theme);
+        const suffix = theme === "dark" ? "-dark" : "";
+        const file = resolve(OUT, `${TAG}-${route.name}-${viewport.name}${suffix}.png`);
+        await shoot(page, file);
+        const overflowBad = sample.overflow ? sample.overflow.scrollWidth > sample.overflow.clientWidth : false;
+        const bad = sample.status !== 200 || overflowBad || sample.errors.length > 0 || sample.dark === false;
+        if (bad) fail(`${route.path} @${viewport.name} ${theme}`);
+        console.log(
+          `[${sample.status}] ${route.path} @${viewport.name} ${theme}` +
+            (sample.dark !== null ? ` dark=${sample.dark}` : "") +
+            (sample.overflow
+              ? ` scroll=${sample.overflow.scrollWidth}/client=${sample.overflow.clientWidth}${overflowBad ? " OVERFLOW" : ""}`
+              : "") +
+            ` errors=${sample.errors.length}` +
+            (sample.errors.length ? `\n    ${sample.errors.slice(0, 3).join("\n    ")}` : ""),
+        );
+      } catch (error) {
+        fail(`${route.path} @${viewport.name} ${theme}: ${error}`);
+      } finally {
+        await context.close();
+      }
+    }
+  }
+}
+
+// ── Agent 浮球位置复核（390：不得遮挡内容页主 CTA 与底部抽屉 CTA）──────────
+if (only("fab")) {
+  const { context, page } = await newPage(VIEWPORTS[1]);
+  try {
+    await page.goto(`${BASE}/courses/tcm-diagnostics`, { waitUntil: "networkidle", timeout: 60000 });
+    await page.waitForTimeout(800);
+    const overlap = await page.evaluate(() => {
+      const fab = document.querySelector("button[class*='fab']");
+      if (!fab) return { fab: null };
+      const f = fab.getBoundingClientRect();
+      const rect = (el) => { const r = el?.getBoundingClientRect(); return r ? { x: r.x, y: r.y, w: r.width, h: r.height } : null; };
+      // 底部抽屉主 CTA（.sessionStartLink 等）与「直接进入学习」入口
+      const cta = document.querySelector("[class*='sessionStartLink']") ?? document.querySelector("[class*='readyLink']");
+      const c = rect(cta);
+      const intersects = c
+        ? !(f.right < c.x || f.x > c.x + c.w || f.bottom < c.y || f.y > c.y + c.h)
+        : null;
+      return {
+        fab: { x: Math.round(f.x), y: Math.round(f.y), w: Math.round(f.width), h: Math.round(f.height) },
+        cta: c ? { x: Math.round(c.x), y: Math.round(c.y), w: Math.round(c.w), h: Math.round(c.h) } : null,
+        intersects,
+      };
+    });
+    console.log(`[agent-fab-390] ${JSON.stringify(overlap)}`);
+    if (overlap.intersects === true) {
+      fail("Agent 浮球遮挡内容页主 CTA（390）");
+    }
+  } catch (error) {
+    fail(`agent-fab: ${error}`);
   } finally {
     await context.close();
   }

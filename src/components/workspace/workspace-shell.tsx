@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
@@ -18,6 +18,7 @@ import {
 
 import { useSession } from "@/hooks/use-session";
 import { getMembershipTierLabel, normalizeMembershipTier } from "@/lib/membership";
+import type { CourseSearchSource } from "@/lib/search-index";
 import {
   ACTIVE_COURSE_ENTRIES,
   PRIMARY_ENTRIES,
@@ -125,7 +126,13 @@ function SidebarNav({
   );
 }
 
-export function WorkspaceShell({ children }: { children: React.ReactNode }) {
+export function WorkspaceShell({
+  children,
+  courseSearchSources,
+}: {
+  children: React.ReactNode;
+  courseSearchSources: readonly CourseSearchSource[];
+}) {
   const pathname = usePathname();
   const { user } = useSession();
   const [drawerOpen, setDrawerOpen] = useState(false);
@@ -187,6 +194,25 @@ export function WorkspaceShell({ children }: { children: React.ReactNode }) {
     return () => window.removeEventListener("keydown", handler);
   }, [drawerOpen]);
 
+  // R4-2 抽屉交互补完：打开时 body 滚锁（documentElement overflow hidden，关闭时还原）
+  // + 焦点进入抽屉第一个条目，关闭时还给汉堡按钮。
+  const hamburgerRef = useRef<HTMLButtonElement>(null);
+  const drawerRef = useRef<HTMLElement>(null);
+  useEffect(() => {
+    if (!drawerOpen) return;
+    const root = document.documentElement;
+    const previousOverflow = root.style.overflow;
+    root.style.overflow = "hidden";
+    const firstLink = drawerRef.current?.querySelector<HTMLElement>("a[href], button");
+    const focusTimer = window.setTimeout(() => firstLink?.focus(), 60);
+    const hamburger = hamburgerRef.current;
+    return () => {
+      root.style.overflow = previousOverflow;
+      window.clearTimeout(focusTimer);
+      hamburger?.focus();
+    };
+  }, [drawerOpen]);
+
   const activeId = resolveActivePrimaryId(pathname);
   const tier = user ? normalizeMembershipTier(user.membershipTier) : null;
   const closeDrawer = () => setDrawerOpen(false);
@@ -194,6 +220,7 @@ export function WorkspaceShell({ children }: { children: React.ReactNode }) {
   return (
     <div className={styles.app}>
       <aside
+        ref={drawerRef}
         data-shell-drawer={drawerOpen ? "open" : undefined}
         className={[styles.sidebar, drawerOpen ? styles.sidebarOpen : ""].filter(Boolean).join(" ")}
         aria-label="工作台导航"
@@ -212,6 +239,7 @@ export function WorkspaceShell({ children }: { children: React.ReactNode }) {
         <header className={styles.topbar}>
           <div className={styles.topbarLeft}>
             <button
+              ref={hamburgerRef}
               type="button"
               className={styles.hamburger}
               onClick={() => setDrawerOpen((open) => !open)}
@@ -266,6 +294,7 @@ export function WorkspaceShell({ children }: { children: React.ReactNode }) {
         onClose={() => setPaletteOpen(false)}
         onNavigate={closeDrawer}
         textbooks={textbooks}
+        courseSearchSources={courseSearchSources}
       />
     </div>
   );

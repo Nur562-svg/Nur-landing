@@ -10,13 +10,14 @@ import {
   flattenSearchGroups,
   normalizeSearchText,
   searchEntries,
+  selectCourseSearchSource,
   SEARCH_GROUP_LIMIT,
   type SearchEntry,
 } from "../src/lib/search-index";
 import { courseHasAuthoredLesson, selectChapterForKnowledgePoint } from "../src/lib/course-selectors";
 
 describe("search-index (R4 ⌘K content search)", () => {
-  const courseEntries = buildCourseSearchEntries(publishedCourses);
+  const courseEntries = buildCourseSearchEntries(publishedCourses.map(selectCourseSearchSource));
 
   it("章节条目覆盖每门已发布课的每章，且题库课走题库章节路由", () => {
     const chapterCount = publishedCourses.reduce((total, course) => total + course.chapters.length, 0);
@@ -26,7 +27,7 @@ describe("search-index (R4 ⌘K content search)", () => {
     for (const course of publishedCourses) {
       const authored = courseHasAuthoredLesson(course);
       for (const chapter of course.chapters) {
-        const entry = chapterEntries.find((item) => item.id.endsWith(`${course.id}-${chapter.id}`));
+        const entry = chapterEntries.find((item) => item.id.endsWith(`${course.slug}-${chapter.slug}`));
         assert.ok(entry, `missing chapter entry: ${course.slug}/${chapter.slug}`);
         assert.equal(entry.group, authored ? "course" : "bank");
         assert.equal(
@@ -50,7 +51,7 @@ describe("search-index (R4 ⌘K content search)", () => {
       for (const point of course.knowledgePoints) {
         if (point.lesson === null) continue;
         expected += 1;
-        const entry = kpEntries.find((item) => item.id === `course-kp-${course.id}-${point.id}`);
+        const entry = kpEntries.find((item) => item.id === `course-kp-${course.slug}-${point.slug}`);
         assert.ok(entry, `missing kp entry: ${course.slug}/${point.slug}`);
         assert.equal(entry.href, `/courses/${course.slug}/knowledge-points/${point.slug}`);
         assert.equal(entry.group, "course");
@@ -67,7 +68,7 @@ describe("search-index (R4 ⌘K content search)", () => {
     for (const course of publishedCourses) {
       if (courseHasAuthoredLesson(course)) continue;
       assert.ok(
-        kpEntries.every((entry) => !entry.id.startsWith(`course-kp-${course.id}-`)),
+        kpEntries.every((entry) => !entry.id.startsWith(`course-kp-${course.slug}-`)),
         `qb course leaked kp entries: ${course.slug}`,
       );
     }
@@ -158,6 +159,40 @@ describe("search-index (R4 ⌘K content search)", () => {
     assert.equal(groups[0].items.length, SEARCH_GROUP_LIMIT);
     assert.equal(groups[0].overflow, 12 - SEARCH_GROUP_LIMIT);
     assert.equal(flattenSearchGroups(groups).length, SEARCH_GROUP_LIMIT);
+  });
+
+  it("selectCourseSearchSource：最小字段裁剪，不携带重型字段与长 id，KP 预计算所属章节名", () => {
+    for (const course of publishedCourses) {
+      const source = selectCourseSearchSource(course);
+      assert.equal(source.slug, course.slug);
+      assert.equal(source.title, course.title);
+      assert.equal(source.chapters.length, course.chapters.length);
+      assert.equal(source.knowledgePoints.length, course.knowledgePoints.length);
+      // 字段裁剪：检索输入不得携带题目/组/案例/来源等重型字段，也不带长 id
+      assert.ok(!("id" in source));
+      assert.ok(!("assessmentItems" in source));
+      assert.ok(!("assessmentGroups" in source));
+      assert.ok(!("cases" in source));
+      assert.ok(!("sources" in source));
+      assert.ok(!("examBlueprint" in source));
+      for (const chapter of source.chapters) {
+        assert.ok(!("id" in chapter));
+        assert.ok(!("focus" in chapter));
+        assert.ok(!("knowledgePointIds" in chapter));
+      }
+      for (const point of course.knowledgePoints) {
+        const projected = source.knowledgePoints.find((item) => item.slug === point.slug);
+        assert.ok(projected);
+        assert.equal(projected.hasLesson, point.lesson !== null);
+        assert.ok(!("id" in projected));
+        assert.ok(!("lesson" in projected));
+          // chapterTitle 与选章节器口径一致
+        const chapter = selectChapterForKnowledgePoint(course, point.id);
+        assert.equal(projected.chapterTitle, chapter?.title ?? null);
+      }
+      // JSON 可序列化（跨服务端→客户端边界的前提）
+      JSON.stringify(source);
+    }
   });
 
   it("flattenSearchGroups 保持组内顺序，供键盘高亮导航", () => {

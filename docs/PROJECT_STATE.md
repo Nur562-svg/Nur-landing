@@ -1,6 +1,6 @@
 # NUR LEARN — Canonical Project State
 
-Last updated: 2026-09-20 (Asia/Shanghai) — Hi doc M0–M7 全部完成；设计系统 v2 R1（壳+token）、R2（Hi doc 五面换装 + 全局暗色基建）与 R3（官方课+题库+计费+私人过渡面换装、错题中心归壳）完成，R4（⌘K 真检索 + 移动端深化）待做
+Last updated: 2026-09-20 (Asia/Shanghai) — Hi doc M0–M7 全部完成；设计系统 v2 R1–R4 全部完成（主线收官：R1 壳+token、R2 Hi doc 五面换装+全局暗色、R3 官方课+题库+计费+私人面换装与错题归壳、R4 ⌘K 真检索+移动端深化）；下一主线=部署上线准备（ICP 备案 + 真实商户号 + 生产密钥/网关 + 公网 notify 补验）
 
 This file is the durable source of truth for continuing NUR LEARN when conversation history is unavailable. Update it after material product decisions, completed milestones, verification changes, or priority changes.
 
@@ -1726,4 +1726,16 @@ R3 沿用 R2 已验证的 **token 桥接**机制（改局部 token 定义值、�
 - 已知事项：dev 冷编译 manifest JSON.parse 500 游走（R1 已知②，生产无此问题）；截图在整轮高负载下偶发字体加载超时，脚本已改为截图超时不计入判定（属脚手架留档，非页面缺陷）。
 - **未纳入提交**：`question-bank-chapter.tsx/.css`、`question-bank-practice.tsx/.module.css` 中含工作区既有未提交逻辑改动（题型筛选/进度索引），R3 在其上做了叠加式 token 桥接但不单独提交，留待用户与其逻辑改动一并处理。
 
-**下一优先级**：R4 = ⌘K 接章节/知识点真检索 + 移动端深化（390 抽屉/底部导航已在 R1 做过一轮，R4 做触控与密度深化），设计系统 v2 主线收官后回到部署上线准备（ICP 备案 + 真实商户号 + 生产密钥/网关 + 公网 notify 补验）。
+**下一优先级**：~~R4 = ⌘K 接章节/知识点真检索 + 移动端深化~~ → **R4 已完成（见下节），设计系统 v2 主线收官**；回到部署上线准备（ICP 备案 + 真实商户号 + 生产密钥/网关 + 公网 notify 补验）。
+
+## 设计系统 v2 R4 — ⌘K 真检索 + 移动端深化，主线收官（2026-09-20 完成）
+
+R4 = R4-1（`feat(design): R4 command palette content search`）+ R4-2（`feat(design): R4 mobile touch deepening + v2-smoke flake fix`）两个独立提交；本节为摘要，验收证据见 `design-qa.md`「Design System R4」节。
+
+- **⌘K 从页面跳转器升级为站内内容检索**：新增 `src/lib/search-index.ts`（纯函数、无 React、无网络），四类条目——章节（闭环课走 `/courses/{slug}` 页内章节目录、题库课走 `/courses/{slug}/question-bank/{chapterSlug}`）、知识点（仅闭环课 `lesson !== null`，title+note 匹配）、Hi doc 书架教材章节（`/learn/hi-doc/t/{id}/c/{n}`，客户端内存、不上送不写盘）、页面入口（R1 静态条目全保留）。NFKC 归一化 includes 匹配，分组（官方课程/题库/书架教材/页面）每组 8 条截断 + 「还有 N 条」提示，空态「没有匹配的内容」。不搜题库题目正文（9k+ 题目全文检索属后端事），不搜学习者私人数据。
+- **bundle 约束（关键教训）**：客户端顶层 `import publishedCourses` 会把整棵课程树打进 bundle（实测 layout chunk ≈9.5MB）。最终方案：服务端 `(workspace)/layout.tsx` 经 `selectCourseSearchSource` 字段裁剪（只带 slug/title/note 级字段，KP 预计算 chapterTitle，不带长 id）再传客户端，客户端 useMemo 构建索引。实测 /learn 客户端 JS **+1.0KB gzip**（预算 30KB）；HTML RSC 载荷 +17KB gzip（KP note 投影，如实记录）。
+- **移动端深化（零业务逻辑，只动 CSS module 与壳组件）**：≤900px 触控目标 ≥44×44（抽屉条目/汉堡/搜索触发/主题切换/用户卡/登录链路 + ⌘K 条目 + V2 六件套导航件）；抽屉补 body 滚锁（打开 `overflow:hidden` 关闭还原）与焦点管理（开→首条目、关→汉堡）；⌘K 面板 ≤480px 全宽底部弹出（贴底、上沿圆角、70dvh 限高）；密度审计 390 主内容页无失衡故未改数值；Agent 浮球 390 落位复核不遮主 CTA，维持现状。
+- 顺手项：`tests/ui-v2-smoke.test.ts` 并发 flake 修复（6 个动态 import 改串行 + `register()` 后空转 stub import 确保钩子 attach），连跑 3 次 6/6 pass。
+- 验证：lint 0 error（188 warning 基线未增）/ typecheck 干净 / `npm run test` **395/395**（+10 检索单测）/ `npm run check` exit 0；浏览器 `scripts/design-r4-check.mjs`（支持 `--only` 分段）：⌘K「寒热」→ 知识点「问寒热」Enter 跳转正确、「八纲辨证」→ 章节工作台、空态、书架章节深链全过；390 触控/滚锁/焦点/底部弹出断言全过；15 路由 × 亮/暗 × 1440/390 矩阵 60 组全部 200、0 控制台错误、无横向溢出。截图 65 张存 `docs/design-references/r4-*.png`。
+
+**下一主线：部署上线准备**——standalone Docker + Postgres 16 + Caddy compose、CI、支付抽象（mock→支付宝沙箱，notify 验签）均已在 M7 就绪，上线仅差：① ICP 备案；② 真实商户号（支付宝/微信）；③ 生产密钥与网关配置（DashScope/SMTP 等，key 只进服务端环境）；④ 公网部署后补验支付宝真实 notify 回调（M7 遗留项）。

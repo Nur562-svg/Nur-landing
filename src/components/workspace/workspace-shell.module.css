@@ -379,6 +379,39 @@
   .userName {
     display: none;
   }
+
+  /* R4-2 触控目标：可点元素命中区 ≥44px（min-* 手法，不固定 height） */
+  .brand {
+    min-height: 44px;
+  }
+
+  .navLink {
+    min-height: 44px;
+  }
+
+  .hamburger {
+    min-height: 44px;
+    min-width: 44px;
+  }
+
+  .searchTrigger {
+    min-height: 44px;
+  }
+
+  .themeToggle {
+    min-height: 44px;
+    min-width: 44px;
+  }
+
+  .userChip {
+    min-height: 44px;
+  }
+
+  .loginLink {
+    align-items: center;
+    display: inline-flex;
+    min-height: 44px;
+  }
 }
 
 @media (max-width: 480px) {

@@ -7,12 +7,15 @@
  * - Hi doc 教材章节条目由调用方传入书架内存数据，本模块不发起请求、不上送、不写盘；
  * - 学习者私人数据（错题/记忆/作答）不进入索引。
  *
- * bundle 约束：仅 import 课程类型与 selector，不 import src/content/*；
- * 调用方（客户端组件）负责以静态 import 提供 publishedCourses 并 memo 索引构建。
+ * bundle 约束（实测教训，勿回退）：在客户端组件顶层 `import publishedCourses`
+ * 会把整个课程树（含 9k+ 题库 item，≈9.5MB layout chunk）打进客户端 bundle。
+ * 因此课程索引必须以「字段裁剪」方式构建：服务端薄适配层（(workspace)/layout.tsx）
+ * 先经 selectCourseSearchSource 把 CourseDefinition 投影为只含 title/slug/note/href
+ * 级字段的 CourseSearchSource，再把 CourseSearchSource[] 传给客户端组件；
+ * 客户端在 useMemo 里调用 buildCourseSearchEntries 生成条目。
  */
-import { courseHasAuthoredLesson, selectKnowledgePointHref } from "@/lib/course-selectors";
-import { isPublishedCourseSlug } from "@/lib/course-publication";
 import type { CourseDefinition } from "@/types/learning";
+import { isPublishedCourseSlug } from "@/lib/course-publication";
 
 /** 检索条目分组（展示顺序固定，见 SEARCH_GROUP_ORDER）。 */
 export type SearchEntryGroup = "course" | "bank" | "shelf" | "page";
@@ -52,26 +55,75 @@ export function normalizeSearchText(value: string): string {
 }
 
 /**
+ * 课程检索输入：CourseDefinition 的最小字段裁剪投影（服务端在传入客户端前完成）。
+ * 只保留构建条目所需的 title/slug/note 级字段：
+ * - 不带 assessmentItems / sources / examBlueprint 等重型字段；
+ * - 不带任何长 id（条目 id 由 slug 派生），不带 chapter.focus（匹配仅按 title + note）；
+ * - KP 的所属章节名在投影时预计算（chapterTitle），避免下发 chapter.knowledgePointIds 全量 id 数组；
+ * - `hasLesson` 由 course 对象直接判定（lesson 非 null），不触发路由。
+ */
+export type CourseSearchSource = Pick<
+  CourseDefinition,
+  "slug" | "title" | "catalogLabel"
+> & {
+  chapters: readonly Pick<
+    CourseDefinition["chapters"][number],
+    "slug" | "indexLabel" | "title"
+  >[];
+  knowledgePoints: readonly (Pick<
+    CourseDefinition["knowledgePoints"][number],
+    "slug" | "title" | "note"
+  > & { hasLesson: boolean; chapterTitle: string | null })[];
+};
+
+/** 从 CourseDefinition 裁剪出检索输入（纯函数；服务端薄适配层调用）。 */
+export function selectCourseSearchSource(course: CourseDefinition): CourseSearchSource {
+  const chapterTitleByPointId = new Map<string, string>();
+  for (const chapter of course.chapters) {
+    for (const pointId of chapter.knowledgePointIds) {
+      chapterTitleByPointId.set(pointId, chapter.title);
+    }
+  }
+  return {
+    slug: course.slug,
+    title: course.title,
+    catalogLabel: course.catalogLabel,
+    chapters: course.chapters.map((chapter) => ({
+      slug: chapter.slug,
+      indexLabel: chapter.indexLabel,
+      title: chapter.title,
+    })),
+    knowledgePoints: course.knowledgePoints.map((point) => ({
+      slug: point.slug,
+      title: point.title,
+      note: point.note,
+      hasLesson: point.lesson !== null,
+      chapterTitle: chapterTitleByPointId.get(point.id) ?? null,
+    })),
+  };
+}
+
+/**
  * 课程条目：章节（每门课每章）+ 知识点（仅闭环课）。
  * - 章节 href 沿用现有路由口径：闭环课走课程工作台 `/courses/{slug}`
  *   （章节目录为页内状态、无独立路由），题库课走 `/courses/{slug}/question-bank/{chapterSlug}`；
  * - 题库课（`*-qb`，lesson 全为 null）的 KP 没有讲义页，不出知识点条目。
  */
 export function buildCourseSearchEntries(
-  courses: readonly CourseDefinition[],
+  courses: readonly CourseSearchSource[],
 ): readonly SearchEntry[] {
   const entries: SearchEntry[] = [];
   for (const course of courses) {
     if (!isPublishedCourseSlug(course.slug)) {
       continue;
     }
-    const authored = courseHasAuthoredLesson(course);
+    const authored = course.knowledgePoints.some((point) => point.hasLesson);
     const group: SearchEntryGroup = authored ? "course" : "bank";
     const courseHref = `/courses/${course.slug}`;
 
     for (const chapter of course.chapters) {
       entries.push({
-        id: `${group}-chapter-${course.id}-${chapter.id}`,
+        id: `${group}-chapter-${course.slug}-${chapter.slug}`,
         label: chapter.title,
         hint: authored
           ? `${course.title} · 第 ${chapter.indexLabel} 章`
@@ -80,23 +132,20 @@ export function buildCourseSearchEntries(
           ? courseHref
           : `/courses/${course.slug}/question-bank/${chapter.slug}`,
         group,
-        keywords: [chapter.title, chapter.focus, course.title, course.catalogLabel],
+        keywords: [chapter.title, course.title, course.catalogLabel],
       });
     }
 
     if (authored) {
       for (const point of course.knowledgePoints) {
-        if (point.lesson === null) {
+        if (!point.hasLesson) {
           continue;
         }
-        const chapter = course.chapters.find((item) => (
-          item.knowledgePointIds.includes(point.id)
-        ));
         entries.push({
-          id: `course-kp-${course.id}-${point.id}`,
+          id: `course-kp-${course.slug}-${point.slug}`,
           label: point.title,
-          hint: chapter ? `${course.title} · ${chapter.title}` : course.title,
-          href: selectKnowledgePointHref(course, point),
+          hint: point.chapterTitle ? `${course.title} · ${point.chapterTitle}` : course.title,
+          href: `/courses/${course.slug}/knowledge-points/${point.slug}`,
           group,
           keywords: [point.title, point.note, course.title, course.catalogLabel],
         });
