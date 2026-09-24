@@ -15,6 +15,7 @@ import {
   validateGeneratedLesson,
 } from "./lesson-heuristic";
 import { createHiDocLessonProviderFromEnv } from "./lesson-provider";
+import { isHiDocDocx } from "./source-label";
 import { readHiDocKnowledgePointExcerpt } from "./source-excerpt";
 
 /**
@@ -117,19 +118,24 @@ export async function generateHiDocKnowledgePointLesson(
   const notes: string[] = [];
   const style = resolveHiDocLessonStyle(await loadAccountLessonStyle(input.userId));
 
+  const docx = isHiDocDocx(textbook.fileName);
   input.onProgress({
     stage: "read",
-    message: `聚合《${chapter.title}》第 ${knowledgePoint.sourcePage} 页附近的教材原文…`,
+    message: docx
+      ? `聚合《${chapter.title}》的教材原文（页码待确认）…`
+      : `聚合《${chapter.title}》第 ${knowledgePoint.sourcePage} 页附近的教材原文…`,
   });
   const excerptResult = await readHiDocKnowledgePointExcerpt({
     storageKey: textbook.storageKey,
+    fileName: textbook.fileName,
+    chapterTitle: chapter.title,
     sourcePage: knowledgePoint.sourcePage,
     chapterPageStart: chapter.pageStart,
     chapterPageEnd: chapter.pageEnd,
   });
   const excerpt = excerptResult.ok ? excerptResult.excerpt : null;
   if (excerptResult.ok) {
-    notes.push(`原文依据：第 ${excerptResult.pages.join("、")} 页（${excerptResult.excerpt.length} 字）。`);
+    notes.push(`原文依据：${excerptResult.locatorLabel}（${excerptResult.excerpt.length} 字）。`);
   } else {
     notes.push(`未能读取教材原文片段：${excerptResult.message}`);
   }
@@ -154,6 +160,7 @@ export async function generateHiDocKnowledgePointLesson(
       sourceExcerpt: excerpt,
       style,
       generatedAtLabel,
+      fileName: textbook.fileName,
     });
   } else {
     if (!excerpt) {
@@ -189,6 +196,7 @@ export async function generateHiDocKnowledgePointLesson(
           chapterTitle: chapter.title,
           knowledgePoint,
           sourceExcerpt: excerpt,
+          fileName: textbook.fileName,
           style,
         },
         input.onDelta,
@@ -215,6 +223,7 @@ export async function generateHiDocKnowledgePointLesson(
           textbookTitle: textbook.title,
           chapterTitle: chapter.title,
           sourcePage: knowledgePoint.sourcePage,
+          fileName: textbook.fileName,
           notice: HIDOC_MODEL_LESSON_NOTICE,
         }),
         body,

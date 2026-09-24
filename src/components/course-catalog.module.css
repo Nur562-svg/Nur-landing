@@ -110,6 +110,27 @@
   letter-spacing: 0.14em;
 }
 
+.drillOnlyBadge {
+  align-self: flex-start;
+  background: color-mix(in srgb, var(--text-900) 8%, transparent);
+  border: 1px solid color-mix(in srgb, var(--text-900) 18%, transparent);
+  border-radius: 999px;
+  color: var(--text-700, var(--muted));
+  display: inline-flex;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  padding: 2px 10px;
+}
+
+.sectionHint {
+  color: var(--muted);
+  font-size: 13px;
+  line-height: 1.6;
+  margin: -4px 0 16px;
+  max-width: 52rem;
+}
+
 .cardTitle {
   font-family: var(--font-serif), "Times New Roman", serif;
   font-size: 18px;

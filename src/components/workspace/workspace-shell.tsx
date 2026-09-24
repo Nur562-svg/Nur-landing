@@ -6,6 +6,7 @@ import { usePathname } from "next/navigation";
 import {
   BookMarked,
   BookOpen,
+  Home,
   CreditCard,
   GraduationCap,
   ListChecks,
@@ -32,6 +33,7 @@ import styles from "./workspace-shell.module.css";
 type NavIcon = typeof BookOpen;
 
 const PRIMARY_ICONS: Readonly<Record<string, NavIcon>> = {
+  learn: Home,
   hidoc: BookOpen,
   courses: GraduationCap,
   "question-bank": ListChecks,
@@ -42,6 +44,7 @@ const PRIMARY_ICONS: Readonly<Record<string, NavIcon>> = {
 function resolveActivePrimaryId(pathname: string | null): string | null {
   if (!pathname) return null;
   if (pathname.startsWith("/learn/hi-doc")) return "hidoc";
+  if (pathname === "/learn" || pathname.startsWith("/learn/")) return "learn";
   if (pathname.startsWith("/courses")) return "courses";
   if (pathname.startsWith("/question-bank")) return "question-bank";
   if (pathname.startsWith("/account")) return "membership";
@@ -235,7 +238,7 @@ export function WorkspaceShell({
         <SidebarNav activeId={activeId} pathname={pathname} textbooks={textbooks} onNavigate={closeDrawer} />
       </aside>
       {drawerOpen ? <div className={styles.scrim} onClick={() => setDrawerOpen(false)} aria-hidden="true" /> : null}
-      <div className={styles.main}>
+      <div className={styles.main} data-workspace-canvas="">
         <header className={styles.topbar}>
           <div className={styles.topbarLeft}>
             <button

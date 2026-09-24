@@ -1,6 +1,6 @@
 # NUR LEARN — Canonical Project State
 
-Last updated: 2026-09-20 (Asia/Shanghai) — Hi doc M0–M7 全部完成；设计系统 v2 R1–R4 全部完成（主线收官：R1 壳+token、R2 Hi doc 五面换装+全局暗色、R3 官方课+题库+计费+私人面换装与错题归壳、R4 ⌘K 真检索+移动端深化）；下一主线=部署上线准备（ICP 备案 + 真实商户号 + 生产密钥/网关 + 公网 notify 补验）
+Last updated: 2026-09-24 (Asia/Shanghai) — 设计系统 v3 为当前工作台视觉（280px 左栏、去重后的 /learn、Hi doc 八步引导、⌘K 全宽底栏每组 6 条）；Hi doc M0–M7 与设计系统 v2 R1–R4 仍是已完成基线。下一产品主线仍是部署上线准备（ICP 备案 + 真实商户号 + 生产密钥/网关 + 公网 notify 补验）。v3 规则见 `docs/DESIGN_V3.md`。
 
 This file is the durable source of truth for continuing NUR LEARN when conversation history is unavailable. Update it after material product decisions, completed milestones, verification changes, or priority changes.
 
@@ -1739,3 +1739,13 @@ R4 = R4-1（`feat(design): R4 command palette content search`）+ R4-2（`feat(d
 - 验证：lint 0 error（188 warning 基线未增）/ typecheck 干净 / `npm run test` **395/395**（+10 检索单测）/ `npm run check` exit 0；浏览器 `scripts/design-r4-check.mjs`（支持 `--only` 分段）：⌘K「寒热」→ 知识点「问寒热」Enter 跳转正确、「八纲辨证」→ 章节工作台、空态、书架章节深链全过；390 触控/滚锁/焦点/底部弹出断言全过；15 路由 × 亮/暗 × 1440/390 矩阵 60 组全部 200、0 控制台错误、无横向溢出。截图 65 张存 `docs/design-references/r4-*.png`。
 
 **下一主线：部署上线准备**——standalone Docker + Postgres 16 + Caddy compose、CI、支付抽象（mock→支付宝沙箱，notify 验签）均已在 M7 就绪，上线仅差：① ICP 备案；② 真实商户号（支付宝/微信）；③ 生产密钥与网关配置（DashScope/SMTP 等，key 只进服务端环境）；④ 公网部署后补验支付宝真实 notify 回调（M7 遗留项）。
+
+## 设计系统 v3 — 桌面优先工作台（2026-09-24）
+
+当前视觉系统。规则、改前/改后同伴卡片计数和 DOCX 页码约定见 `docs/DESIGN_V3.md`。验收记录见 `design-qa.md`「Design System v3」节。
+
+- 壳：左栏 280px，主画布为剩余唯一主列。`/learn` 去掉三条入口卡；官方课程、Hi doc、题库只从左栏进入。
+- 卡片：12px、透明边、一层轻阴影；标题宋体 ≥24px；正文 14px / 1.5。朱砂与石板蓝保留。动效只留加载与状态。
+- ⌘K：所有宽度贴底全宽；`SEARCH_GROUP_LIMIT` 从 8 改为 6，溢出仍报告剩余条数。
+- Hi doc：八步引导（下一步、进度、状态、「下一步」）。PDF 继续 pdf.js 文字层；DOCX 用 mammoth 进入同一路径；扫描件、图片、旧版 `.doc` 明确拒绝。DOCX 界面写「页码待确认」。Hi doc 生成物不挂官方课证据分级。
+- `src/content/courses/` 与 `src/content/materials/` 未改。未提交、也未推送。

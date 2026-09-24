@@ -146,7 +146,8 @@ describe("search-index (R4 ⌘K content search)", () => {
     assert.deepEqual(searchEntries(all, "不存在的东西"), []);
   });
 
-  it("每组截断到 8 条并报告 overflow 余量", () => {
+  it("每组截断到 6 条并报告 overflow 余量", () => {
+    assert.equal(SEARCH_GROUP_LIMIT, 6);
     const many: readonly SearchEntry[] = Array.from({ length: 12 }, (_, index) => ({
       id: `s-${index}`,
       label: `书 · 第 ${index + 1} 章`,
@@ -156,8 +157,9 @@ describe("search-index (R4 ⌘K content search)", () => {
     }));
     const groups = searchEntries(many, "书");
     assert.equal(groups.length, 1);
-    assert.equal(groups[0].items.length, SEARCH_GROUP_LIMIT);
-    assert.equal(groups[0].overflow, 12 - SEARCH_GROUP_LIMIT);
+    assert.equal(groups[0].items.length, 6);
+    assert.ok(groups[0].items.length <= 6);
+    assert.equal(groups[0].overflow, 12 - 6);
     assert.equal(flattenSearchGroups(groups).length, SEARCH_GROUP_LIMIT);
   });
 

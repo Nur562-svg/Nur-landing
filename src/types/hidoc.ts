@@ -12,7 +12,7 @@ export type HiDocTextbookStatus =
   | "failed";
 
 /** 章节来源（诚实标注识别路径，人工修正后为 manual）。 */
-export type HiDocChapterSource = "outline" | "toc-page" | "model" | "manual";
+export type HiDocChapterSource = "outline" | "toc-page" | "model" | "manual" | "docx-heading";
 
 /** 章节萃取状态；M2 只写 pending，M3 才推进。 */
 export type HiDocChapterStatus = "pending" | "extracting" | "extracted" | "failed";
@@ -49,7 +49,7 @@ export type HiDocTocRecognitionView = {
 };
 
 /** 识别路径：书签 / 印刷目录页 / 模型 / 未识别。 */
-export type HiDocTocStrategy = "outline" | "toc-page" | "model" | "none";
+export type HiDocTocStrategy = "outline" | "toc-page" | "model" | "none" | "docx-heading";
 
 /** 书架教材视图（不含 storageKey 等服务器内部字段）。 */
 export type HiDocTextbookView = {
@@ -197,7 +197,7 @@ export type HiDocKnowledgePointStudySummary = HiDocKnowledgePointView & {
 
 /** 学习页章节视图（教材 + 章节 + 知识点列表）。 */
 export type HiDocChapterStudyView = {
-  textbook: { id: string; title: string; pageCount: number };
+  textbook: { id: string; title: string; pageCount: number; fileName: string };
   chapter: HiDocChapterView;
   /** 当前章序（1 起）与总章数，供「第 N/M 章」显示。 */
   chapterIndex: number;

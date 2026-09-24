@@ -1,8 +1,10 @@
 import Link from "next/link";
 import type { Metadata } from "next";
 import { HiDocBookshelf } from "@/components/hi-doc-bookshelf";
+import { HiDocPathGuide } from "@/components/hi-doc-path-guide";
 import { getHiDocSessionUser } from "@/lib/hidoc/session-user";
 import { getHiDocShelf } from "@/lib/hidoc/textbooks";
+import { resolveHiDocGuide } from "@/lib/hidoc/step-guide";
 import { getMembershipTierLabel } from "@/lib/membership";
 import styles from "@/components/hi-doc.module.css";
 
@@ -38,7 +40,7 @@ export default async function HiDocBookshelfPage() {
         <p className={styles.kicker}>HI DOC</p>
         <h1 className={styles.title}>教材学习书架</h1>
         <p className={styles.intro}>
-          上传你自己的教材（文字版 PDF），NUR LEARN 会按当月名额为你保留书架位。
+          上传你自己的教材（文字版 PDF 或 DOCX），NUR LEARN 会按当月名额为你保留书架位。
           已开放：目录识别、知识点萃取、讲义生成与追问、划重点与学霸笔记；
           短材料答疑请前往 <Link href="/learn/hi-doc/w">课题工作坊</Link>。
         </p>
@@ -46,6 +48,8 @@ export default async function HiDocBookshelfPage() {
         {user ? (
           <HiDocBookshelf initialShelf={await getHiDocShelf(user.id, user.tier)} tier={user.tier} />
         ) : (
+          <>
+          <HiDocPathGuide guide={resolveHiDocGuide({ surface: "shelf", signedIn: false })} />
           <section className={styles.gateCard} aria-labelledby="hidoc-gate-title">
             <h2 id="hidoc-gate-title">登录后使用 Hi doc</h2>
             <p>
@@ -60,6 +64,7 @@ export default async function HiDocBookshelfPage() {
               </Link>
             </div>
           </section>
+          </>
         )}
       </div>
     </main>

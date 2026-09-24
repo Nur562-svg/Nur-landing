@@ -1,4 +1,5 @@
 import type { HiDocLessonGenerator, HiDocLessonStyle } from "@/types/hidoc";
+import { formatHiDocSourcePage, isHiDocDocx } from "./source-label";
 
 /**
  * Hi doc 讲义规则层（纯函数，可测试）：风格/生成方式解析、结构校验、无模型时的启发式讲义。
@@ -155,6 +156,8 @@ export type HiDocLessonHeaderInput = {
   textbookTitle: string;
   chapterTitle: string;
   sourcePage: number;
+  /** DOCX 时页首写「页码待确认」，不把占位页码写成印刷页。 */
+  fileName?: string;
   /** 生成方式声明（未接入模型 / AI 生成内容）。 */
   notice: string;
 };
@@ -166,7 +169,7 @@ export function buildLessonHeader(input: HiDocLessonHeaderInput): string {
     "",
     `> 生成方式：${describeHiDocLessonGenerator(input.generator)}`,
     `> 风格：${HIDOC_LESSON_STYLE_LABELS[input.style]} · 生成时间：${input.generatedAtLabel}`,
-    `> 教材：《${input.textbookTitle}》· ${input.chapterTitle} · 依据第 ${input.sourcePage} 页`,
+    `> 教材：《${input.textbookTitle}》· ${input.chapterTitle} · 依据${formatHiDocSourcePage(input.fileName ?? "", input.sourcePage)}`,
     `> ${input.notice}`,
     "",
   ].join("\n");
@@ -187,6 +190,7 @@ export type HiDocHeuristicLessonInput = {
     sourcePage: number;
   };
   textbookTitle: string;
+  fileName?: string;
   chapterTitle: string;
   /** 教材原文片段（带【PDF 第 X 页】标记）；未读到则为 null。 */
   sourceExcerpt: string | null;
@@ -235,14 +239,18 @@ export function selectExcerptLines(
  * 内容只来自萃取结果与教材原文片段，并在页首明示「未接入模型」。
  */
 export function buildHeuristicLesson(input: HiDocHeuristicLessonInput): string {
-  const { knowledgePoint, textbookTitle, chapterTitle, sourceExcerpt, style, generatedAtLabel } = input;
+  const { knowledgePoint, textbookTitle, chapterTitle, sourceExcerpt, style, generatedAtLabel, fileName } = input;
+  const docx = isHiDocDocx(fileName ?? "");
+  const locator = formatHiDocSourcePage(fileName ?? "", knowledgePoint.sourcePage);
   const excerptLines = selectExcerptLines(sourceExcerpt, knowledgePoint);
   const keyTerms = knowledgePoint.keyTerms.filter((term) => term.trim().length > 0);
   const prerequisites = knowledgePoint.prerequisites.filter((item) => item.trim().length > 0);
 
   const excerptSection = excerptLines.length > 0
     ? excerptLines.map((line) => `  - ${line}`).join("\n")
-    : `  - 未在该页原文中检索到与标题直接匹配的句子，请自行对照教材第 ${knowledgePoint.sourcePage} 页。`;
+    : docx
+      ? "  - 未在原文中检索到与标题直接匹配的句子，请对照教材（页码待确认）。"
+      : `  - 未在该页原文中检索到与标题直接匹配的句子，请自行对照教材第 ${knowledgePoint.sourcePage} 页。`;
 
   const parts: string[] = [
     buildLessonHeader({
@@ -253,6 +261,7 @@ export function buildHeuristicLesson(input: HiDocHeuristicLessonInput): string {
       textbookTitle,
       chapterTitle,
       sourcePage: knowledgePoint.sourcePage,
+      fileName,
       notice: HIDOC_HEURISTIC_LESSON_NOTICE,
     }),
     "## 定义",
@@ -260,7 +269,7 @@ export function buildHeuristicLesson(input: HiDocHeuristicLessonInput): string {
     "",
     "## 要点",
     keyTerms.length > 0 ? `- 关键术语：${keyTerms.join("、")}` : "- 关键术语：教材萃取结果未标注关键术语。",
-    `- 原文摘录（第 ${knowledgePoint.sourcePage} 页附近）：`,
+    docx ? "- 原文摘录（页码待确认）：" : `- 原文摘录（第 ${knowledgePoint.sourcePage} 页附近）：`,
     excerptSection,
     prerequisites.length > 0
       ? `- 先修知识点：${prerequisites.join("、")}`
@@ -268,7 +277,7 @@ export function buildHeuristicLesson(input: HiDocHeuristicLessonInput): string {
     "",
     "## 易错点",
     "未接入模型，无法生成易错点分析；以下为需人工核对的检查项：",
-    `- 定义表述、适用条件与边界请以教材第 ${knowledgePoint.sourcePage} 页原文为准。`,
+    `- 定义表述、适用条件与边界请以教材原文为准（${locator}）。`,
     keyTerms.length > 1
       ? `- 关键术语（${keyTerms.join("、")}）易混淆，请核对各自在原文中的用法。`
       : "- 术语用法请核对原文，不要仅凭记忆使用。",
@@ -282,7 +291,7 @@ export function buildHeuristicLesson(input: HiDocHeuristicLessonInput): string {
           `   参考答案：${keyTerms.join("、")}`,
         ]
       : [
-          "2. 从教材第 " + knowledgePoint.sourcePage + " 页原文中找出 1 个与本题相关的要点并复述。",
+          `2. 从教材原文中找出 1 个与本题相关的要点并复述（${locator}）。`,
           `   参考答案（原文摘录，需自行核对）：${excerptLines[0] ?? "该页原文未检索到匹配句子。"}`,
         ]),
     ...(prerequisites.length > 0

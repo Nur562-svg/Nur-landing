@@ -14,8 +14,12 @@ import {
 import type { MembershipTier } from "@/types/auth";
 import type { HiDocApiFailure, HiDocShelf, HiDocTextbookView } from "@/types/hidoc";
 import { getMembershipTierLabel } from "@/lib/membership";
+import { presentShelfBooks } from "@/lib/design-v3-density";
+import { formatHiDocExtent } from "@/lib/hidoc/source-label";
+import { resolveHiDocGuide } from "@/lib/hidoc/step-guide";
 import { V2Badge } from "@/components/ui/v2/badge";
 import { V2Button } from "@/components/ui/v2/button";
+import { HiDocPathGuide } from "./hi-doc-path-guide";
 import styles from "./hi-doc.module.css";
 
 type HiDocBookshelfProps = {
@@ -55,6 +59,7 @@ export function HiDocBookshelf({ initialShelf, tier }: HiDocBookshelfProps) {
   const [title, setTitle] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState<"upload" | "delete" | "activate" | null>(null);
+  const [shelfExpanded, setShelfExpanded] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const activeTextbooks = shelf.textbooks.filter((textbook) => !textbook.isFrozen);
@@ -154,42 +159,44 @@ export function HiDocBookshelf({ initialShelf, tier }: HiDocBookshelfProps) {
     }
   }
 
+  const activePresentation = presentShelfBooks(activeTextbooks, shelfExpanded);
+  const frozenPresentation = activeTextbooks.length === 0 || shelfExpanded
+    ? presentShelfBooks(frozenTextbooks, shelfExpanded)
+    : { visible: [], hiddenCount: frozenTextbooks.length };
+  const hiddenTotal = activePresentation.hiddenCount + frozenPresentation.hiddenCount;
+
   return (
     <div className={styles.shelfLayout}>
-      <section className={styles.quotaPanel} aria-label="本月教材名额">
-        <div className={styles.quotaCopy}>
-          <p className={styles.quotaLabel}>本月名额 · {shelf.quota.month}</p>
-          <p className={styles.quotaValue}>
-            {shelf.quota.used}
-            <span>/{shelf.quota.limit} 已用</span>
-          </p>
-          <p className={styles.quotaNote}>
-            当前档位 {getMembershipTierLabel(tier)} · 名额仅当月有效，下月 1 日刷新；删除教材立即释放名额。
-          </p>
-        </div>
-        <div className={styles.quotaCells} aria-hidden="true">
-          {Array.from({ length: shelf.quota.limit }, (_, index) => (
-            <span
-              key={index}
-              className={index < shelf.quota.used ? styles.quotaCellUsed : styles.quotaCell}
-            />
-          ))}
-        </div>
-      </section>
+      <HiDocPathGuide
+        guide={resolveHiDocGuide({
+          surface: "shelf",
+          signedIn: true,
+          textbookId: (activeTextbooks[0] ?? frozenTextbooks[0])?.id,
+        })}
+      />
+      <p className={styles.quotaLine} aria-label="本月教材名额">
+        本月名额 {shelf.quota.used}/{shelf.quota.limit} · {shelf.quota.month} · {getMembershipTierLabel(tier)}
+        · 名额仅当月有效，删除即释放。
+      </p>
 
-      <section className={styles.uploadPanel} aria-labelledby="hidoc-upload-title">
+      <section
+        className={`${styles.uploadPanel} ${styles.peerCard}`}
+        id="upload"
+        data-peer-card="upload"
+        aria-labelledby="hidoc-upload-title"
+      >
         <div className={styles.panelHead}>
           <h2 id="hidoc-upload-title">上传教材</h2>
-          <p>文字版 PDF · 单本不超过 1500 页 · 教材仅本人可见</p>
+          <p>文字版 PDF 或 DOCX · 单本不超过 1500 页 · 仅本人可见</p>
         </div>
         <div className={styles.uploadRow}>
           <label className={styles.filePicker}>
             <FileUp aria-hidden="true" size={18} strokeWidth={1.5} />
-            <span className={styles.filePickerText}>{file ? file.name : "选择 PDF 文件"}</span>
+            <span className={styles.filePickerText}>{file ? file.name : "选择 PDF 或 DOCX"}</span>
             <input
               ref={fileInputRef}
               type="file"
-              accept="application/pdf,.pdf"
+              accept="application/pdf,.pdf,application/vnd.openxmlformats-officedocument.wordprocessingml.document,.docx"
               className={styles.fileInput}
               disabled={busy !== null}
               onChange={(event) => setFile(event.target.files?.[0] ?? null)}
@@ -213,7 +220,7 @@ export function HiDocBookshelf({ initialShelf, tier }: HiDocBookshelfProps) {
           </V2Button>
         </div>
         <p className={styles.uploadHint}>
-          上传即检测文字层：扫描版 PDF 会明确拒绝并提示，暂不做 OCR；目录识别与知识点萃取在后续版本开放。
+          上传即提取文字。扫描件、图片和旧版 .doc 会明确拒绝；DOCX 没有印刷页码，位置标为待确认。
         </p>
         {error ? (
           <p className={styles.errorBox} role="alert">
@@ -229,17 +236,22 @@ export function HiDocBookshelf({ initialShelf, tier }: HiDocBookshelfProps) {
           <span>{activeTextbooks.length} 本</span>
         </div>
         {activeTextbooks.length === 0 ? (
-          <p className={styles.emptyState}>本月还没有激活的教材。上传一本文字版 PDF 开始。</p>
+          <p className={styles.emptyState}>本月还没有激活的教材。上传一本文字版 PDF 或 DOCX 开始。</p>
         ) : (
           <ul className={styles.textbookList}>
-            {activeTextbooks.map((textbook) => (
-              <li key={textbook.id} className={styles.textbookCard}>
+            {activePresentation.visible.map(({ book: textbook, compactHide }) => (
+              <li
+                key={textbook.id}
+                className={`${styles.textbookCard} ${styles.peerCard}`}
+                data-peer-card="textbook"
+                data-compact-hide={compactHide ? "true" : undefined}
+              >
                 <div className={styles.textbookMain}>
                   <p className={styles.textbookTitle}>
                     <Link href={`/learn/hi-doc/t/${textbook.id}`}>{textbook.title}</Link>
                   </p>
                   <p className={styles.textbookMeta}>
-                    {textbook.fileName} · {textbook.pageCount} 页 · {formatSize(textbook.sizeBytes)} · 上传于{" "}
+                    {textbook.fileName} · {formatHiDocExtent(textbook.fileName, textbook.pageCount)} · {formatSize(textbook.sizeBytes)} · 上传于{" "}
                     {textbook.createdAt.slice(0, 10)}
                   </p>
                   <V2Badge variant="muted" className={styles.stateBadge}>
@@ -267,7 +279,17 @@ export function HiDocBookshelf({ initialShelf, tier }: HiDocBookshelfProps) {
         )}
       </section>
 
-      {frozenTextbooks.length > 0 ? (
+      {hiddenTotal > 0 ? (
+        <button
+          type="button"
+          className={styles.shelfMore}
+          onClick={() => setShelfExpanded(true)}
+        >
+          其余 {hiddenTotal} 本教材
+        </button>
+      ) : null}
+
+      {frozenPresentation.visible.length > 0 ? (
         <section className={styles.textbookSection} aria-labelledby="hidoc-frozen-title">
           <div className={styles.sectionHead}>
             <h2 id="hidoc-frozen-title">已冻结</h2>
@@ -277,15 +299,20 @@ export function HiDocBookshelf({ initialShelf, tier }: HiDocBookshelfProps) {
             这些教材属于更早的月份（激活月）：教材没有被删除，但需要重新激活才会占用本月名额。
           </p>
           <ul className={styles.textbookList}>
-            {frozenTextbooks.map((textbook) => (
-              <li key={textbook.id} className={`${styles.textbookCard} ${styles.textbookCardFrozen}`}>
+            {frozenPresentation.visible.map(({ book: textbook, compactHide }) => (
+              <li
+                key={textbook.id}
+                className={`${styles.textbookCard} ${styles.textbookCardFrozen} ${styles.peerCard}`}
+                data-peer-card="textbook"
+                data-compact-hide={compactHide ? "true" : undefined}
+              >
                 <div className={styles.textbookMain}>
                   <p className={styles.textbookTitle}>
                     <Snowflake aria-hidden="true" size={15} strokeWidth={1.6} />
                     {textbook.title}
                   </p>
                   <p className={styles.textbookMeta}>
-                    {textbook.fileName} · {textbook.pageCount} 页 · {formatSize(textbook.sizeBytes)} · 激活月{" "}
+                    {textbook.fileName} · {formatHiDocExtent(textbook.fileName, textbook.pageCount)} · {formatSize(textbook.sizeBytes)} · 激活月{" "}
                     {textbook.activeMonth}
                   </p>
                   <V2Badge variant="muted" className={styles.stateBadge}>

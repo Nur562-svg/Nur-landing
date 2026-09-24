@@ -21,10 +21,13 @@ import type {
 } from "@/types/hidoc";
 import { consumeHiDocSse, readHiDocFailure } from "@/lib/hidoc/client-api";
 import { describeHiDocLessonGenerator } from "@/lib/hidoc/lesson-heuristic";
+import { formatHiDocPageRange, formatHiDocSourcePage } from "@/lib/hidoc/source-label";
+import { resolveHiDocGuide } from "@/lib/hidoc/step-guide";
 import { V2Button } from "@/components/ui/v2/button";
 import { HiDocHighlightLayer } from "./hi-doc-highlights";
 import { HiDocMarkdown } from "./hi-doc-markdown";
 import { HiDocNotePanel } from "./hi-doc-note";
+import { HiDocPathGuide } from "./hi-doc-path-guide";
 import styles from "./hi-doc.module.css";
 
 /**
@@ -172,8 +175,17 @@ export function HiDocStudyRoom({ textbookId, chapter, selected }: HiDocStudyRoom
     }
   }
 
+  const guide = resolveHiDocGuide({
+    surface: "study",
+    textbookId,
+    chapterOrder: chapter.chapter.order,
+    hasLesson: Boolean(lesson) || chapter.lessonCount > 0,
+    hasNote: Boolean(chapter.note),
+  });
+
   return (
     <div className={styles.studyLayout}>
+      <HiDocPathGuide guide={guide} />
       <aside className={styles.studyAside} aria-label="知识点列表">
         <div className={styles.studyAsideHead}>
           <h2>知识点</h2>
@@ -182,8 +194,8 @@ export function HiDocStudyRoom({ textbookId, chapter, selected }: HiDocStudyRoom
           </span>
         </div>
         <p className={styles.studyAsideMeta}>
-          第 {chapter.chapterIndex}/{chapter.chapterTotal} 章《{chapter.chapter.title}》· 第{" "}
-          {chapter.chapter.pageStart}–{chapter.chapter.pageEnd} 页 · {statusLabels[chapter.chapter.status]}
+          第 {chapter.chapterIndex}/{chapter.chapterTotal} 章《{chapter.chapter.title}》·{" "}
+          {formatHiDocPageRange(chapter.textbook.fileName, chapter.chapter.pageStart, chapter.chapter.pageEnd)} · {statusLabels[chapter.chapter.status]}
         </p>
 
         {chapter.knowledgePoints.length === 0 ? (
@@ -207,7 +219,7 @@ export function HiDocStudyRoom({ textbookId, chapter, selected }: HiDocStudyRoom
                     <span className={styles.kpNavMain}>
                       <span className={styles.kpNavTitle}>{point.title}</span>
                       <span className={styles.kpNavMeta}>
-                        第 {point.sourcePage} 页 · {point.hasLesson ? "已有讲义" : "未生成讲义"}
+                        {formatHiDocSourcePage(chapter.textbook.fileName, point.sourcePage)} · {point.hasLesson ? "已有讲义" : "未生成讲义"}
                       </span>
                     </span>
                   </Link>
@@ -223,7 +235,7 @@ export function HiDocStudyRoom({ textbookId, chapter, selected }: HiDocStudyRoom
           <p className={styles.kicker}>知识点 {String(knowledgePoint.order).padStart(2, "0")}</p>
           <h2 className={styles.studyKpTitle}>{knowledgePoint.title}</h2>
           <p className={styles.studyKpMeta}>
-            教材第 {knowledgePoint.sourcePage} 页
+            {formatHiDocSourcePage(chapter.textbook.fileName, knowledgePoint.sourcePage)}
             {knowledgePoint.keyTerms.length > 0 ? ` · 术语：${knowledgePoint.keyTerms.join("、")}` : ""}
             {knowledgePoint.prerequisites.length > 0
               ? ` · 先修：${knowledgePoint.prerequisites.join("、")}`
@@ -328,6 +340,7 @@ export function HiDocStudyRoom({ textbookId, chapter, selected }: HiDocStudyRoom
           )}
         </section>
 
+        <div id="highlights">
         <HiDocHighlightLayer
           kpId={knowledgePoint.id}
           lessonGeneratedAt={lesson?.generatedAt ?? null}
@@ -335,7 +348,24 @@ export function HiDocStudyRoom({ textbookId, chapter, selected }: HiDocStudyRoom
           bodyRef={lessonBodyRef}
           regenerating={generating}
         />
+        </div>
 
+        <HiDocNotePanel
+          textbookId={textbookId}
+          textbookTitle={chapter.textbook.title}
+          chapter={chapter.chapter}
+          initialNote={chapter.note}
+          lessonCount={chapter.lessonCount}
+          knowledgePointCount={chapter.knowledgePoints.length}
+        />
+
+        <p className={styles.footNote}>
+          Hi doc 生成物为 AI 产品内容，不挂官方课的证据分级（可关联、帮助理解、不可直接等同只属于官方课）；知识点为模型萃取草稿。DOCX 出处保持待确认。
+          返回 <Link href={`/learn/hi-doc/t/${textbookId}`}>教材详情</Link> 或{" "}
+          <Link href="/learn/hi-doc">Hi doc 书架</Link>。
+        </p>
+      </section>
+      <aside className={styles.studyAgent} aria-label="Hi doc 讲解 Agent">
         <section className={styles.chatPanel} aria-labelledby="hidoc-chat-title">
           <div className={styles.panelHead}>
             <h2 id="hidoc-chat-title">
@@ -434,21 +464,7 @@ export function HiDocStudyRoom({ textbookId, chapter, selected }: HiDocStudyRoom
           </form>
         </section>
 
-        <HiDocNotePanel
-          textbookId={textbookId}
-          textbookTitle={chapter.textbook.title}
-          chapter={chapter.chapter}
-          initialNote={chapter.note}
-          lessonCount={chapter.lessonCount}
-          knowledgePointCount={chapter.knowledgePoints.length}
-        />
-
-        <p className={styles.footNote}>
-          Hi doc 生成物为 AI 产品内容，不挂官方课的证据分级；知识点为模型萃取草稿，页码可溯源。
-          返回 <Link href={`/learn/hi-doc/t/${textbookId}`}>教材详情</Link> 或{" "}
-          <Link href="/learn/hi-doc">Hi doc 书架</Link>。
-        </p>
-      </section>
+      </aside>
     </div>
   );
 }

@@ -12,8 +12,9 @@ export type ShellEntry = {
   href: string;
 };
 
-/** 主入口（与 /learn 现有三入口一致 + 会员）。 */
+/** 主入口：学习主环为默认工作台；Hi doc / 题库为从属入口（IA 拍板 2026-09-21）。 */
 export const PRIMARY_ENTRIES: readonly ShellEntry[] = [
+  { id: "learn", label: "学习主环", href: "/learn" },
   { id: "hidoc", label: "Hi doc", href: "/learn/hi-doc" },
   { id: "courses", label: "官方课程", href: "/courses" },
   { id: "question-bank", label: "题库", href: "/question-bank" },

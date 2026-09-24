@@ -5,6 +5,8 @@ import { prisma } from "@/lib/prisma";
 import type { MembershipTier } from "@/types/auth";
 import type { HiDocErrorCode, HiDocShelf, HiDocTextbookView } from "@/types/hidoc";
 import { probeHiDocPdf } from "./pdf-text-layer";
+import { readHiDocSource } from "./source-intake";
+import { HIDOC_DOCX_PAGE_COUNT_PLACEHOLDER, isHiDocDocx } from "./source-label";
 import {
   HIDOC_MAX_FILE_BYTES,
   HIDOC_MAX_PAGE_COUNT,
@@ -88,16 +90,19 @@ export async function uploadHiDocTextbook(
   // 注意：pdfjs 探测会 transfer/detach 传入的 ArrayBuffer，字节数必须在探测前固定下来。
   const sizeBytes = bytes.byteLength;
 
-  if (!fileName.toLowerCase().endsWith(".pdf")) {
+  const docx = isHiDocDocx(fileName);
+  const pdf = fileName.toLowerCase().endsWith(".pdf");
+  if (!docx && !pdf) {
+    const refused = await readHiDocSource(fileName, bytes.slice());
     return {
       ok: false,
       status: 422,
-      code: "invalid-file",
-      message: "目前只支持文字版 PDF（.pdf）；Word 与图片教材在课题工作坊（M6）开放。",
+      code: refused.ok ? "invalid-file" : refused.code,
+      message: refused.ok ? "只接受文字版 PDF（.pdf）或 Word（.docx）。" : refused.message,
     };
   }
   if (sizeBytes === 0) {
-    return { ok: false, status: 422, code: "invalid-file", message: "上传的 PDF 是空文件。" };
+    return { ok: false, status: 422, code: "invalid-file", message: "上传的文件是空的。" };
   }
   if (sizeBytes > HIDOC_MAX_FILE_BYTES) {
     const limitMb = Math.round(HIDOC_MAX_FILE_BYTES / (1024 * 1024));
@@ -136,6 +141,8 @@ export async function uploadHiDocTextbook(
 
   const textbookId = randomUUID();
   const storageKey = buildHiDocStorageKey(userId, textbookId, fileName);
+  // mammoth/pdfjs may detach the buffer they receive. Keep an independent copy for DOCX.
+  const docxBytes = docx ? bytes.slice() : null;
   try {
     await storage.putObject(storageKey, bytes);
   } catch (error) {
@@ -148,35 +155,46 @@ export async function uploadHiDocTextbook(
     };
   }
 
-  const probe = await probeHiDocPdf(bytes);
-  if (!probe.ok) {
-    await removeStoredObjectQuietly(storage, storageKey);
-    if (probe.code === "probe-unavailable") {
-      // 基础设施问题，不误报成用户文件问题
-      return { ok: false, status: 500, code: "server-error", message: probe.message };
+  let pageCount = HIDOC_DOCX_PAGE_COUNT_PLACEHOLDER;
+  let hasTextLayer = true;
+  if (docx) {
+    const read = await readHiDocSource(fileName, docxBytes ?? bytes.slice());
+    if (!read.ok) {
+      await removeStoredObjectQuietly(storage, storageKey);
+      return { ok: false, status: 422, code: read.code, message: read.message };
     }
-    return { ok: false, status: 422, code: "pdf-unreadable", message: probe.message };
-  }
-  if (probe.pageCount > HIDOC_MAX_PAGE_COUNT) {
-    await removeStoredObjectQuietly(storage, storageKey);
-    return {
-      ok: false,
-      status: 422,
-      code: "page-limit",
-      message: `PDF 共 ${probe.pageCount} 页，超过单本 ${HIDOC_MAX_PAGE_COUNT} 页上限；请拆分后上传。`,
-    };
-  }
-  if (!probe.hasTextLayer) {
-    await removeStoredObjectQuietly(storage, storageKey);
-    return {
-      ok: false,
-      status: 422,
-      code: "unsupported-scan",
-      message: "未检测到文字层：暂不支持扫描版 PDF。请上传带文字层的电子版 PDF（扫描件 OCR 后续开放）。",
-    };
+  } else {
+    const probe = await probeHiDocPdf(bytes);
+    if (!probe.ok) {
+      await removeStoredObjectQuietly(storage, storageKey);
+      if (probe.code === "probe-unavailable") {
+        return { ok: false, status: 500, code: "server-error", message: probe.message };
+      }
+      return { ok: false, status: 422, code: "pdf-unreadable", message: probe.message };
+    }
+    if (probe.pageCount > HIDOC_MAX_PAGE_COUNT) {
+      await removeStoredObjectQuietly(storage, storageKey);
+      return {
+        ok: false,
+        status: 422,
+        code: "page-limit",
+        message: `PDF 共 ${probe.pageCount} 页，超过单本 ${HIDOC_MAX_PAGE_COUNT} 页上限；请拆分后上传。`,
+      };
+    }
+    if (!probe.hasTextLayer) {
+      await removeStoredObjectQuietly(storage, storageKey);
+      return {
+        ok: false,
+        status: 422,
+        code: "unsupported-scan",
+        message: "未检测到文字层：暂不支持扫描版 PDF。请上传带文字层的电子版 PDF 或 DOCX。",
+      };
+    }
+    pageCount = probe.pageCount;
+    hasTextLayer = probe.hasTextLayer;
   }
 
-  const title = input.title?.trim() || fileName.replace(/\.pdf$/i, "");
+  const title = input.title?.trim() || fileName.replace(/\.(pdf|docx)$/i, "");
 
   let created: HiDocTextbookRow;
   try {
@@ -195,8 +213,8 @@ export async function uploadHiDocTextbook(
           fileName,
           storageKey,
           sizeBytes,
-          pageCount: probe.pageCount,
-          hasTextLayer: probe.hasTextLayer,
+          pageCount,
+          hasTextLayer,
           status: "uploaded",
           activeMonth: currentMonth,
         },

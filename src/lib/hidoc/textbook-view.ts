@@ -20,7 +20,7 @@ export type HiDocTextbookRow = {
   _count?: { chapters: number };
 };
 
-const tocStrategies: readonly HiDocTocStrategy[] = ["outline", "toc-page", "model", "none"];
+const tocStrategies: readonly HiDocTocStrategy[] = ["outline", "toc-page", "model", "none", "docx-heading"];
 
 export function parseHiDocRecognition(value: unknown): HiDocTocRecognitionView | null {
   if (typeof value !== "object" || value === null) {

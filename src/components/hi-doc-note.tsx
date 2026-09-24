@@ -108,7 +108,7 @@ export function HiDocNotePanel({
   }
 
   return (
-    <section className={styles.notePanel} aria-labelledby="hidoc-note-title">
+    <section className={styles.notePanel} id="note" aria-labelledby="hidoc-note-title">
       <div className={styles.panelHead}>
         <h2 id="hidoc-note-title">
           <NotebookPen aria-hidden="true" size={17} strokeWidth={1.6} /> 学霸笔记

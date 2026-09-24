@@ -100,7 +100,7 @@ function formatGeneratedAtLabel(date: Date): string {
 export async function generateHiDocChapterNote(input: HiDocNoteRequest): Promise<HiDocNoteResult> {
   const textbook = await prisma.hiDocTextbook.findFirst({
     where: { id: input.textbookId, userId: input.userId, deletedAt: null },
-    select: { id: true, title: true },
+    select: { id: true, title: true, fileName: true },
   });
   if (!textbook) {
     return { ok: false, status: 404, code: "not-found", message: "教材不存在或已删除。" };
@@ -192,6 +192,7 @@ export async function generateHiDocChapterNote(input: HiDocNoteRequest): Promise
     chapterTitle: chapter.title,
     pageStart: chapter.pageStart,
     pageEnd: chapter.pageEnd,
+    fileName: textbook.fileName,
     points,
   };
 

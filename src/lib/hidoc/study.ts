@@ -77,6 +77,7 @@ export async function getHiDocChapterStudy(
         id: textbookView.id,
         title: textbookView.title,
         pageCount: textbookView.pageCount,
+        fileName: textbookView.fileName,
       },
       chapter,
       chapterIndex: chapters.findIndex((row) => row.order === chapterOrder) + 1,

@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { ArrowLeft, ArrowRight, BookOpen, FileQuestion, GraduationCap } from "lucide-react";
 import {
+  courseHasAuthoredLesson,
   flattenCourseAssessmentItems,
   selectAssessmentItemsForChapter,
   selectQuestionBankChapterViews,
@@ -18,7 +19,7 @@ type CourseLandingProps = {
   course: CourseDefinition;
 };
 
-/** 通用课程落地页：题库课程（无学习路径）与仅有少量学习内容的课程共用。 */
+/** 通用课程落地页：无课时「仅刷题」课与仅有少量学习内容的课程共用。 */
 export function CourseLanding({ course }: CourseLandingProps) {
   const chapters = selectQuestionBankChapterViews(course);
   const chapterData = chapters.map((chapter) => ({
@@ -31,6 +32,7 @@ export function CourseLanding({ course }: CourseLandingProps) {
     || course.knowledgePoints.some((point) => point.lesson !== null)
     || course.cases.length > 0;
   const hasBlueprint = course.examBlueprint.rows.length > 0;
+  const drillOnly = !courseHasAuthoredLesson(course);
 
   return (
     <div className={styles.container}>
@@ -45,7 +47,19 @@ export function CourseLanding({ course }: CourseLandingProps) {
           {course.classification ? ` · ${course.classification}` : ""}
         </p>
         <h1 className={styles.title}>{course.title}</h1>
-        <p className={styles.subtitle}>{course.description}</p>
+        {drillOnly ? (
+          <p className={styles.drillOnlyBadge} role="status">
+            仅刷题 · 无知识点课时 · 不构成学习闭环
+          </p>
+        ) : null}
+        {drillOnly ? (
+          <p className={styles.subtitle}>
+            {course.description}
+            {" "}本课按章节刷题与模考，没有完整的知识点—写作—案例闭环。
+          </p>
+        ) : (
+          <p className={styles.subtitle}>{course.description}</p>
+        )}
       </header>
 
       {hasLearningContent ? (

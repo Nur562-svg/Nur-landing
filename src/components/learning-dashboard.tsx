@@ -10,8 +10,6 @@ import {
   ChevronUp,
   CircleX,
   FileStack,
-  Library,
-  ListChecks,
   PenLine,
   X,
 } from "lucide-react";
@@ -38,8 +36,9 @@ import {
   downloadLearnerExport,
 } from "@/lib/export-learner-data";
 import type { UserQuotas } from "@/lib/quotas";
-import { getMembershipTierLabel } from "@/lib/membership";
+import { getMembershipTierLabel, normalizeMembershipTier } from "@/lib/membership";
 import { PLATFORM_DOCK_PROPS, useNurAgentDockProps } from "@/lib/agent-dock-props";
+import { learnPeerCompactHide, type LearnPeerCardId } from "@/lib/design-v3-density";
 import styles from "./learning-dashboard.module.css";
 
 const PROFILE_STORAGE_KEY = "nur-learn:profile:v1";
@@ -122,6 +121,13 @@ function computeWeekDays(): { day: string; date: string; today: boolean }[] {
       today: d.toDateString() === today.toDateString(),
     };
   });
+}
+
+function peerCardProps(id: LearnPeerCardId) {
+  return {
+    "data-peer-card": id,
+    "data-compact-hide": learnPeerCompactHide(id) ? "true" : undefined,
+  };
 }
 
 const reasoningSteps = [
@@ -392,9 +398,11 @@ export function LearningDashboard({ courses }: LearningDashboardProps) {
           <Link href="/courses">
             课程
           </Link>
-          <Link href="/learn/course-builder">
-            建课
-          </Link>
+          {normalizeMembershipTier(user?.membershipTier) === "max" ? (
+            <Link href="/learn/course-builder">
+              建课
+            </Link>
+          ) : null}
           <Link href="/learn/hi-doc/w">
             工作坊
           </Link>
@@ -685,45 +693,9 @@ export function LearningDashboard({ courses }: LearningDashboardProps) {
           <p className={styles.eyebrow}>本周学习&nbsp; · &nbsp;{todayLabel}</p>
           <h1 id="page-title">从证据开始辨证</h1>
 
-          <section className={styles.entrySection} aria-label="学习入口">
-            <p className={styles.sectionLabel}>三条学习主线</p>
-            <div className={styles.entryGrid}>
-              <Link className={styles.entryCard} href="/courses">
-                <span className={styles.entryIcon}>
-                  <Library aria-hidden="true" size={22} strokeWidth={1.5} />
-                </span>
-                <span className={styles.entryCopy}>
-                  <strong>官方课程学习闭环</strong>
-                  <small>证据、双视角、写作与案例训练；试点课免费。</small>
-                </span>
-                <ArrowRight aria-hidden="true" size={18} strokeWidth={1.5} />
-              </Link>
-              <Link className={styles.entryCard} href="/learn/hi-doc">
-                <span className={styles.entryIcon}>
-                  <FileStack aria-hidden="true" size={22} strokeWidth={1.5} />
-                </span>
-                <span className={styles.entryCopy}>
-                  <strong>Hi doc</strong>
-                  <small>上传教材建书架：目录识别、讲义追问、划重点与课题工作坊。</small>
-                </span>
-                <ArrowRight aria-hidden="true" size={18} strokeWidth={1.5} />
-              </Link>
-              <Link className={styles.entryCard} href="/question-bank">
-                <span className={styles.entryIcon}>
-                  <ListChecks aria-hidden="true" size={22} strokeWidth={1.5} />
-                </span>
-                <span className={styles.entryCopy}>
-                  <strong>传统刷题题库</strong>
-                  <small>跨课程题目聚合浏览与训练。</small>
-                </span>
-                <ArrowRight aria-hidden="true" size={18} strokeWidth={1.5} />
-              </Link>
-            </div>
-          </section>
-
           <div className={styles.caseSection}>
             <p className={styles.sectionLabel}>当前案例</p>
-            <blockquote className={styles.caseCard}>
+            <blockquote className={`${styles.caseCard} ${styles.peerCard}`} {...peerCardProps("case")}>
               女，22岁。近一周食欲不振，脘腹胀满，便溏，神疲乏力。
             </blockquote>
           </div>
@@ -736,29 +708,31 @@ export function LearningDashboard({ courses }: LearningDashboardProps) {
               </span>
             </div>
 
-            <div className={styles.reasoningFlow}>
+            <div className={styles.stepRail} role="tablist" aria-label="推理步骤">
               {reasoningSteps.map((step, index) => (
-                <div className={styles.flowItem} key={step.index}>
-                  <button
-                    className={`${styles.reasoningCard} ${index === activeStep ? styles.reasoningCardActive : ""}`}
-                    type="button"
-                    onClick={() => {
-                      setCaseCompleted(false);
-                      setActiveStep(index);
-                    }}
-                    aria-current={index === activeStep ? "step" : undefined}
-                  >
-                    <span className={styles.stepIndex}>{step.index}</span>
-                    <strong>{step.title}</strong>
-                    <span className={styles.cardRule} aria-hidden="true" />
-                    <small>{step.description}</small>
-                  </button>
-                  {index < reasoningSteps.length - 1 ? (
-                    <ArrowRight className={styles.flowArrow} aria-hidden="true" size={29} strokeWidth={1.35} />
-                  ) : null}
-                </div>
+                <button
+                  key={step.index}
+                  type="button"
+                  role="tab"
+                  aria-selected={index === activeStep}
+                  onClick={() => {
+                    setCaseCompleted(false);
+                    setActiveStep(index);
+                  }}
+                >
+                  {step.index} {step.title}
+                </button>
               ))}
             </div>
+            <article
+              className={`${styles.reasoningCard} ${styles.peerCard}`}
+              {...peerCardProps("reasoning")}
+            >
+              <span className={styles.stepIndex}>{reasoningSteps[activeStep].index}</span>
+              <strong>{reasoningSteps[activeStep].title}</strong>
+              <span className={styles.cardRule} aria-hidden="true" />
+              <small>{reasoningSteps[activeStep].description}</small>
+            </article>
 
             <button className={styles.primaryAction} type="button" onClick={continueReasoning}>
               <span>{primaryActionLabel}</span>
@@ -768,7 +742,7 @@ export function LearningDashboard({ courses }: LearningDashboardProps) {
 
           <section className={styles.dualLens} id="dual-lens" aria-labelledby="dual-lens-title">
             <h2 id="dual-lens-title">双视角理解线索</h2>
-            <div className={styles.dualLensCard}>
+            <div className={`${styles.dualLensCard} ${styles.peerCard}`} {...peerCardProps("dual-lens")}>
               <article>
                 <span className={`${styles.lensMark} ${styles.tcmMark}`}>中</span>
                 <div>
@@ -790,7 +764,7 @@ export function LearningDashboard({ courses }: LearningDashboardProps) {
         <aside className={styles.progressColumn} aria-labelledby="progress-title">
           <h2 id="progress-title">本周进度</h2>
 
-          <div className={styles.progressItem}>
+          <div className={`${styles.progressItem} ${styles.peerCard}`} {...peerCardProps("progress-week")}>
             <span className={styles.progressIcon}>
               <CalendarDays aria-hidden="true" size={25} strokeWidth={1.55} />
             </span>
@@ -803,7 +777,7 @@ export function LearningDashboard({ courses }: LearningDashboardProps) {
             </div>
           </div>
 
-          <Link href="/wrong-questions" className={styles.progressItem} id="review">
+          <Link href="/wrong-questions" className={`${styles.progressItem} ${styles.peerCard}`} id="review" {...peerCardProps("progress-review")}>
             <span className={styles.progressIcon}>
               <CircleX aria-hidden="true" size={25} strokeWidth={1.55} />
             </span>
@@ -818,26 +792,23 @@ export function LearningDashboard({ courses }: LearningDashboardProps) {
             </div>
           </Link>
 
-          <div className={styles.progressItem}>
-            <span className={styles.progressIcon}>
-              <PenLine aria-hidden="true" size={25} strokeWidth={1.55} />
-            </span>
-            <div>
-              <p><strong>下一组：名词解释默写</strong></p>
-              <small>完成当前案例后开始</small>
-            </div>
-          </div>
+          <p className={styles.progressNote}>
+            <PenLine aria-hidden="true" size={16} strokeWidth={1.6} />
+            下一组：名词解释默写。完成当前案例后开始。
+          </p>
 
-          <Link className={styles.builderEntry} href="/learn/course-builder">
-            <span className={styles.progressIcon}>
-              <FileStack aria-hidden="true" size={25} strokeWidth={1.55} />
-            </span>
-            <span>
-              <strong>材料建课</strong>
-              <small>Nur learn 正努力实现此功能中</small>
-            </span>
-            <ArrowRight aria-hidden="true" size={18} strokeWidth={1.5} />
-          </Link>
+          {normalizeMembershipTier(user?.membershipTier) === "max" ? (
+            <Link className={styles.builderEntry} href="/learn/course-builder">
+              <span className={styles.progressIcon}>
+                <FileStack aria-hidden="true" size={25} strokeWidth={1.55} />
+              </span>
+              <span>
+                <strong>材料建课</strong>
+                <small>Max 专属 · 材料到课程草稿</small>
+              </span>
+              <ArrowRight aria-hidden="true" size={18} strokeWidth={1.5} />
+            </Link>
+          ) : null}
 
           <button
             className={styles.planToggle}

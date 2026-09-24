@@ -2,6 +2,8 @@ import "server-only";
 
 import { buildChapterModelText } from "./extraction-heuristic";
 import { openHiDocPdf, readHiDocPdfPageRange } from "./pdf-document";
+import { isHiDocDocx } from "./source-label";
+import { readHiDocSource, sliceDocxChapter } from "./source-intake";
 import { getHiDocStorage } from "./storage";
 import { pdfTextItemsToLines } from "./toc-heuristic";
 
@@ -20,11 +22,13 @@ export const HIDOC_LESSON_EXCERPT_PAGE_SPAN = 1;
 export const HIDOC_EXCERPT_MIN_CHARS = 40;
 
 export type HiDocSourceExcerptResult =
-  | { ok: true; excerpt: string; pages: number[] }
+  | { ok: true; excerpt: string; pages: number[]; locatorLabel: string }
   | { ok: false; message: string };
 
 export async function readHiDocKnowledgePointExcerpt(input: {
   storageKey: string;
+  fileName?: string;
+  chapterTitle?: string;
   sourcePage: number;
   chapterPageStart: number;
   chapterPageEnd: number;
@@ -35,6 +39,19 @@ export async function readHiDocKnowledgePointExcerpt(input: {
   } catch (error) {
     console.error("[hidoc] 读取教材文件失败", error);
     return { ok: false, message: "教材文件读取失败，请稍后重试。" };
+  }
+
+  if (isHiDocDocx(input.fileName ?? "")) {
+    const read = await readHiDocSource(input.fileName ?? "textbook.docx", bytes.slice());
+    if (!read.ok) {
+      return { ok: false, message: read.message };
+    }
+    const body = sliceDocxChapter(read.html, input.chapterTitle ?? "").trim();
+    const excerpt = `【页码待确认】\n${body}`.slice(0, HIDOC_LESSON_EXCERPT_MAX_CHARS);
+    if (excerpt.replace(/\s+/g, "").length < HIDOC_EXCERPT_MIN_CHARS) {
+      return { ok: false, message: "DOCX 文字过少，无法作为讲义依据。页码待确认。" };
+    }
+    return { ok: true, excerpt, pages: [], locatorLabel: "页码待确认" };
   }
 
   const runtime = await openHiDocPdf(bytes);
@@ -57,7 +74,13 @@ export async function readHiDocKnowledgePointExcerpt(input: {
         message: `第 ${fromPage}–${toPage} 页的文字层内容过少，无法作为讲义依据。`,
       };
     }
-    return { ok: true, excerpt: text, pages: pages.map((page) => page.pageNumber) };
+    const pagesRead = pages.map((page) => page.pageNumber);
+    return {
+      ok: true,
+      excerpt: text,
+      pages: pagesRead,
+      locatorLabel: `第 ${pagesRead.join("、")} 页`,
+    };
   } catch (error) {
     console.error("[hidoc] 读取 PDF 文字层失败", error);
     return { ok: false, message: "PDF 文字层读取失败，请稍后重试。" };

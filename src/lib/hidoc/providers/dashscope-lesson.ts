@@ -6,6 +6,7 @@ import {
   type HiDocLessonProvider,
 } from "../lesson-provider";
 import { HIDOC_LESSON_SELF_TEST_COUNT, HIDOC_LESSON_STYLE_LABELS } from "../lesson-heuristic";
+import { isHiDocDocx } from "../source-label";
 import { streamDashScopeChatCompletion } from "./dashscope-stream";
 
 /**
@@ -41,7 +42,9 @@ function buildPrompt(input: HiDocLessonModelInput): string {
     `讲解风格：${HIDOC_LESSON_STYLE_LABELS[input.style]}。`,
     "约束：",
     "- 只能使用给定原文片段中的信息；片段未覆盖的内容，写「教材本页未展开」，不得补充教材外知识。",
-    "- 引用位置时写清页码（如「第 12 页」），不得编造页码或声称教师强调过某内容。",
+    isHiDocDocx(input.fileName ?? "")
+      ? "- 这份教材没有印刷页码。引用时只写「页码待确认」，不得写成「第 N 页」，也不得声称教师强调过某内容。"
+      : "- 引用位置时写清页码（如「第 12 页」），不得编造页码或声称教师强调过某内容。",
     "- 中医与现代医学表述分别说明，不要直接等同。",
     `知识点信息：${JSON.stringify({
       textbookTitle: input.textbookTitle,
@@ -50,7 +53,7 @@ function buildPrompt(input: HiDocLessonModelInput): string {
       description: input.knowledgePoint.description,
       keyTerms: input.knowledgePoint.keyTerms,
       prerequisites: input.knowledgePoint.prerequisites,
-      sourcePage: input.knowledgePoint.sourcePage,
+      sourcePage: isHiDocDocx(input.fileName ?? "") ? "页码待确认" : input.knowledgePoint.sourcePage,
     })}`,
     `教材原文片段（引用页码以此为准）：${input.sourceExcerpt}`,
   ].join("\n");

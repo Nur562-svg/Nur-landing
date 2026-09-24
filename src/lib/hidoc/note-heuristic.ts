@@ -1,6 +1,7 @@
 import type { HiDocHighlightColor, HiDocLessonGenerator } from "@/types/hidoc";
 import { parseHiDocMarkdown } from "./lesson-markdown";
 import { describeHiDocLessonGenerator, HIDOC_LESSON_STYLE_LABELS } from "./lesson-heuristic";
+import { formatHiDocPageRange, formatHiDocSourcePage } from "./source-label";
 
 /**
  * Hi doc 学霸笔记规则层（纯函数，客户端可安全引用）：
@@ -47,6 +48,8 @@ export type HiDocNoteContext = {
   chapterTitle: string;
   pageStart: number;
   pageEnd: number;
+  /** 有文件名且为 DOCX 时，页码范围与知识点出处都写「页码待确认」。 */
+  fileName?: string;
   points: HiDocNotePoint[];
 };
 
@@ -182,7 +185,7 @@ export function buildHiDocNoteModelInput(context: HiDocNoteContext): {
       textbookTitle: context.textbookTitle,
       chapterTitle: context.chapterTitle,
       chapterPosition: `第 ${context.chapterOrder}/${context.chapterTotal} 章`,
-      pageRange: `第 ${context.pageStart}–${context.pageEnd} 页`,
+      pageRange: formatHiDocPageRange(context.fileName ?? "", context.pageStart, context.pageEnd),
       points,
       hasAnyLesson: context.points.some((point) => point.lessonMarkdown !== null),
       hasAnyConversation: context.points.some((point) => point.questions.length > 0),
@@ -271,7 +274,7 @@ export function buildHiDocNoteHeader(input: {
     "",
     `> 生成方式：${describeHiDocLessonGenerator(input.generator)}`,
     `> 风格：${HIDOC_LESSON_STYLE_LABELS["zh-primary"]} · 生成时间：${input.generatedAtLabel}`,
-    `> 教材：《${context.textbookTitle}》· 第 ${context.chapterOrder}/${context.chapterTotal} 章 · 第 ${context.pageStart}–${context.pageEnd} 页`,
+    `> 教材：《${context.textbookTitle}》· 第 ${context.chapterOrder}/${context.chapterTotal} 章 · ${formatHiDocPageRange(context.fileName ?? "", context.pageStart, context.pageEnd)}`,
     `> ${input.notice}`,
     "",
   ].join("\n");
@@ -295,10 +298,10 @@ export function buildHeuristicHiDocNote(input: HiDocHeuristicNoteInput): string 
   const lessonCount = points.filter((point) => point.lessonMarkdown !== null).length;
 
   const overviewLines = [
-    `本章覆盖教材第 ${context.pageStart}–${context.pageEnd} 页，共 ${points.length} 个知识点，其中 ${lessonCount} 个已生成讲义。`,
+    `本章覆盖教材${formatHiDocPageRange(context.fileName ?? "", context.pageStart, context.pageEnd)}，共 ${points.length} 个知识点，其中 ${lessonCount} 个已生成讲义。`,
     ...points.map(
       (point) =>
-        `- ${String(point.order).padStart(2, "0")} ${point.title}（第 ${point.sourcePage} 页${
+        `- ${String(point.order).padStart(2, "0")} ${point.title}（${formatHiDocSourcePage(context.fileName ?? "", point.sourcePage)}${
           point.lessonMarkdown ? "" : " · 未生成讲义"
         }）`,
     ),

@@ -1,5 +1,6 @@
 import type { HiDocChatMessage, HiDocLessonStyle } from "@/types/hidoc";
 import { HIDOC_LESSON_STYLE_LABELS } from "./lesson-heuristic";
+import { formatHiDocSourcePage, isHiDocDocx } from "./source-label";
 import { HIDOC_CHAT_MESSAGE_MAX_CHARS, trimHiDocChatHistory } from "./conversation";
 
 /**
@@ -22,6 +23,7 @@ export type HiDocChatContext = {
   chapterKnowledgePointTitles: readonly string[];
   lessonMarkdown: string | null;
   sourceExcerpt: string | null;
+  fileName?: string;
   style: HiDocLessonStyle;
 };
 
@@ -41,6 +43,8 @@ function clip(text: string, maxChars: number): string {
 
 export function buildHiDocChatSystemPrompt(context: HiDocChatContext): string {
   const knowledgePoint = context.knowledgePoint;
+  const docx = isHiDocDocx(context.fileName ?? "");
+  const locator = formatHiDocSourcePage(context.fileName ?? "", knowledgePoint.sourcePage);
   const excerpt = context.sourceExcerpt
     ? clip(context.sourceExcerpt, HIDOC_CHAT_EXCERPT_MAX_CHARS)
     : "（未取得本知识点的教材原文片段）";
@@ -49,19 +53,22 @@ export function buildHiDocChatSystemPrompt(context: HiDocChatContext): string {
     : "（该知识点尚未生成讲义）";
 
   return [
-    "你是 NUR LEARN「Hi doc」里针对这份用户私有教材的讲解助教，正在讲解一个具体知识点。",
-    "边界规则：",
-    "- 你是 AI 讲解助手，不是任课教师：不代替教师评分，不预测考试分数。",
+    "你是 NUR LEARN「Hi doc」里的学习搭档（语气：生动、有人味、像 Grok——直接、机敏、偶尔一点幽默，但不油腻）。",
+    "你正在陪学生啃这份用户私有教材的一个具体知识点：先把话说清楚，再把原文钉死。",
+    "边界规则（硬约束，幽默也不能破）：",
+    "- 你是 AI 学习搭档，不是任课教师：不代替教师评分，不预测考试分数。",
     "- 不做临床诊断、不给个体化医疗建议；学生问「这个诊断对不对」时按教材原文解释结构，不做临床判断。",
-    "- 中医与现代医学表述分别说明，不要直接等同；不确定的地方明确说不确定。",
-    "- 回答优先依据下方提供的教材原文片段与讲义；超出该范围时，在回答开头标注「以下为通用医学知识，非本教材内容」。",
-    `- 讲解风格：${HIDOC_LESSON_STYLE_LABELS[context.style]}；引用教材时写清页码（如「第 ${knowledgePoint.sourcePage} 页」）。`,
-    "- 回答使用中文，简洁、结构清晰；可以用小标题与短列表，但不要使用表格或代码块；不要输出空泛鼓励语。",
+    "- 中医与现代医学表述分别说明，不要直接等同；不确定就直说不确定。",
+    "- 回答必须回源：优先依据下方教材原文片段与讲义；超出范围时，在回答开头标注「以下为通用医学知识，非本教材内容」。",
+    docx
+      ? `- 讲解风格：${HIDOC_LESSON_STYLE_LABELS[context.style]}；这份教材没有印刷页码，引用时写「页码待确认」，不得写成「第 N 页」。`
+      : `- 讲解风格：${HIDOC_LESSON_STYLE_LABELS[context.style]}；引用教材时写清页码（如「${locator}」）。`,
+    "- 回答使用中文：可以说人话、用短比喻帮助学生记住，但禁止空泛鸡汤；可用小标题与短列表，不要表格或代码块。",
     "- 不得声称教师强调过某内容，也不得编造教材页码。",
     "",
     `教材：《${context.textbookTitle}》`,
     `章节：${context.chapterTitle}`,
-    `当前知识点：${knowledgePoint.title}（教材第 ${knowledgePoint.sourcePage} 页）`,
+    `当前知识点：${knowledgePoint.title}（${locator}）`,
     `知识点说明：${knowledgePoint.description}`,
     knowledgePoint.keyTerms.length > 0 ? `关键术语：${knowledgePoint.keyTerms.join("、")}` : "关键术语：（未标注）",
     knowledgePoint.prerequisites.length > 0
@@ -69,7 +76,9 @@ export function buildHiDocChatSystemPrompt(context: HiDocChatContext): string {
       : "先修知识点：（未标注）",
     `本章知识点清单：${context.chapterKnowledgePointTitles.join("；") || "（本章暂无其它知识点）"}`,
     "",
-    "本知识点教材原文片段（带【PDF 第 X 页】标记，引用时以这里的页码为准）：",
+    docx
+      ? "本知识点教材原文片段（页码待确认，不要编造页码）："
+      : "本知识点教材原文片段（带【PDF 第 X 页】标记，引用时以这里的页码为准）：",
     excerpt,
     "",
     "本知识点讲义（如已生成）：",

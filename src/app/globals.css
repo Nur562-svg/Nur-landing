@@ -308,6 +308,15 @@ button:not(.icon-only-large),
   --v2-radius-xl: 20px;
   --v2-radius-2xl: 24px;
   --v2-radius-full: 9999px;
+  /* v3 workspace surfaces: 12px cards, transparent border, one light shadow, 14/1.5 body, Songti titles ≥24px */
+  --v3-card-radius: 12px;
+  --v3-card-border: transparent;
+  --v3-card-shadow: 0 1px 3px 0px rgba(0, 0, 0, 0.05);
+  --v3-body-size: 14px;
+  --v3-body-leading: 1.5;
+  --v3-title-size: 24px;
+  --v3-cinnabar: var(--brand-600);
+  --v3-slate-blue: #17659a;
   /* 阴影 */
   --v2-shadow-2xs: 0 1px 3px 0px rgba(0, 0, 0, 0.05);
   --v2-shadow-xs: 0 1px 3px 0px rgba(0, 0, 0, 0.05);
@@ -317,6 +326,12 @@ button:not(.icon-only-large),
   --v2-shadow-lg: 0 1px 3px 0px rgba(0, 0, 0, 0.1), 0 4px 6px -1px rgba(0, 0, 0, 0.1);
   --v2-shadow-xl: 0 1px 3px 0px rgba(0, 0, 0, 0.1), 0 8px 10px -1px rgba(0, 0, 0, 0.1);
   --v2-shadow-2xl: 0 1px 3px 0px rgba(0, 0, 0, 0.25);
+}
+
+@media (max-width: 480px) {
+  [data-peer-card][data-compact-hide="true"] {
+    display: none;
+  }
 }
 
 /* v2 暗色模式：暖炭灰体系（库 .dark 现成值）；本期不强制任何页面启用 */

@@ -26,7 +26,7 @@ export async function POST(
   const { id } = await params;
   const textbook = await prisma.hiDocTextbook.findFirst({
     where: { id, userId: user.id, deletedAt: null },
-    select: { id: true, title: true, storageKey: true, pageCount: true },
+    select: { id: true, title: true, storageKey: true, pageCount: true, fileName: true },
   });
   if (!textbook) {
     return hiDocFailure(404, "not-found", "教材不存在或已删除。");
@@ -57,6 +57,7 @@ export async function POST(
             title: textbook.title,
             storageKey: textbook.storageKey,
             pageCount: textbook.pageCount,
+            fileName: textbook.fileName,
           },
           onProgress: (event: HiDocTocProgressEvent) => send({ type: "progress", ...event }),
         });

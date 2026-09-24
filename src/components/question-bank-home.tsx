@@ -4,6 +4,7 @@ import { useMemo, useState } from "react";
 import Link from "next/link";
 import { ArrowLeft, ArrowRight } from "lucide-react";
 import {
+  courseHasAuthoredLesson,
   selectAssessmentItemsForChapter,
   selectQuestionBankChapterViews,
 } from "@/lib/course-selectors";
@@ -24,6 +25,7 @@ type QuestionBankHomeProps = {
 };
 
 export function QuestionBankHome({ course }: QuestionBankHomeProps) {
+  const drillOnly = !courseHasAuthoredLesson(course);
   const [search, setSearch] = useState("");
   const [selectedKinds, setSelectedKinds] = useState<Set<QuestionKind>>(new Set());
   const [progressStore] = useState(() => getQBProgress(course.id));
@@ -99,10 +101,20 @@ export function QuestionBankHome({ course }: QuestionBankHomeProps) {
           className={styles.backLink}
           href={`/courses/${course.slug}`}
         >
-          <ArrowLeft size={16} /> 返回课程工作台
+          <ArrowLeft size={16} /> {drillOnly ? "返回课程" : "返回课程工作台"}
         </Link>
-        <h1 className={styles.title}>{course.title} · 题库 <SyncStatusBadge /></h1>
-        <p className={styles.subtitle}>按章节浏览与练习；做答进度保存在此浏览器。</p>
+        <h1 className={styles.title}>
+          {course.title} · 题库
+          {drillOnly ? (
+            <span className={styles.drillOnlyBadge}>仅刷题</span>
+          ) : null}{" "}
+          <SyncStatusBadge />
+        </h1>
+        <p className={styles.subtitle}>
+          {drillOnly
+            ? "仅刷题课：按章节练习与模考，不构成知识点—写作—案例闭环。做答进度保存在此浏览器。"
+            : "按章节浏览与练习；做答进度保存在此浏览器。"}
+        </p>
       </header>
 
       <div className={styles.filterBar}>

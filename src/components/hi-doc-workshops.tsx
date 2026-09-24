@@ -6,7 +6,9 @@ import { CircleAlert, FolderOpen, Loader2, Plus, Trash2 } from "lucide-react";
 import type { MembershipTier } from "@/types/auth";
 import type { HiDocApiFailure, HiDocWorkshopListView, HiDocWorkshopView } from "@/types/hidoc";
 import { getMembershipTierLabel } from "@/lib/membership";
+import { resolveHiDocGuide } from "@/lib/hidoc/step-guide";
 import { V2Button } from "@/components/ui/v2/button";
+import { HiDocPathGuide } from "./hi-doc-path-guide";
 import styles from "./hi-doc.module.css";
 
 /**
@@ -99,6 +101,7 @@ export function HiDocWorkshopList({ initialList, tier }: HiDocWorkshopListProps)
 
   return (
     <div className={styles.shelfLayout}>
+      <HiDocPathGuide guide={resolveHiDocGuide({ surface: "workshop" })} />
       <section className={styles.quotaPanel} aria-label="课题工作坊限额">
         <div className={styles.quotaCopy}>
           <p className={styles.quotaLabel}>课题限额 · 当前档位 {getMembershipTierLabel(tier)}</p>
@@ -113,7 +116,7 @@ export function HiDocWorkshopList({ initialList, tier }: HiDocWorkshopListProps)
         </div>
       </section>
 
-      <section className={styles.uploadPanel} aria-labelledby="hidoc-workshop-create-title">
+      <section className={styles.uploadPanel} id="ask" aria-labelledby="hidoc-workshop-create-title">
         <div className={styles.panelHead}>
           <h2 id="hidoc-workshop-create-title">新建课题</h2>
           <p>围绕一个主题上传短材料（带文字层 PDF / Markdown / 纯文本），然后就材料追问</p>

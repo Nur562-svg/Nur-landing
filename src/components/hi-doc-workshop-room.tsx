@@ -20,7 +20,9 @@ import type {
   HiDocWorkshopFileView,
 } from "@/types/hidoc";
 import { consumeHiDocSse, readHiDocFailure } from "@/lib/hidoc/client-api";
+import { resolveHiDocGuide } from "@/lib/hidoc/step-guide";
 import { HiDocMarkdown } from "./hi-doc-markdown";
+import { HiDocPathGuide } from "./hi-doc-path-guide";
 import { V2Badge } from "@/components/ui/v2/badge";
 import { V2Button } from "@/components/ui/v2/button";
 import styles from "./hi-doc.module.css";
@@ -212,6 +214,7 @@ export function HiDocWorkshopRoom({ initialDetail }: HiDocWorkshopRoomProps) {
 
   return (
     <div className={styles.shelfLayout}>
+      <HiDocPathGuide guide={resolveHiDocGuide({ surface: "workshop", workshopId: workshop.id })} />
       <section className={styles.uploadPanel} aria-labelledby="hidoc-workshop-upload-title">
         <div className={styles.panelHead}>
           <h2 id="hidoc-workshop-upload-title">上传材料</h2>
@@ -295,7 +298,7 @@ export function HiDocWorkshopRoom({ initialDetail }: HiDocWorkshopRoomProps) {
         )}
       </section>
 
-      <section className={styles.chatPanel} aria-labelledby="hidoc-workshop-chat-title">
+      <section className={styles.chatPanel} id="ask" aria-labelledby="hidoc-workshop-chat-title">
         <div className={styles.panelHead}>
           <h2 id="hidoc-workshop-chat-title">
             <MessageSquareText aria-hidden="true" size={17} strokeWidth={1.6} />

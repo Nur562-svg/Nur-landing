@@ -3,9 +3,9 @@
 .tabs,
 .rail,
 .bottomNav {
-  border: 1px solid var(--v2-border);
-  border-radius: var(--v2-radius);
-  box-shadow: var(--v2-shadow-xs);
+  border: 1px solid transparent;
+  border-radius: var(--v3-card-radius);
+  box-shadow: var(--v3-card-shadow);
 }
 
 .tabs {
@@ -26,11 +26,6 @@
   color: var(--v2-muted-foreground);
   cursor: pointer;
   font: 600 13px/1.1 var(--v2-font-sans);
-  transition:
-    background-color 0.16s ease,
-    color 0.16s ease,
-    border-color 0.16s ease,
-    box-shadow 0.16s ease;
 }
 
 .tab {

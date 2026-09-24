@@ -8,8 +8,9 @@
   --line: color-mix(in srgb, var(--text-900) 38%, transparent);
   --red: var(--error-600);
   --blue: var(--v2-ring);
-  background: var(--paper);
+  background: var(--v2-background);
   color: var(--ink);
+  font: 400 var(--v3-body-size)/var(--v3-body-leading) var(--v2-font-sans);
   min-height: 100dvh;
   overflow-x: clip;
   position: relative;
@@ -81,7 +82,6 @@
   position: absolute;
   transform: scaleX(0) translateX(-50%);
   transform-origin: left;
-  transition: transform 180ms ease;
   width: 38px;
 }
 
@@ -566,11 +566,11 @@
 }
 
 .mainColumn h1 {
-  font-family: "Songti SC", "STSong", "Noto Serif CJK SC", serif;
-  font-size: clamp(46px, 4.35vw, 65px);
+  font-family: var(--v2-font-display);
+  font-size: clamp(var(--v3-title-size), 3vw, 40px);
   font-weight: 700;
-  letter-spacing: -0.08em;
-  line-height: 1.08;
+  letter-spacing: -0.04em;
+  line-height: 1.2;
   margin: 0;
 }
 
@@ -595,7 +595,6 @@
   min-height: 112px;
   padding: 18px;
   text-decoration: none;
-  transition: background 140ms ease;
 }
 
 .entryCard + .entryCard {
@@ -630,10 +629,6 @@
   color: var(--muted);
   font-size: 12px;
   line-height: 1.5;
-}
-
-.entryCard > svg {
-  transition: transform 160ms ease;
 }
 
 .entryCard:hover > svg {
@@ -708,13 +703,10 @@
   min-width: 0;
   padding: 23px 24px 18px;
   text-align: left;
-  transition:
-    border-color 160ms ease,
-    transform 160ms ease;
 }
 
 .reasoningCard:hover {
-  transform: translateY(-3px);
+  transform: none;
 }
 
 .reasoningCardActive {
@@ -788,10 +780,7 @@
   justify-content: space-between;
   margin-top: 28px;
   padding: 0 27px 0 61px;
-  transition:
-    background 180ms ease,
-    color 180ms ease;
-  width: 370px;
+  width: min(100%, 370px);
 }
 
 .primaryAction:hover {
@@ -890,7 +879,6 @@
   min-height: 120px;
   padding: 18px 0;
   text-decoration: none;
-  transition: background 0.1s;
 }
 
 .progressItem:hover {
@@ -962,10 +950,6 @@
   line-height: 1.45;
 }
 
-.builderEntry > svg {
-  transition: transform 160ms ease;
-}
-
 .builderEntry:hover > svg {
   transform: translateX(4px);
 }
@@ -992,7 +976,6 @@
 
 .planDrawer {
   align-items: stretch;
-  animation: drawer-in 280ms cubic-bezier(0.22, 1, 0.36, 1);
   background: var(--paper-bright);
   border: 1px solid var(--ink);
   bottom: 0;
@@ -1108,15 +1091,6 @@
   border-color: var(--red);
 }
 
-@keyframes drawer-in {
-  from {
-    transform: translateY(100%);
-  }
-  to {
-    transform: translateY(0);
-  }
-}
-
 @media (max-width: 1200px) {
   .header {
     grid-template-columns: minmax(170px, 0.7fr) auto minmax(170px, 0.7fr);
@@ -1224,7 +1198,7 @@
   }
 
   .mainColumn h1 {
-    font-size: clamp(42px, 10vw, 58px);
+    font-size: clamp(var(--v3-title-size), 7vw, 32px);
   }
 
   .entryGrid {
@@ -1263,15 +1237,8 @@
   }
 
   .weekRhythm {
-    min-width: 720px;
-    padding: 24px 20px 14px;
-  }
-
-  .planDrawer::after {
-    color: var(--muted);
-    content: "左右滑动查看完整一周";
-    font-size: 11px;
-    padding: 0 0 9px 20px;
+    min-width: 0;
+    padding: 24px 12px 14px;
   }
 }
 
@@ -1380,7 +1347,6 @@
   text-decoration: none;
   color: var(--ink);
   font-size: 12px;
-  transition: border-color 0.15s, background 0.15s;
 }
 
 .weakKpChip:hover {
@@ -1404,7 +1370,6 @@
   color: var(--ink);
   text-decoration: none;
   opacity: 0.7;
-  transition: opacity 0.15s;
 }
 
 .weakKpMore:hover {
@@ -1419,5 +1384,103 @@
     animation: none;
     scroll-behavior: auto;
     transition: none;
+  }
+}
+
+/* v3: quieter cards, one reasoning card, no decorative wordmark. */
+.ghostWordmark {
+  display: none;
+}
+
+.stepRail {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 12px;
+}
+
+.stepRail button {
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: var(--v3-card-radius);
+  color: var(--ink);
+  cursor: pointer;
+  font: 500 14px/1.5 var(--v2-font-sans);
+  min-height: 44px;
+  padding: 0 14px;
+}
+
+.stepRail button[aria-selected="true"] {
+  box-shadow: inset 0 0 0 1px var(--v3-cinnabar);
+  color: var(--v3-cinnabar);
+}
+
+.peerCard,
+.caseCard,
+.reasoningCard,
+.dualLensCard,
+.progressItem {
+  background: var(--paper-bright);
+  border: 1px solid var(--v3-card-border);
+  border-radius: var(--v3-card-radius);
+  box-shadow: var(--v3-card-shadow);
+}
+
+.reasoningCard {
+  cursor: default;
+  height: auto;
+  margin-top: 12px;
+  min-height: 0;
+}
+
+.caseCard {
+  font-size: 16px;
+  line-height: 1.5;
+}
+
+.dualLens h2,
+.progressColumn h2 {
+  font-family: var(--v2-font-display);
+  font-size: var(--v3-title-size);
+  font-weight: 700;
+}
+
+.dualLensCard p,
+.progressNote {
+  font-family: var(--v2-font-sans);
+  font-size: var(--v3-body-size);
+  line-height: var(--v3-body-leading);
+}
+
+.tcmMark,
+.dualLensCard article:first-child h3 {
+  color: var(--v3-cinnabar);
+}
+
+.westernMark,
+.dualLensCard article:last-child h3 {
+  color: var(--v3-slate-blue);
+}
+
+.progressNote {
+  align-items: center;
+  color: var(--muted);
+  display: flex;
+  gap: 8px;
+  margin: 8px 0 0;
+}
+
+@media (max-width: 480px) {
+  .accountButton,
+  .primaryAction,
+  .planToggle,
+  .stepRail button,
+  .navigation :is(a, button) {
+    min-height: 44px;
+  }
+
+  .dashboard {
+    padding-left: 16px;
+    padding-right: 16px;
   }
 }

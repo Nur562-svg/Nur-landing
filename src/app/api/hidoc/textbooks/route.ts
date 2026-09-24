@@ -48,7 +48,7 @@ export async function POST(request: Request) {
 
   const file = formData.get("file");
   if (!(file instanceof File)) {
-    return hiDocFailure(400, "invalid-request", "请选择要上传的 PDF 文件。");
+    return hiDocFailure(400, "invalid-request", "请选择要上传的 PDF 或 DOCX 文件。");
   }
   const titleValue = formData.get("title");
 

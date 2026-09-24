@@ -206,9 +206,9 @@ export function NurAgentChat(props: NurAgentChatProps) {
             <div className={styles.emptyOrb} aria-hidden="true">
               <NurAgentFace emotion={emotion} size={96} />
             </div>
-            <p>问任何医学或学习相关问题。</p>
+            <p>官方课证据教练在线——问概念、对照或证据结构。</p>
             <p className={styles.emptyHint}>
-              例如：&ldquo;什么是细胞膜？&rdquo;、&ldquo;舌质淡白什么意思？&rdquo;、&ldquo;帮我检查答案&rdquo;
+              例如：&ldquo;舌质淡白怎么和贫血对照？&rdquo;、&ldquo;这条证据属于哪一级？&rdquo;、&ldquo;帮我检查答案结构&rdquo;
             </p>
           </div>
         ) : (
@@ -236,7 +236,7 @@ export function NurAgentChat(props: NurAgentChatProps) {
           className={styles.input}
           value={input}
           onChange={(e) => setInput(e.target.value)}
-          placeholder="问任何问题..."
+          placeholder="问证据、概念或对照…"
           disabled={isLoading}
           type="text"
         />

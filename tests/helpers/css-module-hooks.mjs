@@ -7,12 +7,19 @@ import { pathToFileURL } from "node:url";
 import { resolve as resolvePath } from "node:path";
 
 const STUB_URL = pathToFileURL(resolvePath(import.meta.dirname, "./css-module-stub.mjs")).href;
+const SERVER_ONLY_URL = pathToFileURL(resolvePath(import.meta.dirname, "./server-only-empty.mjs")).href;
 
 export async function resolve(specifier, context, next) {
   if (specifier.endsWith(".module.css")) {
     return {
       shortCircuit: true,
       url: STUB_URL,
+    };
+  }
+  if (specifier === "server-only") {
+    return {
+      shortCircuit: true,
+      url: SERVER_ONLY_URL,
     };
   }
   return next(specifier, context);

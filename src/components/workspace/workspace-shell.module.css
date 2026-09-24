@@ -1,12 +1,14 @@
-/* NUR Workspace 壳 — 组合基准：docs/design-references/claude-v2/ui_kits/website/index.html
-   （248px 侧栏 + 主区 + 顶部细条）。只消费 globals.css 的 v2 token。
-   R1 约定：内容区不加内边距/不加背景/不改字体，保证业务页面自身渲染不受壳影响。 */
+/* NUR Workspace 壳 — v3：280px 固定侧栏 + 单一主画布。只消费 globals.css 的 v2/v3 token。 */
 
 .app {
+  background: var(--v2-background);
+  color: var(--v2-foreground);
   display: grid;
   flex: 1;
-  grid-template-columns: 248px minmax(0, 1fr);
+  font: 400 var(--v3-body-size)/var(--v3-body-leading) var(--v2-font-sans);
+  grid-template-columns: 280px minmax(0, 1fr);
   min-width: 0;
+  width: 100%;
 }
 
 /* ---------- 侧栏 ---------- */
@@ -22,8 +24,8 @@
   padding: calc(var(--v2-spacing) * 6) calc(var(--v2-spacing) * 4);
   position: sticky;
   top: 0;
-  width: 248px;
-  min-width: 248px;
+  width: 280px;
+  min-width: 280px;
   z-index: 60;
 }
 
@@ -92,9 +94,6 @@
   padding: calc(var(--v2-spacing) * 2.5) calc(var(--v2-spacing) * 3);
   text-align: left;
   text-decoration: none;
-  transition:
-    background-color 0.15s ease,
-    color 0.15s ease;
 }
 
 .navLink:hover {
@@ -359,7 +358,6 @@
     position: fixed;
     top: 0;
     transform: translateX(-105%);
-    transition: transform 0.28s cubic-bezier(0.22, 1, 0.36, 1);
     width: 280px;
     z-index: 80;
   }

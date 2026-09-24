@@ -19,8 +19,9 @@ export type HiDocLessonModelInput = {
     prerequisites: readonly string[];
     sourcePage: number;
   };
-  /** 该知识点附近页的教材原文（带【PDF 第 X 页】标记）。 */
+  /** 该知识点附近的教材原文（PDF 带页标记；DOCX 带【页码待确认】）。 */
   sourceExcerpt: string;
+  fileName?: string;
   style: HiDocLessonStyle;
 };
 

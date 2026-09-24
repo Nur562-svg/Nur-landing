@@ -24,6 +24,7 @@ export type HiDocKnowledgePointContext = {
     title: string;
     pageCount: number;
     storageKey: string;
+    fileName: string;
   };
 };
 
@@ -57,6 +58,7 @@ export async function loadHiDocKnowledgePointContext(
         title: row.chapter.textbook.title,
         pageCount: row.chapter.textbook.pageCount,
         storageKey: row.chapter.textbook.storageKey,
+        fileName: row.chapter.textbook.fileName,
       },
     },
   };

@@ -17,6 +17,7 @@ import {
   saveHiDocConversationMessages,
 } from "./knowledge-points";
 import { loadHiDocAccountLessonStyle, loadHiDocLesson } from "./lesson";
+import { isHiDocDocx } from "./source-label";
 import { readHiDocKnowledgePointExcerpt } from "./source-excerpt";
 
 /**
@@ -105,6 +106,8 @@ export async function sendHiDocKnowledgePointMessage(
   if (!sourceExcerpt) {
     const excerptResult = await readHiDocKnowledgePointExcerpt({
       storageKey: textbook.storageKey,
+      fileName: textbook.fileName,
+      chapterTitle: chapter.title,
       sourcePage: knowledgePoint.sourcePage,
       chapterPageStart: chapter.pageStart,
       chapterPageEnd: chapter.pageEnd,
@@ -115,10 +118,11 @@ export async function sendHiDocKnowledgePointMessage(
       notes.push(`未取得教材原文片段（${excerptResult.message}），本次回答仅依据讲义与知识点信息。`);
     }
   }
+  const locator = isHiDocDocx(textbook.fileName) ? "页码待确认的" : `第 ${knowledgePoint.sourcePage} 页附近`;
   notes.push(
     lesson
-      ? `上下文：讲义 + 第 ${knowledgePoint.sourcePage} 页附近原文 + 本章 ${chapterKnowledgePointTitles.length} 个知识点。`
-      : `上下文：第 ${knowledgePoint.sourcePage} 页附近原文 + 本章 ${chapterKnowledgePointTitles.length} 个知识点（该知识点尚未生成讲义）。`,
+      ? `上下文：讲义 + ${locator}原文 + 本章 ${chapterKnowledgePointTitles.length} 个知识点。`
+      : `上下文：${locator}原文 + 本章 ${chapterKnowledgePointTitles.length} 个知识点（该知识点尚未生成讲义）。`,
   );
 
   // 提问先落库：即使模型失败，学生的问题也不会丢
@@ -136,6 +140,7 @@ export async function sendHiDocKnowledgePointMessage(
     chapterKnowledgePointTitles,
     lessonMarkdown: lesson?.view.contentMd ?? null,
     sourceExcerpt,
+    fileName: textbook.fileName,
     style: await loadHiDocAccountLessonStyle(input.userId),
   };
 

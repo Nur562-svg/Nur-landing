@@ -26,7 +26,10 @@ import type {
   HiDocTextbookDetail,
   HiDocTocEvent,
 } from "@/types/hidoc";
+import { isHiDocDocx, formatHiDocExtent, formatHiDocPageRange, formatHiDocSourcePage } from "@/lib/hidoc/source-label";
+import { resolveHiDocGuide } from "@/lib/hidoc/step-guide";
 import { V2Button } from "@/components/ui/v2/button";
+import { HiDocPathGuide } from "./hi-doc-path-guide";
 import styles from "./hi-doc.module.css";
 
 /**
@@ -50,6 +53,7 @@ const sourceLabels: Record<HiDocChapterSource, string> = {
   "toc-page": "目录页识别",
   model: "模型解析",
   manual: "人工修正",
+  "docx-heading": "DOCX 标题（页码待确认）",
 };
 
 const strategyLabels: Record<string, string> = {
@@ -57,6 +61,7 @@ const strategyLabels: Record<string, string> = {
   "toc-page": "印刷目录页",
   model: "模型解析",
   none: "未识别",
+  "docx-heading": "DOCX 标题",
 };
 
 const chapterStatusLabels: Record<HiDocChapterStatus, string> = {
@@ -279,27 +284,30 @@ export function HiDocTextbookDetailView({ initialDetail }: HiDocTextbookDetailPr
     setDraftRows((rows) => rows.map((row) => (row.key === key ? { ...row, ...patch } : row)));
   }
 
+  const docx = isHiDocDocx(textbook.fileName);
+
   function onAddRow() {
     setDraftRows((rows) => {
       const last = rows[rows.length - 1];
-      const start = last ? Number.parseInt(last.pageEnd, 10) + 1 : 1;
+      const start = docx ? 1 : (last ? Number.parseInt(last.pageEnd, 10) + 1 : 1);
+      const end = docx ? 1 : Math.min(start, textbook.pageCount);
       return [
         ...rows,
         {
           key: `new-${Date.now()}-${rows.length}`,
           title: "",
           pageStart: String(start),
-          pageEnd: String(Math.min(start, textbook.pageCount)),
+          pageEnd: String(end),
         },
       ];
     });
   }
 
-  /** 最后一章已经到书末时，没有可新增的页码空间。 */
+  /** 最后一章已经到书末时，没有可新增的页码空间。DOCX 不靠页码分段。 */
   const lastDraftEnd = draftRows.length > 0
     ? Number.parseInt(draftRows[draftRows.length - 1].pageEnd, 10)
     : 0;
-  const canAddChapter = !Number.isFinite(lastDraftEnd) || lastDraftEnd < textbook.pageCount;
+  const canAddChapter = docx || !Number.isFinite(lastDraftEnd) || lastDraftEnd < textbook.pageCount;
 
   async function onSave() {
     if (saving) {
@@ -333,13 +341,24 @@ export function HiDocTextbookDetailView({ initialDetail }: HiDocTextbookDetailPr
     }
   }
 
+  const extractedCount = chapters.filter((chapter) => chapter.knowledgePointCount > 0 || chapter.status === "extracted").length;
+  const guide = resolveHiDocGuide({
+    surface: "textbook",
+    textbookId: textbook.id,
+    chapterCount: chapters.length,
+    extractedCount,
+    editing,
+    chapterOrder: chapters[0]?.order ?? 1,
+  });
+
   return (
     <div className={styles.shelfLayout}>
+      <HiDocPathGuide guide={guide} />
       <section className={styles.quotaPanel} aria-label="教材信息">
         <div className={styles.quotaCopy}>
           <p className={styles.quotaLabel}>教材信息</p>
           <p className={styles.quotaNote}>
-            {textbook.fileName} · {textbook.pageCount} 页 · 章节 {textbook.chapterCount} 个
+            {textbook.fileName} · {formatHiDocExtent(textbook.fileName, textbook.pageCount)} · 章节 {textbook.chapterCount} 个
             {textbook.isFrozen ? ` · 已冻结（激活月 ${textbook.activeMonth}）` : ""}
           </p>
           <p className={styles.quotaNote}>
@@ -348,7 +367,7 @@ export function HiDocTextbookDetailView({ initialDetail }: HiDocTextbookDetailPr
         </div>
       </section>
 
-      <section className={styles.uploadPanel} aria-labelledby="hidoc-recognize-title">
+      <section className={styles.uploadPanel} id="recognize" aria-labelledby="hidoc-recognize-title">
         <div className={styles.panelHead}>
           <h2 id="hidoc-recognize-title">目录识别</h2>
           <p>
@@ -429,7 +448,7 @@ export function HiDocTextbookDetailView({ initialDetail }: HiDocTextbookDetailPr
         ) : null}
       </section>
 
-      <section className={styles.textbookSection} aria-labelledby="hidoc-chapters-title">
+      <section className={styles.textbookSection} id="chapters" aria-labelledby="hidoc-chapters-title">
         <div className={styles.sectionHead}>
           <h2 id="hidoc-chapters-title">章节树</h2>
           <span>{chapters.length} 章</span>
@@ -437,7 +456,7 @@ export function HiDocTextbookDetailView({ initialDetail }: HiDocTextbookDetailPr
 
         {chapters.length === 0 ? (
           <p className={styles.emptyState}>
-            还没有章节。点「识别目录」从 PDF 书签或目录页自动识别；识别不到时可手动录入章节。
+            还没有章节。点「识别目录」。PDF 走书签或目录页；DOCX 走标题，页码保持待确认。识别不到时可手动录入。
           </p>
         ) : editing ? (
           <ul className={styles.textbookList}>
@@ -453,25 +472,31 @@ export function HiDocTextbookDetailView({ initialDetail }: HiDocTextbookDetailPr
                   aria-label={`第 ${index + 1} 章标题`}
                   onChange={(event) => updateRow(row.key, { title: event.target.value })}
                 />
-                <input
-                  className={styles.chapterPageInput}
-                  type="number"
-                  min={1}
-                  max={textbook.pageCount}
-                  value={row.pageStart}
-                  aria-label={`第 ${index + 1} 章起始页`}
-                  onChange={(event) => updateRow(row.key, { pageStart: event.target.value })}
-                />
-                <span className={styles.chapterPageDash}>–</span>
-                <input
-                  className={styles.chapterPageInput}
-                  type="number"
-                  min={1}
-                  max={textbook.pageCount}
-                  value={row.pageEnd}
-                  aria-label={`第 ${index + 1} 章结束页`}
-                  onChange={(event) => updateRow(row.key, { pageEnd: event.target.value })}
-                />
+                {docx ? (
+                  <span className={styles.chapterPageDash}>页码待确认</span>
+                ) : (
+                  <>
+                    <input
+                      className={styles.chapterPageInput}
+                      type="number"
+                      min={1}
+                      max={textbook.pageCount}
+                      value={row.pageStart}
+                      aria-label={`第 ${index + 1} 章起始页`}
+                      onChange={(event) => updateRow(row.key, { pageStart: event.target.value })}
+                    />
+                    <span className={styles.chapterPageDash}>–</span>
+                    <input
+                      className={styles.chapterPageInput}
+                      type="number"
+                      min={1}
+                      max={textbook.pageCount}
+                      value={row.pageEnd}
+                      aria-label={`第 ${index + 1} 章结束页`}
+                      onChange={(event) => updateRow(row.key, { pageEnd: event.target.value })}
+                    />
+                  </>
+                )}
                 <button
                   type="button"
                   className={styles.ghostButton}
@@ -484,7 +509,7 @@ export function HiDocTextbookDetailView({ initialDetail }: HiDocTextbookDetailPr
             ))}
           </ul>
         ) : (
-          <ul className={styles.textbookList}>
+          <ul className={styles.textbookList} id="extract">
             {chapters.map((chapter) => {
               const isExtracting = extractingOrder === chapter.order;
               const isExpanded = expandedOrders.has(chapter.order);
@@ -510,7 +535,7 @@ export function HiDocTextbookDetailView({ initialDetail }: HiDocTextbookDetailPr
                     <span className={styles.chapterMain}>
                       <span className={styles.chapterTitle}>{chapter.title}</span>
                       <span className={styles.chapterMeta}>
-                        第 {chapter.pageStart}–{chapter.pageEnd} 页 · 来源：{sourceLabels[chapter.source]} ·{" "}
+                        {formatHiDocPageRange(textbook.fileName, chapter.pageStart, chapter.pageEnd)} · 来源：{sourceLabels[chapter.source]} ·{" "}
                         {chapterStatusLabels[chapter.status]}
                         {chapter.knowledgePointCount > 0 ? `（${chapter.knowledgePointCount} 个知识点）` : ""}
                       </span>
@@ -552,7 +577,7 @@ export function HiDocTextbookDetailView({ initialDetail }: HiDocTextbookDetailPr
                             >
                               {String(knowledgePoint.order).padStart(2, "0")} · {knowledgePoint.title}
                             </Link>
-                            <span className={styles.kpPage}>第 {knowledgePoint.sourcePage} 页</span>
+                            <span className={styles.kpPage}>{formatHiDocSourcePage(textbook.fileName, knowledgePoint.sourcePage)}</span>
                           </p>
                           <p className={styles.kpDescription}>{knowledgePoint.description}</p>
                           {knowledgePoint.keyTerms.length > 0 ? (

@@ -10,6 +10,8 @@ import { createHiDocExtractProviderFromEnv } from "./extraction-provider";
 import { pdfTextItemsToLines } from "./toc-heuristic";
 import { openHiDocPdf, readHiDocPdfPageRange } from "./pdf-document";
 import { getHiDocStorage } from "./storage";
+import { readHiDocSource, sliceDocxChapter } from "./source-intake";
+import { isHiDocDocx } from "./source-label";
 import {
   getHiDocTextbookDetail,
   replaceChapterKnowledgePoints,
@@ -70,15 +72,13 @@ export async function extractHiDocChapterKnowledgePoints(
     return { ok: false, status: 404, code: "not-found", message: "章节不存在，请先识别或修正目录。" };
   }
 
-  onProgress({ stage: "read", message: `读取《${chapter.title}》（第 ${chapter.pageStart}–${chapter.pageEnd} 页）…` });
-
-  const storageKey = await loadStorageKey(input.userId, input.textbookId);
-  if (!storageKey) {
+  const file = await loadTextbookFile(input.userId, input.textbookId);
+  if (!file) {
     return { ok: false, status: 404, code: "not-found", message: "教材不存在或已删除。" };
   }
   let bytes: Uint8Array;
   try {
-    bytes = await getHiDocStorage().readObject(storageKey);
+    bytes = await getHiDocStorage().readObject(file.storageKey);
   } catch (error) {
     console.error("[hidoc] 萃取读取教材文件失败", error);
     return {
@@ -89,20 +89,50 @@ export async function extractHiDocChapterKnowledgePoints(
     };
   }
 
-  const runtime = await openHiDocPdf(bytes);
-  if (!runtime.ok) {
-    return { ok: false, status: 422, code: "pdf-unreadable", message: runtime.message };
+  const docx = isHiDocDocx(file.fileName);
+  let chapterText = "";
+  let truncated = false;
+  let release: (() => Promise<void>) | null = null;
+
+  if (docx) {
+    onProgress({ stage: "read", message: `读取《${chapter.title}》（页码待确认）…` });
+    const read = await readHiDocSource(file.fileName, bytes.slice());
+    if (!read.ok) {
+      return { ok: false, status: 422, code: "extraction-failed", message: read.message };
+    }
+    chapterText = `【出处】页码待确认。\n${sliceDocxChapter(read.html, chapter.title)}`;
+    notes.push("DOCX 无印刷页码，知识点出处记为待确认。");
+  } else {
+    onProgress({ stage: "read", message: `读取《${chapter.title}》（第 ${chapter.pageStart}–${chapter.pageEnd} 页）…` });
+    const runtime = await openHiDocPdf(bytes);
+    if (!runtime.ok) {
+      return { ok: false, status: 422, code: "pdf-unreadable", message: runtime.message };
+    }
+    release = () => runtime.release();
+    try {
+      const pages = await readHiDocPdfPageRange(runtime.document, {
+        fromPage: chapter.pageStart,
+        toPage: chapter.pageEnd,
+        itemsToLines: pdfTextItemsToLines,
+      });
+      const built = buildChapterModelText(pages);
+      chapterText = built.text;
+      truncated = built.truncated;
+    } catch (error) {
+      await release();
+      return {
+        ok: false,
+        status: 422,
+        code: "pdf-unreadable",
+        message: `PDF 无法读取章节文字：${error instanceof Error ? error.message : "未知错误"}`,
+      };
+    }
   }
 
   let drafts: HiDocKnowledgePointDraft[];
   try {
-    const pages = await readHiDocPdfPageRange(runtime.document, {
-      fromPage: chapter.pageStart,
-      toPage: chapter.pageEnd,
-      itemsToLines: pdfTextItemsToLines,
-    });
-    const { text: chapterText, truncated } = buildChapterModelText(pages);
-    if (truncated) {
+    const truncatedNote = truncated;
+    if (truncatedNote) {
       notes.push(`该章文字较长，仅前 ${chapterText.length.toLocaleString("zh-CN")} 字进入本次精读（按页截断）。`);
     }
     if (chapterText.replace(/\s+/g, "").length < 40) {
@@ -152,7 +182,9 @@ export async function extractHiDocChapterKnowledgePoints(
       modelPointCount = output.knowledgePoints.length;
       modelDroppedCount = output.droppedCount;
       modelDroppedPrerequisiteCount = output.droppedPrerequisiteCount;
-      notes.push(`来源：模型萃取（${provider.id} · ${provider.model}，${drafts.length} 个知识点，页码可溯源）。`);
+      notes.push(docx
+        ? `来源：模型萃取（${provider.id} · ${provider.model}，${drafts.length} 个知识点，出处待确认）。`
+        : `来源：模型萃取（${provider.id} · ${provider.model}，${drafts.length} 个知识点，页码可溯源）。`);
       if (modelDroppedCount > 0) {
         notes.push(`丢弃了 ${modelDroppedCount} 条未通过校验的模型条目（页码越界/字段缺失等）。`);
       }
@@ -213,16 +245,19 @@ export async function extractHiDocChapterKnowledgePoints(
       notes,
     };
   } finally {
-    await runtime.release();
+    await release?.();
   }
 }
 
-async function loadStorageKey(userId: string, textbookId: string): Promise<string | null> {
+async function loadTextbookFile(
+  userId: string,
+  textbookId: string,
+): Promise<{ storageKey: string; fileName: string } | null> {
   const row = await prisma.hiDocTextbook.findFirst({
     where: { id: textbookId, userId, deletedAt: null },
-    select: { storageKey: true },
+    select: { storageKey: true, fileName: true },
   });
-  return row?.storageKey ?? null;
+  return row ?? null;
 }
 
 export type { HiDocChapterServiceResult };

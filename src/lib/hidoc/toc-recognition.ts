@@ -28,6 +28,8 @@ import {
   type HiDocPdfDocument,
 } from "./pdf-document";
 import { getHiDocStorage } from "./storage";
+import { chaptersFromDocxHtml, readHiDocSource } from "./source-intake";
+import { isHiDocDocx } from "./source-label";
 
 /**
  * Hi doc 目录识别编排（server-only）。
@@ -67,6 +69,7 @@ export type HiDocTocRecognitionInput = {
     title: string;
     storageKey: string;
     pageCount: number;
+    fileName: string;
   };
   onProgress: (event: HiDocTocProgressEvent) => void;
 };
@@ -176,6 +179,23 @@ export async function recognizeHiDocToc(
       status: 503,
       code: "storage-unavailable",
       message: "教材文件读取失败，请稍后重试；若持续失败请联系管理员。",
+    };
+  }
+
+  if (isHiDocDocx(input.textbook.fileName)) {
+    onProgress({ stage: "read", message: "读取 DOCX 文字（页码待确认）…" });
+    const read = await readHiDocSource(input.textbook.fileName, bytes.slice());
+    if (!read.ok) {
+      return { ok: false, status: 422, code: read.code, message: read.message };
+    }
+    const chapters = chaptersFromDocxHtml(read.html, input.textbook.title);
+    notes.push("DOCX 没有印刷页码，章节位置记为待确认。");
+    return {
+      ok: true,
+      chapters,
+      strategy: "docx-heading",
+      source: "docx-heading",
+      notes,
     };
   }
 

@@ -862,3 +862,14 @@ playwright-core + 系统 Chrome（headless、无扩展），视口 **1440×900 /
 - 未纳入提交：`question-bank-*` 既有未提交改动、`infectious-*` 全套、`docs/QUESTION_BANK_EXTRACTION.md`、R1/R2 截图刷新（工作区既有状态，全部保留）。
 - 证据（`docs/design-references/`，共 65 张）：⌘K 交互 `r4-palette-search-hanre-1440.png`、`r4-palette-empty-1440.png`、`r4-palette-shelf-1440.png`；390 触控 `r4-drawer-open-390.png`、`r4-palette-390.png`；R3 回归矩阵 15 路由 × 亮/暗 × 1440/390 共 60 张（`r4-{route}-{viewport}[-dark].png`）。
 
+## Design System v3 — 桌面优先工作台（2026-09-24）
+
+当前视觉系统。规则与改前计数见 `docs/DESIGN_V3.md`。
+
+- 改前同伴卡：`/learn` 12 张（3 入口 + 案例 + 4 推理 + 双视角 + 3 进度）。Hi doc 书架在 5 本在用教材的对照样本上是 7 张（名额板 + 上传板 + 5 本教材卡）。
+- 改后：`/learn` 桌面 5 张、390px 3 张。书架同一 5 本样本桌面 4 张（上传 + 3 本）、390px 3 张。名额改成一行字。「其余 N 本」才展开。
+- 三张入口卡文案不再出现在 `/learn`。左栏仍链到 `/courses`、`/learn/hi-doc`、`/question-bank`。侧栏 280px。⌘K 在桌面和 390 都是贴底全宽，每组最多 6 条。
+- Hi doc 八步都有下一步说明、进度、状态和「下一步」。文字层 PDF 走 pdf.js，DOCX 走 mammoth；扫描件 / 图片 / `.doc` 明确拒绝。DOCX 页码显示为待确认。生成物不出现可关联 / 帮助理解 / 不可直接等同。
+- 单测：`tests/design-v3-density.test.ts`、`tests/design-v3-flow.test.ts`，以及 `tests/search-index.test.ts` 的 6 条上限。`src/content/courses/` 与 `src/content/materials/` 无 diff。
+- 浏览器核对：生产构建 `next start` 上 `scripts/design-v3-check.mjs` 两轮 1440 与 390 路由矩阵均为 `V3 CHECK PASSED`（侧栏 280、主画布 ≥70%、无三入口卡、⌘K 贴底全宽且每组 ≤6、Hi doc 有进度/状态/下一步、390 `scrollWidth === clientWidth === 390`）。截图在当次 scratch 的 `v3-launch/`。本次不提交。
+

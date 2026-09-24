@@ -46,8 +46,8 @@ export const SEARCH_GROUP_ORDER: readonly SearchEntryGroup[] = [
   "page",
 ];
 
-/** 每组最多展示条数；超出截断并提示输入更精确的关键词。 */
-export const SEARCH_GROUP_LIMIT = 8;
+/** 每组最多展示 6 条；超出截断并提示输入更精确的关键词。 */
+export const SEARCH_GROUP_LIMIT = 6;
 
 /** 轻量归一化：NFKC（全半角折叠）+ 小写 + 去空白。不引入拼音等外部依赖。 */
 export function normalizeSearchText(value: string): string {

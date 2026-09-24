@@ -479,6 +479,26 @@
   font-weight: 400;
 }
 
+.courseTitleRow {
+  align-items: center;
+  display: inline-flex;
+  flex: 1 1 auto;
+  gap: 8px;
+  min-width: 0;
+}
+
+.drillOnlyBadge {
+  border: 1px solid color-mix(in srgb, var(--text-900) 18%, transparent);
+  border-radius: 999px;
+  color: var(--text-700, var(--muted));
+  flex: 0 0 auto;
+  font-family: var(--font-sans);
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  padding: 1px 8px;
+}
+
 /* ── Responsive ── */
 @media (max-width: 700px) {
   .frame {

@@ -3,6 +3,8 @@
 import { useMemo, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { useSession } from "@/hooks/use-session";
+import { normalizeMembershipTier } from "@/lib/membership";
 import {
   CircleX,
   Bookmark,
@@ -18,7 +20,7 @@ import {
 } from "lucide-react";
 import type { CourseDefinition } from "@/types/learning";
 import { getQBAttempts } from "@/lib/question-bank-store";
-import { flattenCourseAssessmentItems } from "@/lib/course-selectors";
+import { courseHasAuthoredLesson, flattenCourseAssessmentItems } from "@/lib/course-selectors";
 import styles from "./question-bank-global.module.css";
 
 /* ── Filter type definitions ── */
@@ -66,6 +68,8 @@ type QuestionBankGlobalProps = {
 /* ── Component ── */
 export function QuestionBankGlobal({ courses }: QuestionBankGlobalProps) {
   const router = useRouter();
+  const { user } = useSession();
+  const isMax = normalizeMembershipTier(user?.membershipTier) === "max";
   const [search, setSearch] = useState("");
   const [leftFilter, setLeftFilter] = useState<LeftFilter | null>(null);
   const [rightFilter, setRightFilter] = useState<RightFilter>("freshman");
@@ -127,14 +131,21 @@ export function QuestionBankGlobal({ courses }: QuestionBankGlobalProps) {
             <h1 className={styles.title}>期末考试 (中西医结合临床)</h1>
             <p className={styles.titleSub}>跨课程题目聚合浏览与训练</p>
           </div>
-          <button
-            type="button"
-            className={styles.addBtn}
-            onClick={() => router.push("/learn/course-builder")}
-          >
-            <Plus size={16} />
-            添加题库
-          </button>
+          {isMax ? (
+            <button
+              type="button"
+              className={styles.addBtn}
+              onClick={() => router.push("/learn/course-builder")}
+            >
+              <Plus size={16} />
+              添加题库
+            </button>
+          ) : (
+            <Link className={styles.addBtn} href="/account/billing">
+              <Plus size={16} />
+              Max 可建题库
+            </Link>
+          )}
         </div>
 
         {/* 2. Search bar */}
@@ -284,6 +295,7 @@ export function QuestionBankGlobal({ courses }: QuestionBankGlobalProps) {
           {filteredCourses.length > 0 ? filteredCourses.map((course) => {
             const kpCount = course.knowledgePoints.length;
             const qCount = flattenCourseAssessmentItems(course).length;
+            const drillOnly = !courseHasAuthoredLesson(course);
             const meta = qCount > 0
               ? `${kpCount} 知识点 · ${qCount} 题`
               : `${kpCount} 知识点`;
@@ -293,8 +305,15 @@ export function QuestionBankGlobal({ courses }: QuestionBankGlobalProps) {
                 href={`/courses/${course.slug}/question-bank`}
                 className={styles.courseItem}
               >
-                <span>{course.title}</span>
-                <span className={styles.courseMeta}>{meta}</span>
+                <span className={styles.courseTitleRow}>
+                  <span>{course.title}</span>
+                  {drillOnly ? (
+                    <span className={styles.drillOnlyBadge}>仅刷题</span>
+                  ) : null}
+                </span>
+                <span className={styles.courseMeta}>
+                  {drillOnly ? `仅刷题 · ${meta}` : meta}
+                </span>
                 <ChevronRight size={18} className={styles.courseArrow} />
               </Link>
             );
