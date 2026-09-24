@@ -37,7 +37,7 @@
     "cf-typegen": "wrangler types --env-interface CloudflareEnv cloudflare-env.d.ts",
     "quick-check": "node scripts/quick-check.mjs",
     "quick-check:staged": "node scripts/quick-check.mjs --staged",
-    "test": "tsx --test tests/**/*.test.ts",
+    "test": "node --require ./tests/helpers/css-cjs-stub.cjs --import tsx --test \"tests/**/*.test.ts\"",
     "prepare": "node scripts/install-hook.mjs",
     "postinstall": "prisma generate"
   },
