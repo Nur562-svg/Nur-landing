@@ -1,17 +1,17 @@
-import type { HiDocApiFailure } from "@/types/hidoc";
+import type { ClewApiFailure } from "@/types/clew";
 
 /**
- * Hi doc 客户端请求小工具（讲义 / 讲解 / 划重点 / 学霸笔记共用）：
+ * Clew 客户端请求小工具（讲义 / 讲解 / 划重点 / 学霸笔记共用）：
  * SSE 行解析与失败响应读取。事件语义由各调用方判断。
  */
 
 /** 从失败响应体里读取中文原因（读不出时给统一提示）。 */
-export function readHiDocFailure(payload: unknown): string {
-  const candidate = payload as HiDocApiFailure | null;
+export function readClewFailure(payload: unknown): string {
+  const candidate = payload as ClewApiFailure | null;
   return candidate?.error ?? "服务返回异常，请稍后重试。";
 }
 
-export async function consumeHiDocSse(
+export async function consumeClewSse(
   response: Response,
   onEvent: (event: unknown) => void,
 ): Promise<void> {

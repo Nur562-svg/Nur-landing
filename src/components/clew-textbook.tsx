@@ -1,44 +1,47 @@
 "use client";
 
 import Link from "next/link";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import {
+  BookOpenCheck,
   ChevronDown,
   ChevronRight,
   CircleAlert,
+  GripVertical,
   Loader2,
+  Merge,
   Pencil,
   Plus,
   RotateCcw,
-  Save,
   ScanSearch,
   Sparkles,
   Trash2,
   X,
 } from "lucide-react";
 import type {
-  HiDocApiFailure,
-  HiDocChapterSource,
-  HiDocChapterStatus,
-  HiDocChapterView,
-  HiDocExtractEvent,
-  HiDocKnowledgePointView,
-  HiDocTextbookDetail,
-  HiDocTocEvent,
-} from "@/types/hidoc";
-import { isHiDocDocx, formatHiDocExtent, formatHiDocPageRange, formatHiDocSourcePage } from "@/lib/hidoc/source-label";
-import { resolveHiDocGuide } from "@/lib/hidoc/step-guide";
+  ClewApiFailure,
+  ClewChapterSource,
+  ClewChapterStatus,
+  ClewChapterView,
+  ClewCompileEvent,
+  ClewExtractEvent,
+  ClewKnowledgePointView,
+  ClewTextbookDetail,
+  ClewTocEvent,
+} from "@/types/clew";
+import { isClewDocx, formatClewExtent, formatClewPageRange, formatClewSourcePage } from "@/lib/clew/source-label";
+import { resolveClewGuide } from "@/lib/clew/step-guide";
 import { V2Button } from "@/components/ui/v2/button";
-import { HiDocPathGuide } from "./hi-doc-path-guide";
-import styles from "./hi-doc.module.css";
+import { ClewPathGuide } from "./clew-path-guide";
+import styles from "./clew.module.css";
 
 /**
- * Hi doc 教材详情（客户端）：目录识别（SSE 进度）+ 章节树 + 手动修正 + 知识点萃取。
+ * Clew 教材详情（客户端）：目录识别（SSE 进度）+ 章节树 + 手动修正 + 知识点萃取。
  * 所有状态变更都经服务端 API；这里只负责展示与提交。
  */
 
-type HiDocTextbookDetailProps = {
-  initialDetail: HiDocTextbookDetail;
+type ClewTextbookDetailProps = {
+  initialDetail: ClewTextbookDetail;
 };
 
 type ChapterDraftRow = {
@@ -48,7 +51,7 @@ type ChapterDraftRow = {
   pageEnd: string;
 };
 
-const sourceLabels: Record<HiDocChapterSource, string> = {
+const sourceLabels: Record<ClewChapterSource, string> = {
   outline: "PDF 书签",
   "toc-page": "目录页识别",
   model: "模型解析",
@@ -64,14 +67,37 @@ const strategyLabels: Record<string, string> = {
   "docx-heading": "DOCX 标题",
 };
 
-const chapterStatusLabels: Record<HiDocChapterStatus, string> = {
+const chapterStatusLabels: Record<ClewChapterStatus, string> = {
   pending: "未萃取",
   extracting: "萃取中",
   extracted: "已萃取",
   failed: "萃取失败",
 };
 
-function toDraftRows(chapters: readonly HiDocChapterView[]): ChapterDraftRow[] {
+const compileStateLabels: Record<string, string> = {
+  uploaded: "尚未编译",
+  toc_ready: "目录已识别",
+  chapters_ready: "章节已确认",
+  extracting: "编译中断（可继续）",
+  ready: "编译完成",
+  failed: "编译失败",
+};
+
+/** 相对时间（编译缓存「上次编译」行用）。 */
+function formatRelativeTime(iso: string, nowMs: number = Date.now()): string {
+  const at = Date.parse(iso);
+  if (Number.isNaN(at)) {
+    return "";
+  }
+  const minutes = Math.floor(Math.max(0, nowMs - at) / 60_000);
+  if (minutes < 1) return "刚刚";
+  if (minutes < 60) return `${minutes} 分钟前`;
+  const hours = Math.floor(minutes / 60);
+  if (hours < 24) return `${hours} 小时前`;
+  return `${Math.floor(hours / 24)} 天前`;
+}
+
+function toDraftRows(chapters: readonly ClewChapterView[]): ChapterDraftRow[] {
   return chapters.map((chapter) => ({
     key: chapter.id,
     title: chapter.title,
@@ -80,27 +106,134 @@ function toDraftRows(chapters: readonly HiDocChapterView[]): ChapterDraftRow[] {
   }));
 }
 
-export function HiDocTextbookDetailView({ initialDetail }: HiDocTextbookDetailProps) {
+export function ClewTextbookDetailView({ initialDetail }: ClewTextbookDetailProps) {
   const [detail, setDetail] = useState(initialDetail);
   const [progressLog, setProgressLog] = useState<string[]>([]);
   const [recognizing, setRecognizing] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [editing, setEditing] = useState(false);
   const [draftRows, setDraftRows] = useState<ChapterDraftRow[]>([]);
-  const [saving, setSaving] = useState(false);
+  const [confirming, setConfirming] = useState(false);
+  const [dragKey, setDragKey] = useState<string | null>(null);
 
   // 知识点萃取状态
   const [extractingOrder, setExtractingOrder] = useState<number | null>(null);
   const [extractLog, setExtractLog] = useState<string[]>([]);
   const [expandedOrders, setExpandedOrders] = useState<Set<number>>(new Set());
-  const [chapterKnowledgePoints, setChapterKnowledgePoints] = useState<Record<number, HiDocKnowledgePointView[]>>({});
+  const [chapterKnowledgePoints, setChapterKnowledgePoints] = useState<Record<number, ClewKnowledgePointView[]>>({});
+
+  // ZCODE-M3 Phase 3：全书编译（scope + 指纹 + 跨刷新续存）
+  const [compileCache, setCompileCache] = useState<{ state: string; updatedAt: string } | null>(null);
+  const [compiling, setCompiling] = useState(false);
+  const [compileLog, setCompileLog] = useState<string[]>([]);
+  const [compileDone, setCompileDone] = useState<string | null>(null);
+  const [compileError, setCompileError] = useState<string | null>(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    void (async () => {
+      try {
+        const response = await fetch(`/api/clew/textbooks/${initialDetail.textbook.id}/compile`);
+        if (!response.ok) {
+          return;
+        }
+        const payload = (await response.json()) as {
+          ok: boolean;
+          cache: { state: string; updatedAt: string } | null;
+        };
+        if (!cancelled && payload.ok) {
+          setCompileCache(payload.cache);
+        }
+      } catch {
+        // 编译缓存读取失败不阻塞页面（「上次编译」行缺省不显示）
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [initialDetail.textbook.id]);
+
+  /** 编译后刷新章节状态与编译缓存（跨刷新续存的内存版）。 */
+  async function refreshAfterCompile(): Promise<void> {
+    try {
+      const [detailResponse, cacheResponse] = await Promise.all([
+        fetch(`/api/clew/textbooks/${initialDetail.textbook.id}`),
+        fetch(`/api/clew/textbooks/${initialDetail.textbook.id}/compile`),
+      ]);
+      if (detailResponse.ok) {
+        const payload = (await detailResponse.json()) as { ok: boolean; detail: ClewTextbookDetail };
+        if (payload.ok) {
+          setDetail(payload.detail);
+        }
+      }
+      if (cacheResponse.ok) {
+        const payload = (await cacheResponse.json()) as {
+          ok: boolean;
+          cache: { state: string; updatedAt: string } | null;
+        };
+        if (payload.ok) {
+          setCompileCache(payload.cache);
+        }
+      }
+    } catch {
+      // 刷新失败保留现有状态；用户手动刷新页面仍能看到最新
+    }
+  }
+
+  /** 编译全书（SSE：progress 文字流 → chapter 逐章 → done 汇总）。 */
+  async function onCompile(scope: "pending" | "all") {
+    if (compiling || editing) {
+      return;
+    }
+    setCompiling(true);
+    setCompileError(null);
+    setCompileDone(null);
+    setCompileLog([scope === "pending" ? "开始编译待萃取章节…" : "开始全量重新编译…"]);
+
+    try {
+      const response = await fetch(`/api/clew/textbooks/${textbook.id}/compile`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ scope }),
+      });
+      await consumeSse(response, (raw) => {
+        const event = raw as ClewCompileEvent;
+        if (event.type === "progress") {
+          setCompileLog((log) => [...log, event.progress.currentStep ?? event.progress.error ?? ""]);
+        } else if (event.type === "chapter") {
+          setCompileLog((log) => [
+            ...log,
+            event.outcome.ok
+              ? `第 ${event.outcome.chapterOrder} 章《${event.outcome.chapterTitle}》：成功（${event.outcome.knowledgePointCount} 个知识点）`
+              : `第 ${event.outcome.chapterOrder} 章《${event.outcome.chapterTitle}》：失败——${event.outcome.error ?? "未知错误"}`,
+          ]);
+        } else if (event.type === "done") {
+          setCompileLog((log) => [...log, ...(event.notes.length > 0 ? event.notes.map((note) => `提示：${note}`) : [])]);
+          setCompileDone(
+            event.state === "ready"
+              ? `编译完成：${event.succeededChapters} 章成功，共 ${event.knowledgePointCount} 个知识点${
+                  event.failedChapters > 0 ? `；${event.failedChapters} 章失败已隔离` : ""
+                }。`
+              : "编译失败：本次没有章节成功，可到章节列表单独重试。",
+          );
+        } else {
+          setCompileError(event.error);
+        }
+      });
+      await refreshAfterCompile();
+    } catch {
+      setCompileError("编译失败：网络或服务暂时不可用，请稍后重试。");
+    } finally {
+      setCompiling(false);
+    }
+  }
 
   const { textbook, chapters } = detail;
   const recognition = textbook.recognition;
 
   async function readFailure(response: Response): Promise<string> {
     try {
-      const payload = (await response.json()) as HiDocApiFailure;
+      const payload = (await response.json()) as ClewApiFailure;
       return payload.error ?? "服务返回异常，请稍后重试。";
     } catch {
       return "服务返回异常，请稍后重试。";
@@ -116,7 +249,7 @@ export function HiDocTextbookDetailView({ initialDetail }: HiDocTextbookDetailPr
     setProgressLog([]);
 
     try {
-      const response = await fetch(`/api/hidoc/textbooks/${textbook.id}/toc`, { method: "POST" });
+      const response = await fetch(`/api/clew/textbooks/${textbook.id}/toc`, { method: "POST" });
       if (!response.ok || !response.body) {
         setError(await readFailure(response));
         return;
@@ -138,9 +271,9 @@ export function HiDocTextbookDetailView({ initialDetail }: HiDocTextbookDetailPr
           if (!dataLine) {
             continue;
           }
-          let event: HiDocTocEvent;
+          let event: ClewTocEvent;
           try {
-            event = JSON.parse(dataLine.slice(6)) as HiDocTocEvent;
+            event = JSON.parse(dataLine.slice(6)) as ClewTocEvent;
           } catch {
             continue;
           }
@@ -202,7 +335,7 @@ export function HiDocTextbookDetailView({ initialDetail }: HiDocTextbookDetailPr
   }
 
   /** 单章知识点萃取（SSE：进度 → 逐知识点 → 结果）。 */
-  async function onExtractChapter(chapter: HiDocChapterView) {
+  async function onExtractChapter(chapter: ClewChapterView) {
     if (extractingOrder !== null || editing) {
       return;
     }
@@ -212,11 +345,11 @@ export function HiDocTextbookDetailView({ initialDetail }: HiDocTextbookDetailPr
 
     try {
       const response = await fetch(
-        `/api/hidoc/textbooks/${textbook.id}/chapters/${chapter.order}/extract`,
+        `/api/clew/textbooks/${textbook.id}/chapters/${chapter.order}/extract`,
         { method: "POST" },
       );
       await consumeSse(response, (raw) => {
-        const event = raw as HiDocExtractEvent;
+        const event = raw as ClewExtractEvent;
         if (event.type === "progress") {
           setExtractLog((log) => [...log, event.message]);
         } else if (event.type === "kp") {
@@ -249,7 +382,7 @@ export function HiDocTextbookDetailView({ initialDetail }: HiDocTextbookDetailPr
   }
 
   /** 展开章节：首次展开时按需拉取知识点。 */
-  async function onToggleChapter(chapter: HiDocChapterView) {
+  async function onToggleChapter(chapter: ClewChapterView) {
     const next = new Set(expandedOrders);
     if (next.has(chapter.order)) {
       next.delete(chapter.order);
@@ -261,11 +394,11 @@ export function HiDocTextbookDetailView({ initialDetail }: HiDocTextbookDetailPr
     if (chapterKnowledgePoints[chapter.order] === undefined && chapter.knowledgePointCount > 0) {
       try {
         const response = await fetch(
-          `/api/hidoc/textbooks/${textbook.id}/chapters/${chapter.order}`,
+          `/api/clew/textbooks/${textbook.id}/chapters/${chapter.order}`,
         );
         const payload = (await response.json()) as
-          | { ok: true; knowledgePoints: HiDocKnowledgePointView[] }
-          | HiDocApiFailure;
+          | { ok: true; knowledgePoints: ClewKnowledgePointView[] }
+          | ClewApiFailure;
         if (payload.ok) {
           setChapterKnowledgePoints((current) => ({
             ...current,
@@ -284,7 +417,7 @@ export function HiDocTextbookDetailView({ initialDetail }: HiDocTextbookDetailPr
     setDraftRows((rows) => rows.map((row) => (row.key === key ? { ...row, ...patch } : row)));
   }
 
-  const docx = isHiDocDocx(textbook.fileName);
+  const docx = isClewDocx(textbook.fileName);
 
   function onAddRow() {
     setDraftRows((rows) => {
@@ -309,18 +442,19 @@ export function HiDocTextbookDetailView({ initialDetail }: HiDocTextbookDetailPr
     : 0;
   const canAddChapter = docx || !Number.isFinite(lastDraftEnd) || lastDraftEnd < textbook.pageCount;
 
-  async function onSave() {
-    if (saving) {
+  /** SpineEditor 确认：校验并保存章节结构 + 盖确认章；确认后服务端才放行知识点萃取。 */
+  async function onConfirm(rows: ChapterDraftRow[]) {
+    if (confirming || rows.length === 0) {
       return;
     }
-    setSaving(true);
+    setConfirming(true);
     setError(null);
     try {
-      const response = await fetch(`/api/hidoc/textbooks/${textbook.id}/chapters`, {
-        method: "PUT",
+      const response = await fetch(`/api/clew/textbooks/${textbook.id}/toc/confirm`, {
+        method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          chapters: draftRows.map((row) => ({
+          chapters: rows.map((row) => ({
             title: row.title.trim(),
             pageStart: Number.parseInt(row.pageStart, 10),
             pageEnd: Number.parseInt(row.pageEnd, 10),
@@ -331,18 +465,70 @@ export function HiDocTextbookDetailView({ initialDetail }: HiDocTextbookDetailPr
         setError(await readFailure(response));
         return;
       }
-      const payload = (await response.json()) as { ok: true; detail: HiDocTextbookDetail };
+      const payload = (await response.json()) as { ok: true; detail: ClewTextbookDetail };
       setDetail(payload.detail);
       setEditing(false);
     } catch {
-      setError("章节保存失败：网络或服务暂时不可用，请稍后重试。");
+      setError("章节结构确认失败：网络或服务暂时不可用，请稍后重试。");
     } finally {
-      setSaving(false);
+      setConfirming(false);
+      setDragKey(null);
     }
   }
 
+  /** 拖拽排序：把 fromKey 行移动到 toKey 行的位置（仅编辑草稿内；PDF 保存时仍按起始页校验）。 */
+  function reorderRows(fromKey: string, toKey: string) {
+    setDraftRows((rows) => {
+      const from = rows.findIndex((row) => row.key === fromKey);
+      const to = rows.findIndex((row) => row.key === toKey);
+      if (from < 0 || to < 0 || from === to) {
+        return rows;
+      }
+      const next = [...rows];
+      const [moved] = next.splice(from, 1);
+      if (!moved) {
+        return rows;
+      }
+      next.splice(to, 0, moved);
+      return next;
+    });
+  }
+
+  /** 相邻合并：把第 index 章并入上一章（PDF 扩页码范围；DOCX 无页码，拼接标题保持可见）。 */
+  function mergeIntoPrevious(index: number) {
+    setDraftRows((rows) => {
+      if (index <= 0 || index >= rows.length) {
+        return rows;
+      }
+      const previous = rows[index - 1];
+      const current = rows[index];
+      if (!previous || !current) {
+        return rows;
+      }
+      const merged: ChapterDraftRow = docx
+        ? { ...previous, title: `${previous.title}／${current.title}`.slice(0, 200) }
+        : { ...previous, pageEnd: current.pageEnd };
+      return [...rows.slice(0, index - 1), merged, ...rows.slice(index + 1)];
+    });
+  }
+
   const extractedCount = chapters.filter((chapter) => chapter.knowledgePointCount > 0 || chapter.status === "extracted").length;
-  const guide = resolveHiDocGuide({
+  // ZCODE-M3：待编译章（pending | failed 计入重试范围）
+  const pendingCompileCount = chapters.filter(
+    (chapter) => chapter.status === "pending" || chapter.status === "failed",
+  ).length;
+  const compileButtonLabel = compiling
+    ? "编译中"
+    : compileCache?.state === "extracting"
+      ? "继续编译"
+      : pendingCompileCount > 0
+        ? "编译全书"
+        : "重新编译全部";
+  const compileScope: "pending" | "all" = pendingCompileCount > 0 || compileCache?.state === "extracting" ? "pending" : "all";
+  // SpineEditor：结构确认章；识别/修正会重置，未确认前萃取入口禁用
+  const spineConfirmed = Boolean(textbook.spineConfirmedAt);
+  const dirty = JSON.stringify(draftRows) !== JSON.stringify(toDraftRows(chapters));
+  const guide = resolveClewGuide({
     surface: "textbook",
     textbookId: textbook.id,
     chapterCount: chapters.length,
@@ -353,12 +539,12 @@ export function HiDocTextbookDetailView({ initialDetail }: HiDocTextbookDetailPr
 
   return (
     <div className={styles.shelfLayout}>
-      <HiDocPathGuide guide={guide} />
+      <ClewPathGuide guide={guide} />
       <section className={styles.quotaPanel} aria-label="教材信息">
         <div className={styles.quotaCopy}>
           <p className={styles.quotaLabel}>教材信息</p>
           <p className={styles.quotaNote}>
-            {textbook.fileName} · {formatHiDocExtent(textbook.fileName, textbook.pageCount)} · 章节 {textbook.chapterCount} 个
+            {textbook.fileName} · {formatClewExtent(textbook.fileName, textbook.pageCount)} · 章节 {textbook.chapterCount} 个
             {textbook.isFrozen ? ` · 已冻结（激活月 ${textbook.activeMonth}）` : ""}
           </p>
           <p className={styles.quotaNote}>
@@ -367,61 +553,56 @@ export function HiDocTextbookDetailView({ initialDetail }: HiDocTextbookDetailPr
         </div>
       </section>
 
-      <section className={styles.uploadPanel} id="recognize" aria-labelledby="hidoc-recognize-title">
+      <section className={styles.uploadPanel} id="recognize" aria-labelledby="clew-recognize-title">
         <div className={styles.panelHead}>
-          <h2 id="hidoc-recognize-title">目录识别</h2>
+          <h2 id="clew-recognize-title">目录识别</h2>
           <p>
             {recognition
               ? `上次识别：${strategyLabels[recognition.strategy] ?? recognition.strategy} · ${recognition.chapterCount} 章`
               : "尚未识别"}
+            {chapters.length > 0 ? ` · ${spineConfirmed ? "章节结构已确认" : "章节结构待确认"}` : ""}
           </p>
         </div>
         <div className={styles.actionRow}>
           {!editing ? (
-            <V2Button
-              className={styles.v2Button}
-              disabled={recognizing}
-              onClick={onRecognize}
-            >
-              {recognizing ? (
-                <Loader2 className={styles.spin} aria-hidden="true" size={16} strokeWidth={1.8} />
-              ) : (
-                <ScanSearch aria-hidden="true" size={16} strokeWidth={1.6} />
-              )}
-              {recognizing ? "识别中" : chapters.length > 0 ? "重新识别目录" : "识别目录"}
-            </V2Button>
-          ) : null}
-          {!editing ? (
-            <button
-              type="button"
-              className={styles.ghostButton}
-              disabled={recognizing || chapters.length === 0}
-              onClick={onStartEdit}
-            >
-              <Pencil aria-hidden="true" size={15} strokeWidth={1.6} />
-              手动修正章节
-            </button>
-          ) : (
             <>
-              <V2Button className={styles.v2Button} disabled={saving} onClick={onSave}>
-                {saving ? (
+              <V2Button
+                className={styles.v2Button}
+                disabled={recognizing}
+                onClick={onRecognize}
+              >
+                {recognizing ? (
                   <Loader2 className={styles.spin} aria-hidden="true" size={16} strokeWidth={1.8} />
                 ) : (
-                  <Save aria-hidden="true" size={16} strokeWidth={1.6} />
+                  <ScanSearch aria-hidden="true" size={16} strokeWidth={1.6} />
                 )}
-                保存章节
+                {recognizing ? "识别中" : chapters.length > 0 ? "重新识别目录" : "识别目录"}
               </V2Button>
               <button
                 type="button"
                 className={styles.ghostButton}
-                disabled={saving}
-                onClick={() => setEditing(false)}
+                disabled={recognizing || chapters.length === 0}
+                onClick={onStartEdit}
               >
-                <X aria-hidden="true" size={15} strokeWidth={1.6} />
-                取消
+                <Pencil aria-hidden="true" size={15} strokeWidth={1.6} />
+                手动修正章节
               </button>
+              {chapters.length > 0 && !spineConfirmed ? (
+                <V2Button
+                  className={styles.v2Button}
+                  disabled={confirming || recognizing}
+                  onClick={() => onConfirm(toDraftRows(chapters))}
+                >
+                  {confirming ? (
+                    <Loader2 className={styles.spin} aria-hidden="true" size={16} strokeWidth={1.8} />
+                  ) : (
+                    <Sparkles aria-hidden="true" size={16} strokeWidth={1.6} />
+                  )}
+                  确认章节结构并开始萃取
+                </V2Button>
+              ) : null}
             </>
-          )}
+          ) : null}
         </div>
 
         {progressLog.length > 0 ? (
@@ -448,11 +629,76 @@ export function HiDocTextbookDetailView({ initialDetail }: HiDocTextbookDetailPr
         ) : null}
       </section>
 
-      <section className={styles.textbookSection} id="chapters" aria-labelledby="hidoc-chapters-title">
+      {!editing && spineConfirmed ? (
+        <section className={styles.uploadPanel} id="compile" aria-labelledby="clew-compile-title">
+          <div className={styles.panelHead}>
+            <h2 id="clew-compile-title">编译全书</h2>
+            <p>
+              {compileCache
+                ? `上次编译：${compileStateLabels[compileCache.state] ?? compileCache.state} · ${formatRelativeTime(compileCache.updatedAt)}`
+                : "尚未编译"}
+            </p>
+          </div>
+          <div className={styles.actionRow}>
+            <V2Button
+              className={styles.v2Button}
+              disabled={compiling || recognizing || extractingOrder !== null}
+              onClick={() => onCompile(compileScope)}
+            >
+              {compiling ? (
+                <Loader2 className={styles.spin} aria-hidden="true" size={16} strokeWidth={1.8} />
+              ) : (
+                <BookOpenCheck aria-hidden="true" size={16} strokeWidth={1.6} />
+              )}
+              {compileButtonLabel}
+            </V2Button>
+            <span className={styles.quotaNote}>
+              {pendingCompileCount > 0
+                ? `待编译 ${pendingCompileCount} 章 · 预计消耗 ${pendingCompileCount} 次模型调用`
+                : "全部章节已萃取"}
+            </span>
+          </div>
+
+          {compileLog.length > 0 && (compiling || compileDone || compileError) ? (
+            <ul className={styles.progressLog} aria-label="编译进度">
+              {compileLog.map((line, index) => (
+                <li key={`${index}-${line}`}>{line}</li>
+              ))}
+            </ul>
+          ) : null}
+
+          {compileDone ? (
+            <p className={styles.quotaNote} role="status">
+              {compileDone}
+              {chapters.some((chapter) => chapter.status === "failed") ? (
+                <>
+                  {" "}
+                  <Link href="#extract">到章节列表对失败章单独重试</Link>。
+                </>
+              ) : null}
+            </p>
+          ) : null}
+
+          {compileError ? (
+            <p className={styles.errorBox} role="alert">
+              <CircleAlert aria-hidden="true" size={16} strokeWidth={1.8} />
+              <span>{compileError}</span>
+            </p>
+          ) : null}
+        </section>
+      ) : null}
+
+      <section className={styles.textbookSection} id="chapters" aria-labelledby="clew-chapters-title">
         <div className={styles.sectionHead}>
-          <h2 id="hidoc-chapters-title">章节树</h2>
+          <h2 id="clew-chapters-title">章节树</h2>
           <span>{chapters.length} 章</span>
         </div>
+
+        {!editing && chapters.length > 0 && !spineConfirmed ? (
+          <p className={styles.emptyState} data-spine-unconfirmed="true">
+            请先确认章节结构：核对/合并章节后点上方「确认章节结构并开始萃取」，确认前萃取入口不可用。
+          </p>
+        ) : null}
 
         {chapters.length === 0 ? (
           <p className={styles.emptyState}>
@@ -461,7 +707,42 @@ export function HiDocTextbookDetailView({ initialDetail }: HiDocTextbookDetailPr
         ) : editing ? (
           <ul className={styles.textbookList}>
             {draftRows.map((row, index) => (
-              <li key={row.key} className={styles.chapterEditRow}>
+              <li
+                key={row.key}
+                className={styles.chapterEditRow}
+                draggable={dragKey === row.key}
+                onDragStart={() => setDragKey(row.key)}
+                onDragEnd={() => setDragKey(null)}
+                onDragOver={(event) => {
+                  if (dragKey && dragKey !== row.key) event.preventDefault();
+                }}
+                onDrop={(event) => {
+                  event.preventDefault();
+                  if (dragKey && dragKey !== row.key) reorderRows(dragKey, row.key);
+                  setDragKey(null);
+                }}
+              >
+                {index > 0 ? (
+                  <div className={styles.chapterMergeBar}>
+                    <button
+                      type="button"
+                      className={styles.chapterMergeButton}
+                      disabled={confirming}
+                      onClick={() => mergeIntoPrevious(index)}
+                    >
+                      <Merge aria-hidden="true" size={13} strokeWidth={1.6} />
+                      {docx ? "并入上一章（拼接标题）" : "并入上一章（扩页码范围）"}
+                    </button>
+                  </div>
+                ) : null}
+                <span
+                  className={styles.chapterGrip}
+                  aria-hidden="true"
+                  onMouseDown={() => setDragKey(row.key)}
+                  onTouchStart={() => setDragKey(row.key)}
+                >
+                  <GripVertical size={15} strokeWidth={1.6} />
+                </span>
                 <span className={styles.chapterIndex}>{String(index + 1).padStart(2, "0")}</span>
                 <input
                   className={styles.chapterTitleInput}
@@ -501,6 +782,7 @@ export function HiDocTextbookDetailView({ initialDetail }: HiDocTextbookDetailPr
                   type="button"
                   className={styles.ghostButton}
                   aria-label={`删除第 ${index + 1} 章`}
+                  disabled={confirming}
                   onClick={() => setDraftRows((rows) => rows.filter((item) => item.key !== row.key))}
                 >
                   <Trash2 aria-hidden="true" size={15} strokeWidth={1.6} />
@@ -535,7 +817,7 @@ export function HiDocTextbookDetailView({ initialDetail }: HiDocTextbookDetailPr
                     <span className={styles.chapterMain}>
                       <span className={styles.chapterTitle}>{chapter.title}</span>
                       <span className={styles.chapterMeta}>
-                        {formatHiDocPageRange(textbook.fileName, chapter.pageStart, chapter.pageEnd)} · 来源：{sourceLabels[chapter.source]} ·{" "}
+                        {formatClewPageRange(textbook.fileName, chapter.pageStart, chapter.pageEnd)} · 来源：{sourceLabels[chapter.source]} ·{" "}
                         {chapterStatusLabels[chapter.status]}
                         {chapter.knowledgePointCount > 0 ? `（${chapter.knowledgePointCount} 个知识点）` : ""}
                       </span>
@@ -543,7 +825,8 @@ export function HiDocTextbookDetailView({ initialDetail }: HiDocTextbookDetailPr
                     <button
                       type="button"
                       className={styles.ghostButton}
-                      disabled={extractingOrder !== null || recognizing}
+                      disabled={!spineConfirmed || extractingOrder !== null || recognizing || compiling}
+                      title={spineConfirmed ? undefined : "请先确认章节结构"}
                       onClick={() => onExtractChapter(chapter)}
                     >
                       {isExtracting ? (
@@ -573,11 +856,11 @@ export function HiDocTextbookDetailView({ initialDetail }: HiDocTextbookDetailPr
                         <li key={knowledgePoint.id} className={styles.kpItem}>
                           <p className={styles.kpTitle}>
                             <Link
-                              href={`/learn/hi-doc/t/${textbook.id}/c/${chapter.order}?kp=${knowledgePoint.id}`}
+                              href={`/learn/clew/t/${textbook.id}/c/${chapter.order}?kp=${knowledgePoint.id}`}
                             >
                               {String(knowledgePoint.order).padStart(2, "0")} · {knowledgePoint.title}
                             </Link>
-                            <span className={styles.kpPage}>{formatHiDocSourcePage(textbook.fileName, knowledgePoint.sourcePage)}</span>
+                            <span className={styles.kpPage}>{formatClewSourcePage(textbook.fileName, knowledgePoint.sourcePage)}</span>
                           </p>
                           <p className={styles.kpDescription}>{knowledgePoint.description}</p>
                           {knowledgePoint.keyTerms.length > 0 ? (
@@ -600,28 +883,53 @@ export function HiDocTextbookDetailView({ initialDetail }: HiDocTextbookDetailPr
         )}
 
         {editing ? (
-          <div className={styles.chapterEditActions}>
-            <button
-              type="button"
-              className={styles.ghostButton}
-              disabled={!canAddChapter}
-              onClick={onAddRow}
-            >
-              <Plus aria-hidden="true" size={15} strokeWidth={1.6} />
-              新增章节
-            </button>
-            <span className={styles.quotaNote}>
-              {canAddChapter
-                ? "保存时按起始页重新排序；改动或新增的章节会标记为「人工修正」。"
-                : `最后一章已到第 ${textbook.pageCount} 页，没有可新增的页码空间；可先调整现有章节页码。`}
-            </span>
+          <div className={styles.chapterEditBar}>
+            <div className={styles.chapterEditActions}>
+              <button
+                type="button"
+                className={styles.ghostButton}
+                disabled={!canAddChapter}
+                onClick={onAddRow}
+              >
+                <Plus aria-hidden="true" size={15} strokeWidth={1.6} />
+                新增章节
+              </button>
+              <span className={styles.quotaNote}>
+                {canAddChapter
+                  ? "可拖拽 ≡ 调整顺序、合并相邻章节、编辑标题；确认后才能萃取知识点。"
+                  : `最后一章已到第 ${textbook.pageCount} 页，没有可新增的页码空间；可先调整现有章节页码。`}
+              </span>
+            </div>
+            <div className={styles.chapterEditActions}>
+              <V2Button
+                className={styles.v2Button}
+                disabled={confirming || draftRows.length === 0}
+                onClick={() => onConfirm(draftRows)}
+              >
+                {confirming ? (
+                  <Loader2 className={styles.spin} aria-hidden="true" size={16} strokeWidth={1.8} />
+                ) : (
+                  <Sparkles aria-hidden="true" size={16} strokeWidth={1.6} />
+                )}
+                {dirty ? "保存修改并萃取" : "确认章节结构并开始萃取"}
+              </V2Button>
+              <button
+                type="button"
+                className={styles.ghostButton}
+                disabled={confirming}
+                onClick={() => setEditing(false)}
+              >
+                <X aria-hidden="true" size={15} strokeWidth={1.6} />
+                放弃修改
+              </button>
+            </div>
           </div>
         ) : null}
       </section>
 
       <p className={styles.footNote}>
         <RotateCcw aria-hidden="true" size={13} strokeWidth={1.6} /> 重新识别会覆盖当前章节列表（含已萃取的知识点）；重新萃取会覆盖该章既有知识点。
-        返回 <Link href="/learn/hi-doc">Hi doc 书架</Link>。
+        返回 <Link href="/learn/clew">Clew 书架</Link>。
       </p>
     </div>
   );

@@ -3,61 +3,62 @@ import "server-only";
 import { prisma } from "@/lib/prisma";
 import { canUseResource, getQuotaLabel } from "@/lib/quotas";
 import { computeUserQuotas, recordServerUsage } from "@/lib/quotas-server";
-import type { HiDocErrorCode, HiDocNoteView } from "@/types/hidoc";
-import { parseHiDocChatMessages } from "./conversation";
-import { loadHiDocHighlightsByKnowledgePoint } from "./highlights";
+import type { ClewErrorCode, ClewNoteView } from "@/types/clew";
+import { parseClewChatMessages } from "./conversation";
+import { loadClewHighlightsByKnowledgePoint } from "./highlights";
 import {
-  HIDOC_MODEL_NOTE_NOTICE,
-  buildHeuristicHiDocNote,
-  buildHiDocNoteHeader,
-  buildHiDocNoteModelInput,
+  CLEW_MODEL_NOTE_NOTICE,
+  buildHeuristicClewNote,
+  buildClewNoteHeader,
+  buildClewNoteModelInput,
   validateGeneratedNote,
-  type HiDocNoteContext,
-  type HiDocNoteHighlightEntry,
-  type HiDocNotePoint,
+  type ClewNoteContext,
+  type ClewNoteHighlightEntry,
+  type ClewNotePoint,
 } from "./note-heuristic";
-import { createHiDocNoteProviderFromEnv } from "./note-provider";
-import { normalizeLessonMarkdown, parseHiDocLessonGenerator } from "./lesson-heuristic";
+import { createClewNoteProviderFromEnv } from "./note-provider";
+import { ClewProviderConfigError } from "./providers/model-config";
+import { normalizeLessonMarkdown, parseClewLessonGenerator } from "./lesson-heuristic";
 
 /**
- * Hi doc 学霸笔记编排（server-only，按章一次调用）。
+ * Clew 学霸笔记编排（server-only，按章一次调用）。
  * 聚合该章的全部讲义 + 讲解对话 + 划重点 + 批注：模型可用时流式汇总并做结构校验；
  * 未配置密钥时启发式确定性拼装并明确标注「未接入模型」（不占模型额度）。
  * 笔记只汇总真实存在的学习痕迹，缺失小节如实略去，不编造「你曾问到…」。
  */
 
 /** 每个知识点进入笔记的追问条数上限（超出取最近若干条并如实说明）。 */
-export const HIDOC_NOTE_QUESTIONS_PER_KP = 10;
+export const CLEW_NOTE_QUESTIONS_PER_KP = 10;
 
-export type HiDocNoteProgressEvent = {
+export type ClewNoteProgressEvent = {
   stage: "collect" | "generating" | "save";
   message: string;
 };
 
-export type HiDocNoteSuccess = {
+export type ClewNoteSuccess = {
   ok: true;
-  note: HiDocNoteView;
+  note: ClewNoteView;
   notes: string[];
 };
 
-export type HiDocNoteFailure = {
+export type ClewNoteFailure = {
   ok: false;
   status: number;
-  code: HiDocErrorCode;
+  code: ClewErrorCode;
   message: string;
 };
 
-export type HiDocNoteResult = HiDocNoteSuccess | HiDocNoteFailure;
+export type ClewNoteResult = ClewNoteSuccess | ClewNoteFailure;
 
-export type HiDocNoteRequest = {
+export type ClewNoteRequest = {
   userId: string;
   textbookId: string;
   chapterOrder: number;
-  onProgress: (event: HiDocNoteProgressEvent) => void;
+  onProgress: (event: ClewNoteProgressEvent) => void;
   onDelta: (text: string) => void;
 };
 
-export type HiDocNoteRow = {
+export type ClewNoteRow = {
   chapterId: string;
   contentMd: string;
   generator: string;
@@ -65,25 +66,25 @@ export type HiDocNoteRow = {
 };
 
 /** 学霸笔记数据库行 → 对外视图。 */
-export function toHiDocNoteView(row: HiDocNoteRow): HiDocNoteView {
+export function toClewNoteView(row: ClewNoteRow): ClewNoteView {
   return {
     chapterId: row.chapterId,
     contentMd: row.contentMd,
-    generator: parseHiDocLessonGenerator(row.generator),
+    generator: parseClewLessonGenerator(row.generator),
     generatedAt: row.generatedAt.toISOString(),
   };
 }
 
 /** 读取某用户在某章的学霸笔记（不存在返回 null）。 */
-export async function loadHiDocChapterNote(
+export async function loadClewChapterNote(
   userId: string,
   chapterId: string,
-): Promise<HiDocNoteView | null> {
-  const row = await prisma.hiDocNote.findUnique({
+): Promise<ClewNoteView | null> {
+  const row = await prisma.clewNote.findUnique({
     where: { userId_chapterId: { userId, chapterId } },
     select: { chapterId: true, contentMd: true, generator: true, generatedAt: true },
   });
-  return row ? toHiDocNoteView(row) : null;
+  return row ? toClewNoteView(row) : null;
 }
 
 function formatGeneratedAtLabel(date: Date): string {
@@ -97,8 +98,8 @@ function formatGeneratedAtLabel(date: Date): string {
   }).format(date);
 }
 
-export async function generateHiDocChapterNote(input: HiDocNoteRequest): Promise<HiDocNoteResult> {
-  const textbook = await prisma.hiDocTextbook.findFirst({
+export async function generateClewChapterNote(input: ClewNoteRequest): Promise<ClewNoteResult> {
+  const textbook = await prisma.clewTextbook.findFirst({
     where: { id: input.textbookId, userId: input.userId, deletedAt: null },
     select: { id: true, title: true, fileName: true },
   });
@@ -106,7 +107,7 @@ export async function generateHiDocChapterNote(input: HiDocNoteRequest): Promise
     return { ok: false, status: 404, code: "not-found", message: "教材不存在或已删除。" };
   }
 
-  const chapters = await prisma.hiDocChapter.findMany({
+  const chapters = await prisma.clewChapter.findMany({
     where: { textbookId: textbook.id },
     orderBy: { order: "asc" },
     select: { id: true, order: true, title: true, pageStart: true, pageEnd: true },
@@ -116,7 +117,7 @@ export async function generateHiDocChapterNote(input: HiDocNoteRequest): Promise
     return { ok: false, status: 404, code: "not-found", message: "章节不存在，请先识别或修正目录。" };
   }
 
-  const knowledgePointRows = await prisma.hiDocKnowledgePoint.findMany({
+  const knowledgePointRows = await prisma.clewKnowledgePoint.findMany({
     where: { chapterId: chapter.id },
     orderBy: { order: "asc" },
     include: { lesson: { select: { contentMd: true } } },
@@ -136,7 +137,7 @@ export async function generateHiDocChapterNote(input: HiDocNoteRequest): Promise
   });
 
   const kpIds = knowledgePointRows.map((row) => row.id);
-  const conversationRows = await prisma.hiDocConversation.findMany({
+  const conversationRows = await prisma.clewConversation.findMany({
     where: { userId: input.userId, kpId: { in: kpIds } },
     select: { kpId: true, messages: true },
   });
@@ -145,26 +146,26 @@ export async function generateHiDocChapterNote(input: HiDocNoteRequest): Promise
     if (!row.kpId) {
       continue;
     }
-    const questions = parseHiDocChatMessages(row.messages)
+    const questions = parseClewChatMessages(row.messages)
       .filter((message) => message.role === "user")
       .map((message) => message.content);
     questionsByKp.set(row.kpId, questions);
   }
-  const highlightsByKp = await loadHiDocHighlightsByKnowledgePoint(input.userId, kpIds);
+  const highlightsByKp = await loadClewHighlightsByKnowledgePoint(input.userId, kpIds);
 
   const notes: string[] = [];
   let questionCount = 0;
   let highlightCount = 0;
-  const points: HiDocNotePoint[] = knowledgePointRows.map((row) => {
+  const points: ClewNotePoint[] = knowledgePointRows.map((row) => {
     const allQuestions = questionsByKp.get(row.id) ?? [];
-    if (allQuestions.length > HIDOC_NOTE_QUESTIONS_PER_KP) {
+    if (allQuestions.length > CLEW_NOTE_QUESTIONS_PER_KP) {
       notes.push(
-        `知识点「${row.title}」的追问较多（${allQuestions.length} 条），笔记只取最近 ${HIDOC_NOTE_QUESTIONS_PER_KP} 条。`,
+        `知识点「${row.title}」的追问较多（${allQuestions.length} 条），笔记只取最近 ${CLEW_NOTE_QUESTIONS_PER_KP} 条。`,
       );
     }
-    const questions = allQuestions.slice(-HIDOC_NOTE_QUESTIONS_PER_KP);
+    const questions = allQuestions.slice(-CLEW_NOTE_QUESTIONS_PER_KP);
     questionCount += questions.length;
-    const highlights: HiDocNoteHighlightEntry[] = (highlightsByKp.get(row.id) ?? []).map((item) => ({
+    const highlights: ClewNoteHighlightEntry[] = (highlightsByKp.get(row.id) ?? []).map((item) => ({
       quote: item.quote,
       note: item.note,
       color: item.color,
@@ -185,7 +186,7 @@ export async function generateHiDocChapterNote(input: HiDocNoteRequest): Promise
     };
   });
 
-  const context: HiDocNoteContext = {
+  const context: ClewNoteContext = {
     textbookTitle: textbook.title,
     chapterOrder: chapter.order,
     chapterTotal: chapters.length,
@@ -205,28 +206,37 @@ export async function generateHiDocChapterNote(input: HiDocNoteRequest): Promise
   const generatedAtLabel = formatGeneratedAtLabel(generatedAt);
 
   let contentMd: string;
-  let generator: HiDocNoteView["generator"];
+  let generator: ClewNoteView["generator"];
 
-  const provider = await createHiDocNoteProviderFromEnv();
+  // ZCODE-M4 多模型：显式配置了未实现 provider / 非法 baseURL → 明确报错，不走启发式兜底
+  let provider: Awaited<ReturnType<typeof createClewNoteProviderFromEnv>>;
+  try {
+    provider = await createClewNoteProviderFromEnv();
+  } catch (error) {
+    if (error instanceof ClewProviderConfigError) {
+      return { ok: false, status: 503, code: "note-failed", message: error.message };
+    }
+    throw error;
+  }
   if (!provider) {
     generator = { kind: "heuristic" };
     notes.push(
-      "未接入模型（DASHSCOPE_API_KEY / HIDOC_EXTRACT_PROVIDER 未配置）：本次笔记由讲义、划重点、批注与追问确定性地汇总。",
+      "未接入模型（DASHSCOPE_API_KEY / CLEW_EXTRACT_PROVIDER 未配置）：本次笔记由讲义、划重点、批注与追问确定性地汇总。",
     );
-    contentMd = buildHeuristicHiDocNote({ context, generatedAtLabel });
+    contentMd = buildHeuristicClewNote({ context, generatedAtLabel });
   } else {
     const quotas = await computeUserQuotas(input.userId);
-    const quotaItem = quotas.quotas.hidocNotes;
+    const quotaItem = quotas.quotas.clewNotes;
     if (!canUseResource(quotaItem)) {
       return {
         ok: false,
         status: 503,
         code: "quota-exceeded",
-        message: `${getQuotaLabel("hidocNotes")} 已用完（${quotaItem.used}/${quotaItem.limit}），本次笔记生成已停止。可升级会员档位，或等待额度重置后重试。`,
+        message: `${getQuotaLabel("clewNotes")} 已用完（${quotaItem.used}/${quotaItem.limit}），本次笔记生成已停止。可升级会员档位，或等待额度重置后重试。`,
       };
     }
 
-    const modelContext = buildHiDocNoteModelInput(context);
+    const modelContext = buildClewNoteModelInput(context);
     notes.push(...modelContext.notes);
 
     let modelOutcome: "success" | "failed" = "success";
@@ -251,12 +261,12 @@ export async function generateHiDocChapterNote(input: HiDocNoteRequest): Promise
       }
       generator = { kind: "model", provider: provider.id, model: provider.model };
       contentMd = [
-        buildHiDocNoteHeader({
+        buildClewNoteHeader({
           title: `${chapter.title} · 学霸笔记`,
           generator,
           generatedAtLabel,
           context,
-          notice: HIDOC_MODEL_NOTE_NOTICE,
+          notice: CLEW_MODEL_NOTE_NOTICE,
         }),
         body,
       ].join("\n");
@@ -264,7 +274,7 @@ export async function generateHiDocChapterNote(input: HiDocNoteRequest): Promise
     } catch (error) {
       modelOutcome = "failed";
       const message = error instanceof Error ? error.message : "未知错误";
-      console.error("[hidoc] 学霸笔记模型调用失败", error);
+      console.error("[clew] 学霸笔记模型调用失败", error);
       return {
         ok: false,
         status: 503,
@@ -274,10 +284,10 @@ export async function generateHiDocChapterNote(input: HiDocNoteRequest): Promise
     } finally {
       // token 已消耗：无论成败都记账（与目录解析/萃取/讲义同一原则）
       try {
-        await recordServerUsage(input.userId, "hidocNotes");
+        await recordServerUsage(input.userId, "clewNotes");
         await prisma.eventLog.create({
           data: {
-            event: "hidoc_chapter_note",
+            event: "clew_chapter_note",
             userId: input.userId,
             props: {
               textbookId: textbook.id,
@@ -294,17 +304,17 @@ export async function generateHiDocChapterNote(input: HiDocNoteRequest): Promise
           },
         });
       } catch (error) {
-        console.error("[hidoc] 学霸笔记用量记录失败", error);
+        console.error("[clew] 学霸笔记用量记录失败", error);
         notes.push("提示：本次笔记生成的配额计数写入失败，已记录服务端日志。");
       }
     }
   }
 
   input.onProgress({ stage: "save", message: "保存学霸笔记…" });
-  const previous = await loadHiDocChapterNote(input.userId, chapter.id);
+  const previous = await loadClewChapterNote(input.userId, chapter.id);
   const storedGenerator =
     generator.kind === "model" ? `model:${generator.provider}:${generator.model}` : "heuristic";
-  const row = await prisma.hiDocNote.upsert({
+  const row = await prisma.clewNote.upsert({
     where: { userId_chapterId: { userId: input.userId, chapterId: chapter.id } },
     create: {
       userId: input.userId,
@@ -324,7 +334,7 @@ export async function generateHiDocChapterNote(input: HiDocNoteRequest): Promise
     try {
       await prisma.eventLog.create({
         data: {
-          event: "hidoc_chapter_note",
+          event: "clew_chapter_note",
           userId: input.userId,
           props: {
             textbookId: textbook.id,
@@ -339,9 +349,9 @@ export async function generateHiDocChapterNote(input: HiDocNoteRequest): Promise
         },
       });
     } catch (error) {
-      console.error("[hidoc] 学霸笔记事件记录失败", error);
+      console.error("[clew] 学霸笔记事件记录失败", error);
     }
   }
 
-  return { ok: true, note: toHiDocNoteView(row), notes };
+  return { ok: true, note: toClewNoteView(row), notes };
 }

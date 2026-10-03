@@ -12,12 +12,12 @@ export type QuotaResource =
   | "courseBuilds"       // Course Builder 使用（含私人分析）
   | "mockExams"          // 模考会话
   | "agentCalls"         // Agent 调用
-  | "hidocParses"        // Hi doc 目录解析（模型辅助识别，M2 起）
-  | "hidocExtracts"      // Hi doc 知识点萃取（按章模型调用，M3 起）
-  | "hidocLessons"       // Hi doc 知识点讲义生成（按知识点模型调用，M4 起）
-  | "hidocChats"         // Hi doc 讲解对话（按轮模型调用，M4 起）
-  | "hidocNotes"         // Hi doc 学霸笔记生成（按章模型调用，M5 起）
-  | "hidocWorkshopChats"; // Hi doc 课题工作坊答疑（按轮模型调用，M6 起；检索零命中不计）
+  | "clewParses"        // Clew 目录解析（模型辅助识别，M2 起）
+  | "clewExtracts"      // Clew 知识点萃取（按章模型调用，M3 起）
+  | "clewLessons"       // Clew 知识点讲义生成（按知识点模型调用，M4 起）
+  | "clewChats"         // Clew 讲解对话（按轮模型调用，M4 起）
+  | "clewNotes"         // Clew 学霸笔记生成（按章模型调用，M5 起）
+  | "clewWorkshopChats"; // Clew 课题工作坊答疑（按轮模型调用，M6 起；检索零命中不计）
 
 export type QuotaItem = {
   used: number;
@@ -41,48 +41,48 @@ export const TIER_QUOTAS: Record<MembershipTier, Record<QuotaResource, number | 
     courseBuilds: 3,
     mockExams: 10,
     agentCalls: 50,
-    hidocParses: 3,
-    hidocExtracts: 5,
-    hidocLessons: 5,
-    hidocChats: 50,
-    hidocNotes: 3,
-    hidocWorkshopChats: 30,
+    clewParses: 3,
+    clewExtracts: 5,
+    clewLessons: 5,
+    clewChats: 50,
+    clewNotes: 3,
+    clewWorkshopChats: 30,
   },
   basic: {
     privateMaterials: 20,
     courseBuilds: 10,
     mockExams: 30,
     agentCalls: 200,
-    hidocParses: 10,
-    hidocExtracts: 20,
-    hidocLessons: 20,
-    hidocChats: 200,
-    hidocNotes: 10,
-    hidocWorkshopChats: 200,
+    clewParses: 10,
+    clewExtracts: 20,
+    clewLessons: 20,
+    clewChats: 200,
+    clewNotes: 10,
+    clewWorkshopChats: 200,
   },
   pro: {
     privateMaterials: "unlimited",
     courseBuilds: "unlimited",
     mockExams: "unlimited",
     agentCalls: "unlimited",
-    hidocParses: "unlimited",
-    hidocExtracts: "unlimited",
-    hidocLessons: "unlimited",
-    hidocChats: "unlimited",
-    hidocNotes: "unlimited",
-    hidocWorkshopChats: "unlimited",
+    clewParses: "unlimited",
+    clewExtracts: "unlimited",
+    clewLessons: "unlimited",
+    clewChats: "unlimited",
+    clewNotes: "unlimited",
+    clewWorkshopChats: "unlimited",
   },
   max: {
     privateMaterials: "unlimited",
     courseBuilds: "unlimited",
     mockExams: "unlimited",
     agentCalls: "unlimited",
-    hidocParses: "unlimited",
-    hidocExtracts: "unlimited",
-    hidocLessons: "unlimited",
-    hidocChats: "unlimited",
-    hidocNotes: "unlimited",
-    hidocWorkshopChats: "unlimited",
+    clewParses: "unlimited",
+    clewExtracts: "unlimited",
+    clewLessons: "unlimited",
+    clewChats: "unlimited",
+    clewNotes: "unlimited",
+    clewWorkshopChats: "unlimited",
   },
 };
 
@@ -141,13 +141,13 @@ export function getQuotaLabel(resource: QuotaResource): string {
     case "privateMaterials": return "私人材料准入";
     case "courseBuilds": return "Course Builder 构建 / 私人分析";
     case "mockExams": return "模考会话";
-    case "agentCalls": return "NUR Agent 对话";
-    case "hidocParses": return "Hi doc 目录解析（模型）";
-    case "hidocExtracts": return "Hi doc 知识点萃取（模型）";
-    case "hidocLessons": return "Hi doc 讲义生成（模型）";
-    case "hidocChats": return "Hi doc 讲解对话（模型）";
-    case "hidocNotes": return "Hi doc 学霸笔记（模型）";
-    case "hidocWorkshopChats": return "Hi doc 课题工作坊答疑（模型）";
+    case "agentCalls": return "Ariadne Agent 对话";
+    case "clewParses": return "Clew 目录解析（模型）";
+    case "clewExtracts": return "Clew 知识点萃取（模型）";
+    case "clewLessons": return "Clew 讲义生成（模型）";
+    case "clewChats": return "Clew 讲解对话（模型）";
+    case "clewNotes": return "Clew 学霸笔记（模型）";
+    case "clewWorkshopChats": return "Clew 课题工作坊答疑（模型）";
   }
 }
 

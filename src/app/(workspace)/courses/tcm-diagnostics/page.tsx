@@ -7,7 +7,7 @@ import { assertValidLearnerCourseState } from "@/lib/course-validation";
 const course = getRequiredCourseBySlug("tcm-diagnostics");
 
 export const metadata: Metadata = {
-  title: `${course.title}课程工作台｜NUR LEARN`,
+  title: `${course.title}课程工作台｜Ariadne`,
   description: `${course.title}的学期进度、章节路径、考试重点与学习任务总入口。`,
 };
 

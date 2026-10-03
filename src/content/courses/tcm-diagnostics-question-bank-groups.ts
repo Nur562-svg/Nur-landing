@@ -588,7 +588,7 @@ const caseSpleenStomach: AssessmentItemDefinition = {
   promptSource: {
     authority: "nur-editorial",
     wording: "nur-adapted",
-    locator: "NUR LEARN · 脾胃辨证案例迁移（教材P121–123）",
+    locator: "Ariadne · 脾胃辨证案例迁移（教材P121–123）",
     note: "案例由 NUR 根据教材P121–123及教师重点来源组织，不是学校原题、真实患者诊断或任课教师评分。",
     sourceIds: [deepLoopSourceIds.spleenTextbook, deepLoopSourceIds.editorial],
   },

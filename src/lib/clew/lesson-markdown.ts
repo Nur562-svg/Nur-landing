@@ -1,15 +1,15 @@
 /**
- * Hi doc 讲义 markdown 解析（纯函数，客户端可安全引用）。
+ * Clew 讲义 markdown 解析（纯函数，客户端可安全引用）。
  * 只支持讲义实际用到的子集：标题 / 段落 / 列表 / 引用 / 粗体 / 行内代码；
  * 渲染端据此构造 React 元素，不使用 dangerouslySetInnerHTML。
  */
 
-export type HiDocInlineToken =
+export type ClewInlineToken =
   | { kind: "text"; text: string }
   | { kind: "bold"; text: string }
   | { kind: "code"; text: string };
 
-export type HiDocMarkdownBlock =
+export type ClewMarkdownBlock =
   | { kind: "heading"; level: 1 | 2 | 3 | 4; text: string }
   | { kind: "paragraph"; text: string }
   | { kind: "list"; ordered: boolean; items: string[] }
@@ -26,9 +26,9 @@ function clampHeadingLevel(hashes: string): 1 | 2 | 3 | 4 {
   return (level < 1 ? 1 : level) as 1 | 2 | 3 | 4;
 }
 
-export function parseHiDocMarkdown(markdown: string): HiDocMarkdownBlock[] {
+export function parseClewMarkdown(markdown: string): ClewMarkdownBlock[] {
   const lines = markdown.replace(/\r\n/g, "\n").split("\n");
-  const blocks: HiDocMarkdownBlock[] = [];
+  const blocks: ClewMarkdownBlock[] = [];
   let paragraph: string[] = [];
   let list: { ordered: boolean; items: string[] } | null = null;
 
@@ -114,8 +114,8 @@ export function parseHiDocMarkdown(markdown: string): HiDocMarkdownBlock[] {
 
 const INLINE_PATTERN = /(\*\*[^*]+\*\*|`[^`]+`)/g;
 
-export function parseHiDocInline(text: string): HiDocInlineToken[] {
-  const tokens: HiDocInlineToken[] = [];
+export function parseClewInline(text: string): ClewInlineToken[] {
+  const tokens: ClewInlineToken[] = [];
   let lastIndex = 0;
   for (const match of text.matchAll(INLINE_PATTERN)) {
     const index = match.index ?? 0;

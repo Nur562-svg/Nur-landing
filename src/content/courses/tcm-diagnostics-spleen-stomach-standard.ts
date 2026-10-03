@@ -347,7 +347,7 @@ export const spleenStomachAssessmentItems = [
     promptSource: {
       authority: "nur-editorial",
       wording: "nur-adapted",
-      locator: "NUR LEARN · 脾胃病辨证 名词解释训练",
+      locator: "Ariadne · 脾胃病辨证 名词解释训练",
       note: "依据教材印刷页与教师病案重点改编的 NUR 结构化名词解释；不冒充原题或教师标准答案。",
       sourceIds: [spleenStomachSourceIds.textbook, spleenStomachSourceIds.teacherReview],
     },

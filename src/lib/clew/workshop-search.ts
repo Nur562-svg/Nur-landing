@@ -1,12 +1,12 @@
 /**
- * Hi doc M6 课题工作坊材料检索（纯函数，确定性关键词检索；MVP 不引向量库）。
+ * Clew M6 课题工作坊材料检索（纯函数，确定性关键词检索；MVP 不引向量库）。
  * 分词规则：拉丁/数字按连续串取词（≥2 字符）；中文连续段取整段（≤10 字）+ 全部二字滑窗。
  * 命中评分确定性：按「命中词种数 ↓、命中次数 ↓、片段序 ↑」排序，同分结果稳定。
  * 检索不到就如实返回空命中，调用方据此说明「材料里没有相关内容」，绝不编造材料内容或页码。
  */
 
 /** 单条检索片段（PDF 按页；文本按 40 行一块）。 */
-export type HiDocWorkshopSegment = {
+export type ClewWorkshopSegment = {
   fileId: string;
   fileName: string;
   /** PDF 页码（1 起）；文本材料为 null。 */
@@ -18,7 +18,7 @@ export type HiDocWorkshopSegment = {
 };
 
 /** 命中片段（进入答疑上下文与引用列表）。 */
-export type HiDocWorkshopSearchHit = {
+export type ClewWorkshopSearchHit = {
   fileId: string;
   fileName: string;
   /** 中文定位标签：「第 3 页」/「第 41–80 行」。 */
@@ -30,11 +30,11 @@ export type HiDocWorkshopSearchHit = {
 };
 
 /** 进入上下文与结果载荷的命中片段数上限。 */
-export const HIDOC_WORKSHOP_MAX_HITS = 8;
+export const CLEW_WORKSHOP_MAX_HITS = 8;
 /** 每条命中片段摘录长度上限。 */
-export const HIDOC_WORKSHOP_HIT_EXCERPT_CHARS = 600;
+export const CLEW_WORKSHOP_HIT_EXCERPT_CHARS = 600;
 /** 文本分块的行数（与行/页折算比一致：一块 ≈ 1 页）。 */
-export const HIDOC_WORKSHOP_TEXT_CHUNK_LINES = 40;
+export const CLEW_WORKSHOP_TEXT_CHUNK_LINES = 40;
 
 /** 中文停用/虚词（确定性小表；只过滤提问里的口语虚词，不影响材料原文）。 */
 const QUESTION_STOPWORDS = new Set([
@@ -51,7 +51,7 @@ function isCjk(char: string): boolean {
  * 提问分词：拉丁/数字词（≥2 字符，小写化）+ 中文整段（2–10 字）+ 中文二字滑窗。
  * 去停用词；输出确定性去重（按首次出现序）。
  */
-export function tokenizeHiDocWorkshopQuery(question: string): string[] {
+export function tokenizeClewWorkshopQuery(question: string): string[] {
   const tokens: string[] = [];
   const seen = new Set<string>();
   const push = (token: string) => {
@@ -80,7 +80,7 @@ export function tokenizeHiDocWorkshopQuery(question: string): string[] {
 }
 
 /** 片段定位标签。 */
-export function describeHiDocWorkshopSegmentLocator(segment: {
+export function describeClewWorkshopSegmentLocator(segment: {
   page: number | null;
   lineStart: number | null;
   lineEnd: number | null;
@@ -97,12 +97,12 @@ export function describeHiDocWorkshopSegmentLocator(segment: {
 }
 
 /** PDF 文字层 → 片段（每页一条；空白页跳过）。 */
-export function buildHiDocWorkshopPdfSegments(
+export function buildClewWorkshopPdfSegments(
   fileId: string,
   fileName: string,
   pages: readonly { pageNumber: number; text: string }[],
-): HiDocWorkshopSegment[] {
-  const segments: HiDocWorkshopSegment[] = [];
+): ClewWorkshopSegment[] {
+  const segments: ClewWorkshopSegment[] = [];
   for (const page of pages) {
     const text = page.text.replace(/\s+/g, " ").trim();
     if (text.length === 0) {
@@ -114,15 +114,15 @@ export function buildHiDocWorkshopPdfSegments(
 }
 
 /** 文本材料 → 片段（每 40 行一条；空白行不单独成块）。 */
-export function buildHiDocWorkshopTextSegments(
+export function buildClewWorkshopTextSegments(
   fileId: string,
   fileName: string,
   text: string,
-): HiDocWorkshopSegment[] {
+): ClewWorkshopSegment[] {
   const lines = text.split("\n");
-  const segments: HiDocWorkshopSegment[] = [];
-  for (let start = 0; start < lines.length; start += HIDOC_WORKSHOP_TEXT_CHUNK_LINES) {
-    const chunk = lines.slice(start, start + HIDOC_WORKSHOP_TEXT_CHUNK_LINES);
+  const segments: ClewWorkshopSegment[] = [];
+  for (let start = 0; start < lines.length; start += CLEW_WORKSHOP_TEXT_CHUNK_LINES) {
+    const chunk = lines.slice(start, start + CLEW_WORKSHOP_TEXT_CHUNK_LINES);
     const chunkText = chunk.join("\n").replace(/[ \t]+/g, " ").trim();
     if (chunkText.length === 0) {
       continue;
@@ -132,7 +132,7 @@ export function buildHiDocWorkshopTextSegments(
       fileName,
       page: null,
       lineStart: start + 1,
-      lineEnd: Math.min(start + HIDOC_WORKSHOP_TEXT_CHUNK_LINES, lines.length),
+      lineEnd: Math.min(start + CLEW_WORKSHOP_TEXT_CHUNK_LINES, lines.length),
       text: chunkText,
     });
   }
@@ -158,12 +158,12 @@ function buildExcerpt(text: string, terms: readonly string[]): string {
       firstIndex = index;
     }
   }
-  if (text.length <= HIDOC_WORKSHOP_HIT_EXCERPT_CHARS) {
+  if (text.length <= CLEW_WORKSHOP_HIT_EXCERPT_CHARS) {
     return text;
   }
-  const half = Math.floor(HIDOC_WORKSHOP_HIT_EXCERPT_CHARS / 2);
+  const half = Math.floor(CLEW_WORKSHOP_HIT_EXCERPT_CHARS / 2);
   const start = Math.max(0, (firstIndex === -1 ? 0 : firstIndex - half));
-  const end = Math.min(text.length, start + HIDOC_WORKSHOP_HIT_EXCERPT_CHARS);
+  const end = Math.min(text.length, start + CLEW_WORKSHOP_HIT_EXCERPT_CHARS);
   const prefix = start > 0 ? "…" : "";
   const suffix = end < text.length ? "…" : "";
   return `${prefix}${text.slice(start, end).trim()}${suffix}`;
@@ -184,18 +184,18 @@ function queryHasLongTerm(question: string, terms: readonly string[]): boolean {
  * 需命中至少一个长词，或 ≥2 个不同词且覆盖 ≥4 字（相邻滑窗叠合命中只算一个窗口）；
  * 纯二字提问（如「心火」）仍允许单词命中。
  */
-export function searchHiDocWorkshopSegments(
-  segments: readonly HiDocWorkshopSegment[],
+export function searchClewWorkshopSegments(
+  segments: readonly ClewWorkshopSegment[],
   question: string,
-  maxHits: number = HIDOC_WORKSHOP_MAX_HITS,
-): HiDocWorkshopSearchHit[] {
-  const terms = tokenizeHiDocWorkshopQuery(question);
+  maxHits: number = CLEW_WORKSHOP_MAX_HITS,
+): ClewWorkshopSearchHit[] {
+  const terms = tokenizeClewWorkshopQuery(question);
   if (terms.length === 0 || segments.length === 0) {
     return [];
   }
   const hasLongTerm = queryHasLongTerm(question, terms);
 
-  const hits: HiDocWorkshopSearchHit[] = [];
+  const hits: ClewWorkshopSearchHit[] = [];
   segments.forEach((segment, segmentIndex) => {
     const haystack = segment.text;
     const matchedTerms: string[] = [];
@@ -226,7 +226,7 @@ export function searchHiDocWorkshopSegments(
     hits.push({
       fileId: segment.fileId,
       fileName: segment.fileName,
-      locator: describeHiDocWorkshopSegmentLocator(segment),
+      locator: describeClewWorkshopSegmentLocator(segment),
       excerpt: buildExcerpt(segment.text, matchedTerms),
       matchedTerms,
       // 评分 = 命中词种数 × 100 + 命中次数（封顶）；segmentIndex 用于同分稳定排序
@@ -246,12 +246,12 @@ export function searchHiDocWorkshopSegments(
  * 只读关联该用户自己的教材知识点标题：提问分词命中知识点标题（或标题整段包含提问中的中文长词）即关联。
  * 关联不到返回空数组，调用方如实不关联；只读不写。
  */
-export function matchHiDocWorkshopKnowledgePoints(
+export function matchClewWorkshopKnowledgePoints(
   knowledgePointTitles: readonly { id: string; title: string; textbookTitle: string }[],
   question: string,
   maxMatches = 5,
 ): { id: string; title: string; textbookTitle: string }[] {
-  const terms = tokenizeHiDocWorkshopQuery(question);
+  const terms = tokenizeClewWorkshopQuery(question);
   if (terms.length === 0) {
     return [];
   }
@@ -278,7 +278,7 @@ export function matchHiDocWorkshopKnowledgePoints(
 }
 
 /** 检索零命中时的固定回答（确定性文案，不调用模型、不占模型额度）。 */
-export function buildHiDocWorkshopNoHitAnswer(workshopTitle: string): string {
+export function buildClewWorkshopNoHitAnswer(workshopTitle: string): string {
   return [
     `这份课题（${workshopTitle}）的材料里没有检索到与你问题相关的内容。`,
     "我没有调用模型作答，以免编造材料里不存在的内容。",

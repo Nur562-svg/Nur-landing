@@ -1,8 +1,8 @@
 {
-  "name": "nur-landing",
+  "name": "ariadne",
   "version": "0.1.0",
   "private": true,
-  "description": "NUR LEARN — an evidence-led learning platform for Integrated TCM and Western Medicine clinical students.",
+  "description": "Ariadne — an evidence-led learning platform for Integrated TCM and Western Medicine clinical students.",
   "license": "MIT",
   "repository": {
     "type": "git",

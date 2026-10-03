@@ -1,5 +1,5 @@
 import type { AuthUserView } from "@/types/auth";
-import type { HiDocTextbookView } from "@/types/hidoc";
+import type { ClewTextbookView } from "@/types/clew";
 
 /**
  * Workspace 壳的数据源（R1）。
@@ -12,10 +12,10 @@ export type ShellEntry = {
   href: string;
 };
 
-/** 主入口：学习主环为默认工作台；Hi doc / 题库为从属入口（IA 拍板 2026-09-21）。 */
+/** 主入口：学习主环为默认工作台；Clew / 题库为从属入口（IA 拍板 2026-09-21）。 */
 export const PRIMARY_ENTRIES: readonly ShellEntry[] = [
   { id: "learn", label: "学习主环", href: "/learn" },
-  { id: "hidoc", label: "Hi doc", href: "/learn/hi-doc" },
+  { id: "clew", label: "Clew", href: "/learn/clew" },
   { id: "courses", label: "官方课程", href: "/courses" },
   { id: "question-bank", label: "题库", href: "/question-bank" },
   { id: "membership", label: "会员", href: "/account/billing" },
@@ -27,25 +27,44 @@ export const ACTIVE_COURSE_ENTRIES: readonly ShellEntry[] = [
   { id: "course-physiology", label: "生理学", href: "/courses/physiology" },
 ];
 
-export type ShellTextbook = Pick<HiDocTextbookView, "id" | "title" | "chapterCount" | "isFrozen">;
+export type ShellTextbook = Pick<ClewTextbookView, "id" | "title" | "chapterCount" | "isFrozen">;
 
-/** 书架最近教材（最多 3 本，按创建时间倒序——API 已排序）。 */
-export async function fetchRecentTextbooks(): Promise<readonly ShellTextbook[]> {
+/** 左栏常驻配额 chip 用：本月教材名额（真实数据，来自书架 API 的 quota）。 */
+export type ShellQuota = {
+  used: number;
+  limit: number;
+};
+
+/** 书架最近教材 + 当月名额（最多 3 本，按创建时间倒序——API 已排序；失败时静默降级）。 */
+export async function fetchShelfSummary(): Promise<{
+  textbooks: readonly ShellTextbook[];
+  quota: ShellQuota | null;
+}> {
   try {
-    const response = await fetch("/api/hidoc/textbooks", { cache: "no-store" });
+    const response = await fetch("/api/clew/textbooks", { cache: "no-store" });
     if (!response.ok) {
-      return [];
+      return { textbooks: [], quota: null };
     }
-    const payload = (await response.json()) as { ok?: boolean; shelf?: { textbooks?: HiDocTextbookView[] } };
+    const payload = (await response.json()) as {
+      ok?: boolean;
+      shelf?: { textbooks?: ClewTextbookView[]; quota?: { used?: number; limit?: number } };
+    };
     const textbooks = payload.shelf?.textbooks ?? [];
-    return textbooks.slice(0, 3).map((book) => ({
-      id: book.id,
-      title: book.title,
-      chapterCount: book.chapterCount,
-      isFrozen: book.isFrozen,
-    }));
+    const quota = payload.shelf?.quota;
+    return {
+      textbooks: textbooks.slice(0, 3).map((book) => ({
+        id: book.id,
+        title: book.title,
+        chapterCount: book.chapterCount,
+        isFrozen: book.isFrozen,
+      })),
+      quota:
+        quota && typeof quota.used === "number" && typeof quota.limit === "number"
+          ? { used: quota.used, limit: quota.limit }
+          : null,
+    };
   } catch {
-    return [];
+    return { textbooks: [], quota: null };
   }
 }
 

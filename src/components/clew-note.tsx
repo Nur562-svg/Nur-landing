@@ -2,38 +2,38 @@
 
 import { useState } from "react";
 import { CircleAlert, Download, Loader2, NotebookPen, RefreshCw, Sparkles } from "lucide-react";
-import type { HiDocChapterView, HiDocNoteEvent, HiDocNoteView } from "@/types/hidoc";
-import { consumeHiDocSse, readHiDocFailure } from "@/lib/hidoc/client-api";
-import { describeHiDocLessonGenerator } from "@/lib/hidoc/lesson-heuristic";
-import { buildHiDocNoteFileName } from "@/lib/hidoc/note-heuristic";
+import type { ClewChapterView, ClewNoteEvent, ClewNoteView } from "@/types/clew";
+import { consumeClewSse, readClewFailure } from "@/lib/clew/client-api";
+import { describeClewLessonGenerator } from "@/lib/clew/lesson-heuristic";
+import { buildClewNoteFileName } from "@/lib/clew/note-heuristic";
 import { V2Button } from "@/components/ui/v2/button";
-import { HiDocMarkdown } from "./hi-doc-markdown";
-import styles from "./hi-doc.module.css";
+import { ClewMarkdown } from "./clew-markdown";
+import styles from "./clew.module.css";
 
 /**
- * Hi doc 学霸笔记区块（客户端，章级）：
+ * Clew 学霸笔记区块（客户端，章级）：
  * 聚合本章讲义 + 讲解追问 + 划重点/批注，流式生成一份可复习、可下载的 markdown 笔记。
  * 下载走前端 Blob（不落服务器文件存储）；重新生成覆盖旧版本前需确认。
  */
 
-type HiDocNotePanelProps = {
+type ClewNotePanelProps = {
   textbookId: string;
   textbookTitle: string;
-  chapter: HiDocChapterView;
-  initialNote: HiDocNoteView | null;
+  chapter: ClewChapterView;
+  initialNote: ClewNoteView | null;
   lessonCount: number;
   knowledgePointCount: number;
 };
 
-export function HiDocNotePanel({
+export function ClewNotePanel({
   textbookId,
   textbookTitle,
   chapter,
   initialNote,
   lessonCount,
   knowledgePointCount,
-}: HiDocNotePanelProps) {
-  const [note, setNote] = useState<HiDocNoteView | null>(initialNote);
+}: ClewNotePanelProps) {
+  const [note, setNote] = useState<ClewNoteView | null>(initialNote);
   const [draft, setDraft] = useState("");
   const [log, setLog] = useState<string[]>([]);
   const [notes, setNotes] = useState<string[]>([]);
@@ -54,13 +54,13 @@ export function HiDocNotePanel({
 
     try {
       const response = await fetch(
-        `/api/hidoc/textbooks/${textbookId}/chapters/${chapter.order}/note`,
+        `/api/clew/textbooks/${textbookId}/chapters/${chapter.order}/note`,
         { method: "POST" },
       );
       if (!response.ok || !response.body) {
         let message = "学霸笔记生成失败：服务暂时不可用，请稍后重试。";
         try {
-          message = readHiDocFailure(await response.json());
+          message = readClewFailure(await response.json());
         } catch {
           // 保持默认提示
         }
@@ -68,8 +68,8 @@ export function HiDocNotePanel({
         setDraft("");
         return;
       }
-      await consumeHiDocSse(response, (raw) => {
-        const event = raw as HiDocNoteEvent;
+      await consumeClewSse(response, (raw) => {
+        const event = raw as ClewNoteEvent;
         if (event.type === "progress") {
           setLog((current) => [...current, event.message]);
         } else if (event.type === "delta") {
@@ -99,7 +99,7 @@ export function HiDocNotePanel({
     const url = URL.createObjectURL(blob);
     const anchor = document.createElement("a");
     anchor.href = url;
-    anchor.download = buildHiDocNoteFileName(textbookTitle, chapter.title);
+    anchor.download = buildClewNoteFileName(textbookTitle, chapter.title);
     document.body.appendChild(anchor);
     anchor.click();
     document.body.removeChild(anchor);
@@ -108,14 +108,14 @@ export function HiDocNotePanel({
   }
 
   return (
-    <section className={styles.notePanel} id="note" aria-labelledby="hidoc-note-title">
+    <section className={styles.notePanel} id="note" aria-labelledby="clew-note-title">
       <div className={styles.panelHead}>
-        <h2 id="hidoc-note-title">
+        <h2 id="clew-note-title">
           <NotebookPen aria-hidden="true" size={17} strokeWidth={1.6} /> 学霸笔记
         </h2>
         {note ? (
           <p>
-            {describeHiDocLessonGenerator(note.generator)} ·{" "}
+            {describeClewLessonGenerator(note.generator)} ·{" "}
             {new Date(note.generatedAt).toLocaleString("zh-CN", {
               hour12: false,
               timeZone: "Asia/Shanghai",
@@ -202,13 +202,13 @@ export function HiDocNotePanel({
 
       {generating && draft ? (
         <div className={styles.lessonBody} aria-label="学霸笔记生成中预览">
-          <HiDocMarkdown markdown={draft} />
+          <ClewMarkdown markdown={draft} />
         </div>
       ) : note ? (
         <div className={styles.lessonBody}>
-          <HiDocMarkdown markdown={note.contentMd} />
+          <ClewMarkdown markdown={note.contentMd} />
           <p className={styles.noteDownloadHint}>
-            下载的是当前这份笔记（文件名：{buildHiDocNoteFileName(textbookTitle, chapter.title)}
+            下载的是当前这份笔记（文件名：{buildClewNoteFileName(textbookTitle, chapter.title)}
             ）；重新生成后需重新下载。
           </p>
         </div>

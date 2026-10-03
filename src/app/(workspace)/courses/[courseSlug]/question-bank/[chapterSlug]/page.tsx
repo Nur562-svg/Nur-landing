@@ -32,16 +32,16 @@ export async function generateMetadata({
   const course = getPublishedCourseBySlug(courseSlug);
 
   if (!course) {
-    return { title: "题库章节未找到｜NUR LEARN" };
+    return { title: "题库章节未找到｜Ariadne" };
   }
 
   const chapter = selectChapterBySlug(course, chapterSlug);
   if (!chapter) {
-    return { title: "题库章节未找到｜NUR LEARN" };
+    return { title: "题库章节未找到｜Ariadne" };
   }
 
   return {
-    title: `${chapter.title} · 题库｜${course.title}｜NUR LEARN`,
+    title: `${chapter.title} · 题库｜${course.title}｜Ariadne`,
     description: `查看${course.title}中${chapter.title}的所有题目并开始刷题。`,
   };
 }

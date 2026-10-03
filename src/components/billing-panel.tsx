@@ -6,8 +6,8 @@ import { Loader2, Check, ArrowRight } from "lucide-react";
 import type { PlanId, PlanPeriod, PaymentParams } from "@/lib/payment/types";
 import { PLAN_CATALOG } from "@/lib/payment/plans";
 import { getMembershipTierLabel, normalizeMembershipTier } from "@/lib/membership";
-import { HIDOC_MONTHLY_TEXTBOOK_LIMITS } from "@/lib/hidoc/limits";
-import { HIDOC_WORKSHOP_LIMITS } from "@/lib/hidoc/workshop-rules";
+import { CLEW_MONTHLY_TEXTBOOK_LIMITS } from "@/lib/clew/limits";
+import { CLEW_WORKSHOP_LIMITS } from "@/lib/clew/workshop-rules";
 import { getCourseEntitlementLimit } from "@/lib/course-entitlement-policy";
 import { TIER_QUOTAS } from "@/lib/quotas";
 import { V2Badge } from "@/components/ui/v2/badge";
@@ -86,19 +86,19 @@ function statusLabel(status: OrderStatus): string {
 
 /** 权益清单：数字全部来自配额真源头（limits / workshop-rules / entitlement-policy / quotas），不在页面硬编码。 */
 function buildBenefits(tier: "basic" | "pro" | "max"): string[] {
-  const workshop = HIDOC_WORKSHOP_LIMITS[tier];
+  const workshop = CLEW_WORKSHOP_LIMITS[tier];
   const courseLimit = getCourseEntitlementLimit(tier);
   const benefits = [
-    `Hi doc 教材：每月 ${HIDOC_MONTHLY_TEXTBOOK_LIMITS[tier]} 本（名额当月有效）`,
+    `Clew 教材：每月 ${CLEW_MONTHLY_TEXTBOOK_LIMITS[tier]} 本（名额当月有效）`,
     `课题工作坊：${workshop.workshops} 个 · 每课题 ${workshop.filesPerWorkshop} 份材料`,
     `官方课程（非试点）：${courseLimit === "unlimited" ? "全部解锁" : `自选 ${courseLimit} 门`}`,
   ];
-  const chatLimit = TIER_QUOTAS[tier].hidocChats;
+  const chatLimit = TIER_QUOTAS[tier].clewChats;
   if (chatLimit === "unlimited") {
-    benefits.push("Hi doc 模型能力（讲义 / 笔记 / 对话）不限量");
+    benefits.push("Clew 模型能力（讲义 / 笔记 / 对话）不限量");
   } else {
     benefits.push(
-      `Hi doc 讲解对话：${chatLimit} 轮/月 · 学霸笔记 ${TIER_QUOTAS[tier].hidocNotes} 次/月`,
+      `Clew 讲解对话：${chatLimit} 轮/月 · 学霸笔记 ${TIER_QUOTAS[tier].clewNotes} 次/月`,
     );
   }
   return benefits;
@@ -303,7 +303,7 @@ export function BillingPanel() {
   return (
     <div className={styles.page}>
       <div className={styles.container}>
-        <p className={styles.kicker}>NUR LEARN 会员</p>
+        <p className={styles.kicker}>Ariadne 会员</p>
         <h1 className={styles.title}>会员中心</h1>
         <p className={styles.statusLine}>
           当前状态：

@@ -44,11 +44,11 @@ export async function generateMetadata({
     : undefined;
 
   if (!course || !knowledgePoint) {
-    return { title: "写作训练室未找到｜NUR LEARN" };
+    return { title: "写作训练室未找到｜Ariadne" };
   }
 
   return {
-    title: `主观题写作训练室｜${knowledgePoint.title}｜NUR LEARN`,
+    title: `主观题写作训练室｜${knowledgePoint.title}｜Ariadne`,
     description: `围绕${knowledgePoint.title}训练完整的名词解释与简答题表达。`,
   };
 }

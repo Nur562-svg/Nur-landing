@@ -32,14 +32,14 @@ export async function generateMetadata({
   const course = getPublishedCourseBySlug(courseSlug);
 
   if (!course) {
-    return { title: "题目未找到｜NUR LEARN" };
+    return { title: "题目未找到｜Ariadne" };
   }
 
   const chapter = selectChapterBySlug(course, chapterSlug);
   const question = selectQuestionById(course, questionId);
 
   if (!chapter || !question) {
-    return { title: "题目未找到｜NUR LEARN" };
+    return { title: "题目未找到｜Ariadne" };
   }
 
   const truncatedPrompt =
@@ -48,7 +48,7 @@ export async function generateMetadata({
       : question.prompt;
 
   return {
-    title: `${truncatedPrompt} · ${chapter.title}｜NUR LEARN`,
+    title: `${truncatedPrompt} · ${chapter.title}｜Ariadne`,
   };
 }
 

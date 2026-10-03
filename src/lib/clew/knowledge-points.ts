@@ -1,17 +1,17 @@
 import "server-only";
 
 import { prisma } from "@/lib/prisma";
-import type { HiDocChatMessage, HiDocKnowledgePointView } from "@/types/hidoc";
-import { parseHiDocChatMessages } from "./conversation";
-import { toKnowledgePointView, type HiDocChapterServiceResult } from "./chapters";
+import type { ClewChatMessage, ClewKnowledgePointView } from "@/types/clew";
+import { parseClewChatMessages } from "./conversation";
+import { toKnowledgePointView, type ClewChapterServiceResult } from "./chapters";
 
 /**
- * Hi doc 知识点上下文（server-only）：归属校验 + 章节/教材信息 + 同章知识点清单 + 对话读取。
+ * Clew 知识点上下文（server-only）：归属校验 + 章节/教材信息 + 同章知识点清单 + 对话读取。
  * 全部查询都从 userId 出发（教材 → 章节 → 知识点链路上校验私有归属），不信任客户端传入的 id。
  */
 
-export type HiDocKnowledgePointContext = {
-  knowledgePoint: HiDocKnowledgePointView;
+export type ClewKnowledgePointContext = {
+  knowledgePoint: ClewKnowledgePointView;
   chapter: {
     id: string;
     order: number;
@@ -28,11 +28,11 @@ export type HiDocKnowledgePointContext = {
   };
 };
 
-export async function loadHiDocKnowledgePointContext(
+export async function loadClewKnowledgePointContext(
   userId: string,
   kpId: string,
-): Promise<HiDocChapterServiceResult<HiDocKnowledgePointContext>> {
-  const row = await prisma.hiDocKnowledgePoint.findFirst({
+): Promise<ClewChapterServiceResult<ClewKnowledgePointContext>> {
+  const row = await prisma.clewKnowledgePoint.findFirst({
     where: {
       id: kpId,
       chapter: { textbook: { userId, deletedAt: null } },
@@ -66,7 +66,7 @@ export async function loadHiDocKnowledgePointContext(
 
 /** 同章已萃取知识点标题（按序），供对话上下文列出本章结构。 */
 export async function listChapterKnowledgePointTitles(chapterId: string): Promise<string[]> {
-  const rows = await prisma.hiDocKnowledgePoint.findMany({
+  const rows = await prisma.clewKnowledgePoint.findMany({
     where: { chapterId },
     orderBy: { order: "asc" },
     select: { title: true },
@@ -75,24 +75,24 @@ export async function listChapterKnowledgePointTitles(chapterId: string): Promis
 }
 
 /** 读取该用户在某知识点下的对话历史（Json 列按不可信输入解析）。 */
-export async function loadHiDocConversationMessages(
+export async function loadClewConversationMessages(
   userId: string,
   kpId: string,
-): Promise<HiDocChatMessage[]> {
-  const row = await prisma.hiDocConversation.findFirst({
+): Promise<ClewChatMessage[]> {
+  const row = await prisma.clewConversation.findFirst({
     where: { userId, kpId },
     select: { messages: true },
   });
-  return parseHiDocChatMessages(row?.messages);
+  return parseClewChatMessages(row?.messages);
 }
 
 /** 覆盖写入对话消息（每个用户每个知识点一行）。 */
-export async function saveHiDocConversationMessages(
+export async function saveClewConversationMessages(
   userId: string,
   kpId: string,
-  messages: readonly HiDocChatMessage[],
+  messages: readonly ClewChatMessage[],
 ): Promise<void> {
-  await prisma.hiDocConversation.upsert({
+  await prisma.clewConversation.upsert({
     where: { userId_kpId: { userId, kpId } },
     create: { userId, kpId, messages: [...messages] },
     update: { messages: [...messages] },

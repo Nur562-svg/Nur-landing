@@ -3,7 +3,7 @@ import { QuestionBankGlobal } from "@/components/question-bank-global";
 import { publishedCourses } from "@/content/courses";
 
 export const metadata: Metadata = {
-  title: "题库｜NUR LEARN",
+  title: "题库｜Ariadne",
   description: "跨课程题目聚合浏览与训练，支持按年级、题型筛选与刷题统计。",
 };
 

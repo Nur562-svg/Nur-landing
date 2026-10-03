@@ -41,6 +41,15 @@ type NurAgentChatProps = {
   fsrsSummary: readonly FsrsCriterionSummary[] | null;
   currentText: string | null;
   taskContext: TaskContext;
+  /** floating（默认，悬浮球内）/ embedded（页面内嵌）/ page-chat（学习页对当前 KP 提问，显示上下文 chip）。 */
+  mode?: "floating" | "embedded" | "page-chat";
+  /** page-chat 模式的上下文 chip；服务端已按 knowledgePointId 注入 KP 上下文，chip 负责显式标注。 */
+  contextChip?: {
+    label: string;
+    value: string;
+    sourcePage?: number | null;
+    description?: string | null;
+  } | null;
 };
 
 function ToolResultCard({ output }: { output: unknown }) {
@@ -155,8 +164,17 @@ function ChatMessage({ message }: { message: UIMessage }) {
 }
 
 export function NurAgentChat(props: NurAgentChatProps) {
-  const { courseSlug, knowledgePointId, fsrsSummary, currentText, taskContext } = props;
+  const {
+    courseSlug,
+    knowledgePointId,
+    fsrsSummary,
+    currentText,
+    taskContext,
+    mode = "floating",
+    contextChip,
+  } = props;
   const [input, setInput] = useState("");
+  const [chipOpen, setChipOpen] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
 
   const transport = useMemo(
@@ -231,6 +249,25 @@ export function NurAgentChat(props: NurAgentChatProps) {
           </div>
         ) : null}
       </div>
+      {mode === "page-chat" && contextChip ? (
+        <div className={styles.contextChipRow}>
+          <button
+            type="button"
+            className={styles.contextChip}
+            aria-expanded={chipOpen}
+            onClick={() => setChipOpen((open) => !open)}
+            title={contextChip.description ?? undefined}
+          >
+            {contextChip.label}：{contextChip.value}
+            {typeof contextChip.sourcePage === "number"
+              ? ` · 第 ${contextChip.sourcePage} 页`
+              : ""}
+          </button>
+          {chipOpen && contextChip.description ? (
+            <p className={styles.contextChipDetail}>{contextChip.description}</p>
+          ) : null}
+        </div>
+      ) : null}
       <form className={styles.inputForm} onSubmit={handleSubmit}>
         <input
           className={styles.input}

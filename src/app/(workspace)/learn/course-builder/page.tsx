@@ -1,6 +1,6 @@
 import Link from "next/link";
 import type { Metadata } from "next";
-import { getHiDocSessionUser } from "@/lib/hidoc/session-user";
+import { getClewSessionUser } from "@/lib/clew/session-user";
 import { normalizeMembershipTier } from "@/lib/membership";
 import styles from "./page.module.css";
 
@@ -13,13 +13,13 @@ export const metadata: Metadata = {
 export const dynamic = "force-dynamic";
 
 export default async function CourseBuilderPage() {
-  const user = await getHiDocSessionUser();
+  const user = await getClewSessionUser();
   const tier = user ? normalizeMembershipTier(user.tier) : null;
 
   if (tier !== "max") {
     return (
       <main className={styles.page}>
-        <p className={styles.kicker}>NUR LEARN</p>
+        <p className={styles.kicker}>Ariadne</p>
         <h1 className={styles.title}>建课 · Max 专属</h1>
         <p className={styles.message}>
           材料建课仅对 Max 会员开放。升级后可从学习主环进入。
@@ -38,9 +38,9 @@ export default async function CourseBuilderPage() {
 
   return (
     <main className={styles.page}>
-      <p className={styles.kicker}>NUR LEARN</p>
+      <p className={styles.kicker}>Ariadne</p>
       <h1 className={styles.title}>建课</h1>
-      <p className={styles.message}>Nur learn 正努力实现此功能中</p>
+      <p className={styles.message}>Ariadne 正努力实现此功能中</p>
       <Link className={styles.back} href="/learn">
         返回学习首页
       </Link>

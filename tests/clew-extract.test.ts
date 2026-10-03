@@ -1,14 +1,14 @@
 import { describe, it } from "node:test";
 import assert from "node:assert/strict";
 
-// Hi doc M3：知识点萃取 payload 校验、先修归一化与章节模型文本构建
+// Clew M3：知识点萃取 payload 校验、先修归一化与章节模型文本构建
 
-describe("Hi doc knowledge point payload parsing", async () => {
+describe("Clew knowledge point payload parsing", async () => {
   const {
-    HIDOC_MAX_KNOWLEDGE_POINTS_PER_CHAPTER,
+    CLEW_MAX_KNOWLEDGE_POINTS_PER_CHAPTER,
     buildChapterModelText,
     parseModelKnowledgePointsPayload,
-  } = await import("../src/lib/hidoc/extraction-heuristic");
+  } = await import("../src/lib/clew/extraction-heuristic");
 
   const validPoint = {
     title: "四诊合参",
@@ -74,13 +74,13 @@ describe("Hi doc knowledge point payload parsing", async () => {
   });
 
   it("超出单章上限时截断并计数", () => {
-    const points = Array.from({ length: HIDOC_MAX_KNOWLEDGE_POINTS_PER_CHAPTER + 3 }, (_, index) => ({
+    const points = Array.from({ length: CLEW_MAX_KNOWLEDGE_POINTS_PER_CHAPTER + 3 }, (_, index) => ({
       ...validPoint,
       title: `知识点${index + 1}`,
       sourcePage: 3,
     }));
     const result = parseModelKnowledgePointsPayload({ knowledgePoints: points }, 3, 6);
-    assert.equal(result.knowledgePoints.length, HIDOC_MAX_KNOWLEDGE_POINTS_PER_CHAPTER);
+    assert.equal(result.knowledgePoints.length, CLEW_MAX_KNOWLEDGE_POINTS_PER_CHAPTER);
     assert.equal(result.droppedCount, 3);
   });
 
@@ -127,19 +127,19 @@ describe("Hi doc knowledge point payload parsing", async () => {
   });
 });
 
-describe("Hi doc extract quota", async () => {
+describe("Clew extract quota", async () => {
   const { TIER_QUOTAS, computeItem, canUseResource, getQuotaLabel } = await import("../src/lib/quotas");
 
   it("知识点萃取额度：free 5 / basic 20 / pro 与 max 无限", () => {
-    assert.equal(TIER_QUOTAS.free.hidocExtracts, 5);
-    assert.equal(TIER_QUOTAS.basic.hidocExtracts, 20);
-    assert.equal(TIER_QUOTAS.pro.hidocExtracts, "unlimited");
-    assert.equal(TIER_QUOTAS.max.hidocExtracts, "unlimited");
+    assert.equal(TIER_QUOTAS.free.clewExtracts, 5);
+    assert.equal(TIER_QUOTAS.basic.clewExtracts, 20);
+    assert.equal(TIER_QUOTAS.pro.clewExtracts, "unlimited");
+    assert.equal(TIER_QUOTAS.max.clewExtracts, "unlimited");
   });
 
   it("额度边界与标签", () => {
     assert.equal(canUseResource(computeItem(5, 5)), false);
     assert.equal(canUseResource(computeItem(4, 5)), true);
-    assert.match(getQuotaLabel("hidocExtracts"), /知识点萃取/);
+    assert.match(getQuotaLabel("clewExtracts"), /知识点萃取/);
   });
 });

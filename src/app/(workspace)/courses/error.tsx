@@ -12,7 +12,7 @@ export default function CoursesError({
 }) {
   useEffect(() => {
     if (process.env.NODE_ENV !== "production") {
-      console.error("NUR LEARN courses error:", error);
+      console.error("Ariadne courses error:", error);
     }
   }, [error]);
 

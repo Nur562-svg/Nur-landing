@@ -5,8 +5,8 @@ import { crc32 } from "node:zlib";
 import { register } from "node:module";
 import React from "react";
 import { renderToStaticMarkup } from "react-dom/server";
-import { HIDOC_STEPS, guideForStep, resolveHiDocGuide, type HiDocStepId } from "@/lib/hidoc/step-guide";
-import { readHiDocSource } from "@/lib/hidoc/source-intake";
+import { CLEW_STEPS, guideForStep, resolveClewGuide, type ClewStepId } from "@/lib/clew/step-guide";
+import { readClewSource } from "@/lib/clew/source-intake";
 
 register("./helpers/css-module-hooks.mjs", import.meta.url);
 
@@ -105,21 +105,21 @@ function makeDocx(paragraph: string): Uint8Array {
   ]);
 }
 
-describe("design system v3 Hi doc path and local parsers", () => {
+describe("design system v3 Clew path and local parsers", () => {
   let guideHtml = "";
 
   before(async () => {
     await import("./helpers/css-module-stub.mjs");
-    const guide = await import("../src/components/hi-doc-path-guide");
+    const guide = await import("../src/components/clew-path-guide");
     const sample = guideForStep("toc", { textbookId: "tb-1", chapterOrder: 1 });
-    guideHtml = renderToStaticMarkup(React.createElement(guide.HiDocPathGuide, { guide: sample }));
+    guideHtml = renderToStaticMarkup(React.createElement(guide.ClewPathGuide, { guide: sample }));
   });
 
   it("names all eight steps and gives each a next action, progress, status, and target", () => {
-    assert.deepEqual(HIDOC_STEPS.map((step) => step.name), [...STEP_NAMES]);
+    assert.deepEqual(CLEW_STEPS.map((step) => step.name), [...STEP_NAMES]);
     const context = { textbookId: "tb-1", chapterOrder: 2, workshopId: "ws-1" };
-    for (const step of HIDOC_STEPS) {
-      const guide = guideForStep(step.id as HiDocStepId, context);
+    for (const step of CLEW_STEPS) {
+      const guide = guideForStep(step.id as ClewStepId, context);
       assert.equal(guide.currentName, step.name);
       assert.deepEqual([...guide.steps], [...STEP_NAMES]);
       assert.ok(guide.nextAction.trim().length > 0);
@@ -130,11 +130,11 @@ describe("design system v3 Hi doc path and local parsers", () => {
       assert.equal(guide.nextControl, "下一步");
       assert.match(guide.nextHref, /^\//);
     }
-    const emptyShelf = resolveHiDocGuide({ surface: "shelf", signedIn: true });
-    assert.equal(emptyShelf.nextHref, "/learn/hi-doc#upload");
-    const shelfWithBook = resolveHiDocGuide({ surface: "shelf", signedIn: true, textbookId: "tb-9" });
-    assert.equal(shelfWithBook.nextHref, "/learn/hi-doc/t/tb-9#recognize");
-    assert.equal(resolveHiDocGuide({ surface: "shelf", signedIn: false }).nextHref, "/login?next=/learn/hi-doc");
+    const emptyShelf = resolveClewGuide({ surface: "shelf", signedIn: true });
+    assert.equal(emptyShelf.nextHref, "/learn/clew#upload");
+    const shelfWithBook = resolveClewGuide({ surface: "shelf", signedIn: true, textbookId: "tb-9" });
+    assert.equal(shelfWithBook.nextHref, "/learn/clew/t/tb-9#recognize");
+    assert.equal(resolveClewGuide({ surface: "shelf", signedIn: false }).nextHref, "/login?next=/learn/clew");
     assert.match(guideHtml, /下一步/);
     assert.match(guideHtml, /<progress/);
     assert.match(guideHtml, /role="status"/);
@@ -143,8 +143,8 @@ describe("design system v3 Hi doc path and local parsers", () => {
   });
 
   it("reads a text-layer PDF with pdf.js and a DOCX with mammoth, and refuses scans", async () => {
-    const phrase = "NUR LEARN text layer sample for diagnostics";
-    const pdf = await readHiDocSource(
+    const phrase = "Ariadne text layer sample for diagnostics";
+    const pdf = await readClewSource(
       "sample.pdf",
       makePdf(`BT /F1 24 Tf 72 720 Td (${phrase}) Tj ET`),
     );
@@ -155,8 +155,8 @@ describe("design system v3 Hi doc path and local parsers", () => {
       assert.ok((pdf.pageCount ?? 0) >= 1);
     }
 
-    const docxPhrase = "NUR LEARN docx sample spleen qi deficiency notes";
-    const docx = await readHiDocSource("notes.docx", makeDocx(docxPhrase));
+    const docxPhrase = "Ariadne docx sample spleen qi deficiency notes";
+    const docx = await readClewSource("notes.docx", makeDocx(docxPhrase));
     assert.equal(docx.ok, true);
     if (docx.ok) {
       assert.equal(docx.kind, "docx");
@@ -164,28 +164,28 @@ describe("design system v3 Hi doc path and local parsers", () => {
       assert.ok(docx.text.includes(docxPhrase));
     }
 
-    const scanned = await readHiDocSource("scan.pdf", makePdf(""));
+    const scanned = await readClewSource("scan.pdf", makePdf(""));
     assert.equal(scanned.ok, false);
     if (!scanned.ok) {
       assert.equal(scanned.code, "unsupported-scan");
       assert.match(scanned.message, /扫描|文字层|图片/);
     }
 
-    const imageDocx = await readHiDocSource("picture.docx", makeDocx(""));
+    const imageDocx = await readClewSource("picture.docx", makeDocx(""));
     assert.equal(imageDocx.ok, false);
     if (!imageDocx.ok) {
       assert.equal(imageDocx.code, "unsupported-scan");
       assert.match(imageDocx.message, /扫描|图片|文字/);
     }
 
-    const legacy = await readHiDocSource("old.doc", new Uint8Array([1, 2, 3, 4]));
+    const legacy = await readClewSource("old.doc", new Uint8Array([1, 2, 3, 4]));
     assert.equal(legacy.ok, false);
     if (!legacy.ok) {
       assert.equal(legacy.code, "invalid-file");
       assert.match(legacy.message, /\.doc/);
     }
 
-    const image = await readHiDocSource("plate.png", new Uint8Array([137, 80, 78, 71]));
+    const image = await readClewSource("plate.png", new Uint8Array([137, 80, 78, 71]));
     assert.equal(image.ok, false);
     if (!image.ok) {
       assert.equal(image.code, "unsupported-scan");
@@ -202,18 +202,18 @@ describe("design system v3 Hi doc path and local parsers", () => {
       if (request === "server-only") return stubPath;
       return originalResolve.call(this, request, ...rest);
     };
-    const phrase = "NUR LEARN docx spleen qi deficiency lesson excerpt for the diagnostics textbook chapter";
-    const { readHiDocKnowledgePointExcerpt } = await import("../src/lib/hidoc/source-excerpt");
-    const { getHiDocStorage } = await import("../src/lib/hidoc/storage");
-    const { buildHiDocStorageKey } = await import("../src/lib/hidoc/storage-key");
-    const { buildHeuristicLesson } = await import("../src/lib/hidoc/lesson-heuristic");
-    const { buildHiDocChatSystemPrompt } = await import("../src/lib/hidoc/chat-prompt");
-    const { buildHiDocNoteHeader } = await import("../src/lib/hidoc/note-heuristic");
-    const storage = getHiDocStorage();
-    const storageKey = buildHiDocStorageKey("v3docxuser", "v3docxtb", "spleen.docx");
+    const phrase = "Ariadne docx spleen qi deficiency lesson excerpt for the diagnostics textbook chapter";
+    const { readClewKnowledgePointExcerpt } = await import("../src/lib/clew/source-excerpt");
+    const { getClewStorage } = await import("../src/lib/clew/storage");
+    const { buildClewStorageKey } = await import("../src/lib/clew/storage-key");
+    const { buildHeuristicLesson } = await import("../src/lib/clew/lesson-heuristic");
+    const { buildClewChatSystemPrompt } = await import("../src/lib/clew/chat-prompt");
+    const { buildClewNoteHeader } = await import("../src/lib/clew/note-heuristic");
+    const storage = getClewStorage();
+    const storageKey = buildClewStorageKey("v3docxuser", "v3docxtb", "spleen.docx");
     await storage.putObject(storageKey, makeDocx(phrase));
     try {
-      const excerpt = await readHiDocKnowledgePointExcerpt({
+      const excerpt = await readClewKnowledgePointExcerpt({
         storageKey,
         fileName: "spleen.docx",
         chapterTitle: "脾虚",
@@ -247,7 +247,7 @@ describe("design system v3 Hi doc path and local parsers", () => {
       assert.ok(lesson.includes(phrase));
       assert.equal(/依据第\s*1\s*页/.test(lesson), false);
 
-      const prompt = buildHiDocChatSystemPrompt({
+      const prompt = buildClewChatSystemPrompt({
         textbookTitle: "诊断学笔记",
         chapterTitle: "脾虚",
         knowledgePoint: {
@@ -267,7 +267,7 @@ describe("design system v3 Hi doc path and local parsers", () => {
       assert.ok(prompt.includes(phrase));
       assert.equal(/第\s*1\s*页/.test(prompt), false);
 
-      const note = buildHiDocNoteHeader({
+      const note = buildClewNoteHeader({
         title: "脾虚 · 学霸笔记",
         generator: { kind: "heuristic" },
         generatedAtLabel: "2026-09-24 12:00",

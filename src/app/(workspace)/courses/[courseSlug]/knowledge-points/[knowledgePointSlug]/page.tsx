@@ -41,11 +41,11 @@ export async function generateMetadata({
     : undefined;
 
   if (!course || !knowledgePoint?.lesson) {
-    return { title: "知识点未找到｜NUR LEARN" };
+    return { title: "知识点未找到｜Ariadne" };
   }
 
   return {
-    title: `${knowledgePoint.title}｜${course.title}｜NUR LEARN`,
+    title: `${knowledgePoint.title}｜${course.title}｜Ariadne`,
     description: knowledgePoint.lesson.objective,
   };
 }

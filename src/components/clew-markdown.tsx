@@ -1,16 +1,16 @@
 "use client";
 
 import type { ReactNode } from "react";
-import { parseHiDocInline, parseHiDocMarkdown } from "@/lib/hidoc/lesson-markdown";
-import styles from "./hi-doc.module.css";
+import { parseClewInline, parseClewMarkdown } from "@/lib/clew/lesson-markdown";
+import styles from "./clew.module.css";
 
 /**
- * Hi doc 讲义 markdown 渲染（客户端，只渲染受支持的子集）。
+ * Clew 讲义 markdown 渲染（客户端，只渲染受支持的子集）。
  * 不使用 dangerouslySetInnerHTML：所有内容都作为 React 文本节点插入。
  */
 
 function renderInline(text: string): ReactNode[] {
-  return parseHiDocInline(text).map((token, index) => {
+  return parseClewInline(text).map((token, index) => {
     if (token.kind === "bold") {
       return <strong key={index}>{token.text}</strong>;
     }
@@ -21,8 +21,8 @@ function renderInline(text: string): ReactNode[] {
   });
 }
 
-export function HiDocMarkdown({ markdown }: { markdown: string }) {
-  const blocks = parseHiDocMarkdown(markdown);
+export function ClewMarkdown({ markdown }: { markdown: string }) {
+  const blocks = parseClewMarkdown(markdown);
   return (
     <div className={styles.markdown}>
       {blocks.map((block, index) => {

@@ -294,7 +294,7 @@ export const tongueCoatingAssessmentItems = [
     promptSource: {
       authority: "nur-editorial",
       wording: "nur-adapted",
-      locator: "NUR LEARN · 望舌苔 名词解释训练",
+      locator: "Ariadne · 望舌苔 名词解释训练",
       note: "依据教材P37与教师重点改编的 NUR 结构化名词解释训练题。",
       sourceIds: [tongueCoatingSourceIds.textbook, tongueCoatingSourceIds.teacherReview],
     },
@@ -382,7 +382,7 @@ export const tongueCoatingAssessmentItems = [
     promptSource: {
       authority: "nur-editorial",
       wording: "nur-adapted",
-      locator: "NUR LEARN · 望舌苔 简答训练",
+      locator: "Ariadne · 望舌苔 简答训练",
       note: "依据教材P37、P39、教师复习范围改编的 NUR 结构化简答训练题。",
       sourceIds: [tongueCoatingSourceIds.textbook, tongueCoatingSourceIds.teacherReview],
     },
@@ -518,7 +518,7 @@ export const tongueCoatingReasoningCase = {
   promptSource: {
     authority: "nur-editorial",
     wording: "nur-adapted",
-    locator: "NUR LEARN · 望舌苔案例迁移",
+    locator: "Ariadne · 望舌苔案例迁移",
     note: "案例由 NUR 根据教材P37、P39与教师重点组织的合成记录，不是学校原题或真实患者诊断。",
     sourceIds: [
       tongueCoatingSourceIds.textbook,

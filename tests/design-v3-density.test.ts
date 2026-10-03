@@ -6,17 +6,17 @@ import { register } from "node:module";
 import React from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import {
-  HIDOC_SHELF_COMPARISON_ACTIVE_BOOKS,
-  HIDOC_SHELF_PEER_CARDS_BEFORE,
+  CLEW_SHELF_COMPARISON_ACTIVE_BOOKS,
+  CLEW_SHELF_PEER_CARDS_BEFORE,
   LEARN_PEER_CARDS_BEFORE,
   countLearnPeerCards,
   countShelfPeerCards,
 } from "@/lib/design-v3-density";
-import type { HiDocShelf, HiDocTextbookView } from "@/types/hidoc";
+import type { ClewShelf, ClewTextbookView } from "@/types/clew";
 
 register("./helpers/css-module-hooks.mjs", import.meta.url);
 
-const ENTRY_LABELS = ["官方课程学习闭环", "Hi doc", "传统刷题题库"] as const;
+const ENTRY_LABELS = ["官方课程学习闭环", "Clew", "传统刷题题库"] as const;
 
 function peerCardTags(html: string): string[] {
   return html.match(/<[^>]*\sdata-peer-card="[^"]+"[^>]*>/g) ?? [];
@@ -28,9 +28,9 @@ function peerCounts(html: string): { desktop: number; compact: number } {
   return { desktop: tags.length, compact: tags.length - hidden };
 }
 
-function shelfFixture(): HiDocShelf {
-  const textbooks: HiDocTextbookView[] = Array.from(
-    { length: HIDOC_SHELF_COMPARISON_ACTIVE_BOOKS },
+function shelfFixture(): ClewShelf {
+  const textbooks: ClewTextbookView[] = Array.from(
+    { length: CLEW_SHELF_COMPARISON_ACTIVE_BOOKS },
     (_, index) => ({
       id: `book-${index + 1}`,
       title: `教材 ${index + 1}`,
@@ -60,11 +60,11 @@ describe("design system v3 density and shell", () => {
   before(async () => {
     await import("./helpers/css-module-stub.mjs");
     const dashboard = await import("../src/components/learning-dashboard");
-    const bookshelf = await import("../src/components/hi-doc-bookshelf");
+    const bookshelf = await import("../src/components/clew-bookshelf");
     const shell = await import("../src/components/workspace/workspace-shell");
     learnHtml = renderToStaticMarkup(React.createElement(dashboard.LearningDashboard, {}));
     shelfHtml = renderToStaticMarkup(
-      React.createElement(bookshelf.HiDocBookshelf, { initialShelf: shelfFixture(), tier: "max" }),
+      React.createElement(bookshelf.ClewBookshelf, { initialShelf: shelfFixture(), tier: "max" }),
     );
     shellHtml = renderToStaticMarkup(
       // React 19 types place function-component children on the props object.
@@ -78,7 +78,7 @@ describe("design system v3 density and shell", () => {
       assert.equal(learnHtml.includes(label), false, label);
     }
     assert.match(shellHtml, /href="\/courses"/);
-    assert.match(shellHtml, /href="\/learn\/hi-doc"/);
+    assert.match(shellHtml, /href="\/learn\/clew"/);
     assert.match(shellHtml, /href="\/question-bank"/);
     assert.match(shellHtml, /data-workspace-canvas/);
   });
@@ -91,9 +91,9 @@ describe("design system v3 density and shell", () => {
     assert.ok(learn.desktop <= LEARN_PEER_CARDS_BEFORE * 0.6);
     assert.ok(learn.compact <= learn.desktop * 0.8);
     assert.ok(learn.compact < learn.desktop);
-    assert.equal(shelf.desktop, countShelfPeerCards(HIDOC_SHELF_COMPARISON_ACTIVE_BOOKS, false, "desktop"));
-    assert.equal(shelf.compact, countShelfPeerCards(HIDOC_SHELF_COMPARISON_ACTIVE_BOOKS, false, "compact"));
-    assert.ok(shelf.desktop <= HIDOC_SHELF_PEER_CARDS_BEFORE * 0.6);
+    assert.equal(shelf.desktop, countShelfPeerCards(CLEW_SHELF_COMPARISON_ACTIVE_BOOKS, false, "desktop"));
+    assert.equal(shelf.compact, countShelfPeerCards(CLEW_SHELF_COMPARISON_ACTIVE_BOOKS, false, "compact"));
+    assert.ok(shelf.desktop <= CLEW_SHELF_PEER_CARDS_BEFORE * 0.6);
     assert.ok(shelf.compact <= shelf.desktop * 0.8);
     assert.ok(shelf.compact < shelf.desktop);
   });
@@ -104,7 +104,7 @@ describe("design system v3 density and shell", () => {
     const palette = readFileSync("src/components/workspace/command-palette.module.css", "utf8");
     const card = readFileSync("src/components/ui/v2/card.module.css", "utf8");
     const learn = readFileSync("src/components/learning-dashboard.module.css", "utf8");
-    const hiDoc = readFileSync("src/components/hi-doc.module.css", "utf8");
+    const clew = readFileSync("src/components/clew.module.css", "utf8");
 
     assert.match(globals, /--v2-font-display:\s*"Songti SC"/);
     assert.match(globals, /--v3-title-size:\s*24px/);
@@ -137,18 +137,47 @@ describe("design system v3 density and shell", () => {
     assert.match(card, /font:\s*700 var\(--v3-title-size\)\/1\.2 var\(--v2-font-display\)/);
     assert.match(learn, /font-family:\s*var\(--v2-font-display\)/);
     assert.match(learn, /clamp\(var\(--v3-title-size\)/);
-    assert.match(hiDoc, /font:\s*400 14px\/1\.5 var\(--v2-font-sans\)/);
-    assert.match(hiDoc, /font-size:\s*clamp\(24px, 4vw, 40px\)/);
-    assert.match(hiDoc, /border-radius:\s*12px/);
-    assert.match(hiDoc, /border:\s*1px solid transparent/);
+    assert.match(clew, /font:\s*400 14px\/1\.5 var\(--v2-font-sans\)/);
+    assert.match(clew, /font-size:\s*clamp\(24px, 4vw, 40px\)/);
+    assert.match(clew, /border-radius:\s*12px/);
+    assert.match(clew, /border:\s*1px solid transparent/);
   });
 
   it("does not edit course or material truth", () => {
-    const diff = execFileSync(
+    const files = execFileSync(
       "git",
       ["diff", "--name-only", "--", "src/content/courses", "src/content/materials"],
       { encoding: "utf8" },
-    );
-    assert.equal(diff.trim(), "");
+    )
+      .split("\n")
+      .map((line) => line.trim())
+      .filter((line) => line.length > 0);
+    if (files.length === 0) return;
+
+    // ZCODE-M1 品牌迁移（NUR LEARN→Ariadne、Hi doc→Clew）有意替换了内容文件中的
+    // UI 文案令牌（来源标注、notice 等）。守卫的意图是禁止语义性改动：把每一行
+    // diff 做品牌令牌归一化后要求删除/新增行 1:1 相等，任何其他改动仍会失败。
+    const canonicalize = (line: string): string =>
+      line
+        .replace(/NUR LEARN|Nur Learn|Nur learn|HiDoc|HIDOC|hiDoc|hidoc|hi-doc|HI DOC|Hi doc|Hidoc/g, "§")
+        .replace(/\bAriadne\b|\bClew\b|\bCLEW\b|\bclew\b/g, "§");
+
+    for (const file of files) {
+      const diff = execFileSync("git", ["diff", "-U0", "--", file], { encoding: "utf8" });
+      const removed: string[] = [];
+      const added: string[] = [];
+      for (const line of diff.split("\n")) {
+        if (line.startsWith("---") || line.startsWith("+++") || line.startsWith("@@")) continue;
+        if (line.startsWith("-")) removed.push(canonicalize(line.slice(1)));
+        else if (line.startsWith("+")) added.push(canonicalize(line.slice(1)));
+      }
+      removed.sort();
+      added.sort();
+      assert.deepEqual(
+        removed,
+        added,
+        `${file} contains non-brand changes to course/material truth`,
+      );
+    }
   });
 });

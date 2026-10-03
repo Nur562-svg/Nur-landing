@@ -366,7 +366,7 @@ export function PrivatePracticeRoom({ analysisResult }: PrivatePracticeRoomProps
                     )}
                     type="button"
                   >
-                    问 NUR Agent
+                    问 Ariadne Agent
                   </button>
                 </div>
               ) : null}

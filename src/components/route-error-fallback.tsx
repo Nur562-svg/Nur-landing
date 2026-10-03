@@ -21,7 +21,7 @@ export function RouteErrorFallback({
   return (
     <div className={styles.root} role="alert">
       <div className={styles.card}>
-        <p className={styles.eyebrow}>NUR LEARN</p>
+        <p className={styles.eyebrow}>Ariadne</p>
         <h1 className={styles.title}>{title}</h1>
         <p className={styles.body}>{description}</p>
         <div className={styles.actions}>

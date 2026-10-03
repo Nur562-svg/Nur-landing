@@ -71,7 +71,7 @@ export function AuthForm({ mode }: AuthFormProps) {
       </Link>
       <section className={styles.card}>
         <header className={styles.cardHeader}>
-          <h1 className={styles.title}>{isRegister ? "创建账户" : "登录 NUR LEARN"}</h1>
+          <h1 className={styles.title}>{isRegister ? "创建账户" : "登录 Ariadne"}</h1>
           <p className={styles.subtitle}>
             {isRegister
               ? "注册后学习进度、作答记忆与收藏将绑定账户（登录后支持云端同步）。"

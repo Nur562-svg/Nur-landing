@@ -14,6 +14,7 @@ import {
   X,
 } from "lucide-react";
 import type { CourseDefinition, FsrsCriterionState, LearnerAttemptRecord } from "@/types/learning";
+import type { UnifiedContinueTarget, UnifiedFeedItem } from "@/types/unified-learning";
 import { useLearningMemory } from "@/hooks/use-learning-memory";
 import { useWrongQuestionCenter } from "@/hooks/use-wrong-questions";
 import { selectWeakKnowledgePointHref } from "@/lib/wrong-questions";
@@ -157,9 +158,28 @@ type JumpTarget = "workspace" | "dual-lens" | "reasoning" | "review";
 
 type LearningDashboardProps = {
   courses?: readonly CourseDefinition[];
+  /** ZCODE-M3：学习动态（服务端解析好的展示项；未登录为空数组，不渲染区块）。 */
+  unifiedFeed?: readonly UnifiedFeedItem[];
+  continueTarget?: UnifiedContinueTarget | null;
 };
 
-export function LearningDashboard({ courses }: LearningDashboardProps) {
+/** 相对时间（刚刚 / N 分钟前 / N 小时前 / N 天前）。 */
+function formatFeedRelativeTime(iso: string, nowMs: number = Date.now()): string {
+  const at = Date.parse(iso);
+  if (Number.isNaN(at)) {
+    return "";
+  }
+  const diffMs = Math.max(0, nowMs - at);
+  const minutes = Math.floor(diffMs / 60_000);
+  if (minutes < 1) return "刚刚";
+  if (minutes < 60) return `${minutes} 分钟前`;
+  const hours = Math.floor(minutes / 60);
+  if (hours < 24) return `${hours} 小时前`;
+  const days = Math.floor(hours / 24);
+  return `${days} 天前`;
+}
+
+export function LearningDashboard({ courses, unifiedFeed, continueTarget }: LearningDashboardProps) {
   const { user, loading: sessionLoading, logout } = useSession();
   useNurAgentDockProps(PLATFORM_DOCK_PROPS);
   const [activeStep, setActiveStep] = useState(0);
@@ -387,8 +407,8 @@ export function LearningDashboard({ courses }: LearningDashboardProps) {
   return (
     <main className={styles.appShell}>
       <header className={styles.header}>
-        <Link className={styles.brand} href="/learn" aria-label="NUR LEARN 首页">
-          NUR LEARN
+        <Link className={styles.brand} href="/learn" aria-label="Ariadne 首页">
+          Ariadne
         </Link>
 
         <nav className={styles.navigation} aria-label="主导航">
@@ -403,7 +423,7 @@ export function LearningDashboard({ courses }: LearningDashboardProps) {
               建课
             </Link>
           ) : null}
-          <Link href="/learn/hi-doc/w">
+          <Link href="/learn/clew/w">
             工作坊
           </Link>
           <Link href="/courses#question-banks">
@@ -759,6 +779,49 @@ export function LearningDashboard({ courses }: LearningDashboardProps) {
               </article>
             </div>
           </section>
+
+          {unifiedFeed ? (
+            <section className={styles.unifiedFeed} id="unified-feed" aria-labelledby="unified-feed-title">
+              <div className={styles.unifiedFeedHead}>
+                <h2 id="unified-feed-title">学习动态</h2>
+                {continueTarget ? (
+                  <Link className={styles.continueLink} href={continueTarget.href}>
+                    继续上次学习：{continueTarget.kpTitle}（{continueTarget.stageLabel}）
+                    <ArrowRight aria-hidden="true" size={15} strokeWidth={1.6} />
+                  </Link>
+                ) : null}
+              </div>
+              {unifiedFeed.length === 0 ? (
+                <p className={styles.feedEmpty}>还没有学习记录——从官方课、Clew 或题库开始。</p>
+              ) : (
+                <ul className={styles.unifiedFeedList}>
+                  {unifiedFeed.map((item) => {
+                    const row = (
+                      <>
+                        <span className={styles.feedSourceTag} data-content-type={item.contentType}>
+                          {item.sourceLabel}
+                        </span>
+                        <span className={styles.feedBody}>
+                          <span className={styles.feedTitle}>{item.title}</span>
+                          <span className={styles.feedDetail}>{item.detail} · {item.summary}</span>
+                        </span>
+                        <time className={styles.feedTime}>{formatFeedRelativeTime(item.at)}</time>
+                      </>
+                    );
+                    return (
+                      <li key={item.id}>
+                        {item.href ? (
+                          <Link className={styles.feedRow} href={item.href}>{row}</Link>
+                        ) : (
+                          <span className={styles.feedRow}>{row}</span>
+                        )}
+                      </li>
+                    );
+                  })}
+                </ul>
+              )}
+            </section>
+          ) : null}
         </section>
 
         <aside className={styles.progressColumn} aria-labelledby="progress-title">

@@ -12,22 +12,22 @@ import {
   Trash2,
 } from "lucide-react";
 import type { MembershipTier } from "@/types/auth";
-import type { HiDocApiFailure, HiDocShelf, HiDocTextbookView } from "@/types/hidoc";
+import type { ClewApiFailure, ClewShelf, ClewTextbookView } from "@/types/clew";
 import { getMembershipTierLabel } from "@/lib/membership";
 import { presentShelfBooks } from "@/lib/design-v3-density";
-import { formatHiDocExtent } from "@/lib/hidoc/source-label";
-import { resolveHiDocGuide } from "@/lib/hidoc/step-guide";
+import { formatClewExtent } from "@/lib/clew/source-label";
+import { resolveClewGuide } from "@/lib/clew/step-guide";
 import { V2Badge } from "@/components/ui/v2/badge";
 import { V2Button } from "@/components/ui/v2/button";
-import { HiDocPathGuide } from "./hi-doc-path-guide";
-import styles from "./hi-doc.module.css";
+import { ClewPathGuide } from "./clew-path-guide";
+import styles from "./clew.module.css";
 
-type HiDocBookshelfProps = {
-  initialShelf: HiDocShelf;
+type ClewBookshelfProps = {
+  initialShelf: ClewShelf;
   tier: MembershipTier;
 };
 
-type ShelfResponse = { ok: true; shelf: HiDocShelf } | HiDocApiFailure;
+type ShelfResponse = { ok: true; shelf: ClewShelf } | ClewApiFailure;
 
 function formatSize(sizeBytes: number): string {
   if (sizeBytes >= 1024 * 1024) {
@@ -36,7 +36,7 @@ function formatSize(sizeBytes: number): string {
   return `${Math.max(1, Math.round(sizeBytes / 1024))} KB`;
 }
 
-function describeState(textbook: HiDocTextbookView): string {
+function describeState(textbook: ClewTextbookView): string {
   switch (textbook.status) {
     case "uploaded":
       return "未识别目录 · 进入教材可识别";
@@ -53,7 +53,7 @@ function describeState(textbook: HiDocTextbookView): string {
   }
 }
 
-export function HiDocBookshelf({ initialShelf, tier }: HiDocBookshelfProps) {
+export function ClewBookshelf({ initialShelf, tier }: ClewBookshelfProps) {
   const [shelf, setShelf] = useState(initialShelf);
   const [file, setFile] = useState<File | null>(null);
   const [title, setTitle] = useState("");
@@ -91,7 +91,7 @@ export function HiDocBookshelf({ initialShelf, tier }: HiDocBookshelfProps) {
       if (title.trim()) {
         formData.append("title", title.trim());
       }
-      const response = await fetch("/api/hidoc/textbooks", { method: "POST", body: formData });
+      const response = await fetch("/api/clew/textbooks", { method: "POST", body: formData });
       const failureMessage = await readShelfResponse(response);
       if (failureMessage) {
         setError(failureMessage);
@@ -109,7 +109,7 @@ export function HiDocBookshelf({ initialShelf, tier }: HiDocBookshelfProps) {
     }
   }
 
-  async function onDelete(textbook: HiDocTextbookView) {
+  async function onDelete(textbook: ClewTextbookView) {
     if (busy !== null) {
       return;
     }
@@ -122,7 +122,7 @@ export function HiDocBookshelf({ initialShelf, tier }: HiDocBookshelfProps) {
     setBusy("delete");
     setError(null);
     try {
-      const response = await fetch(`/api/hidoc/textbooks?id=${encodeURIComponent(textbook.id)}`, {
+      const response = await fetch(`/api/clew/textbooks?id=${encodeURIComponent(textbook.id)}`, {
         method: "DELETE",
       });
       const failureMessage = await readShelfResponse(response);
@@ -136,14 +136,14 @@ export function HiDocBookshelf({ initialShelf, tier }: HiDocBookshelfProps) {
     }
   }
 
-  async function onActivate(textbook: HiDocTextbookView) {
+  async function onActivate(textbook: ClewTextbookView) {
     if (busy !== null) {
       return;
     }
     setBusy("activate");
     setError(null);
     try {
-      const response = await fetch("/api/hidoc/textbooks", {
+      const response = await fetch("/api/clew/textbooks", {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ id: textbook.id, action: "activate" }),
@@ -167,8 +167,8 @@ export function HiDocBookshelf({ initialShelf, tier }: HiDocBookshelfProps) {
 
   return (
     <div className={styles.shelfLayout}>
-      <HiDocPathGuide
-        guide={resolveHiDocGuide({
+      <ClewPathGuide
+        guide={resolveClewGuide({
           surface: "shelf",
           signedIn: true,
           textbookId: (activeTextbooks[0] ?? frozenTextbooks[0])?.id,
@@ -183,10 +183,10 @@ export function HiDocBookshelf({ initialShelf, tier }: HiDocBookshelfProps) {
         className={`${styles.uploadPanel} ${styles.peerCard}`}
         id="upload"
         data-peer-card="upload"
-        aria-labelledby="hidoc-upload-title"
+        aria-labelledby="clew-upload-title"
       >
         <div className={styles.panelHead}>
-          <h2 id="hidoc-upload-title">上传教材</h2>
+          <h2 id="clew-upload-title">上传教材</h2>
           <p>文字版 PDF 或 DOCX · 单本不超过 1500 页 · 仅本人可见</p>
         </div>
         <div className={styles.uploadRow}>
@@ -230,9 +230,9 @@ export function HiDocBookshelf({ initialShelf, tier }: HiDocBookshelfProps) {
         ) : null}
       </section>
 
-      <section className={styles.textbookSection} aria-labelledby="hidoc-active-title">
+      <section className={styles.textbookSection} aria-labelledby="clew-active-title">
         <div className={styles.sectionHead}>
-          <h2 id="hidoc-active-title">本月在用</h2>
+          <h2 id="clew-active-title">本月在用</h2>
           <span>{activeTextbooks.length} 本</span>
         </div>
         {activeTextbooks.length === 0 ? (
@@ -248,10 +248,10 @@ export function HiDocBookshelf({ initialShelf, tier }: HiDocBookshelfProps) {
               >
                 <div className={styles.textbookMain}>
                   <p className={styles.textbookTitle}>
-                    <Link href={`/learn/hi-doc/t/${textbook.id}`}>{textbook.title}</Link>
+                    <Link href={`/learn/clew/t/${textbook.id}`}>{textbook.title}</Link>
                   </p>
                   <p className={styles.textbookMeta}>
-                    {textbook.fileName} · {formatHiDocExtent(textbook.fileName, textbook.pageCount)} · {formatSize(textbook.sizeBytes)} · 上传于{" "}
+                    {textbook.fileName} · {formatClewExtent(textbook.fileName, textbook.pageCount)} · {formatSize(textbook.sizeBytes)} · 上传于{" "}
                     {textbook.createdAt.slice(0, 10)}
                   </p>
                   <V2Badge variant="muted" className={styles.stateBadge}>
@@ -259,7 +259,7 @@ export function HiDocBookshelf({ initialShelf, tier }: HiDocBookshelfProps) {
                   </V2Badge>
                 </div>
                 <div className={styles.textbookActions}>
-                  <Link className={styles.ghostButton} href={`/learn/hi-doc/t/${textbook.id}`}>
+                  <Link className={styles.ghostButton} href={`/learn/clew/t/${textbook.id}`}>
                     <BookOpen aria-hidden="true" size={15} strokeWidth={1.6} />
                     进入教材
                   </Link>
@@ -290,9 +290,9 @@ export function HiDocBookshelf({ initialShelf, tier }: HiDocBookshelfProps) {
       ) : null}
 
       {frozenPresentation.visible.length > 0 ? (
-        <section className={styles.textbookSection} aria-labelledby="hidoc-frozen-title">
+        <section className={styles.textbookSection} aria-labelledby="clew-frozen-title">
           <div className={styles.sectionHead}>
-            <h2 id="hidoc-frozen-title">已冻结</h2>
+            <h2 id="clew-frozen-title">已冻结</h2>
             <span>{frozenTextbooks.length} 本</span>
           </div>
           <p className={styles.frozenHint}>
@@ -312,7 +312,7 @@ export function HiDocBookshelf({ initialShelf, tier }: HiDocBookshelfProps) {
                     {textbook.title}
                   </p>
                   <p className={styles.textbookMeta}>
-                    {textbook.fileName} · {formatHiDocExtent(textbook.fileName, textbook.pageCount)} · {formatSize(textbook.sizeBytes)} · 激活月{" "}
+                    {textbook.fileName} · {formatClewExtent(textbook.fileName, textbook.pageCount)} · {formatSize(textbook.sizeBytes)} · 激活月{" "}
                     {textbook.activeMonth}
                   </p>
                   <V2Badge variant="muted" className={styles.stateBadge}>
@@ -350,7 +350,7 @@ export function HiDocBookshelf({ initialShelf, tier }: HiDocBookshelfProps) {
       ) : null}
 
       <p className={styles.footNote}>
-        Hi doc 教材存于服务器且仅本人可见；建议同时保留本地副本。返回{" "}
+        Clew 教材存于服务器且仅本人可见；建议同时保留本地副本。返回{" "}
         <Link href="/learn">学习首页</Link>。
       </p>
     </div>

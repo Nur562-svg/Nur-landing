@@ -1,17 +1,17 @@
 import type {
-  HiDocHighlightAnchor,
-  HiDocHighlightColor,
-  HiDocHighlightPaintItem,
-  HiDocHighlightView,
-} from "@/types/hidoc";
+  ClewHighlightAnchor,
+  ClewHighlightColor,
+  ClewHighlightPaintItem,
+  ClewHighlightView,
+} from "@/types/clew";
 
 /**
- * Hi doc 划重点规则层（纯函数，客户端可安全引用）：
+ * Clew 划重点规则层（纯函数，客户端可安全引用）：
  * 四色枚举、输入校验（长度/枚举/上限）、定位锚点解析与失配判定、讲义文本中的定位匹配。
  * 划线定位只依赖确定性字符串匹配，匹配不到就如实进入「未定位」，绝不伪造位置。
  */
 
-export const HIDOC_HIGHLIGHT_COLORS: readonly HiDocHighlightColor[] = [
+export const CLEW_HIGHLIGHT_COLORS: readonly ClewHighlightColor[] = [
   "amber",
   "cinnabar",
   "slate",
@@ -19,7 +19,7 @@ export const HIDOC_HIGHLIGHT_COLORS: readonly HiDocHighlightColor[] = [
 ];
 
 /** 四色语义标签（低饱和度纸面用色）。 */
-export const HIDOC_HIGHLIGHT_COLOR_LABELS: Record<HiDocHighlightColor, string> = {
+export const CLEW_HIGHLIGHT_COLOR_LABELS: Record<ClewHighlightColor, string> = {
   amber: "琥珀",
   cinnabar: "朱砂",
   slate: "黛蓝",
@@ -27,37 +27,37 @@ export const HIDOC_HIGHLIGHT_COLOR_LABELS: Record<HiDocHighlightColor, string> =
 };
 
 /** 选中文字（去首尾空白后）长度上限。 */
-export const HIDOC_HIGHLIGHT_QUOTE_MAX_CHARS = 500;
+export const CLEW_HIGHLIGHT_QUOTE_MAX_CHARS = 500;
 /** 批注长度上限。 */
-export const HIDOC_HIGHLIGHT_NOTE_MAX_CHARS = 1000;
+export const CLEW_HIGHLIGHT_NOTE_MAX_CHARS = 1000;
 /** 前后文定位上下文各自的长度上限（超出截取靠近选区的部分）。 */
-export const HIDOC_HIGHLIGHT_CONTEXT_MAX_CHARS = 80;
+export const CLEW_HIGHLIGHT_CONTEXT_MAX_CHARS = 80;
 /** 每个知识点每个用户的划重点条数上限。 */
-export const HIDOC_HIGHLIGHT_MAX_PER_KP = 100;
+export const CLEW_HIGHLIGHT_MAX_PER_KP = 100;
 
 /** 归属校验失败（不存在或不属于当前账户）时的统一中文原因。 */
-export const HIDOC_HIGHLIGHT_NOT_FOUND_MESSAGE = "划重点不存在或不属于当前账户。";
+export const CLEW_HIGHLIGHT_NOT_FOUND_MESSAGE = "划重点不存在或不属于当前账户。";
 
 /** 未知/缺省颜色返回 null（不猜测，由调用方如实报错）。 */
-export function parseHiDocHighlightColor(value: unknown): HiDocHighlightColor | null {
-  return typeof value === "string" && (HIDOC_HIGHLIGHT_COLORS as readonly string[]).includes(value)
-    ? (value as HiDocHighlightColor)
+export function parseClewHighlightColor(value: unknown): ClewHighlightColor | null {
+  return typeof value === "string" && (CLEW_HIGHLIGHT_COLORS as readonly string[]).includes(value)
+    ? (value as ClewHighlightColor)
     : null;
 }
 
-export type HiDocHighlightValidatedInput = {
+export type ClewHighlightValidatedInput = {
   quote: string;
   prefix: string;
   suffix: string;
-  color: HiDocHighlightColor;
+  color: ClewHighlightColor;
   note: string | null;
 };
 
-export type HiDocHighlightValidation =
-  | { ok: true; value: HiDocHighlightValidatedInput }
+export type ClewHighlightValidation =
+  | { ok: true; value: ClewHighlightValidatedInput }
   | { ok: false; reason: string };
 
-export type HiDocHighlightRawInput = {
+export type ClewHighlightRawInput = {
   quote: unknown;
   prefix: unknown;
   suffix: unknown;
@@ -71,36 +71,36 @@ function readContext(prefix: unknown, suffix: unknown): { prefix: string; suffix
       return "";
     }
     const text = value.replace(/\s+/g, " ").trim();
-    if (text.length <= HIDOC_HIGHLIGHT_CONTEXT_MAX_CHARS) {
+    if (text.length <= CLEW_HIGHLIGHT_CONTEXT_MAX_CHARS) {
       return text;
     }
     // 保留最靠近选区的一侧（前缀取尾部，后缀取头部）
-    return tail ? text.slice(-HIDOC_HIGHLIGHT_CONTEXT_MAX_CHARS) : text.slice(0, HIDOC_HIGHLIGHT_CONTEXT_MAX_CHARS);
+    return tail ? text.slice(-CLEW_HIGHLIGHT_CONTEXT_MAX_CHARS) : text.slice(0, CLEW_HIGHLIGHT_CONTEXT_MAX_CHARS);
   };
   return { prefix: read(prefix, true), suffix: read(suffix, false) };
 }
 
 /** 创建划重点的严格校验：quote 非空且 ≤500、color 属于枚举、note ≤1000、前后文各自限长。 */
-export function validateHiDocHighlightInput(raw: HiDocHighlightRawInput): HiDocHighlightValidation {
+export function validateClewHighlightInput(raw: ClewHighlightRawInput): ClewHighlightValidation {
   if (typeof raw.quote !== "string" || raw.quote.trim().length === 0) {
     return { ok: false, reason: "请先在讲义中选中要划重点的文字。" };
   }
   const quote = raw.quote.trim();
-  if (quote.length > HIDOC_HIGHLIGHT_QUOTE_MAX_CHARS) {
+  if (quote.length > CLEW_HIGHLIGHT_QUOTE_MAX_CHARS) {
     return {
       ok: false,
-      reason: `选中的文字过长（${quote.length} 字），请控制在 ${HIDOC_HIGHLIGHT_QUOTE_MAX_CHARS} 字以内。`,
+      reason: `选中的文字过长（${quote.length} 字），请控制在 ${CLEW_HIGHLIGHT_QUOTE_MAX_CHARS} 字以内。`,
     };
   }
-  const color = parseHiDocHighlightColor(raw.color);
+  const color = parseClewHighlightColor(raw.color);
   if (!color) {
     return { ok: false, reason: "划线颜色不在允许的四色之内（琥珀 / 朱砂 / 黛蓝 / 青玉）。" };
   }
   const note = typeof raw.note === "string" ? raw.note.trim() : "";
-  if (note.length > HIDOC_HIGHLIGHT_NOTE_MAX_CHARS) {
+  if (note.length > CLEW_HIGHLIGHT_NOTE_MAX_CHARS) {
     return {
       ok: false,
-      reason: `批注过长（${note.length} 字），请控制在 ${HIDOC_HIGHLIGHT_NOTE_MAX_CHARS} 字以内。`,
+      reason: `批注过长（${note.length} 字），请控制在 ${CLEW_HIGHLIGHT_NOTE_MAX_CHARS} 字以内。`,
     };
   }
   const context = readContext(raw.prefix, raw.suffix);
@@ -110,20 +110,20 @@ export function validateHiDocHighlightInput(raw: HiDocHighlightRawInput): HiDocH
   };
 }
 
-export type HiDocHighlightPatch = {
-  color?: HiDocHighlightColor;
+export type ClewHighlightPatch = {
+  color?: ClewHighlightColor;
   note?: string | null;
 };
 
-export type HiDocHighlightPatchValidation =
-  | { ok: true; value: HiDocHighlightPatch }
+export type ClewHighlightPatchValidation =
+  | { ok: true; value: ClewHighlightPatch }
   | { ok: false; reason: string };
 
 /** 修改划重点：只接受 color / note 两个字段，至少一个有效。 */
-export function validateHiDocHighlightPatch(raw: { color: unknown; note: unknown }): HiDocHighlightPatchValidation {
-  const value: HiDocHighlightPatch = {};
+export function validateClewHighlightPatch(raw: { color: unknown; note: unknown }): ClewHighlightPatchValidation {
+  const value: ClewHighlightPatch = {};
   if (raw.color !== undefined) {
-    const color = parseHiDocHighlightColor(raw.color);
+    const color = parseClewHighlightColor(raw.color);
     if (!color) {
       return { ok: false, reason: "划线颜色不在允许的四色之内（琥珀 / 朱砂 / 黛蓝 / 青玉）。" };
     }
@@ -134,10 +134,10 @@ export function validateHiDocHighlightPatch(raw: { color: unknown; note: unknown
       return { ok: false, reason: "批注格式无效。" };
     }
     const note = typeof raw.note === "string" ? raw.note.trim() : "";
-    if (note.length > HIDOC_HIGHLIGHT_NOTE_MAX_CHARS) {
+    if (note.length > CLEW_HIGHLIGHT_NOTE_MAX_CHARS) {
       return {
         ok: false,
-        reason: `批注过长（${note.length} 字），请控制在 ${HIDOC_HIGHLIGHT_NOTE_MAX_CHARS} 字以内。`,
+        reason: `批注过长（${note.length} 字），请控制在 ${CLEW_HIGHLIGHT_NOTE_MAX_CHARS} 字以内。`,
       };
     }
     value.note = note.length > 0 ? note : null;
@@ -149,7 +149,7 @@ export function validateHiDocHighlightPatch(raw: { color: unknown; note: unknown
 }
 
 /** anchor Json 按不可信输入解析：只认 { lessonUpdatedAt: string | null }。 */
-export function parseHiDocHighlightAnchor(value: unknown): HiDocHighlightAnchor {
+export function parseClewHighlightAnchor(value: unknown): ClewHighlightAnchor {
   if (typeof value !== "object" || value === null) {
     return { lessonUpdatedAt: null };
   }
@@ -161,8 +161,8 @@ export function parseHiDocHighlightAnchor(value: unknown): HiDocHighlightAnchor 
  * 失配判定：创建时的讲义版本与当前讲义不一致（或讲义不存在 / 锚点缺失）→ 未定位。
  * 不做任何猜测式重定位。
  */
-export function isHiDocHighlightStale(
-  highlight: Pick<HiDocHighlightView, "anchorLessonUpdatedAt">,
+export function isClewHighlightStale(
+  highlight: Pick<ClewHighlightView, "anchorLessonUpdatedAt">,
   lessonGeneratedAt: string | null,
 ): boolean {
   if (!lessonGeneratedAt || !highlight.anchorLessonUpdatedAt) {
@@ -172,7 +172,7 @@ export function isHiDocHighlightStale(
 }
 
 /** 每 kp 上限的中文原因（503，不静默放行）。 */
-export function buildHiDocHighlightLimitMessage(limit: number = HIDOC_HIGHLIGHT_MAX_PER_KP): string {
+export function buildClewHighlightLimitMessage(limit: number = CLEW_HIGHLIGHT_MAX_PER_KP): string {
   return `本知识点的划重点已达上限（${limit} 条）。请先删除不再需要的划线或批注，再继续划重点。`;
 }
 
@@ -211,7 +211,7 @@ function collectOccurrences(haystack: string, needle: string): number[] {
   }
 }
 
-export type HiDocQuoteMatch = {
+export type ClewQuoteMatch = {
   /** 原文（未归一化）中的起始下标（含）。 */
   start: number;
   /** 原文中的结束下标（不含）。 */
@@ -222,12 +222,12 @@ export type HiDocQuoteMatch = {
  * 在讲义纯文本中定位选中文字：先用原文精确匹配，失败再用折叠空白后的文本兜底；
  * 多个候选时用 prefix/suffix 上下文消歧（前缀结尾 / 后缀开头匹配数多者优先，仍相同取最先出现）。
  */
-export function findHiDocQuoteMatch(
+export function findClewQuoteMatch(
   text: string,
   quote: string,
   prefix: string = "",
   suffix: string = "",
-): HiDocQuoteMatch | null {
+): ClewQuoteMatch | null {
   const trimmedQuote = quote.trim();
   if (text.length === 0 || trimmedQuote.length === 0) {
     return null;
@@ -293,8 +293,8 @@ function pickBestMatch(
   length: number,
   prefix: string,
   suffix: string,
-): HiDocQuoteMatch | null {
-  let best: HiDocQuoteMatch | null = null;
+): ClewQuoteMatch | null {
+  let best: ClewQuoteMatch | null = null;
   let bestScore = -1;
   for (const start of positions) {
     const score = contextScore(haystack, start, length, prefix, suffix);
@@ -307,9 +307,9 @@ function pickBestMatch(
 }
 
 /** 视图 → 渲染项（仅取定位所需字段）。 */
-export function toHiDocHighlightPaintItems(
-  highlights: readonly HiDocHighlightView[],
-): HiDocHighlightPaintItem[] {
+export function toClewHighlightPaintItems(
+  highlights: readonly ClewHighlightView[],
+): ClewHighlightPaintItem[] {
   return highlights.map((item) => ({
     id: item.id,
     color: item.color,

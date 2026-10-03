@@ -1,5 +1,5 @@
 /* M7 计费页（三列档位卡 + 月/季/年分段控件）。
- * 视觉沿用既有暖纸体系：方直边、纸色、朱/黛语义色（对齐 hi-doc.module.css 的 token）。 */
+ * 视觉沿用既有暖纸体系：方直边、纸色、朱/黛语义色（对齐 clew.module.css 的 token）。 */
 
 .page {
   /* R3 token 桥接：局部 token 改引 v2 全局 token（映射口径见 design-qa.md R3 节）；.dark 自动翻转。

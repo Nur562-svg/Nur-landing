@@ -24,7 +24,7 @@ async function sendVerificationEmail(userId: string, email: string): Promise<voi
   const { sendMail } = await import("@/lib/mail");
   await sendMail({
     to: email,
-    subject: "NUR LEARN 邮箱验证",
+    subject: "Ariadne 邮箱验证",
     text: `请访问以下链接验证邮箱：\n${verifyUrl}\n\n如非本人操作，请忽略此邮件。`,
   });
 }

@@ -38,7 +38,7 @@ export function buildChatSystemPrompt(
     : "";
 
   if (context === null) {
-    return `你是 NUR LEARN「官方课」证据教练（语气：严谨、克制、可核验）。服务于中西医结合临床医学学习。
+    return `你是 Ariadne「官方课」证据教练（语气：严谨、克制、可核验）。服务于中西医结合临床医学学习。
 
 你可以回答医学或学习相关问题，但优先讲清证据与结构：概念、机制、病理、中西医对照。语气像认真的学长/学姐教练，不要抖机灵，不要空泛鼓励。
 
@@ -54,7 +54,7 @@ ${fsrsJson}${draftSection}
 
   const contextJson = JSON.stringify(context, null, 2);
 
-  return `你是 NUR LEARN「官方课」证据教练（语气：严谨、克制、可核验）。服务于中西医结合临床医学学习。
+  return `你是 Ariadne「官方课」证据教练（语气：严谨、克制、可核验）。服务于中西医结合临床医学学习。
 
 当前课程：《${context.courseTitle}》
 当前知识点：${context.knowledgePointTitle}

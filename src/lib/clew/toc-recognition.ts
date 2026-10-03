@@ -4,9 +4,9 @@ import { prisma } from "@/lib/prisma";
 import { computeUserQuotas, recordServerUsage } from "@/lib/quotas-server";
 import { canUseResource, getQuotaLabel } from "@/lib/quotas";
 import type { MembershipTier } from "@/types/auth";
-import type { HiDocChapterSource, HiDocErrorCode, HiDocTocStrategy } from "@/types/hidoc";
+import type { ClewChapterSource, ClewErrorCode, ClewTocStrategy } from "@/types/clew";
 import {
-  HIDOC_TOC_SCAN_PAGE_LIMIT,
+  CLEW_TOC_SCAN_PAGE_LIMIT,
   collectTocLikePageNumbers,
   normalizeChapterEntries,
   pageTextMatchesTitle,
@@ -14,54 +14,55 @@ import {
   pdfTextItemsToLines,
   resolveConsensusOffset,
   selectOutlineChapters,
-  type HiDocChapterDraft,
-  type HiDocPrintedTocEntry,
+  type ClewChapterDraft,
+  type ClewPrintedTocEntry,
 } from "./toc-heuristic";
 import {
-  HIDOC_TOC_TEXT_MAX_CHARS,
-  createHiDocTocProviderFromEnv,
+  CLEW_TOC_TEXT_MAX_CHARS,
+  createClewTocProviderFromEnv,
 } from "./toc-provider";
+import { ClewProviderConfigError } from "./providers/model-config";
 import {
-  openHiDocPdf,
-  readHiDocPdfOutline,
-  readHiDocPdfPageTexts,
-  type HiDocPdfDocument,
+  openClewPdf,
+  readClewPdfOutline,
+  readClewPdfPageTexts,
+  type ClewPdfDocument,
 } from "./pdf-document";
-import { getHiDocStorage } from "./storage";
-import { chaptersFromDocxHtml, readHiDocSource } from "./source-intake";
-import { isHiDocDocx } from "./source-label";
+import { getClewStorage } from "./storage";
+import { chaptersFromDocxHtml, readClewSource } from "./source-intake";
+import { isClewDocx } from "./source-label";
 
 /**
- * Hi doc 目录识别编排（server-only）。
+ * Clew 目录识别编排（server-only）。
  * 确定性优先：PDF 书签 → 印刷目录页启发式 → （仅在启发式不足时）模型辅助。
  * 每一步都通过 onProgress 汇报；识别不到就如实失败，绝不编造章节。
  */
 
-export type HiDocTocProgressEvent = {
+export type ClewTocProgressEvent = {
   stage: "read" | "outline" | "toc-page" | "model" | "save";
   message: string;
 };
 
-export type HiDocTocRecognitionSuccess = {
+export type ClewTocRecognitionSuccess = {
   ok: true;
-  chapters: HiDocChapterDraft[];
-  strategy: HiDocTocStrategy;
-  source: HiDocChapterSource;
+  chapters: ClewChapterDraft[];
+  strategy: ClewTocStrategy;
+  source: ClewChapterSource;
   notes: string[];
 };
 
-export type HiDocTocRecognitionFailure = {
+export type ClewTocRecognitionFailure = {
   ok: false;
   status: number;
-  code: HiDocErrorCode;
+  code: ClewErrorCode;
   message: string;
 };
 
-export type HiDocTocRecognitionResult =
-  | HiDocTocRecognitionSuccess
-  | HiDocTocRecognitionFailure;
+export type ClewTocRecognitionResult =
+  | ClewTocRecognitionSuccess
+  | ClewTocRecognitionFailure;
 
-export type HiDocTocRecognitionInput = {
+export type ClewTocRecognitionInput = {
   userId: string;
   tier: MembershipTier;
   textbook: {
@@ -71,7 +72,7 @@ export type HiDocTocRecognitionInput = {
     pageCount: number;
     fileName: string;
   };
-  onProgress: (event: HiDocTocProgressEvent) => void;
+  onProgress: (event: ClewTocProgressEvent) => void;
 };
 
 /** 页码偏移探针：在印刷页码附近的窗口里寻找章节标题，投票出偏移。 */
@@ -79,8 +80,8 @@ const offsetProbeWindowBefore = 2;
 const offsetProbeWindowAfter = 12;
 
 async function estimatePrintedPageOffset(
-  document: HiDocPdfDocument,
-  entries: readonly HiDocPrintedTocEntry[],
+  document: ClewPdfDocument,
+  entries: readonly ClewPrintedTocEntry[],
   pageCount: number,
   excludedPages: ReadonlySet<number>,
 ): Promise<{ offset: number | null; probes: number }> {
@@ -129,11 +130,11 @@ async function estimatePrintedPageOffset(
 }
 
 async function recognizeFromOutline(
-  document: HiDocPdfDocument,
+  document: ClewPdfDocument,
   pageCount: number,
   notes: string[],
-): Promise<HiDocChapterDraft[] | null> {
-  const outline = await readHiDocPdfOutline(document);
+): Promise<ClewChapterDraft[] | null> {
+  const outline = await readClewPdfOutline(document);
   const selection = selectOutlineChapters(outline);
   if (selection.entries.length < 2) {
     if (outline.length > 0) {
@@ -162,18 +163,18 @@ async function recognizeFromOutline(
   return chapters;
 }
 
-export async function recognizeHiDocToc(
-  input: HiDocTocRecognitionInput,
-): Promise<HiDocTocRecognitionResult> {
+export async function recognizeClewToc(
+  input: ClewTocRecognitionInput,
+): Promise<ClewTocRecognitionResult> {
   const { onProgress } = input;
   const notes: string[] = [];
 
   onProgress({ stage: "read", message: "读取教材文件…" });
   let bytes: Uint8Array;
   try {
-    bytes = await getHiDocStorage().readObject(input.textbook.storageKey);
+    bytes = await getClewStorage().readObject(input.textbook.storageKey);
   } catch (error) {
-    console.error("[hidoc] 目录识别读取教材文件失败", error);
+    console.error("[clew] 目录识别读取教材文件失败", error);
     return {
       ok: false,
       status: 503,
@@ -182,9 +183,9 @@ export async function recognizeHiDocToc(
     };
   }
 
-  if (isHiDocDocx(input.textbook.fileName)) {
+  if (isClewDocx(input.textbook.fileName)) {
     onProgress({ stage: "read", message: "读取 DOCX 文字（页码待确认）…" });
-    const read = await readHiDocSource(input.textbook.fileName, bytes.slice());
+    const read = await readClewSource(input.textbook.fileName, bytes.slice());
     if (!read.ok) {
       return { ok: false, status: 422, code: read.code, message: read.message };
     }
@@ -199,7 +200,7 @@ export async function recognizeHiDocToc(
     };
   }
 
-  const runtime = await openHiDocPdf(bytes);
+  const runtime = await openClewPdf(bytes);
   if (!runtime.ok) {
     return { ok: false, status: 422, code: "pdf-unreadable", message: runtime.message };
   }
@@ -218,14 +219,14 @@ export async function recognizeHiDocToc(
     }
     onProgress({ stage: "toc-page", message: "书签不可用，扫描前 15 页找目录页…" });
 
-    const pages = await readHiDocPdfPageTexts(document, {
-      maxPages: HIDOC_TOC_SCAN_PAGE_LIMIT,
+    const pages = await readClewPdfPageTexts(document, {
+      maxPages: CLEW_TOC_SCAN_PAGE_LIMIT,
       itemsToLines: pdfTextItemsToLines,
     });
     const printed = parsePrintedTocPages(pages, pageCount);
     let entries = printed.entries;
-    let strategy: HiDocTocStrategy = entries.length >= 2 ? "toc-page" : "none";
-    let source: HiDocChapterSource = "toc-page";
+    let strategy: ClewTocStrategy = entries.length >= 2 ? "toc-page" : "none";
+    let source: ClewChapterSource = "toc-page";
     let offset: number | null = null;
 
     if (entries.length >= 2) {
@@ -244,21 +245,31 @@ export async function recognizeHiDocToc(
       const tocText = pages
         .flatMap((page) => page.lines)
         .join("\n")
-        .slice(0, HIDOC_TOC_TEXT_MAX_CHARS);
-      const provider = await createHiDocTocProviderFromEnv();
+        .slice(0, CLEW_TOC_TEXT_MAX_CHARS);
+      // ZCODE-M4 多模型：显式配置了未实现 provider / 非法 baseURL → 明确报错，
+      // 不静默回落到纯启发式结果（与「未配置密钥 → 仅启发式」的既有分支区分）
+      let provider: Awaited<ReturnType<typeof createClewTocProviderFromEnv>>;
+      try {
+        provider = await createClewTocProviderFromEnv();
+      } catch (error) {
+        if (error instanceof ClewProviderConfigError) {
+          return { ok: false, status: 503, code: "server-error", message: error.message };
+        }
+        throw error;
+      }
       if (!provider) {
-        notes.push("未配置目录解析模型（DASHSCOPE_API_KEY / HIDOC_TOC_PROVIDER），本次仅完成启发式识别。");
+        notes.push("未配置目录解析模型（DASHSCOPE_API_KEY / CLEW_TOC_PROVIDER），本次仅完成启发式识别。");
       } else if (tocText.replace(/\s+/g, "").length < 40) {
         notes.push("前 15 页文字层内容过少，未调用模型。");
       } else {
         const quotas = await computeUserQuotas(input.userId);
-        const quotaItem = quotas.quotas.hidocParses;
+        const quotaItem = quotas.quotas.clewParses;
         if (!canUseResource(quotaItem)) {
           return {
             ok: false,
             status: 503,
             code: "quota-exceeded",
-            message: `${getQuotaLabel("hidocParses")} 已用完（${quotaItem.used}/${quotaItem.limit}），模型辅助识别已停止。可升级会员档位，或等待额度重置后重试。`,
+            message: `${getQuotaLabel("clewParses")} 已用完（${quotaItem.used}/${quotaItem.limit}），模型辅助识别已停止。可升级会员档位，或等待额度重置后重试。`,
           };
         }
         let modelOutcome: "success" | "failed" | null = null;
@@ -278,7 +289,7 @@ export async function recognizeHiDocToc(
           notes.push(`来源：模型解析（${provider.id} · ${provider.model}，${entries.length} 条一级章节）。`);
         } catch (error) {
           const message = error instanceof Error ? error.message : "未知错误";
-          console.error("[hidoc] 目录解析模型调用失败", error);
+          console.error("[clew] 目录解析模型调用失败", error);
           modelOutcome = "failed";
           notes.push(`模型解析失败：${message}（已保留启发式结果）。`);
           onProgress({ stage: "model", message: "模型解析失败，回退到启发式结果。" });
@@ -287,10 +298,10 @@ export async function recognizeHiDocToc(
         // token 已经消耗：无论模型是否给出可用结果，都要记账（不静默放过成本）
         if (modelOutcome) {
           try {
-            await recordServerUsage(input.userId, "hidocParses");
+            await recordServerUsage(input.userId, "clewParses");
             await prisma.eventLog.create({
               data: {
-                event: "hidoc_toc_parse",
+                event: "clew_toc_parse",
                 userId: input.userId,
                 props: {
                   textbookId: input.textbook.id,
@@ -302,7 +313,7 @@ export async function recognizeHiDocToc(
               },
             });
           } catch (error) {
-            console.error("[hidoc] 目录解析用量记录失败", error);
+            console.error("[clew] 目录解析用量记录失败", error);
             notes.push("提示：本次模型调用的配额计数写入失败，已记录服务端日志。");
           }
         }
@@ -335,7 +346,7 @@ export async function recognizeHiDocToc(
           );
         }
       } catch (error) {
-        console.error("[hidoc] 页码偏移校验失败", error);
+        console.error("[clew] 页码偏移校验失败", error);
         notes.push("页码偏移校验失败，已按印刷页码直接映射，请人工核对。");
       }
     }

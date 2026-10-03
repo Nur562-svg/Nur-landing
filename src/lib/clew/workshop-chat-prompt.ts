@@ -1,17 +1,17 @@
-import type { HiDocChatMessage, HiDocWorkshopCitation } from "@/types/hidoc";
-import type { HiDocChatModelMessage } from "./chat-prompt";
-import { HIDOC_CHAT_MESSAGE_MAX_CHARS, trimHiDocChatHistory } from "./conversation";
+import type { ClewChatMessage, ClewWorkshopCitation } from "@/types/clew";
+import type { ClewChatModelMessage } from "./chat-prompt";
+import { CLEW_CHAT_MESSAGE_MAX_CHARS, trimClewChatHistory } from "./conversation";
 
 /**
- * Hi doc M6 课题工作坊答疑提示词（纯函数，可测试）。
+ * Clew M6 课题工作坊答疑提示词（纯函数，可测试）。
  * 与讲义/笔记不同：工作坊没有启发式兜底——检索不到或模型不可用即如实拒绝；
  * 回答只依据命中的材料片段，引用必须写材料名 + 页码/行号，不得编造材料内容或页码。
  */
 
-export type HiDocWorkshopChatContext = {
+export type ClewWorkshopChatContext = {
   workshopTitle: string;
   /** 命中的材料片段（零命中时不走模型，见 workshops.ts）。 */
-  citations: readonly HiDocWorkshopCitation[];
+  citations: readonly ClewWorkshopCitation[];
   /** 只读关联到的本人教材知识点（可为空；仅供回答参考，不写课程真相）。 */
   relatedKnowledgePoints: readonly { title: string; textbookTitle: string }[];
   /** 工作坊全部就绪材料的文件名清单（供模型了解材料范围）。 */
@@ -19,16 +19,16 @@ export type HiDocWorkshopChatContext = {
 };
 
 /** 单条命中片段进入提示词的长度上限。 */
-export const HIDOC_WORKSHOP_CITATION_MAX_CHARS = 900;
+export const CLEW_WORKSHOP_CITATION_MAX_CHARS = 900;
 
 function clip(text: string, maxChars: number): string {
   return text.length > maxChars ? `${text.slice(0, maxChars)}\n…（已截断）` : text;
 }
 
-export function buildHiDocWorkshopChatSystemPrompt(context: HiDocWorkshopChatContext): string {
+export function buildClewWorkshopChatSystemPrompt(context: ClewWorkshopChatContext): string {
   const citationLines = context.citations.map(
     (citation, index) =>
-      `【片段 ${index + 1}】${citation.fileName} · ${citation.locator}\n${clip(citation.excerpt, HIDOC_WORKSHOP_CITATION_MAX_CHARS)}`,
+      `【片段 ${index + 1}】${citation.fileName} · ${citation.locator}\n${clip(citation.excerpt, CLEW_WORKSHOP_CITATION_MAX_CHARS)}`,
   );
   const related = context.relatedKnowledgePoints.length > 0
     ? context.relatedKnowledgePoints
@@ -37,7 +37,7 @@ export function buildHiDocWorkshopChatSystemPrompt(context: HiDocWorkshopChatCon
     : "（本次未关联到教材知识点）";
 
   return [
-    "你是 NUR LEARN「Hi doc」课题工作坊里的学习搭档（语气：生动、有人味、像 Grok——直接、机敏，但不油腻）。",
+    "你是 Ariadne「Clew」课题工作坊里的学习搭档（语气：生动、有人味、像 Grok——直接、机敏，但不油腻）。",
     "你正在就学生自己上传的一组短材料答疑：先把材料说透，再允许一点点轻松。",
     "边界规则（硬约束）：",
     "- 回答只依据下方给出的材料命中片段；片段不足以回答时，明确说「材料里没有相关内容」，不得编造材料内容、页码或行号。",
@@ -60,17 +60,17 @@ export function buildHiDocWorkshopChatSystemPrompt(context: HiDocWorkshopChatCon
 }
 
 /** 组装模型消息：system + 最近历史 + 本轮提问（历史由服务端从库中读取，不接受客户端注入）。 */
-export function buildHiDocWorkshopChatModelMessages(
-  context: HiDocWorkshopChatContext,
-  history: readonly HiDocChatMessage[],
+export function buildClewWorkshopChatModelMessages(
+  context: ClewWorkshopChatContext,
+  history: readonly ClewChatMessage[],
   question: string,
-): HiDocChatModelMessage[] {
-  const trimmed = trimHiDocChatHistory(history);
+): ClewChatModelMessage[] {
+  const trimmed = trimClewChatHistory(history);
   return [
-    { role: "system", content: buildHiDocWorkshopChatSystemPrompt(context) },
+    { role: "system", content: buildClewWorkshopChatSystemPrompt(context) },
     ...trimmed.map((message) => ({
       role: message.role,
-      content: clip(message.content, HIDOC_CHAT_MESSAGE_MAX_CHARS),
+      content: clip(message.content, CLEW_CHAT_MESSAGE_MAX_CHARS),
     })),
     { role: "user", content: question },
   ];

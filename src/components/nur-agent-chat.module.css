@@ -319,3 +319,46 @@
 .inputArea {
   min-height: 40px;
 }
+
+/* page-chat 上下文 chip：显式标注「对当前知识点提问」 */
+.contextChipRow {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 0 10px;
+}
+
+.contextChip {
+  align-self: flex-start;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 12px;
+  line-height: 1.4;
+  color: rgba(30, 28, 24, 0.7);
+  background: rgba(30, 28, 24, 0.05);
+  border: 1px solid rgba(30, 28, 24, 0.12);
+  border-radius: 999px;
+  padding: 4px 10px;
+  cursor: pointer;
+  text-align: left;
+}
+
+.contextChip:hover {
+  color: #24211d;
+  border-color: rgba(30, 28, 24, 0.24);
+}
+
+.contextChip[aria-expanded="true"] {
+  color: #24211d;
+  background: rgba(30, 28, 24, 0.08);
+}
+
+.contextChipDetail {
+  margin: 0;
+  font-size: 12px;
+  line-height: 1.5;
+  color: rgba(30, 28, 24, 0.6);
+  padding: 0 4px;
+}

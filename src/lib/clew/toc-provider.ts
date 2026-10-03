@@ -1,64 +1,47 @@
 import "server-only";
 
-import type { HiDocPrintedTocEntry } from "./toc-heuristic";
+import type { ClewPrintedTocEntry } from "./toc-heuristic";
+import { isClewTaskConfigured, resolveClewTaskModel } from "./providers/model-config";
 
 /**
- * Hi doc 目录解析模型边界（provider-neutral，仿 course-builder/nur-agent 适配器模式）。
+ * Clew 目录解析模型边界（provider-neutral，仿 course-builder/nur-agent 适配器模式）。
  * 模型只做一件事：把「目录页文字」整理成章节条目（标题 + 页码）。
  * 不写库、不改状态、不生成课程事实；页码偏移与合法性由确定性代码负责。
  */
 
-export type HiDocTocModelInput = {
+export type ClewTocModelInput = {
   textbookTitle: string;
   pageCount: number;
   /** 目录页文字（已在调用方做长度上限裁剪）。 */
   tocText: string;
 };
 
-export type HiDocTocProvider = {
+export type ClewTocProvider = {
   id: string;
   model: string;
-  parseToc(input: HiDocTocModelInput): Promise<HiDocPrintedTocEntry[]>;
+  parseToc(input: ClewTocModelInput): Promise<ClewPrintedTocEntry[]>;
 };
 
-export class HiDocTocProviderError extends Error {
+export class ClewTocProviderError extends Error {
   constructor(message: string) {
     super(message);
-    this.name = "HiDocTocProviderError";
+    this.name = "ClewTocProviderError";
   }
 }
 
 /** 目录文字传输上限：只发目录页文字，绝不发整本教材。 */
-export const HIDOC_TOC_TEXT_MAX_CHARS = 12_000;
-
-const DEFAULT_HIDOC_TOC_PROVIDER = "dashscope";
-const DEFAULT_HIDOC_TOC_MODEL = "qwen3.7-plus";
-
-export function resolveHiDocTocProviderId(): string {
-  return process.env.HIDOC_TOC_PROVIDER?.trim() || DEFAULT_HIDOC_TOC_PROVIDER;
-}
-
-export function resolveHiDocTocModel(): string {
-  return process.env.HIDOC_TOC_MODEL?.trim() || DEFAULT_HIDOC_TOC_MODEL;
-}
+export const CLEW_TOC_TEXT_MAX_CHARS = 12_000;
 
 /**
- * 按环境变量构造目录解析 provider。
- * 未配置密钥或 provider 未接入时返回 null（调用方如实降级为纯启发式，不静默假装调用过模型）。
+ * 按任务级 env 解析构造目录解析 provider（ZCODE-M4 多模型：resolve → 校验 → 动态 import adapter）。
+ * 未配置密钥时返回 null（调用方如实降级为纯启发式，不静默假装调用过模型）；
+ * provider 未实现 / baseURL 非法时抛 ClewProviderConfigError（明确报错，不静默回落）。
  */
-export async function createHiDocTocProviderFromEnv(): Promise<HiDocTocProvider | null> {
-  const providerId = resolveHiDocTocProviderId();
-  if (providerId !== "dashscope") {
+export async function createClewTocProviderFromEnv(): Promise<ClewTocProvider | null> {
+  const config = resolveClewTaskModel("toc");
+  if (!isClewTaskConfigured("toc")) {
     return null;
   }
-  const apiKey = process.env.DASHSCOPE_API_KEY?.trim();
-  if (!apiKey) {
-    return null;
-  }
-  const { createDashScopeHiDocTocProvider } = await import("./providers/dashscope-toc");
-  return createDashScopeHiDocTocProvider(
-    apiKey,
-    resolveHiDocTocModel(),
-    process.env.DASHSCOPE_BASE_URL?.trim(),
-  );
+  const { createDashScopeClewTocProvider } = await import("./providers/dashscope-toc");
+  return createDashScopeClewTocProvider(config);
 }

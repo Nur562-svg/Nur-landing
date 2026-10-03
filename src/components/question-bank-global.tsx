@@ -166,7 +166,7 @@ export function QuestionBankGlobal({ courses }: QuestionBankGlobalProps) {
         {/* 3. Main content — two columns */}
         <div className={styles.mainContent}>
           {/* Left: ad area */}
-          <div className={styles.adArea}>Nur Learn 的广告区域</div>
+          <div className={styles.adArea}>Ariadne 的广告区域</div>
 
           {/* Right: sidebar */}
           <div className={styles.sidebar}>

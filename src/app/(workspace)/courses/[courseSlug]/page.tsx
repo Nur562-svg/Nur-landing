@@ -27,11 +27,11 @@ export async function generateMetadata({
   const course = getPublishedCourseBySlug(courseSlug);
 
   if (!course) {
-    return { title: "课程未找到｜NUR LEARN" };
+    return { title: "课程未找到｜Ariadne" };
   }
 
   return {
-    title: `${course.title} 课程工作台｜NUR LEARN`,
+    title: `${course.title} 课程工作台｜Ariadne`,
     description: `${course.title}的章节题库、模拟考试与材料来源总入口。`,
   };
 }

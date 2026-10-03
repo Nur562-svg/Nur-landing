@@ -24,11 +24,11 @@ export async function generateMetadata({
   const course = getPublishedCourseBySlug(courseSlug);
 
   if (!course) {
-    return { title: "题库未找到｜NUR LEARN" };
+    return { title: "题库未找到｜Ariadne" };
   }
 
   return {
-    title: `${course.title} · 题库｜NUR LEARN`,
+    title: `${course.title} · 题库｜Ariadne`,
     description: `${course.title}的章节题库，按章节浏览题目、分题型练习并查看作答统计。`,
   };
 }

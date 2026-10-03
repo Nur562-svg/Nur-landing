@@ -12,7 +12,7 @@ export default function Error({
 }) {
   useEffect(() => {
     if (process.env.NODE_ENV !== "production") {
-      console.error("NUR LEARN route error:", error);
+      console.error("Ariadne route error:", error);
     }
   }, [error]);
 

@@ -3,55 +3,60 @@ import "server-only";
 import { prisma } from "@/lib/prisma";
 import { canUseResource, getQuotaLabel } from "@/lib/quotas";
 import { computeUserQuotas, recordServerUsage } from "@/lib/quotas-server";
-import type { HiDocErrorCode, HiDocLessonGenerator, HiDocLessonView } from "@/types/hidoc";
-import { loadHiDocKnowledgePointContext } from "./knowledge-points";
+import type { ClewErrorCode, ClewLessonGenerator, ClewLessonStyle, ClewLessonView } from "@/types/clew";
+import { loadClewKnowledgePointContext } from "./knowledge-points";
 import {
-  HIDOC_MODEL_LESSON_NOTICE,
+  CLEW_LESSON_STYLE_LABELS,
+  CLEW_MODEL_LESSON_NOTICE,
   buildHeuristicLesson,
   buildLessonHeader,
+  isClewLessonStyle,
   normalizeLessonMarkdown,
-  parseHiDocLessonGenerator,
-  resolveHiDocLessonStyle,
+  parseClewLessonGenerator,
+  resolveClewLessonStyle,
   validateGeneratedLesson,
 } from "./lesson-heuristic";
-import { createHiDocLessonProviderFromEnv } from "./lesson-provider";
-import { isHiDocDocx } from "./source-label";
-import { readHiDocKnowledgePointExcerpt } from "./source-excerpt";
+import { createClewLessonProviderFromEnv } from "./lesson-provider";
+import { ClewProviderConfigError } from "./providers/model-config";
+import { isClewDocx } from "./source-label";
+import { readClewKnowledgePointExcerpt } from "./source-excerpt";
 
 /**
- * Hi doc 讲义生成编排（server-only，单知识点一次调用）。
+ * Clew 讲义生成编排（server-only，单知识点一次调用）。
  * 模型可用 → 流式生成并按结构校验；未配置密钥 → 启发式兜底并明确标注「未接入模型」。
  * 结构不合格、原文片段读不到、额度不足都如实报错，不伪造讲义、不静默降级。
  */
 
-export type HiDocLessonProgressEvent = {
+export type ClewLessonProgressEvent = {
   stage: "read" | "generating" | "save";
   message: string;
 };
 
-export type HiDocLessonSuccess = {
+export type ClewLessonSuccess = {
   ok: true;
-  lesson: HiDocLessonView;
+  lesson: ClewLessonView;
   notes: string[];
 };
 
-export type HiDocLessonFailure = {
+export type ClewLessonFailure = {
   ok: false;
   status: number;
-  code: HiDocErrorCode;
+  code: ClewErrorCode;
   message: string;
 };
 
-export type HiDocLessonResult = HiDocLessonSuccess | HiDocLessonFailure;
+export type ClewLessonResult = ClewLessonSuccess | ClewLessonFailure;
 
-export type HiDocLessonRequest = {
+export type ClewLessonRequest = {
   userId: string;
   kpId: string;
-  onProgress: (event: HiDocLessonProgressEvent) => void;
+  /** 用户显式选择的讲解风格（可选；未提供时用账户默认风格）。 */
+  requestedStyle?: string;
+  onProgress: (event: ClewLessonProgressEvent) => void;
   onDelta: (text: string) => void;
 };
 
-export type HiDocLessonRow = {
+export type ClewLessonRow = {
   contentMd: string;
   style: string;
   generator: string;
@@ -60,27 +65,27 @@ export type HiDocLessonRow = {
 };
 
 /** 讲义数据库行 → 对外视图。 */
-export function toHiDocLessonView(row: HiDocLessonRow): HiDocLessonView {
+export function toClewLessonView(row: ClewLessonRow): ClewLessonView {
   return {
     contentMd: row.contentMd,
-    style: resolveHiDocLessonStyle(row.style),
-    generator: parseHiDocLessonGenerator(row.generator),
+    style: resolveClewLessonStyle(row.style),
+    generator: parseClewLessonGenerator(row.generator),
     generatedAt: row.generatedAt.toISOString(),
   };
 }
 
 /** 读取某知识点的讲义（不存在返回 null）。 */
-export async function loadHiDocLesson(
+export async function loadClewLesson(
   kpId: string,
-): Promise<{ view: HiDocLessonView; sourceExcerpt: string } | null> {
-  const row = await prisma.hiDocLesson.findUnique({
+): Promise<{ view: ClewLessonView; sourceExcerpt: string } | null> {
+  const row = await prisma.clewLesson.findUnique({
     where: { kpId },
     select: { contentMd: true, style: true, generator: true, sourceExcerpt: true, generatedAt: true },
   });
   if (!row) {
     return null;
   }
-  return { view: toHiDocLessonView(row), sourceExcerpt: row.sourceExcerpt };
+  return { view: toClewLessonView(row), sourceExcerpt: row.sourceExcerpt };
 }
 
 function formatGeneratedAtLabel(date: Date): string {
@@ -97,35 +102,49 @@ function formatGeneratedAtLabel(date: Date): string {
 async function loadAccountLessonStyle(userId: string): Promise<string> {
   const user = await prisma.user.findUnique({
     where: { id: userId },
-    select: { hiDocLessonStyle: true },
+    select: { clewLessonStyle: true },
   });
-  return user?.hiDocLessonStyle ?? "zh-primary";
+  return user?.clewLessonStyle ?? "zh-primary";
 }
 
-/** 账户级讲解风格（M4 只有 zh-primary；未知值回落）。 */
-export async function loadHiDocAccountLessonStyle(userId: string): Promise<ReturnType<typeof resolveHiDocLessonStyle>> {
-  return resolveHiDocLessonStyle(await loadAccountLessonStyle(userId));
+/** 账户级讲解风格（四种风格；未知值回落 zh-primary）。 */
+export async function loadClewAccountLessonStyle(userId: string): Promise<ReturnType<typeof resolveClewLessonStyle>> {
+  return resolveClewLessonStyle(await loadAccountLessonStyle(userId));
 }
 
-export async function generateHiDocKnowledgePointLesson(
-  input: HiDocLessonRequest,
-): Promise<HiDocLessonResult> {
-  const context = await loadHiDocKnowledgePointContext(input.userId, input.kpId);
+export async function generateClewKnowledgePointLesson(
+  input: ClewLessonRequest,
+): Promise<ClewLessonResult> {
+  const context = await loadClewKnowledgePointContext(input.userId, input.kpId);
   if (!context.ok) {
     return { ok: false, status: context.status, code: context.code, message: context.message };
   }
   const { knowledgePoint, chapter, textbook } = context.data;
   const notes: string[] = [];
-  const style = resolveHiDocLessonStyle(await loadAccountLessonStyle(input.userId));
+  const accountStyle = resolveClewLessonStyle(await loadAccountLessonStyle(input.userId));
+  let explicitStyle: ClewLessonStyle | null = null;
+  if (input.requestedStyle !== undefined) {
+    const trimmed = input.requestedStyle.trim();
+    if (!isClewLessonStyle(trimmed)) {
+      return {
+        ok: false,
+        status: 400,
+        code: "invalid-request",
+        message: `未知的讲解风格「${trimmed.slice(0, 24)}」，请刷新页面后重试。`,
+      };
+    }
+    explicitStyle = trimmed;
+  }
+  const style: ClewLessonStyle = explicitStyle ?? accountStyle;
 
-  const docx = isHiDocDocx(textbook.fileName);
+  const docx = isClewDocx(textbook.fileName);
   input.onProgress({
     stage: "read",
     message: docx
       ? `聚合《${chapter.title}》的教材原文（页码待确认）…`
       : `聚合《${chapter.title}》第 ${knowledgePoint.sourcePage} 页附近的教材原文…`,
   });
-  const excerptResult = await readHiDocKnowledgePointExcerpt({
+  const excerptResult = await readClewKnowledgePointExcerpt({
     storageKey: textbook.storageKey,
     fileName: textbook.fileName,
     chapterTitle: chapter.title,
@@ -140,18 +159,27 @@ export async function generateHiDocKnowledgePointLesson(
     notes.push(`未能读取教材原文片段：${excerptResult.message}`);
   }
 
-  const previous = await loadHiDocLesson(input.kpId);
+  const previous = await loadClewLesson(input.kpId);
   const generatedAt = new Date();
   const generatedAtLabel = formatGeneratedAtLabel(generatedAt);
 
   let contentMd: string;
-  let generator: HiDocLessonGenerator;
+  let generator: ClewLessonGenerator;
 
-  const provider = await createHiDocLessonProviderFromEnv();
+  // ZCODE-M4 多模型：显式配置了未实现 provider / 非法 baseURL → 明确报错，不走启发式兜底
+  let provider: Awaited<ReturnType<typeof createClewLessonProviderFromEnv>>;
+  try {
+    provider = await createClewLessonProviderFromEnv();
+  } catch (error) {
+    if (error instanceof ClewProviderConfigError) {
+      return { ok: false, status: 503, code: "lesson-failed", message: error.message };
+    }
+    throw error;
+  }
   if (!provider) {
     generator = { kind: "heuristic" };
     notes.push(
-      "未接入模型（DASHSCOPE_API_KEY / HIDOC_EXTRACT_PROVIDER 未配置）：本次讲义由确定性规则整理，内容仅来自萃取结果与教材原文片段。",
+      "未接入模型（DASHSCOPE_API_KEY / CLEW_EXTRACT_PROVIDER 未配置）：本次讲义由确定性规则整理，内容仅来自萃取结果与教材原文片段。",
     );
     contentMd = buildHeuristicLesson({
       knowledgePoint,
@@ -173,13 +201,13 @@ export async function generateHiDocKnowledgePointLesson(
     }
 
     const quotas = await computeUserQuotas(input.userId);
-    const quotaItem = quotas.quotas.hidocLessons;
+    const quotaItem = quotas.quotas.clewLessons;
     if (!canUseResource(quotaItem)) {
       return {
         ok: false,
         status: 503,
         code: "quota-exceeded",
-        message: `${getQuotaLabel("hidocLessons")} 已用完（${quotaItem.used}/${quotaItem.limit}），本次讲义生成已停止。可升级会员档位，或等待额度重置后重试。`,
+        message: `${getQuotaLabel("clewLessons")} 已用完（${quotaItem.used}/${quotaItem.limit}），本次讲义生成已停止。可升级会员档位，或等待额度重置后重试。`,
       };
     }
 
@@ -224,7 +252,7 @@ export async function generateHiDocKnowledgePointLesson(
           chapterTitle: chapter.title,
           sourcePage: knowledgePoint.sourcePage,
           fileName: textbook.fileName,
-          notice: HIDOC_MODEL_LESSON_NOTICE,
+          notice: CLEW_MODEL_LESSON_NOTICE,
         }),
         body,
       ].join("\n");
@@ -232,7 +260,7 @@ export async function generateHiDocKnowledgePointLesson(
     } catch (error) {
       modelOutcome = "failed";
       const message = error instanceof Error ? error.message : "未知错误";
-      console.error("[hidoc] 讲义生成模型调用失败", error);
+      console.error("[clew] 讲义生成模型调用失败", error);
       return {
         ok: false,
         status: 503,
@@ -242,10 +270,10 @@ export async function generateHiDocKnowledgePointLesson(
     } finally {
       // token 已消耗：无论成败都记账（与目录解析/萃取同一原则）
       try {
-        await recordServerUsage(input.userId, "hidocLessons");
+        await recordServerUsage(input.userId, "clewLessons");
         await prisma.eventLog.create({
           data: {
-            event: "hidoc_kp_lesson",
+            event: "clew_kp_lesson",
             userId: input.userId,
             props: {
               kpId: input.kpId,
@@ -258,14 +286,14 @@ export async function generateHiDocKnowledgePointLesson(
           },
         });
       } catch (error) {
-        console.error("[hidoc] 讲义用量记录失败", error);
+        console.error("[clew] 讲义用量记录失败", error);
         notes.push("提示：本次讲义生成的配额计数写入失败，已记录服务端日志。");
       }
     }
   }
 
   input.onProgress({ stage: "save", message: "保存讲义…" });
-  const row = await prisma.hiDocLesson.upsert({
+  const row = await prisma.clewLesson.upsert({
     where: { kpId: input.kpId },
     create: {
       kpId: input.kpId,
@@ -287,20 +315,31 @@ export async function generateHiDocKnowledgePointLesson(
   if (previous) {
     notes.push("本次生成覆盖了此前讲义（重新生成将覆盖旧版本）。");
   }
+  if (explicitStyle && explicitStyle !== accountStyle) {
+    try {
+      await prisma.user.update({
+        where: { id: input.userId },
+        data: { clewLessonStyle: explicitStyle },
+      });
+      notes.push(`讲解风格已设为「${CLEW_LESSON_STYLE_LABELS[explicitStyle]}」，之后的生成默认使用该风格。`);
+    } catch (error) {
+      console.error("[clew] 讲解风格账户默认更新失败", error);
+    }
+  }
   if (generator.kind === "heuristic") {
     // 未消耗模型 token，不占模型额度；仅记录事件便于排查
     try {
       await prisma.eventLog.create({
         data: {
-          event: "hidoc_kp_lesson",
+          event: "clew_kp_lesson",
           userId: input.userId,
           props: { kpId: input.kpId, chapterOrder: chapter.order, generator: "heuristic", outcome: "success" },
         },
       });
     } catch (error) {
-      console.error("[hidoc] 讲义事件记录失败", error);
+      console.error("[clew] 讲义事件记录失败", error);
     }
   }
 
-  return { ok: true, lesson: toHiDocLessonView(row), notes };
+  return { ok: true, lesson: toClewLessonView(row), notes };
 }

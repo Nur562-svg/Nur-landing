@@ -12,7 +12,7 @@ export default function GlobalError({
 }) {
   useEffect(() => {
     if (process.env.NODE_ENV !== "production") {
-      console.error("NUR LEARN global-error:", error);
+      console.error("Ariadne global-error:", error);
     }
   }, [error]);
 

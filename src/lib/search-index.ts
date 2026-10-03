@@ -4,7 +4,7 @@
  * 边界：
  * - 课程/章节/知识点条目只经 course-selectors 选择器与课程对象公开字段构建，
  *   不直读 content 文件、不搜题目正文（题库全文检索是后端事，本期明确不做）；
- * - Hi doc 教材章节条目由调用方传入书架内存数据，本模块不发起请求、不上送、不写盘；
+ * - Clew 教材章节条目由调用方传入书架内存数据，本模块不发起请求、不上送、不写盘；
  * - 学习者私人数据（错题/记忆/作答）不进入索引。
  *
  * bundle 约束（实测教训，勿回退）：在客户端组件顶层 `import publishedCourses`
@@ -155,7 +155,7 @@ export function buildCourseSearchEntries(
   return entries;
 }
 
-/** 书架教材输入（HiDocTextbookView 的最小裁剪；私有数据，仅存在于客户端内存）。 */
+/** 书架教材输入（ClewTextbookView 的最小裁剪；私有数据，仅存在于客户端内存）。 */
 export type ShelfChapterInput = {
   id: string;
   title: string;
@@ -164,7 +164,7 @@ export type ShelfChapterInput = {
 };
 
 /**
- * Hi doc 教材章节条目：每章一条，跳 `/learn/hi-doc/t/{id}/c/{n}`。
+ * Clew 教材章节条目：每章一条，跳 `/learn/clew/t/{id}/c/{n}`。
  * 书架列表只含 chapterCount（无章节标题，且不新增网络请求），
  * 故条目以「教材名 · 第 N 章」呈现、按教材名参与匹配；按教材名检索可直接到达任一章节。
  */
@@ -178,7 +178,7 @@ export function buildShelfChapterEntries(
         id: `shelf-chapter-${book.id}-${chapterIndex}`,
         label: `${book.title} · 第 ${chapterIndex} 章`,
         hint: book.isFrozen ? "书架教材 · 已冻结" : "书架教材",
-        href: `/learn/hi-doc/t/${book.id}/c/${chapterIndex}`,
+        href: `/learn/clew/t/${book.id}/c/${chapterIndex}`,
         group: "shelf",
         keywords: [book.title],
       });

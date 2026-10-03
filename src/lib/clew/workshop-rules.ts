@@ -1,14 +1,14 @@
 import type { MembershipTier } from "@/types/auth";
 
 /**
- * Hi doc M6 课题工作坊规则（纯函数，无服务器依赖，可被测试直接引用）。
+ * Clew M6 课题工作坊规则（纯函数，无服务器依赖，可被测试直接引用）。
  * 工作坊材料不占教材当月名额；但工作坊数量与每个工作坊的材料数按档位限制。
  * 单文件 ≤100 页：PDF 按真实页数，Markdown/纯文本按行数折算（40 行 ≈ 1 页）。
  * 图片与无文字层 PDF 明确拒绝（OCR 后置，见 docs/HI_DOC_PLAN.md §10），不假装修复、不以占位内容冒充。
  */
 
 /** 工作坊数量与每个工作坊材料数上限（按档位）。 */
-export const HIDOC_WORKSHOP_LIMITS: Record<
+export const CLEW_WORKSHOP_LIMITS: Record<
   MembershipTier,
   { workshops: number; filesPerWorkshop: number }
 > = {
@@ -19,43 +19,43 @@ export const HIDOC_WORKSHOP_LIMITS: Record<
 };
 
 /** 单个材料页数上限（PDF 真实页数；文本按行数折算）。 */
-export const HIDOC_WORKSHOP_MAX_PAGE_COUNT = 100;
+export const CLEW_WORKSHOP_MAX_PAGE_COUNT = 100;
 
 /** 文本材料行数折算页数的行/页比（40 行 ≈ 1 页）。 */
-export const HIDOC_WORKSHOP_TEXT_LINES_PER_PAGE = 40;
+export const CLEW_WORKSHOP_TEXT_LINES_PER_PAGE = 40;
 
 /** 文本材料行数上限（= 100 页 × 40 行/页）。 */
-export const HIDOC_WORKSHOP_MAX_TEXT_LINES =
-  HIDOC_WORKSHOP_MAX_PAGE_COUNT * HIDOC_WORKSHOP_TEXT_LINES_PER_PAGE;
+export const CLEW_WORKSHOP_MAX_TEXT_LINES =
+  CLEW_WORKSHOP_MAX_PAGE_COUNT * CLEW_WORKSHOP_TEXT_LINES_PER_PAGE;
 
 /** 工作坊标题/说明长度上限。 */
-export const HIDOC_WORKSHOP_TITLE_MAX_CHARS = 60;
-export const HIDOC_WORKSHOP_NOTE_MAX_CHARS = 500;
+export const CLEW_WORKSHOP_TITLE_MAX_CHARS = 60;
+export const CLEW_WORKSHOP_NOTE_MAX_CHARS = 500;
 
-export type HiDocWorkshopFileKind = "pdf" | "text";
+export type ClewWorkshopFileKind = "pdf" | "text";
 
 const TEXT_FILE_EXTENSIONS = [".md", ".markdown", ".txt"] as const;
 const IMAGE_FILE_EXTENSIONS = [".png", ".jpg", ".jpeg", ".gif", ".webp", ".bmp", ".tif", ".tiff"] as const;
 
-export function getHiDocWorkshopLimits(tier: MembershipTier): {
+export function getClewWorkshopLimits(tier: MembershipTier): {
   workshops: number;
   filesPerWorkshop: number;
 } {
-  return HIDOC_WORKSHOP_LIMITS[tier];
+  return CLEW_WORKSHOP_LIMITS[tier];
 }
 
 /** 文本行数 → 折算页数（向上取整，至少 1 页）。 */
-export function hiDocWorkshopTextPagesFromLines(lineCount: number): number {
+export function clewWorkshopTextPagesFromLines(lineCount: number): number {
   if (lineCount <= 0) {
     return 1;
   }
-  return Math.ceil(lineCount / HIDOC_WORKSHOP_TEXT_LINES_PER_PAGE);
+  return Math.ceil(lineCount / CLEW_WORKSHOP_TEXT_LINES_PER_PAGE);
 }
 
 /** 工作坊材料文件名校验：识别 PDF / 文本；图片给出明确的 OCR 后置原因；其它格式如实拒绝。 */
-export function validateHiDocWorkshopFileName(
+export function validateClewWorkshopFileName(
   fileName: string,
-): { ok: true; kind: HiDocWorkshopFileKind } | { ok: false; reason: string } {
+): { ok: true; kind: ClewWorkshopFileKind } | { ok: false; reason: string } {
   const lower = fileName.trim().toLowerCase();
   if (lower.length === 0) {
     return { ok: false, reason: "文件名不能为空。" };
@@ -79,7 +79,7 @@ export function validateHiDocWorkshopFileName(
 }
 
 /** 严格按 UTF-8 解码文本材料（含 BOM 处理）；无法解码时如实报错，不猜测编码。 */
-export function decodeHiDocWorkshopText(
+export function decodeClewWorkshopText(
   bytes: Uint8Array,
 ): { ok: true; text: string; lineCount: number } | { ok: false; reason: string } {
   let text: string;
@@ -93,32 +93,32 @@ export function decodeHiDocWorkshopText(
     return { ok: false, reason: "文本材料是空文件。" };
   }
   const lineCount = normalized.split("\n").length;
-  if (lineCount > HIDOC_WORKSHOP_MAX_TEXT_LINES) {
+  if (lineCount > CLEW_WORKSHOP_MAX_TEXT_LINES) {
     return {
       ok: false,
-      reason: `文本材料共 ${lineCount} 行，折算约 ${hiDocWorkshopTextPagesFromLines(lineCount)} 页，超过单份 ${HIDOC_WORKSHOP_MAX_PAGE_COUNT} 页上限；请拆分后上传。`,
+      reason: `文本材料共 ${lineCount} 行，折算约 ${clewWorkshopTextPagesFromLines(lineCount)} 页，超过单份 ${CLEW_WORKSHOP_MAX_PAGE_COUNT} 页上限；请拆分后上传。`,
     };
   }
   return { ok: true, text: normalized, lineCount };
 }
 
-export function validateHiDocWorkshopTitle(
+export function validateClewWorkshopTitle(
   title: unknown,
 ): { ok: true; value: string } | { ok: false; reason: string } {
   if (typeof title !== "string" || title.trim().length === 0) {
     return { ok: false, reason: "请输入课题名称。" };
   }
   const value = title.trim();
-  if (value.length > HIDOC_WORKSHOP_TITLE_MAX_CHARS) {
+  if (value.length > CLEW_WORKSHOP_TITLE_MAX_CHARS) {
     return {
       ok: false,
-      reason: `课题名称过长（${value.length} 字），请控制在 ${HIDOC_WORKSHOP_TITLE_MAX_CHARS} 字以内。`,
+      reason: `课题名称过长（${value.length} 字），请控制在 ${CLEW_WORKSHOP_TITLE_MAX_CHARS} 字以内。`,
     };
   }
   return { ok: true, value };
 }
 
-export function validateHiDocWorkshopNote(
+export function validateClewWorkshopNote(
   note: unknown,
 ): { ok: true; value: string | null } | { ok: false; reason: string } {
   if (note === undefined || note === null) {
@@ -131,21 +131,21 @@ export function validateHiDocWorkshopNote(
   if (value.length === 0) {
     return { ok: true, value: null };
   }
-  if (value.length > HIDOC_WORKSHOP_NOTE_MAX_CHARS) {
+  if (value.length > CLEW_WORKSHOP_NOTE_MAX_CHARS) {
     return {
       ok: false,
-      reason: `课题说明过长（${value.length} 字），请控制在 ${HIDOC_WORKSHOP_NOTE_MAX_CHARS} 字以内。`,
+      reason: `课题说明过长（${value.length} 字），请控制在 ${CLEW_WORKSHOP_NOTE_MAX_CHARS} 字以内。`,
     };
   }
   return { ok: true, value };
 }
 
 /** 工作坊数量超额的中文原因（503 明确报错，不静默放行）。 */
-export function buildHiDocWorkshopLimitMessage(used: number, limit: number): string {
+export function buildClewWorkshopLimitMessage(used: number, limit: number): string {
   return `课题工作坊数量已达当前档位上限（${used}/${limit}）。删除不再需要的课题可腾出位置，或升级会员档位。`;
 }
 
 /** 单个工作坊材料数超额的中文原因。 */
-export function buildHiDocWorkshopFileLimitMessage(used: number, limit: number): string {
+export function buildClewWorkshopFileLimitMessage(used: number, limit: number): string {
   return `本课题的材料数量已达当前档位上限（${used}/${limit}）。删除不再需要的材料后可继续上传，或升级会员档位。`;
 }

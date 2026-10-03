@@ -1,13 +1,13 @@
 import { prisma } from "@/lib/prisma";
-import { getHiDocSessionUser } from "@/lib/hidoc/session-user";
-import { recognizeHiDocToc, type HiDocTocProgressEvent } from "@/lib/hidoc/toc-recognition";
-import { saveRecognizedChapters } from "@/lib/hidoc/chapters";
-import { hiDocFailure, hiDocUnauthorized } from "@/lib/hidoc/api-response";
-import type { HiDocTocEvent } from "@/types/hidoc";
+import { getClewSessionUser } from "@/lib/clew/session-user";
+import { recognizeClewToc, type ClewTocProgressEvent } from "@/lib/clew/toc-recognition";
+import { saveRecognizedChapters } from "@/lib/clew/chapters";
+import { clewFailure, clewUnauthorized } from "@/lib/clew/api-response";
+import type { ClewTocEvent } from "@/types/clew";
 
 /**
- * Hi doc 目录识别（thin adapter，SSE 流式进度）。
- * 业务逻辑在 src/lib/hidoc/toc-recognition.ts；这里只负责鉴权、事件编码与落库调用。
+ * Clew 目录识别（thin adapter，SSE 流式进度）。
+ * 业务逻辑在 src/lib/clew/toc-recognition.ts；这里只负责鉴权、事件编码与落库调用。
  */
 
 export const runtime = "nodejs";
@@ -18,25 +18,25 @@ export async function POST(
   _request: Request,
   { params }: { params: Promise<{ id: string }> },
 ) {
-  const user = await getHiDocSessionUser();
+  const user = await getClewSessionUser();
   if (!user) {
-    return hiDocUnauthorized("识别目录");
+    return clewUnauthorized("识别目录");
   }
 
   const { id } = await params;
-  const textbook = await prisma.hiDocTextbook.findFirst({
+  const textbook = await prisma.clewTextbook.findFirst({
     where: { id, userId: user.id, deletedAt: null },
     select: { id: true, title: true, storageKey: true, pageCount: true, fileName: true },
   });
   if (!textbook) {
-    return hiDocFailure(404, "not-found", "教材不存在或已删除。");
+    return clewFailure(404, "not-found", "教材不存在或已删除。");
   }
 
   const encoder = new TextEncoder();
   const stream = new ReadableStream<Uint8Array>({
     async start(controller) {
       let closed = false;
-      const send = (event: HiDocTocEvent) => {
+      const send = (event: ClewTocEvent) => {
         if (closed) {
           return;
         }
@@ -49,7 +49,7 @@ export async function POST(
       };
 
       try {
-        const result = await recognizeHiDocToc({
+        const result = await recognizeClewToc({
           userId: user.id,
           tier: user.tier,
           textbook: {
@@ -59,7 +59,7 @@ export async function POST(
             pageCount: textbook.pageCount,
             fileName: textbook.fileName,
           },
-          onProgress: (event: HiDocTocProgressEvent) => send({ type: "progress", ...event }),
+          onProgress: (event: ClewTocProgressEvent) => send({ type: "progress", ...event }),
         });
 
         if (!result.ok) {
@@ -83,7 +83,7 @@ export async function POST(
         }
         send({ type: "result", detail: saved.data });
       } catch (error) {
-        console.error("[hidoc] 目录识别失败", error);
+        console.error("[clew] 目录识别失败", error);
         send({ type: "error", code: "server-error", error: "目录识别失败，请稍后重试。" });
       } finally {
         closed = true;

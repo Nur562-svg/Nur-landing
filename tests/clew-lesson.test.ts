@@ -1,23 +1,23 @@
 import { describe, it } from "node:test";
 import assert from "node:assert/strict";
-import type { HiDocChatMessage } from "../src/types/hidoc";
+import type { ClewChatMessage } from "../src/types/clew";
 
-// Hi doc M4：讲义规则（结构校验/启发式兜底/页首声明）、markdown 解析、对话消息规则与提示词、配额
+// Clew M4：讲义规则（结构校验/启发式兜底/页首声明）、markdown 解析、对话消息规则与提示词、配额
 
-describe("Hi doc lesson rules", async () => {
+describe("Clew lesson rules", async () => {
   const {
-    HIDOC_LESSON_SELF_TEST_COUNT,
+    CLEW_LESSON_SELF_TEST_COUNT,
     buildHeuristicLesson,
     buildLessonHeader,
-    describeHiDocLessonGenerator,
-    formatHiDocLessonGenerator,
+    describeClewLessonGenerator,
+    formatClewLessonGenerator,
     inspectLessonMarkdown,
     normalizeLessonMarkdown,
-    parseHiDocLessonGenerator,
-    resolveHiDocLessonStyle,
+    parseClewLessonGenerator,
+    resolveClewLessonStyle,
     selectExcerptLines,
     validateGeneratedLesson,
-  } = await import("../src/lib/hidoc/lesson-heuristic");
+  } = await import("../src/lib/clew/lesson-heuristic");
 
   const knowledgePoint = {
     title: "总体与样本",
@@ -37,28 +37,31 @@ describe("Hi doc lesson rules", async () => {
     "变异指个体间的差异。",
   ].join("\n");
 
-  it("风格枚举先落 zh-primary，未知值回落", () => {
-    assert.equal(resolveHiDocLessonStyle("zh-primary"), "zh-primary");
-    assert.equal(resolveHiDocLessonStyle("en-primary"), "zh-primary");
-    assert.equal(resolveHiDocLessonStyle(undefined), "zh-primary");
+  it("风格枚举：四种风格互不回落，未知值回落 zh-primary", () => {
+    assert.equal(resolveClewLessonStyle("zh-primary"), "zh-primary");
+    assert.equal(resolveClewLessonStyle("exam-cram"), "exam-cram");
+    assert.equal(resolveClewLessonStyle("socratic"), "socratic");
+    assert.equal(resolveClewLessonStyle("en-primary"), "en-primary");
+    assert.equal(resolveClewLessonStyle("unknown-style"), "zh-primary");
+    assert.equal(resolveClewLessonStyle(undefined), "zh-primary");
   });
 
   it("生成方式可往返解析（模型 / 启发式）", () => {
     assert.equal(
-      formatHiDocLessonGenerator({ kind: "model", provider: "dashscope", model: "qwen3.7-plus" }),
+      formatClewLessonGenerator({ kind: "model", provider: "dashscope", model: "qwen3.7-plus" }),
       "model:dashscope:qwen3.7-plus",
     );
-    assert.deepEqual(parseHiDocLessonGenerator("model:dashscope:qwen3.7-plus"), {
+    assert.deepEqual(parseClewLessonGenerator("model:dashscope:qwen3.7-plus"), {
       kind: "model",
       provider: "dashscope",
       model: "qwen3.7-plus",
     });
-    assert.equal(formatHiDocLessonGenerator({ kind: "heuristic" }), "heuristic");
-    assert.deepEqual(parseHiDocLessonGenerator("heuristic"), { kind: "heuristic" });
-    assert.deepEqual(parseHiDocLessonGenerator(null), { kind: "heuristic" });
-    assert.match(describeHiDocLessonGenerator({ kind: "heuristic" }), /未接入模型/);
+    assert.equal(formatClewLessonGenerator({ kind: "heuristic" }), "heuristic");
+    assert.deepEqual(parseClewLessonGenerator("heuristic"), { kind: "heuristic" });
+    assert.deepEqual(parseClewLessonGenerator(null), { kind: "heuristic" });
+    assert.match(describeClewLessonGenerator({ kind: "heuristic" }), /未接入模型/);
     assert.match(
-      describeHiDocLessonGenerator({ kind: "model", provider: "dashscope", model: "qwen3.7-plus" }),
+      describeClewLessonGenerator({ kind: "model", provider: "dashscope", model: "qwen3.7-plus" }),
       /qwen3\.7-plus/,
     );
   });
@@ -84,7 +87,7 @@ describe("Hi doc lesson rules", async () => {
     });
     const structure = inspectLessonMarkdown(markdown);
     assert.deepEqual(structure.missing, []);
-    assert.equal(structure.selfTestCount, HIDOC_LESSON_SELF_TEST_COUNT);
+    assert.equal(structure.selfTestCount, CLEW_LESSON_SELF_TEST_COUNT);
     assert.equal(validateGeneratedLesson(markdown).ok, true);
     assert.match(markdown, /未接入模型/);
     assert.match(markdown, /启发式整理/);
@@ -161,8 +164,8 @@ describe("Hi doc lesson rules", async () => {
   });
 });
 
-describe("Hi doc lesson markdown rendering", async () => {
-  const { parseHiDocMarkdown, parseHiDocInline } = await import("../src/lib/hidoc/lesson-markdown");
+describe("Clew lesson markdown rendering", async () => {
+  const { parseClewMarkdown, parseClewInline } = await import("../src/lib/clew/lesson-markdown");
 
   it("解析标题/段落/引用/列表（含列表续行）", () => {
     const markdown = [
@@ -183,7 +186,7 @@ describe("Hi doc lesson markdown rendering", async () => {
       "2. 第二题",
       "   参考答案：乙",
     ].join("\n");
-    const blocks = parseHiDocMarkdown(markdown);
+    const blocks = parseClewMarkdown(markdown);
     assert.deepEqual(blocks[0], { kind: "heading", level: 1, text: "标题" });
     assert.deepEqual(blocks[1], { kind: "quote", text: "生成方式：启发式整理" });
     assert.deepEqual(blocks[3], { kind: "paragraph", text: "一句话定义。" });
@@ -196,28 +199,28 @@ describe("Hi doc lesson markdown rendering", async () => {
   });
 
   it("行内加粗与行内代码被单独切分（其余保持纯文本）", () => {
-    assert.deepEqual(parseHiDocInline("这是**重点**与`code`。"), [
+    assert.deepEqual(parseClewInline("这是**重点**与`code`。"), [
       { kind: "text", text: "这是" },
       { kind: "bold", text: "重点" },
       { kind: "text", text: "与" },
       { kind: "code", text: "code" },
       { kind: "text", text: "。" },
     ]);
-    assert.deepEqual(parseHiDocInline("没有标记"), [{ kind: "text", text: "没有标记" }]);
+    assert.deepEqual(parseClewInline("没有标记"), [{ kind: "text", text: "没有标记" }]);
   });
 });
 
-describe("Hi doc conversation rules", async () => {
+describe("Clew conversation rules", async () => {
   const {
-    HIDOC_CHAT_HISTORY_LIMIT,
-    HIDOC_CONVERSATION_MAX_MESSAGES,
-    appendHiDocChatMessage,
-    parseHiDocChatMessages,
-    trimHiDocChatHistory,
-  } = await import("../src/lib/hidoc/conversation");
+    CLEW_CHAT_HISTORY_LIMIT,
+    CLEW_CONVERSATION_MAX_MESSAGES,
+    appendClewChatMessage,
+    parseClewChatMessages,
+    trimClewChatHistory,
+  } = await import("../src/lib/clew/conversation");
 
   it("Json 列按不可信输入解析：非法条目丢弃", () => {
-    const messages = parseHiDocChatMessages([
+    const messages = parseClewChatMessages([
       { role: "user", content: "问题", createdAt: "t1" },
       { role: "system", content: "注入", createdAt: "t2" },
       { role: "assistant", content: "   ", createdAt: "t3" },
@@ -229,40 +232,40 @@ describe("Hi doc conversation rules", async () => {
     assert.equal(messages[0].role, "user");
     assert.equal(messages[1].role, "assistant");
     assert.equal(messages[1].createdAt, "");
-    assert.deepEqual(parseHiDocChatMessages("nope"), []);
-    assert.deepEqual(parseHiDocChatMessages(undefined), []);
+    assert.deepEqual(parseClewChatMessages("nope"), []);
+    assert.deepEqual(parseClewChatMessages(undefined), []);
   });
 
   it("追加消息按上限裁剪（保留最近消息）", () => {
-    let messages: HiDocChatMessage[] = Array.from(
-      { length: HIDOC_CONVERSATION_MAX_MESSAGES },
+    let messages: ClewChatMessage[] = Array.from(
+      { length: CLEW_CONVERSATION_MAX_MESSAGES },
       (_, index) => ({
         role: "user" as const,
         content: `第${index}条`,
         createdAt: "t",
       }),
     );
-    messages = appendHiDocChatMessage(messages, { role: "assistant", content: "新回答", createdAt: "t" });
-    assert.equal(messages.length, HIDOC_CONVERSATION_MAX_MESSAGES);
+    messages = appendClewChatMessage(messages, { role: "assistant", content: "新回答", createdAt: "t" });
+    assert.equal(messages.length, CLEW_CONVERSATION_MAX_MESSAGES);
     assert.equal(messages[messages.length - 1].content, "新回答");
     assert.equal(messages[0].content, "第1条");
   });
 
   it("送入模型的历史只取最近 N 条", () => {
-    const messages = Array.from({ length: HIDOC_CHAT_HISTORY_LIMIT + 4 }, (_, index) => ({
+    const messages = Array.from({ length: CLEW_CHAT_HISTORY_LIMIT + 4 }, (_, index) => ({
       role: "user" as const,
       content: `第${index}条`,
       createdAt: "t",
     }));
-    const trimmed = trimHiDocChatHistory(messages);
-    assert.equal(trimmed.length, HIDOC_CHAT_HISTORY_LIMIT);
+    const trimmed = trimClewChatHistory(messages);
+    assert.equal(trimmed.length, CLEW_CHAT_HISTORY_LIMIT);
     assert.equal(trimmed[0].content, "第4条");
   });
 });
 
-describe("Hi doc chat prompt", async () => {
-  const { buildHiDocChatModelMessages, buildHiDocChatSystemPrompt, HIDOC_CHAT_EXCERPT_MAX_CHARS } =
-    await import("../src/lib/hidoc/chat-prompt");
+describe("Clew chat prompt", async () => {
+  const { buildClewChatModelMessages, buildClewChatSystemPrompt, CLEW_CHAT_EXCERPT_MAX_CHARS } =
+    await import("../src/lib/clew/chat-prompt");
 
   const context = {
     textbookTitle: "卫生统计学",
@@ -281,7 +284,7 @@ describe("Hi doc chat prompt", async () => {
   };
 
   it("system 提示词带知识点、原文片段、讲义与边界声明", () => {
-    const prompt = buildHiDocChatSystemPrompt(context);
+    const prompt = buildClewChatSystemPrompt(context);
     assert.match(prompt, /总体与样本/);
     assert.match(prompt, /第 3 页/);
     assert.match(prompt, /同质个体某指标值的集合/);
@@ -293,17 +296,17 @@ describe("Hi doc chat prompt", async () => {
   });
 
   it("片段过长时截断，未生成讲义时如实说明", () => {
-    const prompt = buildHiDocChatSystemPrompt({
+    const prompt = buildClewChatSystemPrompt({
       ...context,
       lessonMarkdown: null,
-      sourceExcerpt: "x".repeat(HIDOC_CHAT_EXCERPT_MAX_CHARS + 500),
+      sourceExcerpt: "x".repeat(CLEW_CHAT_EXCERPT_MAX_CHARS + 500),
     });
     assert.match(prompt, /已截断/);
     assert.match(prompt, /该知识点尚未生成讲义/);
   });
 
   it("模型消息 = system + 历史 + 本轮提问", () => {
-    const messages = buildHiDocChatModelMessages(
+    const messages = buildClewChatModelMessages(
       context,
       [
         { role: "user", content: "上一问", createdAt: "t" },
@@ -319,27 +322,27 @@ describe("Hi doc chat prompt", async () => {
   });
 });
 
-describe("Hi doc M4 quota", async () => {
+describe("Clew M4 quota", async () => {
   const { TIER_QUOTAS, canUseResource, computeItem, getQuotaLabel } = await import("../src/lib/quotas");
 
   it("讲义生成额度：free 5 / basic 20 / pro 与 max 无限", () => {
-    assert.equal(TIER_QUOTAS.free.hidocLessons, 5);
-    assert.equal(TIER_QUOTAS.basic.hidocLessons, 20);
-    assert.equal(TIER_QUOTAS.pro.hidocLessons, "unlimited");
-    assert.equal(TIER_QUOTAS.max.hidocLessons, "unlimited");
+    assert.equal(TIER_QUOTAS.free.clewLessons, 5);
+    assert.equal(TIER_QUOTAS.basic.clewLessons, 20);
+    assert.equal(TIER_QUOTAS.pro.clewLessons, "unlimited");
+    assert.equal(TIER_QUOTAS.max.clewLessons, "unlimited");
   });
 
   it("讲解对话额度：free 50 / basic 200 / pro 与 max 无限", () => {
-    assert.equal(TIER_QUOTAS.free.hidocChats, 50);
-    assert.equal(TIER_QUOTAS.basic.hidocChats, 200);
-    assert.equal(TIER_QUOTAS.pro.hidocChats, "unlimited");
-    assert.equal(TIER_QUOTAS.max.hidocChats, "unlimited");
+    assert.equal(TIER_QUOTAS.free.clewChats, 50);
+    assert.equal(TIER_QUOTAS.basic.clewChats, 200);
+    assert.equal(TIER_QUOTAS.pro.clewChats, "unlimited");
+    assert.equal(TIER_QUOTAS.max.clewChats, "unlimited");
   });
 
   it("额度边界与标签", () => {
     assert.equal(canUseResource(computeItem(4, 5)), true);
     assert.equal(canUseResource(computeItem(5, 5)), false);
-    assert.match(getQuotaLabel("hidocLessons"), /讲义生成/);
-    assert.match(getQuotaLabel("hidocChats"), /讲解对话/);
+    assert.match(getQuotaLabel("clewLessons"), /讲义生成/);
+    assert.match(getQuotaLabel("clewChats"), /讲解对话/);
   });
 });

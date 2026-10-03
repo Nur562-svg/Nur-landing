@@ -6,69 +6,70 @@ import { canUseResource, getQuotaLabel } from "@/lib/quotas";
 import { computeUserQuotas, recordServerUsage } from "@/lib/quotas-server";
 import type { MembershipTier } from "@/types/auth";
 import type {
-  HiDocChatMessage,
-  HiDocErrorCode,
-  HiDocWorkshopCitation,
-  HiDocWorkshopDetailView,
-  HiDocWorkshopFileView,
-  HiDocWorkshopLimitsView,
-  HiDocWorkshopListView,
-  HiDocWorkshopView,
-} from "@/types/hidoc";
-import { createHiDocChatProviderFromEnv } from "./chat-provider";
-import { HIDOC_CHAT_QUESTION_MAX_CHARS } from "./chat";
+  ClewChatMessage,
+  ClewErrorCode,
+  ClewWorkshopCitation,
+  ClewWorkshopDetailView,
+  ClewWorkshopFileView,
+  ClewWorkshopLimitsView,
+  ClewWorkshopListView,
+  ClewWorkshopView,
+} from "@/types/clew";
+import { createClewChatProviderFromEnv } from "./chat-provider";
+import { ClewProviderConfigError } from "./providers/model-config";
+import { CLEW_CHAT_QUESTION_MAX_CHARS } from "./chat";
 import {
-  HIDOC_CHAT_MESSAGE_MAX_CHARS,
-  appendHiDocChatMessage,
-  parseHiDocChatMessages,
+  CLEW_CHAT_MESSAGE_MAX_CHARS,
+  appendClewChatMessage,
+  parseClewChatMessages,
 } from "./conversation";
-import { HIDOC_MAX_FILE_BYTES } from "./limits";
-import { openHiDocPdf, readHiDocPdfPageRange } from "./pdf-document";
-import { probeHiDocPdf } from "./pdf-text-layer";
-import { getHiDocStorage, type HiDocStorageDriver } from "./storage";
-import { buildHiDocWorkshopStorageKey } from "./storage-key";
+import { CLEW_MAX_FILE_BYTES } from "./limits";
+import { openClewPdf, readClewPdfPageRange } from "./pdf-document";
+import { probeClewPdf } from "./pdf-text-layer";
+import { getClewStorage, type ClewStorageDriver } from "./storage";
+import { buildClewWorkshopStorageKey } from "./storage-key";
 import { pdfTextItemsToLines } from "./toc-heuristic";
 import {
-  buildHiDocWorkshopChatModelMessages,
-  type HiDocWorkshopChatContext,
+  buildClewWorkshopChatModelMessages,
+  type ClewWorkshopChatContext,
 } from "./workshop-chat-prompt";
 import {
-  HIDOC_WORKSHOP_MAX_PAGE_COUNT,
-  buildHiDocWorkshopFileLimitMessage,
-  buildHiDocWorkshopLimitMessage,
-  decodeHiDocWorkshopText,
-  getHiDocWorkshopLimits,
-  hiDocWorkshopTextPagesFromLines,
-  validateHiDocWorkshopFileName,
-  validateHiDocWorkshopNote,
-  validateHiDocWorkshopTitle,
+  CLEW_WORKSHOP_MAX_PAGE_COUNT,
+  buildClewWorkshopFileLimitMessage,
+  buildClewWorkshopLimitMessage,
+  decodeClewWorkshopText,
+  getClewWorkshopLimits,
+  clewWorkshopTextPagesFromLines,
+  validateClewWorkshopFileName,
+  validateClewWorkshopNote,
+  validateClewWorkshopTitle,
 } from "./workshop-rules";
 import {
-  buildHiDocWorkshopNoHitAnswer,
-  buildHiDocWorkshopPdfSegments,
-  buildHiDocWorkshopTextSegments,
-  matchHiDocWorkshopKnowledgePoints,
-  searchHiDocWorkshopSegments,
-  type HiDocWorkshopSegment,
+  buildClewWorkshopNoHitAnswer,
+  buildClewWorkshopPdfSegments,
+  buildClewWorkshopTextSegments,
+  matchClewWorkshopKnowledgePoints,
+  searchClewWorkshopSegments,
+  type ClewWorkshopSegment,
 } from "./workshop-search";
 
 /**
- * Hi doc M6 课题工作坊服务（server-only）：课题 CRUD、材料上传（≤100 页短材料）、检索答疑编排。
+ * Clew M6 课题工作坊服务（server-only）：课题 CRUD、材料上传（≤100 页短材料）、检索答疑编排。
  * 全部数据私有挂 userId；归属校验一律从 userId 出发，不信任客户端传入的 id。
  * 工作坊材料不占教材当月名额；工作坊数量与单课题材料数按档位限制（workshop-rules.ts）。
  * 检索答疑无启发式兜底：检索不到即如实说「材料里没有相关内容」，无 key 明确报错。
  */
 
-export type HiDocWorkshopFailure = {
+export type ClewWorkshopFailure = {
   ok: false;
   status: number;
-  code: HiDocErrorCode;
+  code: ClewErrorCode;
   message: string;
 };
 
-export type HiDocWorkshopResult<T> = { ok: true; data: T } | HiDocWorkshopFailure;
+export type ClewWorkshopResult<T> = { ok: true; data: T } | ClewWorkshopFailure;
 
-type HiDocWorkshopRow = {
+type ClewWorkshopRow = {
   id: string;
   title: string;
   note: string | null;
@@ -76,7 +77,7 @@ type HiDocWorkshopRow = {
   updatedAt: Date;
 };
 
-type HiDocWorkshopFileRow = {
+type ClewWorkshopFileRow = {
   id: string;
   workshopId: string;
   fileName: string;
@@ -90,7 +91,7 @@ type HiDocWorkshopFileRow = {
   createdAt: Date;
 };
 
-function toHiDocWorkshopView(row: HiDocWorkshopRow & { _count?: { files: number } }, fileCount?: number): HiDocWorkshopView {
+function toClewWorkshopView(row: ClewWorkshopRow & { _count?: { files: number } }, fileCount?: number): ClewWorkshopView {
   return {
     id: row.id,
     title: row.title,
@@ -101,7 +102,7 @@ function toHiDocWorkshopView(row: HiDocWorkshopRow & { _count?: { files: number 
   };
 }
 
-function toHiDocWorkshopFileView(row: HiDocWorkshopFileRow): HiDocWorkshopFileView {
+function toClewWorkshopFileView(row: ClewWorkshopFileRow): ClewWorkshopFileView {
   return {
     id: row.id,
     fileName: row.fileName,
@@ -115,29 +116,29 @@ function toHiDocWorkshopFileView(row: HiDocWorkshopFileRow): HiDocWorkshopFileVi
   };
 }
 
-async function buildLimitsView(userId: string, tier: MembershipTier): Promise<HiDocWorkshopLimitsView> {
-  const limits = getHiDocWorkshopLimits(tier);
-  const workshopUsed = await prisma.hiDocWorkshop.count({ where: { userId } });
+async function buildLimitsView(userId: string, tier: MembershipTier): Promise<ClewWorkshopLimitsView> {
+  const limits = getClewWorkshopLimits(tier);
+  const workshopUsed = await prisma.clewWorkshop.count({ where: { userId } });
   return {
     workshopUsed,
     workshopLimit: limits.workshops,
     filesPerWorkshopLimit: limits.filesPerWorkshop,
-    maxPagesPerFile: HIDOC_WORKSHOP_MAX_PAGE_COUNT,
+    maxPagesPerFile: CLEW_WORKSHOP_MAX_PAGE_COUNT,
   };
 }
 
 /** 课题列表 + 限额。 */
-export async function listHiDocWorkshops(
+export async function listClewWorkshops(
   userId: string,
   tier: MembershipTier,
-): Promise<HiDocWorkshopListView> {
-  const rows = await prisma.hiDocWorkshop.findMany({
+): Promise<ClewWorkshopListView> {
+  const rows = await prisma.clewWorkshop.findMany({
     where: { userId },
     orderBy: { updatedAt: "desc" },
     include: { _count: { select: { files: true } } },
   });
   return {
-    workshops: rows.map((row) => toHiDocWorkshopView(row)),
+    workshops: rows.map((row) => toClewWorkshopView(row)),
     limits: await buildLimitsView(userId, tier),
   };
 }
@@ -146,47 +147,47 @@ export async function listHiDocWorkshops(
 async function loadOwnedWorkshop(
   userId: string,
   workshopId: string,
-): Promise<HiDocWorkshopRow | null> {
-  return prisma.hiDocWorkshop.findFirst({ where: { id: workshopId, userId } });
+): Promise<ClewWorkshopRow | null> {
+  return prisma.clewWorkshop.findFirst({ where: { id: workshopId, userId } });
 }
 
-export async function createHiDocWorkshop(input: {
+export async function createClewWorkshop(input: {
   userId: string;
   tier: MembershipTier;
   title: unknown;
   note: unknown;
-}): Promise<HiDocWorkshopResult<HiDocWorkshopListView>> {
-  const title = validateHiDocWorkshopTitle(input.title);
+}): Promise<ClewWorkshopResult<ClewWorkshopListView>> {
+  const title = validateClewWorkshopTitle(input.title);
   if (!title.ok) {
     return { ok: false, status: 400, code: "invalid-request", message: title.reason };
   }
-  const note = validateHiDocWorkshopNote(input.note);
+  const note = validateClewWorkshopNote(input.note);
   if (!note.ok) {
     return { ok: false, status: 400, code: "invalid-request", message: note.reason };
   }
 
-  const limits = getHiDocWorkshopLimits(input.tier);
-  const used = await prisma.hiDocWorkshop.count({ where: { userId: input.userId } });
+  const limits = getClewWorkshopLimits(input.tier);
+  const used = await prisma.clewWorkshop.count({ where: { userId: input.userId } });
   if (used >= limits.workshops) {
     return {
       ok: false,
       status: 503,
       code: "quota-exceeded",
-      message: buildHiDocWorkshopLimitMessage(used, limits.workshops),
+      message: buildClewWorkshopLimitMessage(used, limits.workshops),
     };
   }
 
-  await prisma.hiDocWorkshop.create({
+  await prisma.clewWorkshop.create({
     data: { userId: input.userId, title: title.value, note: note.value },
   });
-  return { ok: true, data: await listHiDocWorkshops(input.userId, input.tier) };
+  return { ok: true, data: await listClewWorkshops(input.userId, input.tier) };
 }
 
-export async function deleteHiDocWorkshop(
+export async function deleteClewWorkshop(
   userId: string,
   workshopId: string,
-): Promise<HiDocWorkshopResult<{ deletedId: string }>> {
-  const workshop = await prisma.hiDocWorkshop.findFirst({
+): Promise<ClewWorkshopResult<{ deletedId: string }>> {
+  const workshop = await prisma.clewWorkshop.findFirst({
     where: { id: workshopId, userId },
     include: { files: { select: { storageKey: true } } },
   });
@@ -195,31 +196,31 @@ export async function deleteHiDocWorkshop(
   }
 
   // 行删除（级联删除材料与对话行）；服务器文件随后尽力清理
-  await prisma.hiDocWorkshop.delete({ where: { id: workshop.id } });
+  await prisma.clewWorkshop.delete({ where: { id: workshop.id } });
 
   try {
-    const storage = getHiDocStorage();
+    const storage = getClewStorage();
     for (const file of workshop.files) {
       try {
         await storage.removeObject(file.storageKey);
       } catch (error) {
-        console.error(`[hidoc] 课题材料删除失败：${file.storageKey}`, error);
+        console.error(`[clew] 课题材料删除失败：${file.storageKey}`, error);
       }
     }
   } catch (error) {
-    console.error("[hidoc] 删除课题时存储不可用", error);
+    console.error("[clew] 删除课题时存储不可用", error);
   }
 
   return { ok: true, data: { deletedId: workshop.id } };
 }
 
 /** 课题详情：材料清单 + 答疑对话历史 + 限额。 */
-export async function getHiDocWorkshopDetail(
+export async function getClewWorkshopDetail(
   userId: string,
   tier: MembershipTier,
   workshopId: string,
-): Promise<HiDocWorkshopResult<HiDocWorkshopDetailView>> {
-  const workshop = await prisma.hiDocWorkshop.findFirst({
+): Promise<ClewWorkshopResult<ClewWorkshopDetailView>> {
+  const workshop = await prisma.clewWorkshop.findFirst({
     where: { id: workshopId, userId },
     include: {
       files: { orderBy: { createdAt: "asc" } },
@@ -230,7 +231,7 @@ export async function getHiDocWorkshopDetail(
     return { ok: false, status: 404, code: "not-found", message: "课题不存在或不属于当前账户。" };
   }
 
-  const conversation = await prisma.hiDocConversation.findFirst({
+  const conversation = await prisma.clewConversation.findFirst({
     where: { userId, workshopId },
     select: { messages: true },
   });
@@ -238,17 +239,17 @@ export async function getHiDocWorkshopDetail(
   return {
     ok: true,
     data: {
-      workshop: toHiDocWorkshopView(workshop),
-      files: workshop.files.map((file) => toHiDocWorkshopFileView(file)),
-      messages: parseHiDocChatMessages(conversation?.messages),
+      workshop: toClewWorkshopView(workshop),
+      files: workshop.files.map((file) => toClewWorkshopFileView(file)),
+      messages: parseClewChatMessages(conversation?.messages),
       limits: await buildLimitsView(userId, tier),
     },
   };
 }
 
-class HiDocWorkshopQuotaExceededError extends Error {}
+class ClewWorkshopQuotaExceededError extends Error {}
 
-export type HiDocWorkshopUploadInput = {
+export type ClewWorkshopUploadInput = {
   userId: string;
   tier: MembershipTier;
   workshopId: string;
@@ -260,9 +261,9 @@ export type HiDocWorkshopUploadInput = {
  * 上传课题材料：格式/大小/页数/文字层校验 → 落盘 → 落库（事务内二次校验材料数）。
  * 上传即检测：图片与无文字层 PDF 明确拒绝并给中文原因（OCR 后置），不落库、不留文件。
  */
-export async function uploadHiDocWorkshopFile(
-  input: HiDocWorkshopUploadInput,
-): Promise<HiDocWorkshopResult<{ file: HiDocWorkshopFileView }>> {
+export async function uploadClewWorkshopFile(
+  input: ClewWorkshopUploadInput,
+): Promise<ClewWorkshopResult<{ file: ClewWorkshopFileView }>> {
   const { userId, tier, bytes } = input;
   const fileName = input.fileName.trim();
   const sizeBytes = bytes.byteLength;
@@ -272,15 +273,15 @@ export async function uploadHiDocWorkshopFile(
     return { ok: false, status: 404, code: "not-found", message: "课题不存在或不属于当前账户。" };
   }
 
-  const kindResult = validateHiDocWorkshopFileName(fileName);
+  const kindResult = validateClewWorkshopFileName(fileName);
   if (!kindResult.ok) {
     return { ok: false, status: 422, code: "invalid-file", message: kindResult.reason };
   }
   if (sizeBytes === 0) {
     return { ok: false, status: 422, code: "invalid-file", message: "上传的是空文件。" };
   }
-  if (sizeBytes > HIDOC_MAX_FILE_BYTES) {
-    const limitMb = Math.round(HIDOC_MAX_FILE_BYTES / (1024 * 1024));
+  if (sizeBytes > CLEW_MAX_FILE_BYTES) {
+    const limitMb = Math.round(CLEW_MAX_FILE_BYTES / (1024 * 1024));
     const actualMb = (sizeBytes / (1024 * 1024)).toFixed(1);
     return {
       ok: false,
@@ -290,20 +291,20 @@ export async function uploadHiDocWorkshopFile(
     };
   }
 
-  const limits = getHiDocWorkshopLimits(tier);
-  const usedBefore = await prisma.hiDocWorkshopFile.count({ where: { workshopId: workshop.id } });
+  const limits = getClewWorkshopLimits(tier);
+  const usedBefore = await prisma.clewWorkshopFile.count({ where: { workshopId: workshop.id } });
   if (usedBefore >= limits.filesPerWorkshop) {
     return {
       ok: false,
       status: 503,
       code: "quota-exceeded",
-      message: buildHiDocWorkshopFileLimitMessage(usedBefore, limits.filesPerWorkshop),
+      message: buildClewWorkshopFileLimitMessage(usedBefore, limits.filesPerWorkshop),
     };
   }
 
-  let storage: HiDocStorageDriver;
+  let storage: ClewStorageDriver;
   try {
-    storage = getHiDocStorage();
+    storage = getClewStorage();
   } catch (error) {
     return {
       ok: false,
@@ -314,11 +315,11 @@ export async function uploadHiDocWorkshopFile(
   }
 
   const fileId = randomUUID();
-  const storageKey = buildHiDocWorkshopStorageKey(userId, workshop.id, fileId, fileName);
+  const storageKey = buildClewWorkshopStorageKey(userId, workshop.id, fileId, fileName);
   try {
     await storage.putObject(storageKey, bytes);
   } catch (error) {
-    console.error("[hidoc] 课题材料写入存储失败", error);
+    console.error("[clew] 课题材料写入存储失败", error);
     return {
       ok: false,
       status: 503,
@@ -331,7 +332,7 @@ export async function uploadHiDocWorkshopFile(
     try {
       await storage.removeObject(storageKey);
     } catch (error) {
-      console.error(`[hidoc] 存储对象删除失败：${storageKey}`, error);
+      console.error(`[clew] 存储对象删除失败：${storageKey}`, error);
     }
   };
 
@@ -339,7 +340,7 @@ export async function uploadHiDocWorkshopFile(
   let pageCount: number;
   let hasTextLayer: boolean;
   if (kindResult.kind === "pdf") {
-    const probe = await probeHiDocPdf(bytes);
+    const probe = await probeClewPdf(bytes);
     if (!probe.ok) {
       await removeQuietly();
       if (probe.code === "probe-unavailable") {
@@ -347,13 +348,13 @@ export async function uploadHiDocWorkshopFile(
       }
       return { ok: false, status: 422, code: "pdf-unreadable", message: probe.message };
     }
-    if (probe.pageCount > HIDOC_WORKSHOP_MAX_PAGE_COUNT) {
+    if (probe.pageCount > CLEW_WORKSHOP_MAX_PAGE_COUNT) {
       await removeQuietly();
       return {
         ok: false,
         status: 422,
         code: "page-limit",
-        message: `这份 PDF 共 ${probe.pageCount} 页，超过课题材料单份 ${HIDOC_WORKSHOP_MAX_PAGE_COUNT} 页上限；课题工作坊定位是短材料，请拆分后上传，或作为教材上传到书架。`,
+        message: `这份 PDF 共 ${probe.pageCount} 页，超过课题材料单份 ${CLEW_WORKSHOP_MAX_PAGE_COUNT} 页上限；课题工作坊定位是短材料，请拆分后上传，或作为教材上传到书架。`,
       };
     }
     if (!probe.hasTextLayer) {
@@ -368,24 +369,24 @@ export async function uploadHiDocWorkshopFile(
     pageCount = probe.pageCount;
     hasTextLayer = true;
   } else {
-    const decoded = decodeHiDocWorkshopText(bytes);
+    const decoded = decodeClewWorkshopText(bytes);
     if (!decoded.ok) {
       await removeQuietly();
       return { ok: false, status: 422, code: "invalid-file", message: decoded.reason };
     }
-    pageCount = hiDocWorkshopTextPagesFromLines(decoded.lineCount);
+    pageCount = clewWorkshopTextPagesFromLines(decoded.lineCount);
     hasTextLayer = true;
   }
 
   try {
     const created = await prisma.$transaction(async (tx) => {
-      const usedNow = await tx.hiDocWorkshopFile.count({ where: { workshopId: workshop.id } });
+      const usedNow = await tx.clewWorkshopFile.count({ where: { workshopId: workshop.id } });
       if (usedNow >= limits.filesPerWorkshop) {
-        throw new HiDocWorkshopQuotaExceededError(
-          buildHiDocWorkshopFileLimitMessage(usedNow, limits.filesPerWorkshop),
+        throw new ClewWorkshopQuotaExceededError(
+          buildClewWorkshopFileLimitMessage(usedNow, limits.filesPerWorkshop),
         );
       }
-      const row = await tx.hiDocWorkshopFile.create({
+      const row = await tx.clewWorkshopFile.create({
         data: {
           id: fileId,
           workshopId: workshop.id,
@@ -398,29 +399,29 @@ export async function uploadHiDocWorkshopFile(
           ocrStatus: "not-attempted",
         },
       });
-      await tx.hiDocWorkshop.update({
+      await tx.clewWorkshop.update({
         where: { id: workshop.id },
         data: { updatedAt: new Date() },
       });
       return row;
     });
-    return { ok: true, data: { file: toHiDocWorkshopFileView(created) } };
+    return { ok: true, data: { file: toClewWorkshopFileView(created) } };
   } catch (error) {
     await removeQuietly();
-    if (error instanceof HiDocWorkshopQuotaExceededError) {
+    if (error instanceof ClewWorkshopQuotaExceededError) {
       return { ok: false, status: 503, code: "quota-exceeded", message: error.message };
     }
-    console.error("[hidoc] 课题材料落库失败", error);
+    console.error("[clew] 课题材料落库失败", error);
     return { ok: false, status: 500, code: "server-error", message: "材料保存失败，请稍后重试；本次未占用材料名额。" };
   }
 }
 
-export async function deleteHiDocWorkshopFile(
+export async function deleteClewWorkshopFile(
   userId: string,
   workshopId: string,
   fileId: string,
-): Promise<HiDocWorkshopResult<{ deletedId: string }>> {
-  const file = await prisma.hiDocWorkshopFile.findFirst({
+): Promise<ClewWorkshopResult<{ deletedId: string }>> {
+  const file = await prisma.clewWorkshopFile.findFirst({
     where: { id: fileId, workshopId, workshop: { userId } },
     select: { id: true, storageKey: true },
   });
@@ -428,38 +429,38 @@ export async function deleteHiDocWorkshopFile(
     return { ok: false, status: 404, code: "not-found", message: "材料不存在或不属于当前账户。" };
   }
 
-  await prisma.hiDocWorkshopFile.delete({ where: { id: file.id } });
+  await prisma.clewWorkshopFile.delete({ where: { id: file.id } });
 
   try {
-    const storage = getHiDocStorage();
+    const storage = getClewStorage();
     try {
       await storage.removeObject(file.storageKey);
     } catch (error) {
-      console.error(`[hidoc] 存储对象删除失败：${file.storageKey}`, error);
+      console.error(`[clew] 存储对象删除失败：${file.storageKey}`, error);
     }
   } catch (error) {
-    console.error("[hidoc] 删除课题材料时存储不可用", error);
+    console.error("[clew] 删除课题材料时存储不可用", error);
   }
 
   return { ok: true, data: { deletedId: file.id } };
 }
 
 /** 读取一份材料的检索片段（PDF 按页；文本按行块）。文字层按需读取，不改写原文件。 */
-async function readWorkshopFileSegments(file: HiDocWorkshopFileRow): Promise<HiDocWorkshopSegment[]> {
-  const storage = getHiDocStorage();
+async function readWorkshopFileSegments(file: ClewWorkshopFileRow): Promise<ClewWorkshopSegment[]> {
+  const storage = getClewStorage();
   const bytes = await storage.readObject(file.storageKey);
   if (file.fileName.toLowerCase().endsWith(".pdf")) {
-    const runtime = await openHiDocPdf(bytes);
+    const runtime = await openClewPdf(bytes);
     if (!runtime.ok) {
       throw new Error(`材料《${file.fileName}》暂时无法读取（${runtime.message}）。`);
     }
     try {
-      const pages = await readHiDocPdfPageRange(runtime.document, {
+      const pages = await readClewPdfPageRange(runtime.document, {
         fromPage: 1,
         toPage: runtime.document.numPages,
         itemsToLines: pdfTextItemsToLines,
       });
-      return buildHiDocWorkshopPdfSegments(
+      return buildClewWorkshopPdfSegments(
         file.id,
         file.fileName,
         pages.map((page) => ({ pageNumber: page.pageNumber, text: page.lines.join("\n") })),
@@ -468,18 +469,18 @@ async function readWorkshopFileSegments(file: HiDocWorkshopFileRow): Promise<HiD
       await runtime.release();
     }
   }
-  const decoded = decodeHiDocWorkshopText(bytes);
+  const decoded = decodeClewWorkshopText(bytes);
   if (!decoded.ok) {
     throw new Error(`材料《${file.fileName}》暂时无法读取（${decoded.reason}）。`);
   }
-  return buildHiDocWorkshopTextSegments(file.id, file.fileName, decoded.text);
+  return buildClewWorkshopTextSegments(file.id, file.fileName, decoded.text);
 }
 
 /** 只读关联该用户自己的教材知识点标题（仅本人数据、不写课程真相）。 */
 async function listOwnKnowledgePointTitles(
   userId: string,
 ): Promise<{ id: string; title: string; textbookTitle: string }[]> {
-  const rows = await prisma.hiDocKnowledgePoint.findMany({
+  const rows = await prisma.clewKnowledgePoint.findMany({
     where: { chapter: { textbook: { userId, deletedAt: null } } },
     orderBy: { createdAt: "asc" },
     take: 500,
@@ -488,25 +489,25 @@ async function listOwnKnowledgePointTitles(
   return rows.map((row) => ({ id: row.id, title: row.title, textbookTitle: row.chapter.textbook.title }));
 }
 
-export type HiDocWorkshopChatProgressEvent = {
+export type ClewWorkshopChatProgressEvent = {
   stage: "search" | "answer" | "save";
   message: string;
 };
 
-export type HiDocWorkshopChatSuccess = {
+export type ClewWorkshopChatSuccess = {
   ok: true;
-  conversation: { workshopId: string; messages: HiDocChatMessage[] };
-  citations: HiDocWorkshopCitation[];
+  conversation: { workshopId: string; messages: ClewChatMessage[] };
+  citations: ClewWorkshopCitation[];
   notes: string[];
 };
 
-export type HiDocWorkshopChatResult = HiDocWorkshopChatSuccess | HiDocWorkshopFailure;
+export type ClewWorkshopChatResult = ClewWorkshopChatSuccess | ClewWorkshopFailure;
 
-export type HiDocWorkshopChatRequest = {
+export type ClewWorkshopChatRequest = {
   userId: string;
   workshopId: string;
   message: string;
-  onProgress: (event: HiDocWorkshopChatProgressEvent) => void;
+  onProgress: (event: ClewWorkshopChatProgressEvent) => void;
   onDelta: (text: string) => void;
 };
 
@@ -515,23 +516,23 @@ export type HiDocWorkshopChatRequest = {
  * 提问先落库（不会丢失），回答成功后再落库；失败如实报错且不保存半截回答。
  * 检索零命中：不调用模型、不占模型额度，返回确定性「材料里没有相关内容」。
  */
-export async function sendHiDocWorkshopMessage(
-  input: HiDocWorkshopChatRequest,
-): Promise<HiDocWorkshopChatResult> {
+export async function sendClewWorkshopMessage(
+  input: ClewWorkshopChatRequest,
+): Promise<ClewWorkshopChatResult> {
   const question = input.message.trim();
   if (question.length === 0) {
     return { ok: false, status: 400, code: "invalid-request", message: "请输入要提问的问题。" };
   }
-  if (question.length > HIDOC_CHAT_QUESTION_MAX_CHARS) {
+  if (question.length > CLEW_CHAT_QUESTION_MAX_CHARS) {
     return {
       ok: false,
       status: 400,
       code: "invalid-request",
-      message: `提问过长（${question.length} 字），请控制在 ${HIDOC_CHAT_QUESTION_MAX_CHARS} 字以内。`,
+      message: `提问过长（${question.length} 字），请控制在 ${CLEW_CHAT_QUESTION_MAX_CHARS} 字以内。`,
     };
   }
 
-  const workshop = await prisma.hiDocWorkshop.findFirst({
+  const workshop = await prisma.clewWorkshop.findFirst({
     where: { id: input.workshopId, userId: input.userId },
     include: { files: { orderBy: { createdAt: "asc" } } },
   });
@@ -550,24 +551,33 @@ export async function sendHiDocWorkshopMessage(
   }
 
   // 工作坊答疑没有启发式兜底：模型不可用即明确报错（与讲义/笔记的兜底策略不同）
-  const provider = await createHiDocChatProviderFromEnv();
+  // ZCODE-M4 多模型：显式配置了未实现 provider / 非法 baseURL 同样明确报错
+  let provider: Awaited<ReturnType<typeof createClewChatProviderFromEnv>>;
+  try {
+    provider = await createClewChatProviderFromEnv();
+  } catch (error) {
+    if (error instanceof ClewProviderConfigError) {
+      return { ok: false, status: 503, code: "chat-failed", message: error.message };
+    }
+    throw error;
+  }
   if (!provider) {
     return {
       ok: false,
       status: 503,
       code: "chat-failed",
-      message: "未配置答疑模型（DASHSCOPE_API_KEY / HIDOC_EXTRACT_PROVIDER），课题工作坊答疑暂不可用。",
+      message: "未配置答疑模型（DASHSCOPE_API_KEY / CLEW_EXTRACT_PROVIDER），课题工作坊答疑暂不可用。",
     };
   }
 
   const quotas = await computeUserQuotas(input.userId);
-  const quotaItem = quotas.quotas.hidocWorkshopChats;
+  const quotaItem = quotas.quotas.clewWorkshopChats;
   if (!canUseResource(quotaItem)) {
     return {
       ok: false,
       status: 503,
       code: "quota-exceeded",
-      message: `${getQuotaLabel("hidocWorkshopChats")} 已用完（${quotaItem.used}/${quotaItem.limit}），本轮提问已停止。可升级会员档位，或等待额度重置后重试。`,
+      message: `${getQuotaLabel("clewWorkshopChats")} 已用完（${quotaItem.used}/${quotaItem.limit}），本轮提问已停止。可升级会员档位，或等待额度重置后重试。`,
     };
   }
 
@@ -575,12 +585,12 @@ export async function sendHiDocWorkshopMessage(
 
   // 1) 读取材料文字层并做确定性关键词检索
   input.onProgress({ stage: "search", message: `读取 ${readyFiles.length} 份材料并检索相关片段…` });
-  const segments: HiDocWorkshopSegment[] = [];
+  const segments: ClewWorkshopSegment[] = [];
   for (const file of readyFiles) {
     try {
       segments.push(...await readWorkshopFileSegments(file));
     } catch (error) {
-      console.error("[hidoc] 课题材料读取失败", error);
+      console.error("[clew] 课题材料读取失败", error);
       notes.push(error instanceof Error ? error.message : `材料《${file.fileName}》暂时无法读取。`);
     }
   }
@@ -593,8 +603,8 @@ export async function sendHiDocWorkshopMessage(
     };
   }
 
-  const hits = searchHiDocWorkshopSegments(segments, question);
-  const citations: HiDocWorkshopCitation[] = hits.map((hit) => ({
+  const hits = searchClewWorkshopSegments(segments, question);
+  const citations: ClewWorkshopCitation[] = hits.map((hit) => ({
     fileId: hit.fileId,
     fileName: hit.fileName,
     locator: hit.locator,
@@ -602,7 +612,7 @@ export async function sendHiDocWorkshopMessage(
   }));
 
   // 2) 只读关联本人教材知识点（关联不到就如实不关联）
-  const relatedKnowledgePoints = matchHiDocWorkshopKnowledgePoints(
+  const relatedKnowledgePoints = matchClewWorkshopKnowledgePoints(
     await listOwnKnowledgePointTitles(input.userId),
     question,
   );
@@ -613,24 +623,24 @@ export async function sendHiDocWorkshopMessage(
   }
 
   // 3) 提问先落库：即使后续失败，问题也不会丢
-  const conversationRow = await prisma.hiDocConversation.findFirst({
+  const conversationRow = await prisma.clewConversation.findFirst({
     where: { userId: input.userId, workshopId: input.workshopId },
     select: { messages: true },
   });
-  const history = parseHiDocChatMessages(conversationRow?.messages);
-  const withQuestion = appendHiDocChatMessage(history, {
+  const history = parseClewChatMessages(conversationRow?.messages);
+  const withQuestion = appendClewChatMessage(history, {
     role: "user",
     content: question,
     createdAt: new Date().toISOString(),
   });
-  await prisma.hiDocConversation.upsert({
+  await prisma.clewConversation.upsert({
     where: { userId_workshopId: { userId: input.userId, workshopId: input.workshopId } },
     create: { userId: input.userId, workshopId: input.workshopId, messages: [...withQuestion] },
     update: { messages: [...withQuestion] },
   });
 
-  const saveMessages = async (messages: readonly HiDocChatMessage[]) => {
-    await prisma.hiDocConversation.upsert({
+  const saveMessages = async (messages: readonly ClewChatMessage[]) => {
+    await prisma.clewConversation.upsert({
       where: { userId_workshopId: { userId: input.userId, workshopId: input.workshopId } },
       create: { userId: input.userId, workshopId: input.workshopId, messages: [...messages] },
       update: { messages: [...messages] },
@@ -640,9 +650,9 @@ export async function sendHiDocWorkshopMessage(
   // 4) 检索零命中：不调用模型、不占模型额度，确定性如实回答
   if (hits.length === 0) {
     input.onProgress({ stage: "answer", message: "材料里没有检索到相关内容。" });
-    const answer = buildHiDocWorkshopNoHitAnswer(workshop.title);
+    const answer = buildClewWorkshopNoHitAnswer(workshop.title);
     input.onDelta(answer);
-    const finalMessages = appendHiDocChatMessage(withQuestion, {
+    const finalMessages = appendClewChatMessage(withQuestion, {
       role: "assistant",
       content: answer,
       createdAt: new Date().toISOString(),
@@ -653,7 +663,7 @@ export async function sendHiDocWorkshopMessage(
     try {
       await prisma.eventLog.create({
         data: {
-          event: "hidoc_workshop_chat",
+          event: "clew_workshop_chat",
           userId: input.userId,
           props: {
             workshopId: input.workshopId,
@@ -668,7 +678,7 @@ export async function sendHiDocWorkshopMessage(
         },
       });
     } catch (error) {
-      console.error("[hidoc] 课题答疑事件记录失败", error);
+      console.error("[clew] 课题答疑事件记录失败", error);
     }
     return {
       ok: true,
@@ -682,7 +692,7 @@ export async function sendHiDocWorkshopMessage(
 
   // 5) 命中：调用模型流式回答（token 已消耗即记账，无论成败）
   input.onProgress({ stage: "answer", message: `依据 ${hits.length} 个命中片段生成回答（${provider.model}）…` });
-  const chatContext: HiDocWorkshopChatContext = {
+  const chatContext: ClewWorkshopChatContext = {
     workshopTitle: workshop.title,
     citations,
     relatedKnowledgePoints,
@@ -693,13 +703,13 @@ export async function sendHiDocWorkshopMessage(
   let answer = "";
   try {
     answer = await provider.streamReply(
-      { messages: buildHiDocWorkshopChatModelMessages(chatContext, history, question), question },
+      { messages: buildClewWorkshopChatModelMessages(chatContext, history, question), question },
       input.onDelta,
     );
   } catch (error) {
     modelOutcome = "failed";
     const message = error instanceof Error ? error.message : "未知错误";
-    console.error("[hidoc] 课题答疑模型调用失败", error);
+    console.error("[clew] 课题答疑模型调用失败", error);
     return {
       ok: false,
       status: 503,
@@ -708,10 +718,10 @@ export async function sendHiDocWorkshopMessage(
     };
   } finally {
     try {
-      await recordServerUsage(input.userId, "hidocWorkshopChats");
+      await recordServerUsage(input.userId, "clewWorkshopChats");
       await prisma.eventLog.create({
         data: {
-          event: "hidoc_workshop_chat",
+          event: "clew_workshop_chat",
           userId: input.userId,
           props: {
             workshopId: input.workshopId,
@@ -726,14 +736,14 @@ export async function sendHiDocWorkshopMessage(
         },
       });
     } catch (error) {
-      console.error("[hidoc] 课题答疑用量记录失败", error);
+      console.error("[clew] 课题答疑用量记录失败", error);
       notes.push("提示：本轮对话的配额计数写入失败，已记录服务端日志。");
     }
   }
 
-  const finalMessages = appendHiDocChatMessage(withQuestion, {
+  const finalMessages = appendClewChatMessage(withQuestion, {
     role: "assistant",
-    content: answer.slice(0, HIDOC_CHAT_MESSAGE_MAX_CHARS),
+    content: answer.slice(0, CLEW_CHAT_MESSAGE_MAX_CHARS),
     createdAt: new Date().toISOString(),
   });
   input.onProgress({ stage: "save", message: "保存对话…" });

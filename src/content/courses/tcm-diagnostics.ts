@@ -569,7 +569,7 @@ const coldHeatAssessmentItems = [
     promptSource: {
       authority: "nur-editorial",
       wording: "nur-adapted",
-      locator: "NUR LEARN · 问寒热 名词解释训练",
+      locator: "Ariadne · 问寒热 名词解释训练",
       note: "依据教材与教师重点改编的 NUR 结构化名词解释训练题。",
       sourceIds: [coldHeatSourceIds.textbook, coldHeatSourceIds.teacherReview],
     },
@@ -615,7 +615,7 @@ const coldHeatAssessmentItems = [
     promptSource: {
       authority: "nur-editorial",
       wording: "nur-adapted",
-      locator: "NUR LEARN · 问寒热 简答训练",
+      locator: "Ariadne · 问寒热 简答训练",
       note: "依据教材P52–53、教师复习范围及公开临床参考改编的 NUR 结构化简答训练题。",
       sourceIds: [coldHeatSourceIds.textbook, coldHeatSourceIds.teacherReview],
     },
@@ -668,7 +668,7 @@ const coldHeatReasoningCase = {
   promptSource: {
     authority: "nur-editorial",
     wording: "nur-adapted",
-    locator: "NUR LEARN · 问寒热案例迁移",
+    locator: "Ariadne · 问寒热案例迁移",
     note: "案例由 NUR 根据教材P52–53、教师复习范围及临床参考组织，不是学校原题或真实患者诊断。",
     sourceIds: [coldHeatSourceIds.textbook, coldHeatSourceIds.teacherReview],
   },
@@ -737,7 +737,7 @@ const inquiryDietReasoningCase = {
   promptSource: {
     authority: "nur-editorial",
     wording: "nur-adapted",
-    locator: "NUR LEARN · 问饮食口味案例迁移",
+    locator: "Ariadne · 问饮食口味案例迁移",
     note: "案例由 NUR 根据教材P60–61、教师复习范围及公开临床参考组织，不是学校原题或真实患者诊断。",
     sourceIds: [
       inquiryDietSourceIds.textbook,
@@ -1753,7 +1753,7 @@ export const tcmDiagnosticsCourse = {
       status: "available",
       missingLabel: null,
       citation: {
-        label: "NUR LEARN 问饮食口味结构演示（非教材）",
+        label: "Ariadne 问饮食口味结构演示（非教材）",
         edition: null,
         page: null,
         slide: null,

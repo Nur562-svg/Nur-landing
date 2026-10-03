@@ -294,7 +294,7 @@ export const exteriorInteriorAssessmentItems = [
     promptSource: {
       authority: "nur-editorial",
       wording: "nur-adapted",
-      locator: "NUR LEARN · 表里辨证 名词解释训练",
+      locator: "Ariadne · 表里辨证 名词解释训练",
       note: "依据教材P89–91与教师重点（表证、半表半里）改编的 NUR 结构化名词解释训练题。",
       sourceIds: [exteriorInteriorSourceIds.textbook, exteriorInteriorSourceIds.teacherReview],
     },
@@ -382,7 +382,7 @@ export const exteriorInteriorAssessmentItems = [
     promptSource: {
       authority: "nur-editorial",
       wording: "nur-adapted",
-      locator: "NUR LEARN · 表里辨证 简答训练",
+      locator: "Ariadne · 表里辨证 简答训练",
       note: "依据教材P89–91、教师复习范围改编的 NUR 结构化简答训练题。",
       sourceIds: [exteriorInteriorSourceIds.textbook, exteriorInteriorSourceIds.teacherReview],
     },
@@ -518,7 +518,7 @@ export const exteriorInteriorReasoningCase = {
   promptSource: {
     authority: "nur-editorial",
     wording: "nur-adapted",
-    locator: "NUR LEARN · 表里辨证案例迁移",
+    locator: "Ariadne · 表里辨证案例迁移",
     note: "案例由 NUR 根据教材P89–91与教师重点组织的合成记录，不是学校原题或真实患者诊断。",
     sourceIds: [
       exteriorInteriorSourceIds.textbook,

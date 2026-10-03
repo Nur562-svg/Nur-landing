@@ -200,7 +200,7 @@ export function NurAgentDock(props: NurAgentDockProps) {
           }
           setOpen(true);
         }}
-        aria-label={`打开 NUR Agent（当前表情：${emotion}）`}
+        aria-label={`打开 Ariadne Agent（当前表情：${emotion}）`}
         type="button"
         data-open={open}
         data-emotion={emotion}
@@ -228,11 +228,11 @@ export function NurAgentDock(props: NurAgentDockProps) {
             className={styles.drawer}
             onClick={(e) => e.stopPropagation()}
             role="dialog"
-            aria-label="NUR Agent"
+            aria-label="Ariadne Agent"
           >
             <header className={styles.header}>
               <div className={styles.headerLeft}>
-                <h3>NUR Agent</h3>
+                <h3>Ariadne Agent</h3>
                 <span className={styles.surfaceLabel}>{surfaceLabel}</span>
               </div>
               <button

@@ -1,11 +1,11 @@
 import Link from "next/link";
-import type { HiDocGuide } from "@/lib/hidoc/step-guide";
-import styles from "./hi-doc.module.css";
+import type { ClewGuide } from "@/lib/clew/step-guide";
+import styles from "./clew.module.css";
 
 /** Renders the shipped eight-step guide: progress, status, and 下一步. */
-export function HiDocPathGuide({ guide }: { guide: HiDocGuide }) {
+export function ClewPathGuide({ guide }: { guide: ClewGuide }) {
   return (
-    <section className={styles.pathGuide} aria-label="Hi doc 学习路径">
+    <section className={styles.pathGuide} aria-label="Clew 学习路径">
       <ol className={styles.pathSteps}>
         {guide.steps.map((name, index) => (
           <li

@@ -1,15 +1,15 @@
-import type { HiDocChatMessage, HiDocLessonStyle } from "@/types/hidoc";
-import { HIDOC_LESSON_STYLE_LABELS } from "./lesson-heuristic";
-import { formatHiDocSourcePage, isHiDocDocx } from "./source-label";
-import { HIDOC_CHAT_MESSAGE_MAX_CHARS, trimHiDocChatHistory } from "./conversation";
+import type { ClewChatMessage, ClewLessonStyle } from "@/types/clew";
+import { CLEW_LESSON_STYLE_LABELS } from "./lesson-heuristic";
+import { formatClewSourcePage, isClewDocx } from "./source-label";
+import { CLEW_CHAT_MESSAGE_MAX_CHARS, trimClewChatHistory } from "./conversation";
 
 /**
- * Hi doc 讲解对话提示词（纯函数，可测试）。
- * 与官方课程闭环不同：Hi doc 生成物按通用 AI 产品呈现，不挂官方课的证据分级标签；
+ * Clew 讲解对话提示词（纯函数，可测试）。
+ * 与官方课程闭环不同：Clew 生成物按通用 AI 产品呈现，不挂官方课的证据分级标签；
  * 但边界仍然声明清楚（不是教师评分、不做临床诊断、超出教材原文要明确标注）。
  */
 
-export type HiDocChatContext = {
+export type ClewChatContext = {
   textbookTitle: string;
   chapterTitle: string;
   knowledgePoint: {
@@ -24,36 +24,36 @@ export type HiDocChatContext = {
   lessonMarkdown: string | null;
   sourceExcerpt: string | null;
   fileName?: string;
-  style: HiDocLessonStyle;
+  style: ClewLessonStyle;
 };
 
-export type HiDocChatModelMessage = {
+export type ClewChatModelMessage = {
   role: "system" | "user" | "assistant";
   content: string;
 };
 
 /** 原文片段进入提示词的长度上限（讲义已保存片段，避免整章塞入）。 */
-export const HIDOC_CHAT_EXCERPT_MAX_CHARS = 4000;
+export const CLEW_CHAT_EXCERPT_MAX_CHARS = 4000;
 /** 讲义进入提示词的长度上限。 */
-export const HIDOC_CHAT_LESSON_MAX_CHARS = 4000;
+export const CLEW_CHAT_LESSON_MAX_CHARS = 4000;
 
 function clip(text: string, maxChars: number): string {
   return text.length > maxChars ? `${text.slice(0, maxChars)}\n…（已截断）` : text;
 }
 
-export function buildHiDocChatSystemPrompt(context: HiDocChatContext): string {
+export function buildClewChatSystemPrompt(context: ClewChatContext): string {
   const knowledgePoint = context.knowledgePoint;
-  const docx = isHiDocDocx(context.fileName ?? "");
-  const locator = formatHiDocSourcePage(context.fileName ?? "", knowledgePoint.sourcePage);
+  const docx = isClewDocx(context.fileName ?? "");
+  const locator = formatClewSourcePage(context.fileName ?? "", knowledgePoint.sourcePage);
   const excerpt = context.sourceExcerpt
-    ? clip(context.sourceExcerpt, HIDOC_CHAT_EXCERPT_MAX_CHARS)
+    ? clip(context.sourceExcerpt, CLEW_CHAT_EXCERPT_MAX_CHARS)
     : "（未取得本知识点的教材原文片段）";
   const lesson = context.lessonMarkdown
-    ? clip(context.lessonMarkdown, HIDOC_CHAT_LESSON_MAX_CHARS)
+    ? clip(context.lessonMarkdown, CLEW_CHAT_LESSON_MAX_CHARS)
     : "（该知识点尚未生成讲义）";
 
   return [
-    "你是 NUR LEARN「Hi doc」里的学习搭档（语气：生动、有人味、像 Grok——直接、机敏、偶尔一点幽默，但不油腻）。",
+    "你是 Ariadne「Clew」里的学习搭档（语气：生动、有人味、像 Grok——直接、机敏、偶尔一点幽默，但不油腻）。",
     "你正在陪学生啃这份用户私有教材的一个具体知识点：先把话说清楚，再把原文钉死。",
     "边界规则（硬约束，幽默也不能破）：",
     "- 你是 AI 学习搭档，不是任课教师：不代替教师评分，不预测考试分数。",
@@ -61,8 +61,8 @@ export function buildHiDocChatSystemPrompt(context: HiDocChatContext): string {
     "- 中医与现代医学表述分别说明，不要直接等同；不确定就直说不确定。",
     "- 回答必须回源：优先依据下方教材原文片段与讲义；超出范围时，在回答开头标注「以下为通用医学知识，非本教材内容」。",
     docx
-      ? `- 讲解风格：${HIDOC_LESSON_STYLE_LABELS[context.style]}；这份教材没有印刷页码，引用时写「页码待确认」，不得写成「第 N 页」。`
-      : `- 讲解风格：${HIDOC_LESSON_STYLE_LABELS[context.style]}；引用教材时写清页码（如「${locator}」）。`,
+      ? `- 讲解风格：${CLEW_LESSON_STYLE_LABELS[context.style]}；这份教材没有印刷页码，引用时写「页码待确认」，不得写成「第 N 页」。`
+      : `- 讲解风格：${CLEW_LESSON_STYLE_LABELS[context.style]}；引用教材时写清页码（如「${locator}」）。`,
     "- 回答使用中文：可以说人话、用短比喻帮助学生记住，但禁止空泛鸡汤；可用小标题与短列表，不要表格或代码块。",
     "- 不得声称教师强调过某内容，也不得编造教材页码。",
     "",
@@ -87,17 +87,17 @@ export function buildHiDocChatSystemPrompt(context: HiDocChatContext): string {
 }
 
 /** 组装模型消息：system + 最近历史 + 本轮提问（历史由服务端从库中读取，不接受客户端注入）。 */
-export function buildHiDocChatModelMessages(
-  context: HiDocChatContext,
-  history: readonly HiDocChatMessage[],
+export function buildClewChatModelMessages(
+  context: ClewChatContext,
+  history: readonly ClewChatMessage[],
   userMessage: string,
-): HiDocChatModelMessage[] {
-  const trimmed = trimHiDocChatHistory(history);
+): ClewChatModelMessage[] {
+  const trimmed = trimClewChatHistory(history);
   return [
-    { role: "system", content: buildHiDocChatSystemPrompt(context) },
+    { role: "system", content: buildClewChatSystemPrompt(context) },
     ...trimmed.map((message) => ({
       role: message.role,
-      content: clip(message.content, HIDOC_CHAT_MESSAGE_MAX_CHARS),
+      content: clip(message.content, CLEW_CHAT_MESSAGE_MAX_CHARS),
     })),
     { role: "user", content: userMessage },
   ];

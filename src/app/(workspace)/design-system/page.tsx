@@ -5,7 +5,7 @@ import type { Metadata } from "next";
 
 export const metadata: Metadata = {
   title: "设计系统 v2 预览",
-  description: "NUR LEARN 设计系统 v2 组件与 token 对照基准（开发预览）",
+  description: "Ariadne 设计系统 v2 组件与 token 对照基准（开发预览）",
   robots: { index: false, follow: false },
 };
 

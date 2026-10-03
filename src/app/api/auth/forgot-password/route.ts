@@ -46,8 +46,8 @@ export async function POST(request: Request): Promise<Response> {
       const resetUrl = `${SITE_URL}/reset-password?token=${token}`;
       await sendMail({
         to: email,
-        subject: "NUR LEARN 密码重置",
-        text: `你收到这封邮件是因为你的 NUR LEARN 账户发起了密码重置请求。\n\n请访问以下链接重置密码（15 分钟内有效，一次性使用）：\n${resetUrl}\n\n如非本人操作，请忽略此邮件，你的密码不会改变。`,
+        subject: "Ariadne 密码重置",
+        text: `你收到这封邮件是因为你的 Ariadne 账户发起了密码重置请求。\n\n请访问以下链接重置密码（15 分钟内有效，一次性使用）：\n${resetUrl}\n\n如非本人操作，请忽略此邮件，你的密码不会改变。`,
       });
     }
 

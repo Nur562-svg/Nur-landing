@@ -24,6 +24,16 @@ import {
   foldQbAttemptsByStableIdentity,
   qbAttemptContentIdentityKey,
 } from "./qb-attempt-identity";
+import {
+  appendUnifiedLearningEvents,
+  buildOfficialAttemptEvent,
+  buildQbAttemptEvent,
+} from "./unified-events";
+import { publishedCourses } from "@/content/courses";
+import {
+  flattenCourseAssessmentItems,
+  selectChapterForKnowledgePoint,
+} from "./course-selectors";
 
 function toJsonValue<T>(v: T): Prisma.InputJsonValue {
   return v as unknown as Prisma.InputJsonValue;
@@ -136,6 +146,21 @@ export async function recordConfirmedAttemptServer(
         createdAt,
       },
     });
+    // ZCODE-M3 旁路：官方课作答事件（独立 try/catch，不影响主流程；dedupe 命中分支不重复发）
+    try {
+      await appendUnifiedLearningEvents(userId, [
+        buildOfficialAttemptEvent({
+          knowledgePointId: input.knowledgePointId,
+          attemptId: attempt.id,
+          taskId: input.taskId,
+          courseId: input.courseId,
+          surface: input.surface,
+          confirmedAt: confirmedAtIso,
+        }),
+      ]);
+    } catch (error) {
+      console.error("[unified-events] 官方课作答事件追加失败", error);
+    }
     return { ok: true, id: attempt.id };
   } catch {
     return { ok: false, error: "persist-failed" };
@@ -183,6 +208,8 @@ export async function upsertAttemptsBatchServer(
 
   let created = 0;
   let skipped = 0;
+  // ZCODE-M3 旁路：本批 created 的作答事件（循环结束后统一幂等写入）
+  const batchEvents = [];
 
   for (const a of attempts) {
     const text = a.confirmedText.slice(0, 12000);
@@ -231,10 +258,27 @@ export async function upsertAttemptsBatchServer(
       idSet.add(row.id);
       contentToId.set(key, row.id);
       created += 1;
+      batchEvents.push(
+        buildOfficialAttemptEvent({
+          knowledgePointId: a.knowledgePointId,
+          attemptId: row.id,
+          taskId: a.taskId,
+          courseId: a.courseId,
+          surface: a.surface,
+          confirmedAt: confirmedAtIso,
+        }),
+      );
     } catch {
       // 并发/唯一冲突：记 skip，不中断整批
       skipped += 1;
     }
+  }
+
+  // 旁路：只为本批 created 的 attempts 发事件（幂等兜底，重跑安全）
+  try {
+    await appendUnifiedLearningEvents(userId, batchEvents);
+  } catch (error) {
+    console.error("[unified-events] 批量作答事件追加失败", error);
   }
 
   const deduped = await dedupeLearnerAttemptsForUser(userId);
@@ -339,6 +383,31 @@ export async function upsertFsrsStateServer(
   });
 }
 
+// ZCODE-M3：题库归属解析（questionId → courseSlug/chapterSlug），与错题中心 itemLookup 同源；
+// 进程内缓存（注册课程内容在构建期固定）。解析不到就跳过事件并 console.warn，不伪造归属。
+let qbQuestionLookupCache: Map<string, { courseSlug: string; chapterSlug: string }> | null = null;
+
+function getQbQuestionLookup(): Map<string, { courseSlug: string; chapterSlug: string }> {
+  if (qbQuestionLookupCache) {
+    return qbQuestionLookupCache;
+  }
+  const lookup = new Map<string, { courseSlug: string; chapterSlug: string }>();
+  for (const course of publishedCourses) {
+    for (const item of flattenCourseAssessmentItems(course)) {
+      if (lookup.has(item.id)) {
+        continue;
+      }
+      const chapter = selectChapterForKnowledgePoint(course, item.knowledgePointId);
+      lookup.set(item.id, {
+        courseSlug: course.slug,
+        chapterSlug: chapter?.slug ?? "",
+      });
+    }
+  }
+  qbQuestionLookupCache = lookup;
+  return lookup;
+}
+
 // 题库 attempt（幂等追加，使用内容键去重）
 export async function addQbAttemptServer(userId: string, record: QBAttemptRecord): Promise<void> {
   const newKey = qbAttemptContentIdentityKey(record);
@@ -367,6 +436,27 @@ export async function addQbAttemptServer(userId: string, record: QBAttemptRecord
       attemptedAt: new Date(record.attemptedAt),
     },
   });
+
+  // ZCODE-M3 旁路：题库作答事件（归属解析不到就跳过，独立 try/catch）
+  try {
+    const attribution = getQbQuestionLookup().get(record.questionId);
+    if (!attribution || !attribution.chapterSlug) {
+      console.warn(`[unified-events] 题库题目 ${record.questionId} 无法归属注册章节，跳过事件`);
+      return;
+    }
+    await appendUnifiedLearningEvents(userId, [
+      buildQbAttemptEvent({
+        courseSlug: attribution.courseSlug,
+        chapterSlug: attribution.chapterSlug,
+        questionId: record.questionId,
+        isCorrect: record.isCorrect,
+        attemptedAt: record.attemptedAt,
+        qbContentIdentityKey: newKey,
+      }),
+    ]);
+  } catch (error) {
+    console.error("[unified-events] 题库作答事件追加失败", error);
+  }
 }
 
 // 题库收藏 toggle（幂等）

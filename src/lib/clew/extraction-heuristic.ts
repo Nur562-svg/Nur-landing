@@ -1,23 +1,25 @@
 /**
- * Hi doc 知识点萃取校验（纯函数，可测试）：模型输出的不可信 payload → 结构化草稿。
+ * Clew 知识点萃取校验（纯函数，可测试）：模型输出的不可信 payload → 结构化草稿。
  * 只接受严格形状；非法条目丢弃并计数；先修引用只保留同批次内能对上的标题，不伪造。
  */
 
-export type HiDocKnowledgePointDraft = {
+export type ClewKnowledgePointDraft = {
   title: string;
   description: string;
   keyTerms: string[];
   prerequisites: string[];
   sourcePage: number;
+  /** ZCODE-M2: 学习闭环 profile（萃取管线用规则引擎补全；模型不直接决定）。 */
+  loopProfileId?: string;
 };
 
-export const HIDOC_MAX_KNOWLEDGE_POINTS_PER_CHAPTER = 30;
+export const CLEW_MAX_KNOWLEDGE_POINTS_PER_CHAPTER = 30;
 
 /** 单章送入模型的文字上限（页标记后）。 */
-export const HIDOC_CHAPTER_TEXT_MAX_CHARS = 20_000;
+export const CLEW_CHAPTER_TEXT_MAX_CHARS = 20_000;
 
-export type HiDocExtractionParseResult = {
-  knowledgePoints: HiDocKnowledgePointDraft[];
+export type ClewExtractionParseResult = {
+  knowledgePoints: ClewKnowledgePointDraft[];
   droppedCount: number;
   droppedPrerequisiteCount: number;
 };
@@ -45,7 +47,7 @@ export function parseModelKnowledgePointsPayload(
   value: unknown,
   chapterPageStart: number,
   chapterPageEnd: number,
-): HiDocExtractionParseResult {
+): ClewExtractionParseResult {
   if (typeof value !== "object" || value === null) {
     return { knowledgePoints: [], droppedCount: 0, droppedPrerequisiteCount: 0 };
   }
@@ -54,10 +56,10 @@ export function parseModelKnowledgePointsPayload(
     return { knowledgePoints: [], droppedCount: 0, droppedPrerequisiteCount: 0 };
   }
 
-  const drafts: HiDocKnowledgePointDraft[] = [];
+  const drafts: ClewKnowledgePointDraft[] = [];
   let droppedCount = 0;
 
-  for (const raw of points.slice(0, HIDOC_MAX_KNOWLEDGE_POINTS_PER_CHAPTER * 2)) {
+  for (const raw of points.slice(0, CLEW_MAX_KNOWLEDGE_POINTS_PER_CHAPTER * 2)) {
     if (typeof raw !== "object" || raw === null) {
       droppedCount += 1;
       continue;
@@ -98,14 +100,14 @@ export function parseModelKnowledgePointsPayload(
     });
   }
 
-  if (drafts.length > HIDOC_MAX_KNOWLEDGE_POINTS_PER_CHAPTER) {
-    droppedCount += drafts.length - HIDOC_MAX_KNOWLEDGE_POINTS_PER_CHAPTER;
-    drafts.length = HIDOC_MAX_KNOWLEDGE_POINTS_PER_CHAPTER;
+  if (drafts.length > CLEW_MAX_KNOWLEDGE_POINTS_PER_CHAPTER) {
+    droppedCount += drafts.length - CLEW_MAX_KNOWLEDGE_POINTS_PER_CHAPTER;
+    drafts.length = CLEW_MAX_KNOWLEDGE_POINTS_PER_CHAPTER;
   }
 
   // 同章去重（标题 + 页码相同视为重复）
   const seen = new Set<string>();
-  const deduped: HiDocKnowledgePointDraft[] = [];
+  const deduped: ClewKnowledgePointDraft[] = [];
   for (const draft of drafts) {
     const key = `${draft.sourcePage}::${draft.title.toLowerCase()}`;
     if (seen.has(key)) {
@@ -137,7 +139,7 @@ export function parseModelKnowledgePointsPayload(
 /** 章节文字 + 页标记 → 模型输入文本（【PDF 第 X 页】分隔）。 */
 export function buildChapterModelText(
   pages: readonly { pageNumber: number; lines: string[] }[],
-  maxChars: number = HIDOC_CHAPTER_TEXT_MAX_CHARS,
+  maxChars: number = CLEW_CHAPTER_TEXT_MAX_CHARS,
 ): { text: string; truncated: boolean } {
   const parts: string[] = [];
   let used = 0;

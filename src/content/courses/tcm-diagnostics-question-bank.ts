@@ -557,7 +557,7 @@ const caseItem: AssessmentItemDefinition = {
   promptSource: {
     authority: "nur-editorial",
     wording: "nur-adapted",
-    locator: "NUR LEARN · 问饮食口味案例迁移（教材P60–61）",
+    locator: "Ariadne · 问饮食口味案例迁移（教材P60–61）",
     note: "案例由 NUR 根据教材P60–61、教师复习范围及公开临床参考组织，不是学校原题、真实患者诊断或任课教师评分。",
     sourceIds: [
       textbookSourceId,

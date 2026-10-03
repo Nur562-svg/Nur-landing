@@ -1,23 +1,23 @@
 /**
- * Hi doc 目录启发式（纯函数，可测试）：把书签条目或印刷目录页文字归一化为章节草稿。
+ * Clew 目录启发式（纯函数，可测试）：把书签条目或印刷目录页文字归一化为章节草稿。
  * 只做结构化整理，不补造任何章节、页码或标题；解析不到就如实返回 0 章。
  */
 
-export type HiDocChapterDraft = {
+export type ClewChapterDraft = {
   title: string;
   pageStart: number;
   pageEnd: number;
 };
 
-export type HiDocPrintedTocEntry = {
+export type ClewPrintedTocEntry = {
   title: string;
   pageNumber: number;
 };
 
-export const HIDOC_MAX_CHAPTERS = 200;
+export const CLEW_MAX_CHAPTERS = 200;
 
 /** 单本目录页扫描上限（封面/版权/前言之后通常就是目录）。 */
-export const HIDOC_TOC_SCAN_PAGE_LIMIT = 15;
+export const CLEW_TOC_SCAN_PAGE_LIMIT = 15;
 
 const chapterNumberPattern = "[一二三四五六七八九十百千零〇两0-9０-９\\u2F00-\\u2FD5]{1,8}";
 const chapterLinePattern = new RegExp(`^\\s*第\\s*${chapterNumberPattern}\\s*[章篇]`);
@@ -118,16 +118,16 @@ export function parsePrintedTocPages(
   pages: readonly { pageNumber: number; lines: string[] }[],
   pageCount: number,
 ): {
-  entries: HiDocPrintedTocEntry[];
+  entries: ClewPrintedTocEntry[];
   ignoredCount: number;
   tocPageNumbers: number[];
 } {
-  const entries: HiDocPrintedTocEntry[] = [];
+  const entries: ClewPrintedTocEntry[] = [];
   const tocPageNumbers: number[] = [];
   let ignoredCount = 0;
 
   for (const page of pages) {
-    const pageEntries: HiDocPrintedTocEntry[] = [];
+    const pageEntries: ClewPrintedTocEntry[] = [];
     let ignoredOnPage = 0;
 
     for (const rawLine of page.lines) {
@@ -197,12 +197,12 @@ export function collectTocLikePageNumbers(
  * 越界条目直接丢弃并计数，不静默修正。
  */
 export function normalizeChapterEntries(
-  entries: readonly HiDocPrintedTocEntry[],
+  entries: readonly ClewPrintedTocEntry[],
   pageCount: number,
-  maxChapters: number = HIDOC_MAX_CHAPTERS,
-): { chapters: HiDocChapterDraft[]; droppedCount: number } {
+  maxChapters: number = CLEW_MAX_CHAPTERS,
+): { chapters: ClewChapterDraft[]; droppedCount: number } {
   const seen = new Set<string>();
-  const usable: HiDocPrintedTocEntry[] = [];
+  const usable: ClewPrintedTocEntry[] = [];
   let droppedCount = 0;
 
   for (const entry of entries) {
@@ -228,7 +228,7 @@ export function normalizeChapterEntries(
     usable.length = maxChapters;
   }
 
-  const chapters: HiDocChapterDraft[] = usable.map((entry, index) => {
+  const chapters: ClewChapterDraft[] = usable.map((entry, index) => {
     const nextStart = usable[index + 1]?.pageNumber;
     const pageEnd = nextStart === undefined ? pageCount : Math.max(entry.pageNumber, nextStart - 1);
     return { title: entry.title, pageStart: entry.pageNumber, pageEnd };
@@ -268,7 +268,7 @@ export function resolveConsensusOffset(candidates: readonly (number | null)[]): 
 export function parseModelChaptersPayload(
   value: unknown,
   pageCount: number,
-): { entries: HiDocPrintedTocEntry[]; droppedCount: number } {
+): { entries: ClewPrintedTocEntry[]; droppedCount: number } {
   if (typeof value !== "object" || value === null) {
     return { entries: [], droppedCount: 0 };
   }
@@ -277,9 +277,9 @@ export function parseModelChaptersPayload(
     return { entries: [], droppedCount: 0 };
   }
 
-  const entries: HiDocPrintedTocEntry[] = [];
+  const entries: ClewPrintedTocEntry[] = [];
   let droppedCount = 0;
-  for (const raw of chapters.slice(0, HIDOC_MAX_CHAPTERS * 2)) {
+  for (const raw of chapters.slice(0, CLEW_MAX_CHAPTERS * 2)) {
     if (typeof raw !== "object" || raw === null) {
       droppedCount += 1;
       continue;
@@ -306,8 +306,8 @@ export function parseModelChaptersPayload(
 const chapterOnlyPattern = new RegExp(`^\\s*第\\s*${chapterNumberPattern}\\s*章`);
 const partOnlyPattern = new RegExp(`^\\s*第\\s*${chapterNumberPattern}\\s*篇`);
 
-export type HiDocOutlineChapterSelection = {
-  entries: HiDocPrintedTocEntry[];
+export type ClewOutlineChapterSelection = {
+  entries: ClewPrintedTocEntry[];
   /** 采用的书签层级；按标题模式选中时为 null。 */
   level: number | null;
   /** 选择依据：章标题 / 篇标题 / 层级兜底。 */
@@ -324,7 +324,7 @@ export type HiDocOutlineChapterSelection = {
  */
 export function selectOutlineChapters(
   entries: readonly { title: string; level: number; pageNumber: number | null }[],
-): HiDocOutlineChapterSelection {
+): ClewOutlineChapterSelection {
   const resolved = entries
     .filter((entry): entry is { title: string; level: number; pageNumber: number } => entry.pageNumber !== null)
     .map((entry) => ({ title: entry.title, level: entry.level, pageNumber: entry.pageNumber }));
@@ -394,8 +394,8 @@ export function validateManualChapters(
   if (input.length === 0) {
     return { ok: false, message: "章节列表不能为空；如无需章节，请保留识别结果或重新识别。" };
   }
-  if (input.length > HIDOC_MAX_CHAPTERS) {
-    return { ok: false, message: `章节数超过上限 ${HIDOC_MAX_CHAPTERS}。` };
+  if (input.length > CLEW_MAX_CHAPTERS) {
+    return { ok: false, message: `章节数超过上限 ${CLEW_MAX_CHAPTERS}。` };
   }
 
   const chapters: ManualChapterInput[] = [];

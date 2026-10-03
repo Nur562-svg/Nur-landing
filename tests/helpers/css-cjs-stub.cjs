@@ -5,7 +5,10 @@
  * (require(esm) era), which never consults the ESM hook. Registered via
  * NODE_OPTIONS --require so the patch is in place before any test file loads.
  */
+// eslint-disable-next-line @typescript-eslint/no-require-imports -- .cjs helper must use require by design
 const Module = require("node:module");
+// eslint-disable-next-line @typescript-eslint/no-require-imports -- .cjs helper must use require by design
+const path = require("node:path");
 
 if (!Module._extensions[".css"]) {
   // Mirror tests/helpers/css-module-stub.mjs: named properties AND an
@@ -19,4 +22,18 @@ if (!Module._extensions[".css"]) {
       filename,
     );
   };
+}
+
+// `server-only` guard: the ESM-lane hook (tests/helpers/css-module-hooks.mjs) maps this
+// specifier, but tsx resolves imports through require() (see above), so alias it in the
+// CJS lane too — otherwise importing any lib with `import "server-only"` fails to load.
+if (!Module._resolveFilename.__nurServerOnlyPatched) {
+  const originalResolveFilename = Module._resolveFilename;
+  Module._resolveFilename = function resolveFilename(request, ...rest) {
+    if (request === "server-only") {
+      return path.join(__dirname, "server-only-empty.cjs");
+    }
+    return originalResolveFilename.call(this, request, ...rest);
+  };
+  Module._resolveFilename.__nurServerOnlyPatched = true;
 }

@@ -17,10 +17,10 @@ export async function generateMetadata({
   const { courseSlug } = await params;
   const course = getPublishedCourseBySlug(courseSlug);
   if (!course) {
-    return { title: "模考｜NUR LEARN" };
+    return { title: "模考｜Ariadne" };
   }
   return {
-    title: `${course.title} 模考｜NUR LEARN`,
+    title: `${course.title} 模考｜Ariadne`,
     description: `按蓝图组卷的完整模考（100 分）。客观题自动评分，主观题提供自核与 NUR 结构参考。`,
   };
 }

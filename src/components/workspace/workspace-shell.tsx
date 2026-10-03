@@ -23,8 +23,9 @@ import type { CourseSearchSource } from "@/lib/search-index";
 import {
   ACTIVE_COURSE_ENTRIES,
   PRIMARY_ENTRIES,
-  fetchRecentTextbooks,
+  fetchShelfSummary,
   type ShellEntry,
+  type ShellQuota,
   type ShellTextbook,
 } from "./shell-data";
 import { CommandPalette } from "./command-palette";
@@ -34,16 +35,16 @@ type NavIcon = typeof BookOpen;
 
 const PRIMARY_ICONS: Readonly<Record<string, NavIcon>> = {
   learn: Home,
-  hidoc: BookOpen,
+  clew: BookOpen,
   courses: GraduationCap,
   "question-bank": ListChecks,
   membership: CreditCard,
 };
 
-/** 侧栏 active 判定：按段落前缀归组（书架教材页归入 Hi doc）。 */
+/** 侧栏 active 判定：按段落前缀归组（书架教材页归入 Clew）。 */
 function resolveActivePrimaryId(pathname: string | null): string | null {
   if (!pathname) return null;
-  if (pathname.startsWith("/learn/hi-doc")) return "hidoc";
+  if (pathname.startsWith("/learn/clew")) return "clew";
   if (pathname === "/learn" || pathname.startsWith("/learn/")) return "learn";
   if (pathname.startsWith("/courses")) return "courses";
   if (pathname.startsWith("/question-bank")) return "question-bank";
@@ -91,7 +92,7 @@ function SidebarNav({
           ? textbooks.map((book) => (
             <Link
               key={book.id}
-              href={`/learn/hi-doc/t/${book.id}`}
+              href={`/learn/clew/t/${book.id}`}
               onClick={onNavigate}
               className={styles.navLink}
               title={book.title}
@@ -103,7 +104,7 @@ function SidebarNav({
           ))
           : (
             <p className={styles.sidebarEmpty}>
-              登录并在 Hi doc 上传教材后，这里会显示书架最近教材。
+              登录并在 Clew 上传教材后，这里会显示书架最近教材。
             </p>
           )}
         {ACTIVE_COURSE_ENTRIES.map((entry) => {
@@ -141,6 +142,8 @@ export function WorkspaceShell({
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [paletteOpen, setPaletteOpen] = useState(false);
   const [textbooks, setTextbooks] = useState<readonly ShellTextbook[]>([]);
+  const [quota, setQuota] = useState<ShellQuota | null>(null);
+  const [clewModelCalls, setClewModelCalls] = useState<number | null>(null);
   const [dark, setDark] = useState(false);
 
   // R2-2 明暗切换：挂载后读当前主题（根 layout 的防闪烁脚本可能已在 hydration 前挂上 .dark）。
@@ -163,15 +166,36 @@ export function WorkspaceShell({
     }
   };
 
-  // 登录后才拉书架最近教材（未登录请求书架 API 会得到 401，避免产生资源错误）
+  // 登录后才拉书架最近教材与配额（未登录请求书架 API 会得到 401，避免产生资源错误）
   useEffect(() => {
     if (!user) {
       return;
     }
     let cancelled = false;
-    fetchRecentTextbooks().then((books) => {
-      if (!cancelled) setTextbooks(books);
+    fetchShelfSummary().then(({ textbooks: books, quota: nextQuota }) => {
+      if (cancelled) return;
+      setTextbooks(books);
+      setQuota(nextQuota);
     });
+    // 本月 Clew 模型调用合计（真实用量，来自配额 API；替代无出处的 token 估算）
+    fetch("/api/auth/quotas", { cache: "no-store" })
+      .then((response) => (response.ok ? response.json() : null))
+      .then((payload: { quotas?: { quotas?: Record<string, { used?: number }> } } | null) => {
+        const items = payload?.quotas?.quotas;
+        if (cancelled || !items) return;
+        let total = 0;
+        let seen = false;
+        for (const [key, item] of Object.entries(items)) {
+          if (key.startsWith("clew") && typeof item?.used === "number") {
+            total += item.used;
+            seen = true;
+          }
+        }
+        if (seen) setClewModelCalls(total);
+      })
+      .catch(() => {
+        // 配额接口不可用时 chip 静默缺省
+      });
     return () => {
       cancelled = true;
     };
@@ -228,14 +252,24 @@ export function WorkspaceShell({
         className={[styles.sidebar, drawerOpen ? styles.sidebarOpen : ""].filter(Boolean).join(" ")}
         aria-label="工作台导航"
       >
-        <Link className={styles.brand} href="/learn" aria-label="NUR LEARN 学习主页">
+        <Link className={styles.brand} href="/learn" aria-label="Ariadne 学习主页">
           <span className={styles.brandMark} aria-hidden="true">N</span>
           <span className={styles.brandText}>
-            <span className={styles.brandName}>NUR LEARN</span>
+            <span className={styles.brandName}>Ariadne</span>
             <span className={styles.brandSub}>工作台</span>
           </span>
         </Link>
         <SidebarNav activeId={activeId} pathname={pathname} textbooks={textbooks} onNavigate={closeDrawer} />
+        {user ? (
+          <div className={styles.quotaChip} aria-label="本月用量">
+            {quota ? (
+              <span>
+                本月教材名额 {quota.used}/{quota.limit} 本
+              </span>
+            ) : null}
+            {clewModelCalls !== null ? <span>本月模型调用 {clewModelCalls} 次</span> : null}
+          </div>
+        ) : null}
       </aside>
       {drawerOpen ? <div className={styles.scrim} onClick={() => setDrawerOpen(false)} aria-hidden="true" /> : null}
       <div className={styles.main} data-workspace-canvas="">

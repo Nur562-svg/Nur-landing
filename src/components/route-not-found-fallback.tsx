@@ -5,7 +5,7 @@ export function RouteNotFoundFallback() {
   return (
     <div className={styles.root}>
       <div className={styles.card}>
-        <p className={styles.eyebrow}>NUR LEARN</p>
+        <p className={styles.eyebrow}>Ariadne</p>
         <h1 className={styles.title}>未找到该页面</h1>
         <p className={styles.body}>
           链接可能已失效，或该内容尚未开放。你可以返回学习首页，从课程工作台继续。

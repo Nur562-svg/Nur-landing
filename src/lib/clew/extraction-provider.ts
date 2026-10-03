@@ -1,14 +1,15 @@
 import "server-only";
 
-import type { HiDocKnowledgePointDraft } from "./extraction-heuristic";
+import type { ClewKnowledgePointDraft } from "./extraction-heuristic";
+import { isClewTaskConfigured, resolveClewTaskModel } from "./providers/model-config";
 
 /**
- * Hi doc 知识点萃取模型边界（provider-neutral，复用目录解析同一套 DashScope 密钥）。
+ * Clew 知识点萃取模型边界（provider-neutral）。
  * 模型只做一件事：读单章文字层草稿，产出带页码溯源的知识点列表。
  * 不写库、不改状态；payload 合法性由确定性代码（extraction-heuristic）负责。
  */
 
-export type HiDocExtractModelInput = {
+export type ClewExtractModelInput = {
   textbookTitle: string;
   chapterTitle: string;
   chapterPageStart: number;
@@ -17,52 +18,37 @@ export type HiDocExtractModelInput = {
   chapterText: string;
 };
 
-export type HiDocExtractProviderOutput = {
-  knowledgePoints: HiDocKnowledgePointDraft[];
+export type ClewExtractProviderOutput = {
+  knowledgePoints: ClewKnowledgePointDraft[];
   /** 未通过严格校验被丢弃的条目数（如实告知用户）。 */
   droppedCount: number;
   /** 无法在同章对上而被丢弃的先修引用数。 */
   droppedPrerequisiteCount: number;
 };
 
-export type HiDocExtractProvider = {
+export type ClewExtractProvider = {
   id: string;
   model: string;
-  extractKnowledgePoints(input: HiDocExtractModelInput): Promise<HiDocExtractProviderOutput>;
+  extractKnowledgePoints(input: ClewExtractModelInput): Promise<ClewExtractProviderOutput>;
 };
 
-export class HiDocExtractProviderError extends Error {
+export class ClewExtractProviderError extends Error {
   constructor(message: string) {
     super(message);
-    this.name = "HiDocExtractProviderError";
+    this.name = "ClewExtractProviderError";
   }
 }
 
-const DEFAULT_PROVIDER = "dashscope";
-const DEFAULT_MODEL = "qwen3.7-plus";
-
-export function resolveHiDocExtractProviderId(): string {
-  return process.env.HIDOC_EXTRACT_PROVIDER?.trim() || DEFAULT_PROVIDER;
-}
-
-export function resolveHiDocExtractModel(): string {
-  return process.env.HIDOC_EXTRACT_MODEL?.trim() || DEFAULT_MODEL;
-}
-
-/** 未配置密钥时返回 null（调用方如实拒绝，不假装萃取）。 */
-export async function createHiDocExtractProviderFromEnv(): Promise<HiDocExtractProvider | null> {
-  const providerId = resolveHiDocExtractProviderId();
-  if (providerId !== "dashscope") {
+/**
+ * 按任务级 env 解析构造萃取 provider（ZCODE-M4 多模型：resolve → 校验 → 动态 import adapter）。
+ * 未配置密钥时返回 null（调用方如实拒绝，不假装萃取）；
+ * provider 未实现 / baseURL 非法时抛 ClewProviderConfigError（明确报错，不静默回落）。
+ */
+export async function createClewExtractProviderFromEnv(): Promise<ClewExtractProvider | null> {
+  const config = resolveClewTaskModel("extraction");
+  if (!isClewTaskConfigured("extraction")) {
     return null;
   }
-  const apiKey = process.env.DASHSCOPE_API_KEY?.trim();
-  if (!apiKey) {
-    return null;
-  }
-  const { createDashScopeHiDocExtractProvider } = await import("./providers/dashscope-extract");
-  return createDashScopeHiDocExtractProvider(
-    apiKey,
-    resolveHiDocExtractModel(),
-    process.env.DASHSCOPE_BASE_URL?.trim(),
-  );
+  const { createDashScopeClewExtractProvider } = await import("./providers/dashscope-extract");
+  return createDashScopeClewExtractProvider(config);
 }

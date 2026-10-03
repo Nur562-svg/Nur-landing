@@ -1,4 +1,4 @@
-// NUR LEARN 数据层（Prisma）
+// Ariadne 数据层（Prisma）
 // 开发环境使用 SQLite 文件库（零依赖）；生产环境切换 Postgres 只需修改 provider 与连接串。
 // 注意：不使用原生 enum（SQLite 不支持），枚举语义由 TypeScript 类型约束保证可移植性。
 //
@@ -24,8 +24,9 @@ model User {
   membershipExpiresAt DateTime?
   // 邮箱验证时间（null = 未验证）；收费前须完成验证
   emailVerifiedAt     DateTime?
-  // Hi doc 讲解风格（账户级；M4 仅实现 "zh-primary"，枚举见 src/types/hidoc.ts）
-  hiDocLessonStyle    String    @default("zh-primary")
+  // Clew 讲解风格（账户级；M4 仅实现 "zh-primary"，枚举见 src/types/clew.ts）
+  // 列名保持品牌迁移前的 hiDocLessonStyle，避免数据库漂移
+  clewLessonStyle    String    @default("zh-primary") @map("hiDocLessonStyle")
   // M3: usage counters for quota (courseBuilds, agentCalls, etc.)
   usage               Json? // { courseBuilds?: number, agentCalls?: number }
   createdAt           DateTime  @default(now())
@@ -44,15 +45,17 @@ model User {
   // M4: 密码重置令牌
   passwordResetTokens           PasswordResetToken[]
   courseEntitlements            CourseEntitlement[]
-  // Hi doc: 用户私有教材（服务器存储，仅本人可见，不进官方课程目录）
-  hiDocTextbooks                HiDocTextbook[]
-  // Hi doc M4: 讲解对话（kpId 可空，为 M6 课题工作坊预留）
-  hiDocConversations            HiDocConversation[]
-  // Hi doc M5: 划重点/批注与章级学霸笔记（全部私有挂 userId）
-  hiDocHighlights               HiDocHighlight[]
-  hiDocNotes                    HiDocNote[]
-  // Hi doc M6: 课题工作坊（短材料 + 检索答疑；私有挂 userId）
-  hiDocWorkshops                HiDocWorkshop[]
+  // Clew: 用户私有教材（服务器存储，仅本人可见，不进官方课程目录）
+  clewTextbooks                ClewTextbook[]
+  // Clew M4: 讲解对话（kpId 可空，为 M6 课题工作坊预留）
+  clewConversations            ClewConversation[]
+  // Clew M5: 划重点/批注与章级学霸笔记（全部私有挂 userId）
+  clewHighlights               ClewHighlight[]
+  clewNotes                    ClewNote[]
+  // Clew M6: 课题工作坊（短材料 + 检索答疑；私有挂 userId）
+  clewWorkshops                ClewWorkshop[]
+  // ZCODE-M2: Clew 学习会话（Loop Profile 走环状态，跨页面/跨设备续存）
+  clewStudySessions            ClewStudySession[]
 }
 
 /// M4: 会员订单（支付抽象层持久化）。provider 切换不影响已存订单。
@@ -82,7 +85,7 @@ model Order {
   @@index([status, createdAt])
 }
 
-/// Hi doc M0: 官方课程名额。试点课白名单不占名额、不写行。
+/// Clew M0: 官方课程名额。试点课白名单不占名额、不写行。
 model CourseEntitlement {
   id        String   @id @default(cuid())
   userId    String
@@ -94,15 +97,15 @@ model CourseEntitlement {
   @@index([userId, grantedAt])
 }
 
-/// Hi doc M1: 用户私有教材（服务器存储、按 userId 隔离；不进官方课程目录、不进 /courses）。
-model HiDocTextbook {
+/// Clew M1: 用户私有教材（服务器存储、按 userId 隔离；不进官方课程目录、不进 /courses）。
+model ClewTextbook {
   id     String @id @default(cuid())
   userId String
   user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   title    String
   fileName String
-  // 存储抽象键（hidoc/{userId}/{textbookId}/{fileName}）；本地磁盘卷与 OSS 适配后语义一致
+  // 存储抽象键（clew/{userId}/{textbookId}/{fileName}）；本地磁盘卷与 OSS 适配后语义一致
   storageKey   String   @unique
   sizeBytes    Int
   pageCount    Int
@@ -121,14 +124,16 @@ model HiDocTextbook {
   @@index([userId, activeMonth, deletedAt])
   @@index([userId, createdAt])
 
-  chapters HiDocChapter[]
+  chapters ClewChapter[]
+  // Table name kept as pre-migration HiDocTextbook to avoid DB drift
+  @@map("HiDocTextbook")
 }
 
-/// Hi doc M3: 章节知识点（模型萃取草稿，含页码溯源；私有挂教材章节）。
-model HiDocKnowledgePoint {
+/// Clew M3: 章节知识点（模型萃取草稿，含页码溯源；私有挂教材章节）。
+model ClewKnowledgePoint {
   id         String      @id @default(cuid())
   chapterId  String
-  chapter    HiDocChapter @relation(fields: [chapterId], references: [id], onDelete: Cascade)
+  chapter    ClewChapter @relation(fields: [chapterId], references: [id], onDelete: Cascade)
 
   order       Int
   title       String
@@ -137,22 +142,30 @@ model HiDocKnowledgePoint {
   prerequisites Json // string[]（章节内先修知识点标题）
   // 该知识点在 PDF 中的页序（1 起，与章节页码同源）
   sourcePage  Int
+  // ZCODE-M2: 学习闭环 profile（萃取时规则引擎建议，用户可改；六种预定义见 src/types/loop-profile.ts）
+  loopProfileId         String @default("concept-mastery")
+  // "ai-suggested" | "user-selected" | "default"（诚实标注分配来源）
+  loopProfileAssignedBy String @default("ai-suggested")
   createdAt   DateTime @default(now())
 
-  lesson HiDocLesson?
+  lesson ClewLesson?
 
   // M5: 该知识点的划重点/批注
-  highlights HiDocHighlight[]
+  highlights ClewHighlight[]
+  // ZCODE-M2: 知识点-证据绑定（知纲模式）
+  evidenceLinks ClewKnowledgePointEvidence[]
 
   @@index([chapterId, order])
+  // Table name kept as pre-migration HiDocKnowledgePoint to avoid DB drift
+  @@map("HiDocKnowledgePoint")
 }
 
-/// Hi doc M4: 知识点讲义（每个知识点至多一份，重新生成即覆盖）。
+/// Clew M4: 知识点讲义（每个知识点至多一份，重新生成即覆盖）。
 /// 生成方式如实入库（模型 id 或启发式兜底），原文片段一并保存供对话复用，避免每轮对话重解析 PDF。
-model HiDocLesson {
+model ClewLesson {
   id     String @id @default(cuid())
   kpId   String @unique
-  kp     HiDocKnowledgePoint @relation(fields: [kpId], references: [id], onDelete: Cascade)
+  kp     ClewKnowledgePoint @relation(fields: [kpId], references: [id], onDelete: Cascade)
 
   contentMd    String
   // 讲解风格："zh-primary"（M4 唯一实现）
@@ -163,10 +176,12 @@ model HiDocLesson {
   sourceExcerpt String
   generatedAt  DateTime @default(now())
   updatedAt    DateTime @updatedAt
+  // Table name kept as pre-migration HiDocLesson to avoid DB drift
+  @@map("HiDocLesson")
 }
 
-/// Hi doc M4: 讲解对话（私有挂 userId；kpId 可空，为 M6 课题工作坊预留）。
-model HiDocConversation {
+/// Clew M4: 讲解对话（私有挂 userId；kpId 可空，为 M6 课题工作坊预留）。
+model ClewConversation {
   id     String @id @default(cuid())
   userId String
   user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
@@ -174,7 +189,7 @@ model HiDocConversation {
   // kpId 维度（M4 讲解对话）与 workshopId 维度（M6 课题工作坊答疑）互斥：一条对话只属于其中一种
   kpId        String?
   workshopId  String?
-  workshop    HiDocWorkshop? @relation(fields: [workshopId], references: [id], onDelete: Cascade)
+  workshop    ClewWorkshop? @relation(fields: [workshopId], references: [id], onDelete: Cascade)
   // 对话消息 JSON（{ role, content, createdAt }[]），服务端裁剪保留最近若干轮
   messages  Json
   createdAt DateTime @default(now())
@@ -183,18 +198,20 @@ model HiDocConversation {
   @@unique([userId, kpId])
   @@unique([userId, workshopId])
   @@index([userId, updatedAt])
+  // Table name kept as pre-migration HiDocConversation to avoid DB drift
+  @@map("HiDocConversation")
 }
 
-/// Hi doc M5: 划重点/批注（私有挂 userId，随知识点级联删除）。
+/// Clew M5: 划重点/批注（私有挂 userId，随知识点级联删除）。
 /// quote/prefix/suffix 为讲义渲染文本中的选中文字与前后文定位上下文；anchor 存创建时的讲义版本（{ lessonUpdatedAt }），
 /// 讲义重新生成后失配的条目如实进入「未定位」，绝不伪造定位。
-model HiDocHighlight {
+model ClewHighlight {
   id     String @id @default(cuid())
   userId String
   user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   kpId String
-  kp   HiDocKnowledgePoint @relation(fields: [kpId], references: [id], onDelete: Cascade)
+  kp   ClewKnowledgePoint @relation(fields: [kpId], references: [id], onDelete: Cascade)
 
   quote  String
   prefix String
@@ -209,16 +226,18 @@ model HiDocHighlight {
   updatedAt DateTime @updatedAt
 
   @@index([userId, kpId])
+  // Table name kept as pre-migration HiDocHighlight to avoid DB drift
+  @@map("HiDocHighlight")
 }
 
-/// Hi doc M5: 学霸笔记（章级汇总：讲义 + 追问 + 划重点/批注；每用户每章一份，重新生成即覆盖）。
-model HiDocNote {
+/// Clew M5: 学霸笔记（章级汇总：讲义 + 追问 + 划重点/批注；每用户每章一份，重新生成即覆盖）。
+model ClewNote {
   id     String @id @default(cuid())
   userId String
   user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   chapterId String
-  chapter   HiDocChapter @relation(fields: [chapterId], references: [id], onDelete: Cascade)
+  chapter   ClewChapter @relation(fields: [chapterId], references: [id], onDelete: Cascade)
 
   contentMd String
   // 生成方式："model:dashscope:qwen3.7-plus" | "heuristic"
@@ -228,11 +247,13 @@ model HiDocNote {
 
   @@unique([userId, chapterId])
   @@index([userId, updatedAt])
+  // Table name kept as pre-migration HiDocNote to avoid DB drift
+  @@map("HiDocNote")
 }
 
-/// Hi doc M6: 课题工作坊（替代「我的资料」本地快练的短材料答疑空间；私有挂 userId）。
-/// 工作坊材料不占教材当月名额，但工作坊数量与每个工作坊的材料数按档位限制（见 src/lib/hidoc/workshop-rules.ts）。
-model HiDocWorkshop {
+/// Clew M6: 课题工作坊（替代「我的资料」本地快练的短材料答疑空间；私有挂 userId）。
+/// 工作坊材料不占教材当月名额，但工作坊数量与每个工作坊的材料数按档位限制（见 src/lib/clew/workshop-rules.ts）。
+model ClewWorkshop {
   id     String @id @default(cuid())
   userId String
   user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
@@ -243,22 +264,24 @@ model HiDocWorkshop {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  files         HiDocWorkshopFile[]
-  conversations HiDocConversation[]
+  files         ClewWorkshopFile[]
+  conversations ClewConversation[]
 
   @@index([userId, updatedAt])
+  // Table name kept as pre-migration HiDocWorkshop to avoid DB drift
+  @@map("HiDocWorkshop")
 }
 
-/// Hi doc M6: 课题工作坊材料（≤100 页短材料：有文字层 PDF / Markdown / 纯文本）。
-/// 服务器存储、按 userId 隔离（storageKey 复用 hidoc/{userId}/… 抽象）；上传即检测，不合格直接拒绝不落库。
+/// Clew M6: 课题工作坊材料（≤100 页短材料：有文字层 PDF / Markdown / 纯文本）。
+/// 服务器存储、按 userId 隔离（storageKey 复用 clew/{userId}/… 抽象）；上传即检测，不合格直接拒绝不落库。
 /// M6 不做 OCR：ocrStatus 如实存 "not-attempted"。
-model HiDocWorkshopFile {
+model ClewWorkshopFile {
   id         String        @id @default(cuid())
   workshopId String
-  workshop   HiDocWorkshop @relation(fields: [workshopId], references: [id], onDelete: Cascade)
+  workshop   ClewWorkshop @relation(fields: [workshopId], references: [id], onDelete: Cascade)
 
   fileName   String
-  // 存储抽象键（hidoc/{userId}/workshops/{workshopId}/{fileId}/{fileName}）
+  // 存储抽象键（clew/{userId}/workshops/{workshopId}/{fileId}/{fileName}）
   storageKey  String  @unique
   sizeBytes   Int
   // PDF 为真实页数；文本材料按行数折算（workshop-rules.ts 的行/页比）
@@ -275,13 +298,15 @@ model HiDocWorkshopFile {
   updatedAt DateTime @updatedAt
 
   @@index([workshopId])
+  // Table name kept as pre-migration HiDocWorkshopFile to avoid DB drift
+  @@map("HiDocWorkshopFile")
 }
 
-/// Hi doc M2: 教材章节（目录识别结果 / 手动修正结果；页码为 PDF 页序，1 起）。
-model HiDocChapter {
+/// Clew M2: 教材章节（目录识别结果 / 手动修正结果；页码为 PDF 页序，1 起）。
+model ClewChapter {
   id         String       @id @default(cuid())
   textbookId String
-  textbook   HiDocTextbook @relation(fields: [textbookId], references: [id], onDelete: Cascade)
+  textbook   ClewTextbook @relation(fields: [textbookId], references: [id], onDelete: Cascade)
 
   order     Int
   title     String
@@ -294,11 +319,13 @@ model HiDocChapter {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  knowledgePoints HiDocKnowledgePoint[]
+  knowledgePoints ClewKnowledgePoint[]
   // M5: 该章的学霸笔记（每用户每章一份）
-  notes           HiDocNote[]
+  notes           ClewNote[]
 
   @@index([textbookId, order])
+  // Table name kept as pre-migration HiDocChapter to avoid DB drift
+  @@map("HiDocChapter")
 }
 
 /// M4: 密码重置令牌（一次性，15 分钟过期）。
@@ -324,6 +351,117 @@ model EventLog {
 
   @@index([event, createdAt])
   @@index([userId])
+}
+
+/// ZCODE-M2 Phase 4: Clew 学习会话（Loop Profile 走环状态；服务器持久化，跨设备同步）。
+/// 一个活跃会话 = 一个用户在一个知识点上按某个 profile 走环；完成/放弃后归档。
+model ClewStudySession {
+  id        String @id @default(cuid())
+  userId    String
+  user      User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  textbookId String
+  chapterId  String?
+  kpId       String?
+
+  // LoopProfile（六种预定义之一；类型契约见 src/types/loop-profile.ts）
+  profileId         String
+  currentStageIndex Int    @default(0)
+  // Partial<Record<LoopStage, StageState>>
+  stageStates       Json
+
+  // "active" | "completed" | "abandoned"
+  status      String   @default("active")
+  startedAt   DateTime @default(now())
+  lastActiveAt DateTime @default(now())
+  completedAt DateTime?
+
+  @@index([userId, status])
+  @@index([userId, kpId, status])
+  @@index([userId, textbookId])
+}
+
+/// ZCODE-M2 Phase 2/4: 教材编译缓存（book-to-skill 预编译模式）。
+/// contentFingerprint 为教材内容 SHA-256：教材变化时重新编译。
+model ClewCompileCache {
+  id          String @id @default(cuid())
+  textbookId  String @unique
+
+  // "uploaded" | "toc_ready" | "chapters_ready" | "extracting" | "ready" | "failed"
+  state    String
+  progress Json? // ClewCompileProgress
+
+  // 缓存内容（预编译产物；命中时按需加载，不重复请求模型）
+  tocData    Json?
+  chapters   Json?
+  kpPackages Json? // 知识点数据包（含证据绑定引用）
+
+  contentFingerprint String
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([state])
+}
+
+/// ZCODE-M2 Phase 2/4: Clew 证据原子（知纲模式；页级原文，不可修改的真源）。
+model ClewEvidenceAtom {
+  id         String @id @default(cuid())
+  textbookId String
+  chapterId  String
+  pageNumber Int
+  text       String // 原文文本
+  contextBefore String?
+  contextAfter  String?
+
+  createdAt DateTime @default(now())
+
+  kpLinks ClewKnowledgePointEvidence[]
+
+  @@unique([chapterId, pageNumber])
+  @@index([textbookId, chapterId])
+}
+
+/// ZCODE-M2 Phase 4: Clew 知识点-证据绑定（多对多 + 主证据标记 + 相关度评分）。
+model ClewKnowledgePointEvidence {
+  id         String @id @default(cuid())
+  kpId       String
+  kp         ClewKnowledgePoint @relation(fields: [kpId], references: [id], onDelete: Cascade)
+  evidenceId String
+  evidence   ClewEvidenceAtom  @relation(fields: [evidenceId], references: [id], onDelete: Cascade)
+
+  isPrimary      Boolean @default(false)
+  relevanceScore Float?
+
+  createdAt DateTime @default(now())
+
+  @@unique([kpId, evidenceId])
+  @@index([kpId])
+}
+
+/// ZCODE-M3 Phase 1: 统一学习事件总线（跨官方课 / Clew / 题库；旁路记录，不阻塞主流程）。
+/// 写入幂等：每用户内 sourceKey 唯一（clew-session:{id}:… / attempt:{id} / qb-attempt:{contentKey}）。
+model UnifiedLearningEvent {
+  id      String @id @default(cuid())
+  userId  String
+  /// 事件发生时间（业务时间）
+  timestamp DateTime @default(now())
+  /// official-kp | clew-kp | qb-chapter
+  contentType String
+  /// official-kp → knowledgePointId；clew-kp → kpId；qb-chapter → "{courseSlug}/{chapterSlug}"
+  contentId   String
+  profileId   String
+  stage       String
+  eventType   String
+  payload     Json
+  /// 幂等键（每用户唯一）
+  sourceKey String
+
+  createdAt DateTime @default(now())
+
+  @@unique([userId, sourceKey])
+  @@index([userId, timestamp])
+  @@index([userId, contentType, contentId])
 }
 
 model LearnerAttempt {

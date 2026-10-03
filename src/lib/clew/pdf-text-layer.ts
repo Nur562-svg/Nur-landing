@@ -1,6 +1,6 @@
 import "server-only";
 
-import { openHiDocPdf } from "./pdf-document";
+import { openClewPdf } from "./pdf-document";
 
 /**
  * 服务端 PDF 文字层探测（复用 material-intake 的 pdfjs 文字层提取思路，只做检测不做块切分）。
@@ -13,7 +13,7 @@ const SAMPLE_PAGE_LIMIT = 6;
 /** 单页去空白后达到该字符数，即认为存在文字层。 */
 const MIN_TEXT_LENGTH_PER_PAGE = 20;
 
-export type HiDocPdfProbe =
+export type ClewPdfProbe =
   | { ok: true; pageCount: number; hasTextLayer: boolean }
   | { ok: false; code: "pdf-unreadable" | "probe-unavailable"; message: string };
 
@@ -28,8 +28,8 @@ function buildSamplePageNumbers(pageCount: number): number[] {
   return [...pages].sort((a, b) => a - b).slice(0, SAMPLE_PAGE_LIMIT);
 }
 
-export async function probeHiDocPdf(data: Uint8Array): Promise<HiDocPdfProbe> {
-  const runtime = await openHiDocPdf(data);
+export async function probeClewPdf(data: Uint8Array): Promise<ClewPdfProbe> {
+  const runtime = await openClewPdf(data);
   if (!runtime.ok) {
     return { ok: false, code: runtime.code, message: runtime.message };
   }

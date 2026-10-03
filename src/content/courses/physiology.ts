@@ -562,7 +562,7 @@ export const physiologyCourse = {
       displayLabel: "NUR 稳态学习结构",
       status: "available",
       missingLabel: null,
-      citation: { label: "NUR LEARN 内环境与稳态结构草案（非学校原题）", edition: null, page: null, slide: null, academicYear: null, url: null },
+      citation: { label: "Ariadne 内环境与稳态结构草案（非学校原题）", edition: null, page: null, slide: null, academicYear: null, url: null },
       verifiedAt: null,
     },
     {

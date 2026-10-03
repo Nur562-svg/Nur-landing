@@ -1,14 +1,14 @@
-import type { HiDocHighlightColor, HiDocHighlightPaintItem, HiDocHighlightSelection } from "@/types/hidoc";
-import { HIDOC_HIGHLIGHT_CONTEXT_MAX_CHARS, findHiDocQuoteMatch } from "./highlight-rules";
+import type { ClewHighlightColor, ClewHighlightPaintItem, ClewHighlightSelection } from "@/types/clew";
+import { CLEW_HIGHLIGHT_CONTEXT_MAX_CHARS, findClewQuoteMatch } from "./highlight-rules";
 
 /**
- * Hi doc 划重点 DOM 定位（仅浏览器端使用）：
+ * Clew 划重点 DOM 定位（仅浏览器端使用）：
  * 在渲染后的讲义 DOM 内用 quote + prefix/suffix 做文本定位，并通过 Range/textNode 包裹 `<mark>`。
  * 禁止 innerHTML 拼接（防注入）：所有操作都走 TreeWalker / splitText / insertBefore。
  */
 
-const MARK_ATTRIBUTE = "data-hidoc-highlight-id";
-const MARK_COLOR_ATTRIBUTE = "data-hidoc-swatch";
+const MARK_ATTRIBUTE = "data-clew-highlight-id";
+const MARK_COLOR_ATTRIBUTE = "data-clew-swatch";
 
 type TextSegment = { node: Text; start: number; end: number };
 
@@ -30,7 +30,7 @@ function collectTextSegments(root: HTMLElement): TextSegment[] {
 }
 
 /** 清除既有划线：把 <mark> 的文本节点放回原位并合并相邻文本节点（不改动 React 渲染的文本内容）。 */
-export function clearHiDocHighlightMarks(root: HTMLElement): void {
+export function clearClewHighlightMarks(root: HTMLElement): void {
   const marks = root.querySelectorAll(`mark[${MARK_ATTRIBUTE}]`);
   marks.forEach((mark) => {
     const parent = mark.parentNode;
@@ -49,8 +49,8 @@ function wrapRange(
   segments: readonly TextSegment[],
   start: number,
   end: number,
-  item: HiDocHighlightPaintItem,
-  swatchClassName: (color: HiDocHighlightColor) => string,
+  item: ClewHighlightPaintItem,
+  swatchClassName: (color: ClewHighlightColor) => string,
 ): boolean {
   const affected = segments.filter((segment) => segment.start < end && segment.end > start);
   if (affected.length === 0) {
@@ -84,7 +84,7 @@ function wrapRange(
   return true;
 }
 
-export type HiDocPaintResult = {
+export type ClewPaintResult = {
   locatedIds: string[];
   missingIds: string[];
 };
@@ -93,17 +93,17 @@ export type HiDocPaintResult = {
  * 逐条定位并划线：定位失败（讲义已更新 / 文本对不上）的条目返回 missingIds，
  * 由 UI 如实放进「未定位」列表，不做任何猜测式定位。
  */
-export function paintHiDocHighlights(
+export function paintClewHighlights(
   root: HTMLElement,
-  items: readonly HiDocHighlightPaintItem[],
-  swatchClassName: (color: HiDocHighlightColor) => string,
-): HiDocPaintResult {
+  items: readonly ClewHighlightPaintItem[],
+  swatchClassName: (color: ClewHighlightColor) => string,
+): ClewPaintResult {
   const locatedIds: string[] = [];
   const missingIds: string[] = [];
   for (const item of items) {
     const segments = collectTextSegments(root);
     const fullText = segments.map((segment) => segment.node.data).join("");
-    const match = findHiDocQuoteMatch(fullText, item.quote, item.prefix, item.suffix);
+    const match = findClewQuoteMatch(fullText, item.quote, item.prefix, item.suffix);
     if (!match || !wrapRange(segments, match.start, match.end, item, swatchClassName)) {
       missingIds.push(item.id);
       continue;
@@ -118,7 +118,7 @@ function normalizeContext(value: string): string {
 }
 
 /** 读取当前选区（必须落在讲义容器内）：quote + 选区前后文，供服务端定位与消歧。 */
-export function readHiDocSelection(root: HTMLElement | null): HiDocHighlightSelection | null {
+export function readClewSelection(root: HTMLElement | null): ClewHighlightSelection | null {
   if (!root) {
     return null;
   }
@@ -140,8 +140,8 @@ export function readHiDocSelection(root: HTMLElement | null): HiDocHighlightSele
     after.setStart(range.endContainer, range.endOffset);
     return {
       quote,
-      prefix: normalizeContext(before.toString().slice(-HIDOC_HIGHLIGHT_CONTEXT_MAX_CHARS)),
-      suffix: normalizeContext(after.toString().slice(0, HIDOC_HIGHLIGHT_CONTEXT_MAX_CHARS)),
+      prefix: normalizeContext(before.toString().slice(-CLEW_HIGHLIGHT_CONTEXT_MAX_CHARS)),
+      suffix: normalizeContext(after.toString().slice(0, CLEW_HIGHLIGHT_CONTEXT_MAX_CHARS)),
     };
   } catch {
     return null;
@@ -149,7 +149,7 @@ export function readHiDocSelection(root: HTMLElement | null): HiDocHighlightSele
 }
 
 /** 定位某条划线对应的 <mark>（用于「定位」跳转与编辑气泡定位）。 */
-export function findHiDocHighlightMark(root: HTMLElement, highlightId: string): HTMLElement | null {
+export function findClewHighlightMark(root: HTMLElement, highlightId: string): HTMLElement | null {
   const marks = root.querySelectorAll<HTMLElement>(`mark[${MARK_ATTRIBUTE}]`);
   for (const mark of marks) {
     if (mark.getAttribute(MARK_ATTRIBUTE) === highlightId) {

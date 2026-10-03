@@ -4,26 +4,26 @@ import Link from "next/link";
 import { useRef, useState } from "react";
 import { CircleAlert, FolderOpen, Loader2, Plus, Trash2 } from "lucide-react";
 import type { MembershipTier } from "@/types/auth";
-import type { HiDocApiFailure, HiDocWorkshopListView, HiDocWorkshopView } from "@/types/hidoc";
+import type { ClewApiFailure, ClewWorkshopListView, ClewWorkshopView } from "@/types/clew";
 import { getMembershipTierLabel } from "@/lib/membership";
-import { resolveHiDocGuide } from "@/lib/hidoc/step-guide";
+import { resolveClewGuide } from "@/lib/clew/step-guide";
 import { V2Button } from "@/components/ui/v2/button";
-import { HiDocPathGuide } from "./hi-doc-path-guide";
-import styles from "./hi-doc.module.css";
+import { ClewPathGuide } from "./clew-path-guide";
+import styles from "./clew.module.css";
 
 /**
- * Hi doc 课题工作坊列表（客户端）：限额 + 新建 + 列表 + 删除。
+ * Clew 课题工作坊列表（客户端）：限额 + 新建 + 列表 + 删除。
  * 全部操作走服务端 API；工作坊材料不占教材当月名额。
  */
 
-type HiDocWorkshopListProps = {
-  initialList: HiDocWorkshopListView;
+type ClewWorkshopListProps = {
+  initialList: ClewWorkshopListView;
   tier: MembershipTier;
 };
 
-type ListResponse = { ok: true } & HiDocWorkshopListView | HiDocApiFailure;
+type ListResponse = { ok: true } & ClewWorkshopListView | ClewApiFailure;
 
-export function HiDocWorkshopList({ initialList, tier }: HiDocWorkshopListProps) {
+export function ClewWorkshopList({ initialList, tier }: ClewWorkshopListProps) {
   const [list, setList] = useState(initialList);
   const [title, setTitle] = useState("");
   const [note, setNote] = useState("");
@@ -52,7 +52,7 @@ export function HiDocWorkshopList({ initialList, tier }: HiDocWorkshopListProps)
     setBusy("create");
     setError(null);
     try {
-      const response = await fetch("/api/hidoc/workshops", {
+      const response = await fetch("/api/clew/workshops", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ title: title.trim(), note: note.trim() || undefined }),
@@ -72,7 +72,7 @@ export function HiDocWorkshopList({ initialList, tier }: HiDocWorkshopListProps)
     }
   }
 
-  async function onDelete(workshop: HiDocWorkshopView) {
+  async function onDelete(workshop: ClewWorkshopView) {
     if (busy !== null) {
       return;
     }
@@ -85,7 +85,7 @@ export function HiDocWorkshopList({ initialList, tier }: HiDocWorkshopListProps)
     setBusy("delete");
     setError(null);
     try {
-      const response = await fetch(`/api/hidoc/workshops?id=${encodeURIComponent(workshop.id)}`, {
+      const response = await fetch(`/api/clew/workshops?id=${encodeURIComponent(workshop.id)}`, {
         method: "DELETE",
       });
       const failureMessage = await readListResponse(response);
@@ -101,7 +101,7 @@ export function HiDocWorkshopList({ initialList, tier }: HiDocWorkshopListProps)
 
   return (
     <div className={styles.shelfLayout}>
-      <HiDocPathGuide guide={resolveHiDocGuide({ surface: "workshop" })} />
+      <ClewPathGuide guide={resolveClewGuide({ surface: "workshop" })} />
       <section className={styles.quotaPanel} aria-label="课题工作坊限额">
         <div className={styles.quotaCopy}>
           <p className={styles.quotaLabel}>课题限额 · 当前档位 {getMembershipTierLabel(tier)}</p>
@@ -116,9 +116,9 @@ export function HiDocWorkshopList({ initialList, tier }: HiDocWorkshopListProps)
         </div>
       </section>
 
-      <section className={styles.uploadPanel} id="ask" aria-labelledby="hidoc-workshop-create-title">
+      <section className={styles.uploadPanel} id="ask" aria-labelledby="clew-workshop-create-title">
         <div className={styles.panelHead}>
-          <h2 id="hidoc-workshop-create-title">新建课题</h2>
+          <h2 id="clew-workshop-create-title">新建课题</h2>
           <p>围绕一个主题上传短材料（带文字层 PDF / Markdown / 纯文本），然后就材料追问</p>
         </div>
         <div className={styles.uploadRow}>
@@ -164,9 +164,9 @@ export function HiDocWorkshopList({ initialList, tier }: HiDocWorkshopListProps)
         ) : null}
       </section>
 
-      <section className={styles.textbookSection} aria-labelledby="hidoc-workshop-list-title">
+      <section className={styles.textbookSection} aria-labelledby="clew-workshop-list-title">
         <div className={styles.sectionHead}>
-          <h2 id="hidoc-workshop-list-title">我的课题</h2>
+          <h2 id="clew-workshop-list-title">我的课题</h2>
           <span>{list.workshops.length} 个</span>
         </div>
         {list.workshops.length === 0 ? (
@@ -179,7 +179,7 @@ export function HiDocWorkshopList({ initialList, tier }: HiDocWorkshopListProps)
               <li key={workshop.id} className={styles.textbookCard}>
                 <div className={styles.textbookMain}>
                   <p className={styles.textbookTitle}>
-                    <Link href={`/learn/hi-doc/w/${workshop.id}`}>{workshop.title}</Link>
+                    <Link href={`/learn/clew/w/${workshop.id}`}>{workshop.title}</Link>
                   </p>
                   <p className={styles.textbookMeta}>
                     {workshop.fileCount} 份材料 · 更新于 {workshop.updatedAt.slice(0, 10)}
@@ -187,7 +187,7 @@ export function HiDocWorkshopList({ initialList, tier }: HiDocWorkshopListProps)
                   {workshop.note ? <p className={styles.textbookState}>{workshop.note}</p> : null}
                 </div>
                 <div className={styles.textbookActions}>
-                  <Link className={styles.ghostButton} href={`/learn/hi-doc/w/${workshop.id}`}>
+                  <Link className={styles.ghostButton} href={`/learn/clew/w/${workshop.id}`}>
                     <FolderOpen aria-hidden="true" size={15} strokeWidth={1.6} />
                     进入课题
                   </Link>
@@ -209,7 +209,7 @@ export function HiDocWorkshopList({ initialList, tier }: HiDocWorkshopListProps)
 
       <p className={styles.footNote}>
         课题工作坊由原「我的资料」升级而来：材料存服务器且仅本人可见，可跨设备继续。返回{" "}
-        <Link href="/learn/hi-doc">教材书架</Link>。
+        <Link href="/learn/clew">教材书架</Link>。
       </p>
     </div>
   );

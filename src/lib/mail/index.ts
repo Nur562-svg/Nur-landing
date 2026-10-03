@@ -53,7 +53,7 @@ async function createSmtpProvider(): Promise<MailProvider> {
     async send(message: MailMessage) {
       try {
         await transport.sendMail({
-          from: process.env.SMTP_FROM ?? "NUR LEARN <noreply@nur-learn.example.com>",
+          from: process.env.SMTP_FROM ?? "Ariadne <noreply@nur-learn.example.com>",
           to: message.to,
           subject: message.subject,
           text: message.text,

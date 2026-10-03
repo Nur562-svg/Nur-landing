@@ -16,7 +16,7 @@ export function assertNodeRuntimeDatabaseUrl(options: {
   const url = options.databaseUrl?.trim() ?? "";
   if (!isPostgresConnectionString(url)) {
     throw new Error(
-      "NUR LEARN 生产环境必须使用 Postgres DATABASE_URL（postgresql://...），禁止 sqlite。",
+      "Ariadne 生产环境必须使用 Postgres DATABASE_URL（postgresql://...），禁止 sqlite。",
     );
   }
 }

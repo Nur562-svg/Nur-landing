@@ -12,31 +12,31 @@ import {
   Trash2,
 } from "lucide-react";
 import type {
-  HiDocApiFailure,
-  HiDocChatMessage,
-  HiDocWorkshopChatEvent,
-  HiDocWorkshopCitation,
-  HiDocWorkshopDetailView,
-  HiDocWorkshopFileView,
-} from "@/types/hidoc";
-import { consumeHiDocSse, readHiDocFailure } from "@/lib/hidoc/client-api";
-import { resolveHiDocGuide } from "@/lib/hidoc/step-guide";
-import { HiDocMarkdown } from "./hi-doc-markdown";
-import { HiDocPathGuide } from "./hi-doc-path-guide";
+  ClewApiFailure,
+  ClewChatMessage,
+  ClewWorkshopChatEvent,
+  ClewWorkshopCitation,
+  ClewWorkshopDetailView,
+  ClewWorkshopFileView,
+} from "@/types/clew";
+import { consumeClewSse, readClewFailure } from "@/lib/clew/client-api";
+import { resolveClewGuide } from "@/lib/clew/step-guide";
+import { ClewMarkdown } from "./clew-markdown";
+import { ClewPathGuide } from "./clew-path-guide";
 import { V2Badge } from "@/components/ui/v2/badge";
 import { V2Button } from "@/components/ui/v2/button";
-import styles from "./hi-doc.module.css";
+import styles from "./clew.module.css";
 
 /**
- * Hi doc 课题工作坊房间（客户端）：材料上传/清单/删除 + 就材料追问（SSE 流式，命中片段如实展示）。
+ * Clew 课题工作坊房间（客户端）：材料上传/清单/删除 + 就材料追问（SSE 流式，命中片段如实展示）。
  * 所有校验与检索都在服务端；这里只负责展示与事件解析。
  */
 
-type HiDocWorkshopRoomProps = {
-  initialDetail: HiDocWorkshopDetailView;
+type ClewWorkshopRoomProps = {
+  initialDetail: ClewWorkshopDetailView;
 };
 
-type DetailResponse = { ok: true; detail: HiDocWorkshopDetailView } | HiDocApiFailure;
+type DetailResponse = { ok: true; detail: ClewWorkshopDetailView } | ClewApiFailure;
 
 function formatSize(sizeBytes: number): string {
   if (sizeBytes >= 1024 * 1024) {
@@ -45,7 +45,7 @@ function formatSize(sizeBytes: number): string {
   return `${Math.max(1, Math.round(sizeBytes / 1024))} KB`;
 }
 
-function describeFileState(file: HiDocWorkshopFileView): string {
+function describeFileState(file: ClewWorkshopFileView): string {
   if (file.status === "ready") {
     return "可检索";
   }
@@ -55,18 +55,18 @@ function describeFileState(file: HiDocWorkshopFileView): string {
   return "已上传";
 }
 
-export function HiDocWorkshopRoom({ initialDetail }: HiDocWorkshopRoomProps) {
+export function ClewWorkshopRoom({ initialDetail }: ClewWorkshopRoomProps) {
   const [detail, setDetail] = useState(initialDetail);
   const [file, setFile] = useState<File | null>(null);
   const [uploadError, setUploadError] = useState<string | null>(null);
   const [uploading, setUploading] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const [messages, setMessages] = useState<HiDocChatMessage[]>(initialDetail.messages);
+  const [messages, setMessages] = useState<ClewChatMessage[]>(initialDetail.messages);
   const [chatDraft, setChatDraft] = useState("");
   const [chatError, setChatError] = useState<string | null>(null);
   const [chatNotes, setChatNotes] = useState<string[]>([]);
-  const [citations, setCitations] = useState<HiDocWorkshopCitation[]>([]);
+  const [citations, setCitations] = useState<ClewWorkshopCitation[]>([]);
   const [progressLog, setProgressLog] = useState<string[]>([]);
   const [streaming, setStreaming] = useState(false);
   const chatListRef = useRef<HTMLDivElement>(null);
@@ -103,7 +103,7 @@ export function HiDocWorkshopRoom({ initialDetail }: HiDocWorkshopRoomProps) {
     try {
       const formData = new FormData();
       formData.append("file", file);
-      const response = await fetch(`/api/hidoc/workshops/${workshop.id}/files`, {
+      const response = await fetch(`/api/clew/workshops/${workshop.id}/files`, {
         method: "POST",
         body: formData,
       });
@@ -123,7 +123,7 @@ export function HiDocWorkshopRoom({ initialDetail }: HiDocWorkshopRoomProps) {
     }
   }
 
-  async function onDeleteFile(item: HiDocWorkshopFileView) {
+  async function onDeleteFile(item: ClewWorkshopFileView) {
     if (uploading || streaming) {
       return;
     }
@@ -134,7 +134,7 @@ export function HiDocWorkshopRoom({ initialDetail }: HiDocWorkshopRoomProps) {
     setUploadError(null);
     try {
       const response = await fetch(
-        `/api/hidoc/workshops/${workshop.id}/files?fileId=${encodeURIComponent(item.id)}`,
+        `/api/clew/workshops/${workshop.id}/files?fileId=${encodeURIComponent(item.id)}`,
         { method: "DELETE" },
       );
       const failureMessage = await readDetailResponse(response);
@@ -164,7 +164,7 @@ export function HiDocWorkshopRoom({ initialDetail }: HiDocWorkshopRoomProps) {
     let answer = "";
 
     try {
-      const response = await fetch(`/api/hidoc/workshops/${workshop.id}/chat`, {
+      const response = await fetch(`/api/clew/workshops/${workshop.id}/chat`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ message: question }),
@@ -172,15 +172,15 @@ export function HiDocWorkshopRoom({ initialDetail }: HiDocWorkshopRoomProps) {
       if (!response.ok || !response.body) {
         let message = "答疑失败：服务暂时不可用，请稍后重试。";
         try {
-          message = readHiDocFailure(await response.json());
+          message = readClewFailure(await response.json());
         } catch {
           // 保持默认提示
         }
         setChatError(message);
         return;
       }
-      await consumeHiDocSse(response, (raw) => {
-        const event = raw as HiDocWorkshopChatEvent;
+      await consumeClewSse(response, (raw) => {
+        const event = raw as ClewWorkshopChatEvent;
         if (event.type === "progress") {
           setProgressLog((log) => [...log, event.message]);
         } else if (event.type === "delta") {
@@ -214,10 +214,10 @@ export function HiDocWorkshopRoom({ initialDetail }: HiDocWorkshopRoomProps) {
 
   return (
     <div className={styles.shelfLayout}>
-      <HiDocPathGuide guide={resolveHiDocGuide({ surface: "workshop", workshopId: workshop.id })} />
-      <section className={styles.uploadPanel} aria-labelledby="hidoc-workshop-upload-title">
+      <ClewPathGuide guide={resolveClewGuide({ surface: "workshop", workshopId: workshop.id })} />
+      <section className={styles.uploadPanel} aria-labelledby="clew-workshop-upload-title">
         <div className={styles.panelHead}>
-          <h2 id="hidoc-workshop-upload-title">上传材料</h2>
+          <h2 id="clew-workshop-upload-title">上传材料</h2>
           <p>
             带文字层 PDF / Markdown / 纯文本 · 单份不超过 {detail.limits.maxPagesPerFile} 页 ·
             本课题 {detail.files.length}/{detail.limits.filesPerWorkshopLimit} 份
@@ -258,9 +258,9 @@ export function HiDocWorkshopRoom({ initialDetail }: HiDocWorkshopRoomProps) {
         ) : null}
       </section>
 
-      <section className={styles.textbookSection} aria-labelledby="hidoc-workshop-files-title">
+      <section className={styles.textbookSection} aria-labelledby="clew-workshop-files-title">
         <div className={styles.sectionHead}>
-          <h2 id="hidoc-workshop-files-title">课题材料</h2>
+          <h2 id="clew-workshop-files-title">课题材料</h2>
           <span>{detail.files.length} 份</span>
         </div>
         {detail.files.length === 0 ? (
@@ -298,9 +298,9 @@ export function HiDocWorkshopRoom({ initialDetail }: HiDocWorkshopRoomProps) {
         )}
       </section>
 
-      <section className={styles.chatPanel} id="ask" aria-labelledby="hidoc-workshop-chat-title">
+      <section className={styles.chatPanel} id="ask" aria-labelledby="clew-workshop-chat-title">
         <div className={styles.panelHead}>
-          <h2 id="hidoc-workshop-chat-title">
+          <h2 id="clew-workshop-chat-title">
             <MessageSquareText aria-hidden="true" size={17} strokeWidth={1.6} />
             就材料追问
           </h2>
@@ -324,7 +324,7 @@ export function HiDocWorkshopRoom({ initialDetail }: HiDocWorkshopRoomProps) {
                 <div className={styles.chatBubble}>
                   {message.role === "assistant" ? (
                     <div className={styles.chatMarkdown}>
-                      <HiDocMarkdown markdown={message.content} />
+                      <ClewMarkdown markdown={message.content} />
                     </div>
                   ) : (
                     message.content
@@ -339,7 +339,7 @@ export function HiDocWorkshopRoom({ initialDetail }: HiDocWorkshopRoomProps) {
               <div className={styles.chatBubble}>
                 {streamingTail ? (
                   <div className={styles.chatMarkdown}>
-                    <HiDocMarkdown markdown={streamingTail.content} />
+                    <ClewMarkdown markdown={streamingTail.content} />
                   </div>
                 ) : (
                   "正在检索材料…"
@@ -431,7 +431,7 @@ export function HiDocWorkshopRoom({ initialDetail }: HiDocWorkshopRoomProps) {
 
       <p className={styles.footNote}>
         回答只依据本课题材料的命中片段；材料未覆盖的内容会如实说明，不做联网搜索。返回{" "}
-        <Link href="/learn/hi-doc/w">课题列表</Link>。
+        <Link href="/learn/clew/w">课题列表</Link>。
       </p>
     </div>
   );

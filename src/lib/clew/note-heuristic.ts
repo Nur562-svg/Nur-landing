@@ -1,31 +1,31 @@
-import type { HiDocHighlightColor, HiDocLessonGenerator } from "@/types/hidoc";
-import { parseHiDocMarkdown } from "./lesson-markdown";
-import { describeHiDocLessonGenerator, HIDOC_LESSON_STYLE_LABELS } from "./lesson-heuristic";
-import { formatHiDocPageRange, formatHiDocSourcePage } from "./source-label";
+import type { ClewHighlightColor, ClewLessonGenerator } from "@/types/clew";
+import { parseClewMarkdown } from "./lesson-markdown";
+import { describeClewLessonGenerator, CLEW_LESSON_STYLE_LABELS } from "./lesson-heuristic";
+import { formatClewPageRange, formatClewSourcePage } from "./source-label";
 
 /**
- * Hi doc 学霸笔记规则层（纯函数，客户端可安全引用）：
+ * Clew 学霸笔记规则层（纯函数，客户端可安全引用）：
  * 章级笔记上下文 → 模型输入 / 启发式笔记的确定性拼装、结构校验、下载文件名。
  * 只汇总真实存在的讲义、追问、划重点与批注；缺失即如实略去，不编造「你曾问到…」。
  */
 
 /** 单份讲义进入笔记上下文的字符上限（超出即截断并如实标注）。 */
-export const HIDOC_NOTE_LESSON_SOURCE_MAX_CHARS = 2000;
+export const CLEW_NOTE_LESSON_SOURCE_MAX_CHARS = 2000;
 
 /** 笔记页首声明（未接入模型 / AI 生成）。 */
-export const HIDOC_HEURISTIC_NOTE_NOTICE =
+export const CLEW_HEURISTIC_NOTE_NOTICE =
   "本笔记未调用模型：内容由讲义要点、划重点、批注与追问记录确定性地汇总，请对照教材与讲义核对。";
 
-export const HIDOC_MODEL_NOTE_NOTICE = "AI 汇总笔记，请对照教材与讲义核对；不是教师讲义或标准答案。";
+export const CLEW_MODEL_NOTE_NOTICE = "AI 汇总笔记，请对照教材与讲义核对；不是教师讲义或标准答案。";
 
-export type HiDocNoteHighlightEntry = {
+export type ClewNoteHighlightEntry = {
   quote: string;
   note: string | null;
-  color: HiDocHighlightColor;
+  color: ClewHighlightColor;
 };
 
 /** 单个知识点进入笔记的聚合上下文。 */
-export type HiDocNotePoint = {
+export type ClewNotePoint = {
   id: string;
   order: number;
   title: string;
@@ -37,11 +37,11 @@ export type HiDocNotePoint = {
   /** 该知识点下学习者的追问（仅 user 消息原文，按时间序）。 */
   questions: string[];
   /** 该知识点的划重点/批注。 */
-  highlights: HiDocNoteHighlightEntry[];
+  highlights: ClewNoteHighlightEntry[];
 };
 
 /** 章级笔记聚合上下文（服务端读取，纯函数消费）。 */
-export type HiDocNoteContext = {
+export type ClewNoteContext = {
   textbookTitle: string;
   chapterOrder: number;
   chapterTotal: number;
@@ -50,11 +50,11 @@ export type HiDocNoteContext = {
   pageEnd: number;
   /** 有文件名且为 DOCX 时，页码范围与知识点出处都写「页码待确认」。 */
   fileName?: string;
-  points: HiDocNotePoint[];
+  points: ClewNotePoint[];
 };
 
 /** 送入模型的单知识点输入（讲义已压缩为要点/易错点/自测题片段）。 */
-export type HiDocNoteModelPoint = {
+export type ClewNoteModelPoint = {
   order: number;
   title: string;
   description: string;
@@ -66,12 +66,12 @@ export type HiDocNoteModelPoint = {
   highlights: { quote: string; note: string | null }[];
 };
 
-export type HiDocNoteModelInput = {
+export type ClewNoteModelInput = {
   textbookTitle: string;
   chapterTitle: string;
   chapterPosition: string;
   pageRange: string;
-  points: HiDocNoteModelPoint[];
+  points: ClewNoteModelPoint[];
   hasAnyLesson: boolean;
   hasAnyConversation: boolean;
   hasAnyHighlight: boolean;
@@ -90,7 +90,7 @@ function stripHeadingDecoration(line: string): string {
 }
 
 function extractLessonSection(markdown: string, sectionTitle: string): LessonSectionContent {
-  const blocks = parseHiDocMarkdown(markdown);
+  const blocks = parseClewMarkdown(markdown);
   const result: LessonSectionContent = { bullets: [], paragraphs: [] };
   let inSection = false;
   for (const block of blocks) {
@@ -123,7 +123,7 @@ export function extractLessonSelfTestItems(markdown: string): string[] {
  */
 export function extractLessonNoteSource(
   markdown: string,
-  maxChars: number = HIDOC_NOTE_LESSON_SOURCE_MAX_CHARS,
+  maxChars: number = CLEW_NOTE_LESSON_SOURCE_MAX_CHARS,
 ): { source: string; truncated: boolean } {
   const sections = ["定义", "要点", "易错点", "自测题"] as const;
   const parts: string[] = [];
@@ -145,12 +145,12 @@ export function extractLessonNoteSource(
 
 /* ---------------- 模型输入构建 ---------------- */
 
-export function buildHiDocNoteModelInput(context: HiDocNoteContext): {
-  input: HiDocNoteModelInput;
+export function buildClewNoteModelInput(context: ClewNoteContext): {
+  input: ClewNoteModelInput;
   notes: string[];
 } {
   const notes: string[] = [];
-  const points: HiDocNoteModelPoint[] = context.points.map((point) => {
+  const points: ClewNoteModelPoint[] = context.points.map((point) => {
     let lessonSource: string | null = null;
     let lessonTruncated = false;
     if (point.lessonMarkdown) {
@@ -185,7 +185,7 @@ export function buildHiDocNoteModelInput(context: HiDocNoteContext): {
       textbookTitle: context.textbookTitle,
       chapterTitle: context.chapterTitle,
       chapterPosition: `第 ${context.chapterOrder}/${context.chapterTotal} 章`,
-      pageRange: formatHiDocPageRange(context.fileName ?? "", context.pageStart, context.pageEnd),
+      pageRange: formatClewPageRange(context.fileName ?? "", context.pageStart, context.pageEnd),
       points,
       hasAnyLesson: context.points.some((point) => point.lessonMarkdown !== null),
       hasAnyConversation: context.points.some((point) => point.questions.length > 0),
@@ -197,13 +197,13 @@ export function buildHiDocNoteModelInput(context: HiDocNoteContext): {
 
 /* ---------------- 结构校验（模型输出与启发式共用） ---------------- */
 
-export type HiDocNoteStructure = {
+export type ClewNoteStructure = {
   hasOverview: boolean;
   hasSelfTestSummary: boolean;
   pointSectionCount: number;
 };
 
-export function inspectHiDocNote(markdown: string): HiDocNoteStructure {
+export function inspectClewNote(markdown: string): ClewNoteStructure {
   const lines = markdown.replace(/\r\n/g, "\n").split("\n");
   let hasOverview = false;
   let hasSelfTestSummary = false;
@@ -231,15 +231,15 @@ export function inspectHiDocNote(markdown: string): HiDocNoteStructure {
   return { hasOverview, hasSelfTestSummary, pointSectionCount };
 }
 
-export type HiDocNoteValidation = {
+export type ClewNoteValidation = {
   ok: boolean;
-  structure: HiDocNoteStructure;
+  structure: ClewNoteStructure;
   reason: string | null;
 };
 
 /** 模型笔记结构校验：章首导读与自测题汇总必须存在，且至少有一个知识点小节。 */
-export function validateGeneratedNote(markdown: string): HiDocNoteValidation {
-  const structure = inspectHiDocNote(markdown);
+export function validateGeneratedNote(markdown: string): ClewNoteValidation {
+  const structure = inspectClewNote(markdown);
   if (!structure.hasOverview) {
     return { ok: false, structure, reason: "缺少「章首导读」小节" };
   }
@@ -254,27 +254,27 @@ export function validateGeneratedNote(markdown: string): HiDocNoteValidation {
 
 /* ---------------- 启发式笔记（无模型时的确定性拼装） ---------------- */
 
-export type HiDocHeuristicNoteInput = {
-  context: HiDocNoteContext;
+export type ClewHeuristicNoteInput = {
+  context: ClewNoteContext;
   /** 由调用方格式化好的时间标签（纯函数不做时区假设）。 */
   generatedAtLabel: string;
 };
 
 /** 笔记固定页首（模型与启发式共用，保证生成方式与来源可溯源）。 */
-export function buildHiDocNoteHeader(input: {
+export function buildClewNoteHeader(input: {
   title: string;
-  generator: HiDocLessonGenerator;
+  generator: ClewLessonGenerator;
   generatedAtLabel: string;
-  context: HiDocNoteContext;
+  context: ClewNoteContext;
   notice: string;
 }): string {
   const { context } = input;
   return [
     `# ${input.title}`,
     "",
-    `> 生成方式：${describeHiDocLessonGenerator(input.generator)}`,
-    `> 风格：${HIDOC_LESSON_STYLE_LABELS["zh-primary"]} · 生成时间：${input.generatedAtLabel}`,
-    `> 教材：《${context.textbookTitle}》· 第 ${context.chapterOrder}/${context.chapterTotal} 章 · ${formatHiDocPageRange(context.fileName ?? "", context.pageStart, context.pageEnd)}`,
+    `> 生成方式：${describeClewLessonGenerator(input.generator)}`,
+    `> 风格：${CLEW_LESSON_STYLE_LABELS["zh-primary"]} · 生成时间：${input.generatedAtLabel}`,
+    `> 教材：《${context.textbookTitle}》· 第 ${context.chapterOrder}/${context.chapterTotal} 章 · ${formatClewPageRange(context.fileName ?? "", context.pageStart, context.pageEnd)}`,
     `> ${input.notice}`,
     "",
   ].join("\n");
@@ -292,28 +292,28 @@ function formatQuoteExcerpt(quote: string): string {
  * 未接入模型时的启发式学霸笔记：只重排讲义要点、划重点、批注与追问记录，
  * 缺失的小节（无划重点/无批注/无追问/未生成讲义）如实略去或说明，不编造。
  */
-export function buildHeuristicHiDocNote(input: HiDocHeuristicNoteInput): string {
+export function buildHeuristicClewNote(input: ClewHeuristicNoteInput): string {
   const { context, generatedAtLabel } = input;
   const points = [...context.points].sort((a, b) => a.order - b.order);
   const lessonCount = points.filter((point) => point.lessonMarkdown !== null).length;
 
   const overviewLines = [
-    `本章覆盖教材${formatHiDocPageRange(context.fileName ?? "", context.pageStart, context.pageEnd)}，共 ${points.length} 个知识点，其中 ${lessonCount} 个已生成讲义。`,
+    `本章覆盖教材${formatClewPageRange(context.fileName ?? "", context.pageStart, context.pageEnd)}，共 ${points.length} 个知识点，其中 ${lessonCount} 个已生成讲义。`,
     ...points.map(
       (point) =>
-        `- ${String(point.order).padStart(2, "0")} ${point.title}（${formatHiDocSourcePage(context.fileName ?? "", point.sourcePage)}${
+        `- ${String(point.order).padStart(2, "0")} ${point.title}（${formatClewSourcePage(context.fileName ?? "", point.sourcePage)}${
           point.lessonMarkdown ? "" : " · 未生成讲义"
         }）`,
     ),
   ];
 
   const parts: string[] = [
-    buildHiDocNoteHeader({
+    buildClewNoteHeader({
       title: `${context.chapterTitle} · 学霸笔记`,
       generator: { kind: "heuristic" },
       generatedAtLabel,
       context,
-      notice: HIDOC_HEURISTIC_NOTE_NOTICE,
+      notice: CLEW_HEURISTIC_NOTE_NOTICE,
     }),
     "## 章首导读",
     ...overviewLines,
@@ -397,7 +397,7 @@ function sanitizeFileNamePart(value: string): string {
 }
 
 /** 下载文件名：{教材名}-{章节名}-学霸笔记.md（不落服务器文件存储）。 */
-export function buildHiDocNoteFileName(textbookTitle: string, chapterTitle: string): string {
+export function buildClewNoteFileName(textbookTitle: string, chapterTitle: string): string {
   const textbook = sanitizeFileNamePart(textbookTitle) || "教材";
   const chapter = sanitizeFileNamePart(chapterTitle) || "章节";
   return `${textbook}-${chapter}-学霸笔记.md`;

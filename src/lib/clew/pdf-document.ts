@@ -5,7 +5,7 @@ import path from "node:path";
 import { pathToFileURL } from "node:url";
 
 /**
- * Hi doc 服务端 PDF 运行时（server-only）：统一 pdfjs 加载与 worker 解析。
+ * Clew 服务端 PDF 运行时（server-only）：统一 pdfjs 加载与 worker 解析。
  * pdfjs 在 Node 下用「fake worker」：库本体可以被 webpack 打包，但 worker 是独立文件，
  * 必须把 GlobalWorkerOptions.workerSrc 指到 node_modules 里的真实 pdf.worker.mjs
  * （打包后的默认相对路径会失效）。该文件通过 next.config.ts 的 outputFileTracingIncludes
@@ -25,10 +25,10 @@ const PDF_WORKER_RELATIVE_PATH = path.join(
 type PdfjsModule = typeof import("pdfjs-dist/legacy/build/pdf.mjs");
 type PdfLoadingTask = ReturnType<PdfjsModule["getDocument"]>;
 /** 已打开的 PDF 文档（pdfjs PDFDocumentProxy）。 */
-export type HiDocPdfDocument = Awaited<PdfLoadingTask["promise"]>;
+export type ClewPdfDocument = Awaited<PdfLoadingTask["promise"]>;
 
-export type HiDocPdfRuntime =
-  | { ok: true; document: HiDocPdfDocument; release: () => Promise<void> }
+export type ClewPdfRuntime =
+  | { ok: true; document: ClewPdfDocument; release: () => Promise<void> }
   | { ok: false; code: "pdf-unreadable" | "probe-unavailable"; message: string };
 
 function resolvePdfWorkerSrc(): string | null {
@@ -36,7 +36,7 @@ function resolvePdfWorkerSrc(): string | null {
   return existsSync(workerPath) ? pathToFileURL(workerPath).href : null;
 }
 
-export async function openHiDocPdf(data: Uint8Array): Promise<HiDocPdfRuntime> {
+export async function openClewPdf(data: Uint8Array): Promise<ClewPdfRuntime> {
   const workerSrc = resolvePdfWorkerSrc();
   if (!workerSrc) {
     return {
@@ -67,14 +67,14 @@ export async function openHiDocPdf(data: Uint8Array): Promise<HiDocPdfRuntime> {
 }
 
 /** 书签条目（PDF 自带 outline）；pageNumber 为 null 表示目标页无法解析。 */
-export type HiDocPdfOutlineEntry = {
+export type ClewPdfOutlineEntry = {
   title: string;
   level: number;
   pageNumber: number | null;
 };
 
 /** 单页文字层（按行切分，供目录页解析使用）。 */
-export type HiDocPdfPageText = {
+export type ClewPdfPageText = {
   pageNumber: number;
   lines: string[];
 };
@@ -89,7 +89,7 @@ function isRefProxy(value: unknown): value is { num: number; gen: number } {
 }
 
 async function resolveDestinationPageNumber(
-  document: HiDocPdfDocument,
+  document: ClewPdfDocument,
   dest: unknown,
 ): Promise<number | null> {
   try {
@@ -111,11 +111,11 @@ async function resolveDestinationPageNumber(
   }
 }
 
-export async function readHiDocPdfOutline(
-  document: HiDocPdfDocument,
-): Promise<HiDocPdfOutlineEntry[]> {
+export async function readClewPdfOutline(
+  document: ClewPdfDocument,
+): Promise<ClewPdfOutlineEntry[]> {
   // pdfjs 类型标注为数组，但运行时可能返回 null（无书签）。
-  let outline: Awaited<ReturnType<HiDocPdfDocument["getOutline"]>> | null = null;
+  let outline: Awaited<ReturnType<ClewPdfDocument["getOutline"]>> | null = null;
   try {
     outline = await document.getOutline();
   } catch {
@@ -125,7 +125,7 @@ export async function readHiDocPdfOutline(
     return [];
   }
 
-  const entries: HiDocPdfOutlineEntry[] = [];
+  const entries: ClewPdfOutlineEntry[] = [];
   const maxEntries = 500;
 
   const walk = async (
@@ -155,17 +155,17 @@ export async function readHiDocPdfOutline(
 }
 
 /** 读取指定页区间的文字层（按行）；fromPage 1 起，含端点。 */
-export async function readHiDocPdfPageRange(
-  document: HiDocPdfDocument,
+export async function readClewPdfPageRange(
+  document: ClewPdfDocument,
   options: {
     fromPage: number;
     toPage: number;
     itemsToLines: (items: readonly { str?: string; hasEOL?: boolean }[]) => string[];
   },
-): Promise<HiDocPdfPageText[]> {
+): Promise<ClewPdfPageText[]> {
   const from = Math.max(1, Math.min(document.numPages, options.fromPage));
   const to = Math.max(from, Math.min(document.numPages, options.toPage));
-  const pages: HiDocPdfPageText[] = [];
+  const pages: ClewPdfPageText[] = [];
   for (let pageNumber = from; pageNumber <= to; pageNumber += 1) {
     const page = await document.getPage(pageNumber);
     const textContent = await page.getTextContent({ includeMarkedContent: false });
@@ -180,12 +180,12 @@ export async function readHiDocPdfPageRange(
 }
 
 /** 读取前 N 页文字层（按行），用于目录页启发式与模型输入。 */
-export async function readHiDocPdfPageTexts(
-  document: HiDocPdfDocument,
+export async function readClewPdfPageTexts(
+  document: ClewPdfDocument,
   options: { maxPages: number; itemsToLines: (items: readonly { str?: string; hasEOL?: boolean }[]) => string[] },
-): Promise<HiDocPdfPageText[]> {
+): Promise<ClewPdfPageText[]> {
   const pageLimit = Math.max(1, Math.min(document.numPages, options.maxPages));
-  const pages: HiDocPdfPageText[] = [];
+  const pages: ClewPdfPageText[] = [];
   for (let pageNumber = 1; pageNumber <= pageLimit; pageNumber += 1) {
     const page = await document.getPage(pageNumber);
     const textContent = await page.getTextContent({ includeMarkedContent: false });

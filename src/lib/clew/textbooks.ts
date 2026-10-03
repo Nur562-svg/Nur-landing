@@ -3,74 +3,74 @@ import "server-only";
 import { randomUUID } from "node:crypto";
 import { prisma } from "@/lib/prisma";
 import type { MembershipTier } from "@/types/auth";
-import type { HiDocErrorCode, HiDocShelf, HiDocTextbookView } from "@/types/hidoc";
-import { probeHiDocPdf } from "./pdf-text-layer";
-import { readHiDocSource } from "./source-intake";
-import { HIDOC_DOCX_PAGE_COUNT_PLACEHOLDER, isHiDocDocx } from "./source-label";
+import type { ClewErrorCode, ClewShelf, ClewTextbookView } from "@/types/clew";
+import { probeClewPdf } from "./pdf-text-layer";
+import { readClewSource } from "./source-intake";
+import { CLEW_DOCX_PAGE_COUNT_PLACEHOLDER, isClewDocx } from "./source-label";
 import {
-  HIDOC_MAX_FILE_BYTES,
-  HIDOC_MAX_PAGE_COUNT,
-  buildHiDocQuotaExceededMessage,
-  computeHiDocQuota,
-  getHiDocActiveMonth,
-  getHiDocMonthlyTextbookLimit,
+  CLEW_MAX_FILE_BYTES,
+  CLEW_MAX_PAGE_COUNT,
+  buildClewQuotaExceededMessage,
+  computeClewQuota,
+  getClewActiveMonth,
+  getClewMonthlyTextbookLimit,
 } from "./limits";
-import { getHiDocStorage, type HiDocStorageDriver } from "./storage";
-import { buildHiDocStorageKey } from "./storage-key";
-import { toHiDocTextbookView, type HiDocTextbookRow } from "./textbook-view";
+import { getClewStorage, type ClewStorageDriver } from "./storage";
+import { buildClewStorageKey } from "./storage-key";
+import { toClewTextbookView, type ClewTextbookRow } from "./textbook-view";
 
 /**
- * Hi doc 教材服务（server-only）：上传 / 书架 / 删除 / 重新激活。
+ * Clew 教材服务（server-only）：上传 / 书架 / 删除 / 重新激活。
  * 名额仅当月有效；教材全部私有挂 userId，不进官方课程目录。
  * API 路由只做 thin adapter：这里返回结构化失败（status + code + 中文原因），路由原样映射。
  */
 
-export type HiDocServiceFailure = {
+export type ClewServiceFailure = {
   ok: false;
   status: number;
-  code: HiDocErrorCode;
+  code: ClewErrorCode;
   message: string;
 };
 
-export type HiDocServiceResult<T> = { ok: true; data: T } | HiDocServiceFailure;
+export type ClewServiceResult<T> = { ok: true; data: T } | ClewServiceFailure;
 
 async function countMonthlyUsage(userId: string, month: string): Promise<number> {
-  return prisma.hiDocTextbook.count({
+  return prisma.clewTextbook.count({
     where: { userId, activeMonth: month, deletedAt: null },
   });
 }
 
 /** 事务内二次校验失败时抛出；与其它失败区分，避免误报 500。 */
-class HiDocQuotaExceededError extends Error {}
+class ClewQuotaExceededError extends Error {}
 
 /** 书架快照：未删除教材（含冻结教材）+ 当月名额。 */
-export async function getHiDocShelf(userId: string, tier: MembershipTier): Promise<HiDocShelf> {
-  const currentMonth = getHiDocActiveMonth();
-  const rows = await prisma.hiDocTextbook.findMany({
+export async function getClewShelf(userId: string, tier: MembershipTier): Promise<ClewShelf> {
+  const currentMonth = getClewActiveMonth();
+  const rows = await prisma.clewTextbook.findMany({
     where: { userId, deletedAt: null },
     orderBy: { createdAt: "desc" },
     include: { _count: { select: { chapters: true } } },
   });
   const used = rows.filter((row) => row.activeMonth === currentMonth).length;
   return {
-    textbooks: rows.map((row) => toHiDocTextbookView(row, currentMonth)),
-    quota: computeHiDocQuota(used, tier, currentMonth),
+    textbooks: rows.map((row) => toClewTextbookView(row, currentMonth)),
+    quota: computeClewQuota(used, tier, currentMonth),
   };
 }
 
 /** 尽力删除存储对象：失败只记录日志，不改变业务结论（名额由数据库记录决定）。 */
 async function removeStoredObjectQuietly(
-  storage: HiDocStorageDriver,
+  storage: ClewStorageDriver,
   storageKey: string,
 ): Promise<void> {
   try {
     await storage.removeObject(storageKey);
   } catch (error) {
-    console.error(`[hidoc] 存储对象删除失败：${storageKey}`, error);
+    console.error(`[clew] 存储对象删除失败：${storageKey}`, error);
   }
 }
 
-export type HiDocUploadInput = {
+export type ClewUploadInput = {
   userId: string;
   tier: MembershipTier;
   fileName: string;
@@ -82,18 +82,18 @@ export type HiDocUploadInput = {
  * 上传教材：校验格式/大小/页数/文字层 → 落盘 → 落库（事务内二次校验名额）。
  * 任何一步失败都清理已写入的文件，绝不静默放行。
  */
-export async function uploadHiDocTextbook(
-  input: HiDocUploadInput,
-): Promise<HiDocServiceResult<{ textbook: HiDocTextbookView }>> {
+export async function uploadClewTextbook(
+  input: ClewUploadInput,
+): Promise<ClewServiceResult<{ textbook: ClewTextbookView }>> {
   const { userId, tier, bytes } = input;
   const fileName = input.fileName.trim();
   // 注意：pdfjs 探测会 transfer/detach 传入的 ArrayBuffer，字节数必须在探测前固定下来。
   const sizeBytes = bytes.byteLength;
 
-  const docx = isHiDocDocx(fileName);
+  const docx = isClewDocx(fileName);
   const pdf = fileName.toLowerCase().endsWith(".pdf");
   if (!docx && !pdf) {
-    const refused = await readHiDocSource(fileName, bytes.slice());
+    const refused = await readClewSource(fileName, bytes.slice());
     return {
       ok: false,
       status: 422,
@@ -104,8 +104,8 @@ export async function uploadHiDocTextbook(
   if (sizeBytes === 0) {
     return { ok: false, status: 422, code: "invalid-file", message: "上传的文件是空的。" };
   }
-  if (sizeBytes > HIDOC_MAX_FILE_BYTES) {
-    const limitMb = Math.round(HIDOC_MAX_FILE_BYTES / (1024 * 1024));
+  if (sizeBytes > CLEW_MAX_FILE_BYTES) {
+    const limitMb = Math.round(CLEW_MAX_FILE_BYTES / (1024 * 1024));
     const actualMb = (sizeBytes / (1024 * 1024)).toFixed(1);
     return {
       ok: false,
@@ -115,21 +115,21 @@ export async function uploadHiDocTextbook(
     };
   }
 
-  const currentMonth = getHiDocActiveMonth();
-  const limit = getHiDocMonthlyTextbookLimit(tier);
+  const currentMonth = getClewActiveMonth();
+  const limit = getClewMonthlyTextbookLimit(tier);
   const usedBefore = await countMonthlyUsage(userId, currentMonth);
   if (usedBefore >= limit) {
     return {
       ok: false,
       status: 503,
       code: "quota-exceeded",
-      message: buildHiDocQuotaExceededMessage(usedBefore, limit),
+      message: buildClewQuotaExceededMessage(usedBefore, limit),
     };
   }
 
-  let storage: HiDocStorageDriver;
+  let storage: ClewStorageDriver;
   try {
-    storage = getHiDocStorage();
+    storage = getClewStorage();
   } catch (error) {
     return {
       ok: false,
@@ -140,13 +140,13 @@ export async function uploadHiDocTextbook(
   }
 
   const textbookId = randomUUID();
-  const storageKey = buildHiDocStorageKey(userId, textbookId, fileName);
+  const storageKey = buildClewStorageKey(userId, textbookId, fileName);
   // mammoth/pdfjs may detach the buffer they receive. Keep an independent copy for DOCX.
   const docxBytes = docx ? bytes.slice() : null;
   try {
     await storage.putObject(storageKey, bytes);
   } catch (error) {
-    console.error("[hidoc] 教材写入存储失败", error);
+    console.error("[clew] 教材写入存储失败", error);
     return {
       ok: false,
       status: 503,
@@ -155,16 +155,16 @@ export async function uploadHiDocTextbook(
     };
   }
 
-  let pageCount = HIDOC_DOCX_PAGE_COUNT_PLACEHOLDER;
+  let pageCount = CLEW_DOCX_PAGE_COUNT_PLACEHOLDER;
   let hasTextLayer = true;
   if (docx) {
-    const read = await readHiDocSource(fileName, docxBytes ?? bytes.slice());
+    const read = await readClewSource(fileName, docxBytes ?? bytes.slice());
     if (!read.ok) {
       await removeStoredObjectQuietly(storage, storageKey);
       return { ok: false, status: 422, code: read.code, message: read.message };
     }
   } else {
-    const probe = await probeHiDocPdf(bytes);
+    const probe = await probeClewPdf(bytes);
     if (!probe.ok) {
       await removeStoredObjectQuietly(storage, storageKey);
       if (probe.code === "probe-unavailable") {
@@ -172,13 +172,13 @@ export async function uploadHiDocTextbook(
       }
       return { ok: false, status: 422, code: "pdf-unreadable", message: probe.message };
     }
-    if (probe.pageCount > HIDOC_MAX_PAGE_COUNT) {
+    if (probe.pageCount > CLEW_MAX_PAGE_COUNT) {
       await removeStoredObjectQuietly(storage, storageKey);
       return {
         ok: false,
         status: 422,
         code: "page-limit",
-        message: `PDF 共 ${probe.pageCount} 页，超过单本 ${HIDOC_MAX_PAGE_COUNT} 页上限；请拆分后上传。`,
+        message: `PDF 共 ${probe.pageCount} 页，超过单本 ${CLEW_MAX_PAGE_COUNT} 页上限；请拆分后上传。`,
       };
     }
     if (!probe.hasTextLayer) {
@@ -196,16 +196,16 @@ export async function uploadHiDocTextbook(
 
   const title = input.title?.trim() || fileName.replace(/\.(pdf|docx)$/i, "");
 
-  let created: HiDocTextbookRow;
+  let created: ClewTextbookRow;
   try {
     created = await prisma.$transaction(async (tx) => {
-      const usedNow = await tx.hiDocTextbook.count({
+      const usedNow = await tx.clewTextbook.count({
         where: { userId, activeMonth: currentMonth, deletedAt: null },
       });
       if (usedNow >= limit) {
-        throw new HiDocQuotaExceededError(buildHiDocQuotaExceededMessage(usedNow, limit));
+        throw new ClewQuotaExceededError(buildClewQuotaExceededMessage(usedNow, limit));
       }
-      return tx.hiDocTextbook.create({
+      return tx.clewTextbook.create({
         data: {
           id: textbookId,
           userId,
@@ -222,27 +222,27 @@ export async function uploadHiDocTextbook(
     });
   } catch (error) {
     await removeStoredObjectQuietly(storage, storageKey);
-    if (error instanceof HiDocQuotaExceededError) {
+    if (error instanceof ClewQuotaExceededError) {
       return { ok: false, status: 503, code: "quota-exceeded", message: error.message };
     }
-    console.error("[hidoc] 教材落库失败", error);
+    console.error("[clew] 教材落库失败", error);
     return { ok: false, status: 500, code: "server-error", message: "教材保存失败，请稍后重试；本次未占用名额。" };
   }
 
   return {
     ok: true,
-    data: { textbook: toHiDocTextbookView({ ...created, _count: { chapters: 0 } }, currentMonth) },
+    data: { textbook: toClewTextbookView({ ...created, _count: { chapters: 0 } }, currentMonth) },
   };
 }
 
 /**
  * 删除教材（软删除墓碑 + 删除服务器文件）：释放当月名额。
  */
-export async function deleteHiDocTextbook(
+export async function deleteClewTextbook(
   userId: string,
   textbookId: string,
-): Promise<HiDocServiceResult<{ deletedId: string }>> {
-  const row = await prisma.hiDocTextbook.findFirst({
+): Promise<ClewServiceResult<{ deletedId: string }>> {
+  const row = await prisma.clewTextbook.findFirst({
     where: { id: textbookId, userId, deletedAt: null },
     select: { id: true, storageKey: true },
   });
@@ -250,17 +250,17 @@ export async function deleteHiDocTextbook(
     return { ok: false, status: 404, code: "not-found", message: "教材不存在或已删除。" };
   }
 
-  await prisma.hiDocTextbook.update({
+  await prisma.clewTextbook.update({
     where: { id: row.id },
     data: { deletedAt: new Date() },
   });
 
   // 隐私优先：记录保留为墓碑（名额/审计），服务器文件立即删除。
   try {
-    const storage = getHiDocStorage();
+    const storage = getClewStorage();
     await removeStoredObjectQuietly(storage, row.storageKey);
   } catch (error) {
-    console.error("[hidoc] 删除教材时存储不可用", error);
+    console.error("[clew] 删除教材时存储不可用", error);
   }
 
   return { ok: true, data: { deletedId: row.id } };
@@ -269,13 +269,13 @@ export async function deleteHiDocTextbook(
 /**
  * 冻结教材重新激活：占用当月名额；名额不足返回 503。
  */
-export async function activateHiDocTextbook(
+export async function activateClewTextbook(
   userId: string,
   tier: MembershipTier,
   textbookId: string,
-): Promise<HiDocServiceResult<{ textbook: HiDocTextbookView }>> {
-  const currentMonth = getHiDocActiveMonth();
-  const row = await prisma.hiDocTextbook.findFirst({
+): Promise<ClewServiceResult<{ textbook: ClewTextbookView }>> {
+  const currentMonth = getClewActiveMonth();
+  const row = await prisma.clewTextbook.findFirst({
     where: { id: textbookId, userId, deletedAt: null },
     include: { _count: { select: { chapters: true } } },
   });
@@ -283,7 +283,7 @@ export async function activateHiDocTextbook(
     return { ok: false, status: 404, code: "not-found", message: "教材不存在或已删除。" };
   }
 
-  const limit = getHiDocMonthlyTextbookLimit(tier);
+  const limit = getClewMonthlyTextbookLimit(tier);
   if (row.activeMonth !== currentMonth) {
     const used = await countMonthlyUsage(userId, currentMonth);
     if (used >= limit) {
@@ -291,10 +291,10 @@ export async function activateHiDocTextbook(
         ok: false,
         status: 503,
         code: "quota-exceeded",
-        message: buildHiDocQuotaExceededMessage(used, limit),
+        message: buildClewQuotaExceededMessage(used, limit),
       };
     }
-    await prisma.hiDocTextbook.update({
+    await prisma.clewTextbook.update({
       where: { id: row.id },
       data: { activeMonth: currentMonth },
     });
@@ -302,6 +302,6 @@ export async function activateHiDocTextbook(
 
   return {
     ok: true,
-    data: { textbook: toHiDocTextbookView({ ...row, activeMonth: currentMonth }, currentMonth) },
+    data: { textbook: toClewTextbookView({ ...row, activeMonth: currentMonth }, currentMonth) },
   };
 }

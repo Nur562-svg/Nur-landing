@@ -4,8 +4,8 @@ import { AuthForm } from "@/components/auth-form";
 import { RouteLoadingFallback } from "@/components/route-loading-fallback";
 
 export const metadata: Metadata = {
-  title: "注册｜NUR LEARN",
-  description: "注册 NUR LEARN 账号，用于学习状态云同步与会员能力（可选）。",
+  title: "注册｜Ariadne",
+  description: "注册 Ariadne 账号，用于学习状态云同步与会员能力（可选）。",
   robots: { index: false, follow: false },
 };
 

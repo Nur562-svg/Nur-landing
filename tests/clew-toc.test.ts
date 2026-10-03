@@ -1,9 +1,9 @@
 import { describe, it } from "node:test";
 import assert from "node:assert/strict";
 
-// Hi doc M2：目录启发式、模型输出校验、章节归一化与手动修正校验
+// Clew M2：目录启发式、模型输出校验、章节归一化与手动修正校验
 
-describe("Hi doc printed TOC parsing", async () => {
+describe("Clew printed TOC parsing", async () => {
   const {
     pdfTextItemsToLines,
     parsePrintedTocPages,
@@ -12,7 +12,7 @@ describe("Hi doc printed TOC parsing", async () => {
     pageTextMatchesTitle,
     parseModelChaptersPayload,
     validateManualChapters,
-  } = await import("../src/lib/hidoc/toc-heuristic");
+  } = await import("../src/lib/clew/toc-heuristic");
 
   it("pdfjs 文本项按 hasEOL 切成行并折叠空白", () => {
     const lines = pdfTextItemsToLines([
@@ -164,12 +164,12 @@ describe("Hi doc printed TOC parsing", async () => {
   });
 });
 
-describe("Hi doc textbook view mapping", async () => {
-  const { parseHiDocRecognition, toHiDocTextbookView } = await import("../src/lib/hidoc/textbook-view");
+describe("Clew textbook view mapping", async () => {
+  const { parseClewRecognition, toClewTextbookView } = await import("../src/lib/clew/textbook-view");
 
   it("识别元信息按不可信输入解析", () => {
     assert.deepEqual(
-      parseHiDocRecognition({
+      parseClewRecognition({
         strategy: "outline",
         chapterCount: 12,
         notes: ["来源：PDF 书签（一级条目 12 条）。", 42],
@@ -180,14 +180,35 @@ describe("Hi doc textbook view mapping", async () => {
         chapterCount: 12,
         notes: ["来源：PDF 书签（一级条目 12 条）。"],
         recognizedAt: "2026-09-17T00:00:00.000Z",
+        spineConfirmedAt: null,
       },
     );
-    assert.equal(parseHiDocRecognition(null), null);
-    assert.equal(parseHiDocRecognition({ strategy: "bogus", chapterCount: 1, recognizedAt: "x" }), null);
+    assert.equal(
+      parseClewRecognition({
+        strategy: "outline",
+        chapterCount: 2,
+        notes: [],
+        recognizedAt: "2026-09-17T00:00:00.000Z",
+        spineConfirmedAt: "2026-09-30T08:00:00.000Z",
+      })?.spineConfirmedAt,
+      "2026-09-30T08:00:00.000Z",
+    );
+    assert.equal(
+      parseClewRecognition({
+        strategy: "outline",
+        chapterCount: 2,
+        notes: [],
+        recognizedAt: "2026-09-17T00:00:00.000Z",
+        spineConfirmedAt: 42,
+      })?.spineConfirmedAt,
+      null,
+    );
+    assert.equal(parseClewRecognition(null), null);
+    assert.equal(parseClewRecognition({ strategy: "bogus", chapterCount: 1, recognizedAt: "x" }), null);
   });
 
   it("视图带章节数与冻结判定", () => {
-    const view = toHiDocTextbookView(
+    const view = toClewTextbookView(
       {
         id: "t1",
         title: "教材",
@@ -209,14 +230,14 @@ describe("Hi doc textbook view mapping", async () => {
   });
 });
 
-describe("Hi doc parse quota", async () => {
+describe("Clew parse quota", async () => {
   const { TIER_QUOTAS, canUseResource, computeItem, getQuotaLabel } = await import("../src/lib/quotas");
 
   it("目录解析额度：free 3 / basic 10 / pro 与 max 无限", () => {
-    assert.equal(TIER_QUOTAS.free.hidocParses, 3);
-    assert.equal(TIER_QUOTAS.basic.hidocParses, 10);
-    assert.equal(TIER_QUOTAS.pro.hidocParses, "unlimited");
-    assert.equal(TIER_QUOTAS.max.hidocParses, "unlimited");
+    assert.equal(TIER_QUOTAS.free.clewParses, 3);
+    assert.equal(TIER_QUOTAS.basic.clewParses, 10);
+    assert.equal(TIER_QUOTAS.pro.clewParses, "unlimited");
+    assert.equal(TIER_QUOTAS.max.clewParses, "unlimited");
   });
 
   it("额度用尽后 canUseResource 为 false（不静默放行）", () => {
@@ -226,6 +247,6 @@ describe("Hi doc parse quota", async () => {
   });
 
   it("配额标签为中文", () => {
-    assert.match(getQuotaLabel("hidocParses"), /Hi doc/);
+    assert.match(getQuotaLabel("clewParses"), /Clew/);
   });
 });

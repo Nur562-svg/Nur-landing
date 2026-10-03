@@ -1,10 +1,10 @@
 /**
- * Hi doc eight-step guide. Pure data: screens render this and do not invent
- * a second copy of the path. Hi doc output is not given official-course
+ * Clew eight-step guide. Pure data: screens render this and do not invent
+ * a second copy of the path. Clew output is not given official-course
  * evidence grades (可关联 / 帮助理解 / 不可直接等同).
  */
 
-export const HIDOC_STEPS = [
+export const CLEW_STEPS = [
   { id: "upload", name: "上传" },
   { id: "toc", name: "目录识别" },
   { id: "revise", name: "章节修正" },
@@ -15,9 +15,9 @@ export const HIDOC_STEPS = [
   { id: "workshop", name: "课题工作坊" },
 ] as const;
 
-export type HiDocStepId = (typeof HIDOC_STEPS)[number]["id"];
+export type ClewStepId = (typeof CLEW_STEPS)[number]["id"];
 
-export type HiDocGuideContext = {
+export type ClewGuideContext = {
   textbookId?: string;
   chapterOrder?: number;
   workshopId?: string;
@@ -25,9 +25,9 @@ export type HiDocGuideContext = {
   signedIn?: boolean;
 };
 
-export type HiDocGuide = {
+export type ClewGuide = {
   steps: readonly string[];
-  currentId: HiDocStepId;
+  currentId: ClewStepId;
   currentName: string;
   progressLabel: string;
   progressValue: number;
@@ -38,9 +38,9 @@ export type HiDocGuide = {
   nextControl: "下一步";
 };
 
-const STEP_COUNT = HIDOC_STEPS.length;
+const STEP_COUNT = CLEW_STEPS.length;
 
-const NEXT_ACTION: Record<HiDocStepId, string> = {
+const NEXT_ACTION: Record<ClewStepId, string> = {
   upload: "选择带文字层的 PDF 或 DOCX 上传。扫描件和图片会被拒绝。",
   toc: "识别目录。DOCX 没有印刷页码，位置保持待确认。",
   revise: "核对章节标题，删掉多余项，然后保存。",
@@ -51,7 +51,7 @@ const NEXT_ACTION: Record<HiDocStepId, string> = {
   workshop: "用不超过 100 页的短材料提问。问完可回到书架。",
 };
 
-const STATUS_HINT: Record<HiDocStepId, string> = {
+const STATUS_HINT: Record<ClewStepId, string> = {
   upload: "当前：上传教材",
   toc: "当前：目录识别",
   revise: "当前：章节修正",
@@ -62,27 +62,27 @@ const STATUS_HINT: Record<HiDocStepId, string> = {
   workshop: "当前：课题工作坊",
 };
 
-function bookHref(context: HiDocGuideContext): string {
-  return context.textbookId ? `/learn/hi-doc/t/${context.textbookId}` : "/learn/hi-doc";
+function bookHref(context: ClewGuideContext): string {
+  return context.textbookId ? `/learn/clew/t/${context.textbookId}` : "/learn/clew";
 }
 
-function studyHref(context: HiDocGuideContext): string {
+function studyHref(context: ClewGuideContext): string {
   const chapter = context.chapterOrder ?? 1;
-  return context.textbookId ? `/learn/hi-doc/t/${context.textbookId}/c/${chapter}` : "/learn/hi-doc";
+  return context.textbookId ? `/learn/clew/t/${context.textbookId}/c/${chapter}` : "/learn/clew";
 }
 
-function hrefFor(step: HiDocStepId, context: HiDocGuideContext): string {
+function hrefFor(step: ClewStepId, context: ClewGuideContext): string {
   const book = bookHref(context);
   const study = studyHref(context);
   switch (step) {
     case "upload":
-      return "/learn/hi-doc#upload";
+      return "/learn/clew#upload";
     case "toc":
       if (context.signedIn === false) {
-        return "/login?next=/learn/hi-doc";
+        return "/login?next=/learn/clew";
       }
       if (!context.textbookId) {
-        return "/learn/hi-doc#upload";
+        return "/learn/clew#upload";
       }
       return `${book}#recognize`;
     case "revise":
@@ -96,16 +96,16 @@ function hrefFor(step: HiDocStepId, context: HiDocGuideContext): string {
     case "note":
       return `${study}#note`;
     case "workshop":
-      return context.workshopId ? `/learn/hi-doc/w/${context.workshopId}#ask` : "/learn/hi-doc/w#ask";
+      return context.workshopId ? `/learn/clew/w/${context.workshopId}#ask` : "/learn/clew/w#ask";
   }
 }
 
-export function guideForStep(step: HiDocStepId, context: HiDocGuideContext = {}): HiDocGuide {
-  const index = HIDOC_STEPS.findIndex((item) => item.id === step);
-  const current = HIDOC_STEPS[index] ?? HIDOC_STEPS[0];
-  const next = HIDOC_STEPS[index + 1] ?? current;
+export function guideForStep(step: ClewStepId, context: ClewGuideContext = {}): ClewGuide {
+  const index = CLEW_STEPS.findIndex((item) => item.id === step);
+  const current = CLEW_STEPS[index] ?? CLEW_STEPS[0];
+  const next = CLEW_STEPS[index + 1] ?? current;
   return {
-    steps: HIDOC_STEPS.map((item) => item.name),
+    steps: CLEW_STEPS.map((item) => item.name),
     currentId: current.id,
     currentName: current.name,
     progressLabel: `${index + 1} / ${STEP_COUNT}`,
@@ -118,7 +118,7 @@ export function guideForStep(step: HiDocStepId, context: HiDocGuideContext = {})
   };
 }
 
-export type HiDocSurfaceState =
+export type ClewSurfaceState =
   | { surface: "shelf"; textbookId?: string; signedIn?: boolean }
   | {
       surface: "textbook";
@@ -137,7 +137,7 @@ export type HiDocSurfaceState =
     }
   | { surface: "workshop"; workshopId?: string };
 
-export function resolveHiDocGuide(state: HiDocSurfaceState): HiDocGuide {
+export function resolveClewGuide(state: ClewSurfaceState): ClewGuide {
   switch (state.surface) {
     case "shelf":
       return guideForStep("upload", {

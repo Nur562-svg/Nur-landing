@@ -10,39 +10,41 @@ import {
   Trash2,
   X,
 } from "lucide-react";
-import type { HiDocHighlightColor, HiDocHighlightView } from "@/types/hidoc";
+import type { ClewHighlightColor, ClewHighlightView } from "@/types/clew";
 import {
-  HIDOC_HIGHLIGHT_COLORS,
-  HIDOC_HIGHLIGHT_COLOR_LABELS,
-  HIDOC_HIGHLIGHT_NOTE_MAX_CHARS,
-  HIDOC_HIGHLIGHT_QUOTE_MAX_CHARS,
-  isHiDocHighlightStale,
-  toHiDocHighlightPaintItems,
-} from "@/lib/hidoc/highlight-rules";
+  CLEW_HIGHLIGHT_COLORS,
+  CLEW_HIGHLIGHT_COLOR_LABELS,
+  CLEW_HIGHLIGHT_NOTE_MAX_CHARS,
+  CLEW_HIGHLIGHT_QUOTE_MAX_CHARS,
+  isClewHighlightStale,
+  toClewHighlightPaintItems,
+} from "@/lib/clew/highlight-rules";
 import {
-  clearHiDocHighlightMarks,
-  findHiDocHighlightMark,
-  paintHiDocHighlights,
-  readHiDocSelection,
-} from "@/lib/hidoc/highlight-dom";
-import { readHiDocFailure } from "@/lib/hidoc/client-api";
-import styles from "./hi-doc.module.css";
+  clearClewHighlightMarks,
+  findClewHighlightMark,
+  paintClewHighlights,
+  readClewSelection,
+} from "@/lib/clew/highlight-dom";
+import { readClewFailure } from "@/lib/clew/client-api";
+import styles from "./clew.module.css";
 
 /**
- * Hi doc 划重点层（客户端）：在讲义 DOM 内做文本定位并包裹 <mark>（Range/textNode，不用 innerHTML），
+ * Clew 划重点层（客户端）：在讲义 DOM 内做文本定位并包裹 <mark>（Range/textNode，不用 innerHTML），
  * 提供选中文字后的四色划线气泡、批注编辑与「划重点」面板（含失配的「未定位」列表）。
  * 定位失败的条目如实列入「未定位」，绝不伪造位置。
  */
 
-type HiDocHighlightLayerProps = {
+type ClewHighlightLayerProps = {
   kpId: string;
   /** 当前讲义版本（ISO）；为 null 表示尚未生成讲义。 */
   lessonGeneratedAt: string | null;
-  initialHighlights: HiDocHighlightView[];
+  initialHighlights: ClewHighlightView[];
   /** 讲义正文容器（由学习页渲染 markdown，本组件只做定位与划线）。 */
   bodyRef: RefObject<HTMLDivElement | null>;
   /** 讲义正在重新生成：期间清除旧划线，避免与新讲义 DOM 冲突。 */
   regenerating: boolean;
+  /** 讲义视图（ZCODE-M4 三视图）：视图切换会改变正文文本，须触发重新定位。 */
+  bodyVariant?: string;
 };
 
 type BubbleState = {
@@ -51,7 +53,7 @@ type BubbleState = {
   quote: string;
   prefix: string;
   suffix: string;
-  color: HiDocHighlightColor;
+  color: ClewHighlightColor;
   note: string;
   left: number;
   top: number;
@@ -59,7 +61,7 @@ type BubbleState = {
 };
 
 /** 四色变量类（划线 <mark>、色板与色块共用；CSS Modules 不允许裸属性选择器）。 */
-const swatchClasses: Record<HiDocHighlightColor, string> = {
+const swatchClasses: Record<ClewHighlightColor, string> = {
   amber: styles.swatchAmber,
   cinnabar: styles.swatchCinnabar,
   slate: styles.swatchSlate,
@@ -76,14 +78,15 @@ function clampBubblePosition(rect: DOMRect | null): { left: number; top: number 
   return { left, top: Math.max(12, top) };
 }
 
-export function HiDocHighlightLayer({
+export function ClewHighlightLayer({
   kpId,
   lessonGeneratedAt,
   initialHighlights,
   bodyRef,
   regenerating,
-}: HiDocHighlightLayerProps) {
-  const [highlights, setHighlights] = useState<HiDocHighlightView[]>(initialHighlights);
+  bodyVariant = "full",
+}: ClewHighlightLayerProps) {
+  const [highlights, setHighlights] = useState<ClewHighlightView[]>(initialHighlights);
   const [paint, setPaint] = useState<{ locatedIds: string[]; missingIds: string[] }>({
     locatedIds: [],
     missingIds: [],
@@ -93,8 +96,11 @@ export function HiDocHighlightLayer({
   const [error, setError] = useState<string | null>(null);
   const [focusId, setFocusId] = useState<string | null>(null);
 
-  // 讲义 DOM 会在「旧讲义 → 流式草稿 → 新讲义」间整体重挂载；bodyVersion 变化时重新挂监听与重画
-  const bodyVersion = regenerating ? "draft" : lessonGeneratedAt ?? "empty";
+  // 讲义 DOM 会在「旧讲义 → 流式草稿 → 新讲义」间整体重挂载；bodyVersion 变化时重新挂监听与重画。
+  // 视图（初学/复习/备考）也并入版本：被视图隐藏文本上的划线定位不到时如实进入「未定位」列表。
+  const bodyVersion = regenerating
+    ? "draft"
+    : `${lessonGeneratedAt ?? "empty"}:${bodyVariant ?? "full"}`;
   const actionsRef = useRef<{
     onSelection: () => void;
     onBodyClick: (event: MouseEvent) => void;
@@ -106,7 +112,7 @@ export function HiDocHighlightLayer({
         if (!lessonGeneratedAt || regenerating) {
           return;
         }
-        const selection = readHiDocSelection(bodyRef.current);
+        const selection = readClewSelection(bodyRef.current);
         if (!selection) {
           return;
         }
@@ -116,7 +122,7 @@ export function HiDocHighlightLayer({
             ? domSelection.getRangeAt(0).getBoundingClientRect()
             : null;
         const position = clampBubblePosition(rect);
-        const tooLong = selection.quote.length > HIDOC_HIGHLIGHT_QUOTE_MAX_CHARS;
+        const tooLong = selection.quote.length > CLEW_HIGHLIGHT_QUOTE_MAX_CHARS;
         setBubble({
           mode: "create",
           highlightId: null,
@@ -128,17 +134,17 @@ export function HiDocHighlightLayer({
           left: position.left,
           top: position.top,
           error: tooLong
-            ? `选中的文字过长（${selection.quote.length} 字），请控制在 ${HIDOC_HIGHLIGHT_QUOTE_MAX_CHARS} 字以内。`
+            ? `选中的文字过长（${selection.quote.length} 字），请控制在 ${CLEW_HIGHLIGHT_QUOTE_MAX_CHARS} 字以内。`
             : null,
         });
       },
       onBodyClick: (event: MouseEvent) => {
         const target = event.target as HTMLElement | null;
-        const mark = target?.closest("mark[data-hidoc-highlight-id]");
+        const mark = target?.closest("mark[data-clew-highlight-id]");
         if (!mark || window.getSelection()?.toString().trim()) {
           return;
         }
-        const id = mark.getAttribute("data-hidoc-highlight-id");
+        const id = mark.getAttribute("data-clew-highlight-id");
         const item = id ? highlights.find((entry) => entry.id === id) : undefined;
         if (!item) {
           return;
@@ -188,25 +194,25 @@ export function HiDocHighlightLayer({
     if (!body) {
       return;
     }
-    clearHiDocHighlightMarks(body);
+    clearClewHighlightMarks(body);
     if (!lessonGeneratedAt || regenerating) {
       setPaint({ locatedIds: [], missingIds: [] });
       return;
     }
-    const items = toHiDocHighlightPaintItems(
-      highlights.filter((item) => !isHiDocHighlightStale(item, lessonGeneratedAt)),
+    const items = toClewHighlightPaintItems(
+      highlights.filter((item) => !isClewHighlightStale(item, lessonGeneratedAt)),
     );
     if (items.length === 0) {
       setPaint({ locatedIds: [], missingIds: [] });
       return;
     }
-    const result = paintHiDocHighlights(body, items, (color) => swatchClasses[color]);
+    const result = paintClewHighlights(body, items, (color) => swatchClasses[color]);
     setPaint({ locatedIds: result.locatedIds, missingIds: result.missingIds });
   }, [bodyRef, bodyVersion, highlights, lessonGeneratedAt, regenerating]);
 
   const staleIds = new Set(
     highlights
-      .filter((item) => isHiDocHighlightStale(item, lessonGeneratedAt))
+      .filter((item) => isClewHighlightStale(item, lessonGeneratedAt))
       .map((item) => item.id),
   );
   const unlocatedIds = new Set([...staleIds, ...paint.missingIds]);
@@ -221,7 +227,7 @@ export function HiDocHighlightLayer({
     setError(null);
     try {
       if (bubble.mode === "create") {
-        const response = await fetch("/api/hidoc/highlights", {
+        const response = await fetch("/api/clew/highlights", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
@@ -235,26 +241,26 @@ export function HiDocHighlightLayer({
         });
         const payload: unknown = await response.json().catch(() => null);
         if (!response.ok) {
-          setBubble((current) => (current ? { ...current, error: readHiDocFailure(payload) } : current));
+          setBubble((current) => (current ? { ...current, error: readClewFailure(payload) } : current));
           return;
         }
-        const created = (payload as { highlight?: HiDocHighlightView }).highlight;
+        const created = (payload as { highlight?: ClewHighlightView }).highlight;
         if (created) {
           setHighlights((current) => [...current, created]);
         }
         window.getSelection()?.removeAllRanges();
       } else if (bubble.highlightId) {
-        const response = await fetch(`/api/hidoc/highlights/${bubble.highlightId}`, {
+        const response = await fetch(`/api/clew/highlights/${bubble.highlightId}`, {
           method: "PATCH",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ color: bubble.color, note: bubble.note }),
         });
         const payload: unknown = await response.json().catch(() => null);
         if (!response.ok) {
-          setBubble((current) => (current ? { ...current, error: readHiDocFailure(payload) } : current));
+          setBubble((current) => (current ? { ...current, error: readClewFailure(payload) } : current));
           return;
         }
-        const updated = (payload as { highlight?: HiDocHighlightView }).highlight;
+        const updated = (payload as { highlight?: ClewHighlightView }).highlight;
         if (updated) {
           setHighlights((current) => current.map((item) => (item.id === updated.id ? updated : item)));
         }
@@ -276,10 +282,10 @@ export function HiDocHighlightLayer({
     setSaving(true);
     setError(null);
     try {
-      const response = await fetch(`/api/hidoc/highlights/${highlightId}`, { method: "DELETE" });
+      const response = await fetch(`/api/clew/highlights/${highlightId}`, { method: "DELETE" });
       const payload: unknown = await response.json().catch(() => null);
       if (!response.ok) {
-        setError(readHiDocFailure(payload));
+        setError(readClewFailure(payload));
         return;
       }
       setHighlights((current) => current.filter((item) => item.id !== highlightId));
@@ -292,7 +298,7 @@ export function HiDocHighlightLayer({
   }
 
   function onLocate(highlightId: string) {
-    const mark = bodyRef.current ? findHiDocHighlightMark(bodyRef.current, highlightId) : null;
+    const mark = bodyRef.current ? findClewHighlightMark(bodyRef.current, highlightId) : null;
     if (!mark) {
       return;
     }
@@ -326,30 +332,30 @@ export function HiDocHighlightLayer({
           </div>
           <p className={styles.bubbleQuote}>「{bubble.quote}」</p>
           <div className={styles.colorSwatchRow} role="radiogroup" aria-label="划线颜色">
-            {HIDOC_HIGHLIGHT_COLORS.map((color) => (
+            {CLEW_HIGHLIGHT_COLORS.map((color) => (
               <button
                 key={color}
                 type="button"
                 role="radio"
                 aria-checked={bubble.color === color}
-                aria-label={`${HIDOC_HIGHLIGHT_COLOR_LABELS[color]}划线`}
+                aria-label={`${CLEW_HIGHLIGHT_COLOR_LABELS[color]}划线`}
                 className={`${
                   bubble.color === color ? styles.colorSwatchActive : styles.colorSwatch
                 } ${swatchClasses[color]}`}
-                data-hidoc-swatch={color}
+                data-clew-swatch={color}
                 onClick={() => setBubble((current) => (current ? { ...current, color } : current))}
               >
                 <span aria-hidden="true" />
-                {HIDOC_HIGHLIGHT_COLOR_LABELS[color]}
+                {CLEW_HIGHLIGHT_COLOR_LABELS[color]}
               </button>
             ))}
           </div>
           <label className={styles.bubbleField}>
-            <span>批注（可选，{HIDOC_HIGHLIGHT_NOTE_MAX_CHARS} 字以内）</span>
+            <span>批注（可选，{CLEW_HIGHLIGHT_NOTE_MAX_CHARS} 字以内）</span>
             <textarea
               className={styles.bubbleTextarea}
               value={bubble.note}
-              maxLength={HIDOC_HIGHLIGHT_NOTE_MAX_CHARS}
+              maxLength={CLEW_HIGHLIGHT_NOTE_MAX_CHARS}
               rows={3}
               placeholder="为什么重要？容易错在哪？"
               onChange={(event) =>
@@ -400,9 +406,9 @@ export function HiDocHighlightLayer({
         </div>
       ) : null}
 
-      <section className={styles.highlightPanel} aria-labelledby="hidoc-highlight-title">
+      <section className={styles.highlightPanel} aria-labelledby="clew-highlight-title">
         <div className={styles.panelHead}>
-          <h2 id="hidoc-highlight-title">
+          <h2 id="clew-highlight-title">
             <Highlighter aria-hidden="true" size={17} strokeWidth={1.6} /> 划重点
           </h2>
           <p>
@@ -443,7 +449,7 @@ export function HiDocHighlightLayer({
                       <p className={styles.highlightQuote}>「{item.quote}」</p>
                       {item.note ? <p className={styles.highlightNote}>{item.note}</p> : null}
                       <p className={styles.highlightMeta}>
-                        {HIDOC_HIGHLIGHT_COLOR_LABELS[item.color]} ·{" "}
+                        {CLEW_HIGHLIGHT_COLOR_LABELS[item.color]} ·{" "}
                         {new Date(item.createdAt).toLocaleString("zh-CN", {
                           hour12: false,
                           timeZone: "Asia/Shanghai",
@@ -465,7 +471,7 @@ export function HiDocHighlightLayer({
                         aria-label="编辑颜色或批注"
                         onClick={() => {
                           const mark = bodyRef.current
-                            ? findHiDocHighlightMark(bodyRef.current, item.id)
+                            ? findClewHighlightMark(bodyRef.current, item.id)
                             : null;
                           const position = clampBubblePosition(
                             mark ? mark.getBoundingClientRect() : null,
@@ -518,7 +524,7 @@ export function HiDocHighlightLayer({
                         <p className={styles.highlightQuote}>「{item.quote}」</p>
                         {item.note ? <p className={styles.highlightNote}>{item.note}</p> : null}
                         <p className={styles.highlightMeta}>
-                          {HIDOC_HIGHLIGHT_COLOR_LABELS[item.color]} · 旧版讲义（
+                          {CLEW_HIGHLIGHT_COLOR_LABELS[item.color]} · 旧版讲义（
                           {item.anchorLessonUpdatedAt
                             ? new Date(item.anchorLessonUpdatedAt).toLocaleString("zh-CN", {
                                 hour12: false,

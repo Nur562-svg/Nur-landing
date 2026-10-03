@@ -45,7 +45,7 @@ const TAB_ITEMS = [
 ] as const;
 
 const RAIL_ITEMS = [
-  { id: "hidoc", label: "Hi doc", href: "/learn/hi-doc" },
+  { id: "clew", label: "Clew", href: "/learn/clew" },
   { id: "courses", label: "官方课程", href: "/courses" },
   { id: "question-bank", label: "题库", href: "/question-bank" },
   { id: "membership", label: "会员", href: "/account/billing" },
@@ -62,7 +62,7 @@ export function DesignSystemPreview() {
     <div className={styles.page}>
       <header className={styles.head}>
         <div>
-          <p className={styles.eyebrow}>NUR LEARN · DESIGN SYSTEM V2 · R1</p>
+          <p className={styles.eyebrow}>Ariadne · DESIGN SYSTEM V2 · R1</p>
           <h1 className={styles.title}>设计系统预览</h1>
           <p className={styles.lead}>
             暖纸体系 v2：terracotta 主强调、宋体显示标题、8–24px 圆角。
@@ -137,7 +137,7 @@ export function DesignSystemPreview() {
           <V2Card variant="sunken" eyebrow="Editorial Sidebar" title="会话笔记" body="凹陷面承载辅助提示，不与主响应争抢注意力。">
             <p className={styles.sectionNote}>sunken</p>
           </V2Card>
-          <V2Card variant="emphasis" eyebrow="NUR LEARN" title="发布前复核" body="最高优先级提示使用最强对比与最深阴影。">
+          <V2Card variant="emphasis" eyebrow="Ariadne" title="发布前复核" body="最高优先级提示使用最强对比与最深阴影。">
             <p className={`${styles.sectionNote} ${styles.emphasisNote}`}>emphasis</p>
           </V2Card>
           <V2Card variant="disabled" eyebrow="Context locked" title="暂不可用" body="禁用态降调不降可读性，保持同一套间距与圆角。">
@@ -168,15 +168,15 @@ export function DesignSystemPreview() {
           <div className={styles.stack}>
             <p className={styles.demoLabel}>User / Assistant</p>
             <V2ChatBubble role="user" meta="你 · 刚刚">这一段的辨证链在哪里断了？</V2ChatBubble>
-            <V2ChatBubble role="assistant" meta="NUR Agent · 1 分钟">先回到舌象证据：苔白腻提示痰湿，再对齐脉象。注意这是「可关联」，不能直接等同现代医学诊断。</V2ChatBubble>
+            <V2ChatBubble role="assistant" meta="Ariadne Agent · 1 分钟">先回到舌象证据：苔白腻提示痰湿，再对齐脉象。注意这是「可关联」，不能直接等同现代医学诊断。</V2ChatBubble>
             <V2ChatBubble role="user" meta="你 · 排队中" disabled>继续追问典型病案。</V2ChatBubble>
-            <V2ChatBubble role="assistant" meta="NUR Agent · 不可用" disabled>这一轮服务暂不可用。</V2ChatBubble>
+            <V2ChatBubble role="assistant" meta="Ariadne Agent · 不可用" disabled>这一轮服务暂不可用。</V2ChatBubble>
           </div>
           <div className={styles.stack}>
             <p className={styles.demoLabel}>Thread</p>
             <V2ChatThread>
               <V2ChatBubble role="user" meta="你 · 刚刚">推荐一条本周学习路径。</V2ChatBubble>
-              <V2ChatBubble role="assistant" meta="NUR Agent · 1 分钟">先完成「口味与食欲」知识点，再做主观题写作与病案推理，最后回流错题。</V2ChatBubble>
+              <V2ChatBubble role="assistant" meta="Ariadne Agent · 1 分钟">先完成「口味与食欲」知识点，再做主观题写作与病案推理，最后回流错题。</V2ChatBubble>
             </V2ChatThread>
           </div>
         </div>
@@ -191,7 +191,7 @@ export function DesignSystemPreview() {
           </div>
           <div>
             <p className={styles.demoLabel}>Sidebar Rail</p>
-            <V2SideRail brand="NUR LEARN" items={RAIL_ITEMS} activeId="hidoc" aria-label="侧栏导航示例" />
+            <V2SideRail brand="Ariadne" items={RAIL_ITEMS} activeId="clew" aria-label="侧栏导航示例" />
           </div>
           <div>
             <p className={styles.demoLabel}>Bottom Nav</p>

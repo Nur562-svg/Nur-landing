@@ -74,29 +74,29 @@ describe("search-index (R4 ⌘K content search)", () => {
     }
   });
 
-  it("书架教材章节条目按 chapterCount 展开，跳 /learn/hi-doc/t/{id}/c/{n}", () => {
+  it("书架教材章节条目按 chapterCount 展开，跳 /learn/clew/t/{id}/c/{n}", () => {
     const entries = buildShelfChapterEntries([
       { id: "book-a", title: "生物化学（第九版）", chapterCount: 3, isFrozen: false },
       { id: "book-b", title: "生理学讲义", chapterCount: 1, isFrozen: true },
     ]);
     assert.equal(entries.length, 4);
-    assert.equal(entries[0].href, "/learn/hi-doc/t/book-a/c/1");
+    assert.equal(entries[0].href, "/learn/clew/t/book-a/c/1");
     assert.equal(entries[0].label, "生物化学（第九版） · 第 1 章");
     assert.equal(entries[0].hint, "书架教材");
     assert.equal(entries[0].group, "shelf");
-    assert.equal(entries[3].href, "/learn/hi-doc/t/book-b/c/1");
+    assert.equal(entries[3].href, "/learn/clew/t/book-b/c/1");
     assert.equal(entries[3].hint, "书架教材 · 已冻结");
     assert.deepEqual(buildShelfChapterEntries([]), []);
   });
 
   it("页面入口条目保留静态入口并归入页面组", () => {
     const entries = buildPageEntries([
-      { id: "hidoc", label: "Hi doc", href: "/learn/hi-doc" },
+      { id: "clew", label: "Clew", href: "/learn/clew" },
       { id: "learn-home", label: "学习主页", href: "/learn" },
     ]);
     assert.equal(entries.length, 2);
     assert.equal(entries[0].group, "page");
-    assert.equal(entries[0].id, "page-hidoc");
+    assert.equal(entries[0].id, "page-clew");
     assert.deepEqual(entries[1].keywords, ["学习主页"]);
   });
 
@@ -151,7 +151,7 @@ describe("search-index (R4 ⌘K content search)", () => {
     const many: readonly SearchEntry[] = Array.from({ length: 12 }, (_, index) => ({
       id: `s-${index}`,
       label: `书 · 第 ${index + 1} 章`,
-      href: `/learn/hi-doc/t/b/c/${index + 1}`,
+      href: `/learn/clew/t/b/c/${index + 1}`,
       group: "shelf" as const,
       keywords: ["书"],
     }));

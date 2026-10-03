@@ -1,4 +1,4 @@
-/* ── Design tokens (from existing NUR LEARN editorial system) ── */
+/* ── Design tokens (from existing Ariadne editorial system) ── */
 .container {
   /* R3 token 桥接：局部 token 改引 v2 全局 token（映射口径见 design-qa.md R3 节）；.dark 自动翻转。
      --blue → --v2-ring 为设计决策，非等值替换。 */

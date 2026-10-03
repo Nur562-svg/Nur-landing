@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 
 export const metadata: Metadata = {
-  title: "重置密码｜NUR LEARN",
+  title: "重置密码｜Ariadne",
   description: "设置新的登录密码。",
   robots: { index: false, follow: false },
 };

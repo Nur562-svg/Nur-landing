@@ -134,7 +134,7 @@ function buildPrompt(context: ResolvedNurAgentContext): string {
     sources: context.sources,
   };
   return [
-    "你是 NUR LEARN 的受限结构学习 Agent。只判断答案是否覆盖给定结构，不判断医学事实真伪，不作临床诊断，不冒充任课教师评分或标准答案。",
+    "你是 Ariadne 的受限结构学习 Agent。只判断答案是否覆盖给定结构，不判断医学事实真伪，不作临床诊断，不冒充任课教师评分或标准答案。",
     "中医推理、现代医学评估与二者关系边界必须分别处理；不得把证候和现代疾病直接等同。",
     "只能返回给定 criterion id 和 confirmed attempt id。最多选择一个下一步。只有 allowRewrite 为 true 时才可选择一个 rewrite criterion；否则必须返回 null。不得使用网页、工具、文件或外部知识。",
     `允许的结构：${JSON.stringify(allowedOutput)}`,

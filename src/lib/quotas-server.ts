@@ -15,12 +15,12 @@ export async function recordServerUsage(
   resource:
     | "courseBuilds"
     | "agentCalls"
-    | "hidocParses"
-    | "hidocExtracts"
-    | "hidocLessons"
-    | "hidocChats"
-    | "hidocNotes"
-    | "hidocWorkshopChats",
+    | "clewParses"
+    | "clewExtracts"
+    | "clewLessons"
+    | "clewChats"
+    | "clewNotes"
+    | "clewWorkshopChats",
 ): Promise<void> {
   const user = await prisma.user.findUnique({ where: { id: userId }, select: { usage: true } });
   const current: UserUsageRecord = ((user?.usage as UserUsageRecord) ?? {}) as UserUsageRecord;
@@ -59,12 +59,12 @@ export async function computeUserQuotas(userId: string): Promise<UserQuotas> {
   const serverUsage: UserUsageRecord = ((user?.usage as UserUsageRecord) ?? {}) as UserUsageRecord;
   const serverBuilds = serverUsage.courseBuilds || 0;
   const serverAgent = serverUsage.agentCalls || 0;
-  const serverHidocParses = serverUsage.hidocParses || 0;
-  const serverHidocExtracts = serverUsage.hidocExtracts || 0;
-  const serverHidocLessons = serverUsage.hidocLessons || 0;
-  const serverHidocChats = serverUsage.hidocChats || 0;
-  const serverHidocNotes = serverUsage.hidocNotes || 0;
-  const serverHidocWorkshopChats = serverUsage.hidocWorkshopChats || 0;
+  const serverClewParses = serverUsage.clewParses || 0;
+  const serverClewExtracts = serverUsage.clewExtracts || 0;
+  const serverClewLessons = serverUsage.clewLessons || 0;
+  const serverClewChats = serverUsage.clewChats || 0;
+  const serverClewNotes = serverUsage.clewNotes || 0;
+  const serverClewWorkshopChats = serverUsage.clewWorkshopChats || 0;
 
   const clientBuilds = getClientBump("courseBuilds");
   const clientAgent = getClientBump("agentCalls");
@@ -77,12 +77,12 @@ export async function computeUserQuotas(userId: string): Promise<UserQuotas> {
     courseBuilds: computeItem(courseBuildsUsed, limits.courseBuilds),
     mockExams: computeItem(mockExamsUsed, limits.mockExams),
     agentCalls: computeItem(agentCallsUsed, limits.agentCalls),
-    hidocParses: computeItem(serverHidocParses, limits.hidocParses),
-    hidocExtracts: computeItem(serverHidocExtracts, limits.hidocExtracts),
-    hidocLessons: computeItem(serverHidocLessons, limits.hidocLessons),
-    hidocChats: computeItem(serverHidocChats, limits.hidocChats),
-    hidocNotes: computeItem(serverHidocNotes, limits.hidocNotes),
-    hidocWorkshopChats: computeItem(serverHidocWorkshopChats, limits.hidocWorkshopChats),
+    clewParses: computeItem(serverClewParses, limits.clewParses),
+    clewExtracts: computeItem(serverClewExtracts, limits.clewExtracts),
+    clewLessons: computeItem(serverClewLessons, limits.clewLessons),
+    clewChats: computeItem(serverClewChats, limits.clewChats),
+    clewNotes: computeItem(serverClewNotes, limits.clewNotes),
+    clewWorkshopChats: computeItem(serverClewWorkshopChats, limits.clewWorkshopChats),
   };
 
   const periodNote = tier === "pro"

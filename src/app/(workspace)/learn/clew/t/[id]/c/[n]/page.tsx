@@ -1,56 +1,56 @@
 import Link from "next/link";
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
-import { HiDocStudyRoom } from "@/components/hi-doc-study";
-import { getHiDocSessionUser } from "@/lib/hidoc/session-user";
-import { getHiDocChapterStudy, getHiDocKnowledgePointStudy } from "@/lib/hidoc/study";
+import { ClewStudyRoom } from "@/components/clew-study";
+import { getClewSessionUser } from "@/lib/clew/session-user";
+import { getClewChapterStudy, getClewKnowledgePointStudy } from "@/lib/clew/study";
 import { getMembershipTierLabel } from "@/lib/membership";
-import styles from "@/components/hi-doc.module.css";
+import styles from "@/components/clew.module.css";
 
 export const metadata: Metadata = {
-  title: "知识点学习 | Hi doc · NUR LEARN",
+  title: "知识点学习 | Clew · Ariadne",
   description: "按知识点生成讲义，并就讲义与教材原文继续追问。",
   robots: { index: false, follow: false },
 };
 
 export const dynamic = "force-dynamic";
 
-export default async function HiDocChapterStudyPage({
+export default async function ClewChapterStudyPage({
   params,
   searchParams,
 }: {
   params: Promise<{ id: string; n: string }>;
   searchParams: Promise<{ kp?: string }>;
 }) {
-  const user = await getHiDocSessionUser();
+  const user = await getClewSessionUser();
   const { id, n } = await params;
   const { kp } = await searchParams;
-  const studyPath = `/learn/hi-doc/t/${id}/c/${n}`;
+  const studyPath = `/learn/clew/t/${id}/c/${n}`;
 
   if (!user) {
     return (
       <main className={styles.page}>
         <header className={styles.header}>
           <Link className={styles.brand} href="/learn">
-            NUR LEARN
+            Ariadne
           </Link>
           <div className={styles.headerMeta}>
-            <Link className={styles.headerLink} href="/learn/hi-doc">
+            <Link className={styles.headerLink} href="/learn/clew">
               返回书架
             </Link>
           </div>
         </header>
         <div className={styles.content}>
-          <p className={styles.kicker}>HI DOC</p>
+          <p className={styles.kicker}>CLEW</p>
           <h1 className={styles.title}>知识点学习</h1>
-          <section className={styles.gateCard} aria-labelledby="hidoc-study-gate-title">
-            <h2 id="hidoc-study-gate-title">登录后开始学习</h2>
+          <section className={styles.gateCard} aria-labelledby="clew-study-gate-title">
+            <h2 id="clew-study-gate-title">登录后开始学习</h2>
             <p>教材是你的私有资料，讲义与讲解对话需要登录账户才能使用。</p>
             <div className={styles.gateActions}>
               <Link className={styles.gateButton} href={`/login?next=${studyPath}`}>
                 去登录
               </Link>
-              <Link className={styles.gateSecondary} href="/learn/hi-doc">
+              <Link className={styles.gateSecondary} href="/learn/clew">
                 返回书架
               </Link>
             </div>
@@ -65,7 +65,7 @@ export default async function HiDocChapterStudyPage({
     notFound();
   }
 
-  const chapterStudy = await getHiDocChapterStudy(user.id, id, chapterOrder);
+  const chapterStudy = await getClewChapterStudy(user.id, id, chapterOrder);
   if (!chapterStudy.ok) {
     if (chapterStudy.code === "not-found") {
       notFound();
@@ -74,16 +74,16 @@ export default async function HiDocChapterStudyPage({
       <main className={styles.page}>
         <header className={styles.header}>
           <Link className={styles.brand} href="/learn">
-            NUR LEARN
+            Ariadne
           </Link>
           <div className={styles.headerMeta}>
-            <Link className={styles.headerLink} href="/learn/hi-doc">
+            <Link className={styles.headerLink} href="/learn/clew">
               返回书架
             </Link>
           </div>
         </header>
         <div className={styles.content}>
-          <p className={styles.kicker}>HI DOC</p>
+          <p className={styles.kicker}>CLEW</p>
           <h1 className={styles.title}>知识点学习</h1>
           <p className={styles.errorBox} role="alert">
             {chapterStudy.message}
@@ -100,30 +100,30 @@ export default async function HiDocChapterStudyPage({
     ?? knowledgePoints[0]?.id
     ?? null;
   const pointStudy = selectedId
-    ? await getHiDocKnowledgePointStudy(user.id, selectedId)
+    ? await getClewKnowledgePointStudy(user.id, selectedId)
     : null;
 
   return (
     <main className={styles.page}>
       <header className={styles.header}>
         <Link className={styles.brand} href="/learn">
-          NUR LEARN
+          Ariadne
         </Link>
         <div className={styles.headerMeta}>
           <span>
             {user.displayName} · {getMembershipTierLabel(user.tier)}
           </span>
-          <Link className={styles.headerLink} href={`/learn/hi-doc/t/${id}`}>
+          <Link className={styles.headerLink} href={`/learn/clew/t/${id}`}>
             教材详情
           </Link>
-          <Link className={styles.headerLink} href="/learn/hi-doc">
+          <Link className={styles.headerLink} href="/learn/clew">
             返回书架
           </Link>
         </div>
       </header>
 
       <div className={styles.studyContent}>
-        <p className={styles.kicker}>HI DOC · 知识学习</p>
+        <p className={styles.kicker}>CLEW · 知识学习</p>
         <h1 className={styles.title}>{chapterStudy.data.textbook.title}</h1>
         <p className={styles.intro}>
           第 {chapterStudy.data.chapterIndex}/{chapterStudy.data.chapterTotal} 章《
@@ -132,7 +132,7 @@ export default async function HiDocChapterStudyPage({
         </p>
 
         {pointStudy?.ok ? (
-          <HiDocStudyRoom
+          <ClewStudyRoom
             key={pointStudy.data.knowledgePoint.id}
             textbookId={chapterStudy.data.textbook.id}
             chapter={chapterStudy.data}
@@ -141,7 +141,7 @@ export default async function HiDocChapterStudyPage({
         ) : (
           <section className={styles.emptyState}>
             本章还没有可学习的知识点：先回到
-            <Link href={`/learn/hi-doc/t/${id}`}> 教材详情 </Link>
+            <Link href={`/learn/clew/t/${id}`}> 教材详情 </Link>
             对第 {chapterOrder} 章运行「萃取知识点」。
           </section>
         )}

@@ -180,7 +180,7 @@ function buildPrompt(
   baselinePlan: CourseBuildPlan,
 ): string {
   return [
-    "你是 NUR LEARN Course Builder 的受限课程规划器。你只能在已经声明的课程、章节、知识点和来源 ID 内整理课程计划。",
+    "你是 Ariadne Course Builder 的受限课程规划器。你只能在已经声明的课程、章节、知识点和来源 ID 内整理课程计划。",
     "不得新增来源、页码、教师重点、答案、评分标准或医学事实。pending 来源必须标为 review 或 exclude，不能标为 use。不得改变 curriculumMode。",
     "必须保留每个 chapterId、knowledgePointId、sourceId，且各出现一次。priorityKnowledgePointIds 只能引用已知知识点。",
     "请返回一个 JSON 对象，字段和 requiredOutputTemplate 完全一致。不要返回 Markdown、解释或代码围栏。",
@@ -226,7 +226,7 @@ function buildPrivateOverlayPrompt(
     requiredOutputTemplate: outputTemplate,
   };
   return [
-    "你是 NUR LEARN 的受限私人摘录规划器。只能逐条判断已知 excerptId 为 use、review 或 exclude，并说明固定知识点中的描述性学习用途与人工审核提示。",
+    "你是 Ariadne 的受限私人摘录规划器。只能逐条判断已知 excerptId 为 use、review 或 exclude，并说明固定知识点中的描述性学习用途与人工审核提示。",
     "不得新增或修改 overlayId、courseId、knowledgePointId、excerptId；不得生成来源、页码、答案、教师重点、评分标准、课程事实或发布状态。learner-private 与 pending-review 永远不能升级。",
     "每个已知 excerptId 必须且只能出现一次。请返回字段与 requiredOutputTemplate 完全一致的 JSON 对象，不要返回 Markdown、解释或代码围栏。",
     `最小传输上下文：${JSON.stringify(context)}`,
@@ -293,7 +293,7 @@ function buildPrivateMaterialAnalysisPrompt(
     requiredOutputShape,
   };
   return [
-    "你是 NUR LEARN 的受限私人材料分析器。请把已明确授权的摘录标准化、去重、分组为候选主题与可练习题目（a1-single 单选、fill 填空、short-answer 简答、term-explanation 名词解释），并为每道去重后的题生成一份 NUR/Qwen 参考答案草稿。",
+    "你是 Ariadne 的受限私人材料分析器。请把已明确授权的摘录标准化、去重、分组为候选主题与可练习题目（a1-single 单选、fill 填空、short-answer 简答、term-explanation 名词解释），并为每道去重后的题生成一份 NUR/Qwen 参考答案草稿。",
     "每个输入 excerptId 必须且只能进入一个 question.sourceExcerptIds 或 unmapped；去重题可合并多个 excerptId。每个已映射 excerptId 还必须且只能进入一个 topic.excerptIds。不得新增未知 excerptId。",
     "topic 只是私人候选分组，不是官方章节。不得修改 courseId、knowledgePointId、overlayId，不得创建学校答案、教材标准答案、教师 rubric、当前教师采分点、来源页码、课程发布状态或其他权威升级。",
     "若摘录只有题干，sourceAnswerStatus 必须为 missing。即使摘录疑似同时包含答案，也只能标 candidate-present-pending-review。所有 answerDraft 都只是生成草稿，不能在文本中冒充来源答案。",

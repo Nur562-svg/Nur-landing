@@ -124,12 +124,12 @@ describe("Design System v2 six-piece components (pure render smoke)", () => {
     const tabs = renderToStaticMarkup(h(components.V2TabStrip, { items, activeId: "a" }));
     const rail = renderToStaticMarkup(
       h(components.V2SideRail, {
-        brand: "NUR LEARN",
+        brand: "Ariadne",
         items: [
-          { id: "hidoc", label: "Hi doc", href: "/learn/hi-doc" },
+          { id: "clew", label: "Clew", href: "/learn/clew" },
           { id: "courses", label: "官方课程", href: "/courses" },
         ],
-        activeId: "hidoc",
+        activeId: "clew",
       }),
     );
     const bottom = renderToStaticMarkup(
@@ -137,7 +137,7 @@ describe("Design System v2 six-piece components (pure render smoke)", () => {
     );
     assert.ok(tabs.includes("讲义"));
     assert.ok(tabs.includes("维护中"));
-    assert.ok(rail.includes("Hi doc"));
+    assert.ok(rail.includes("Clew"));
     assert.ok(rail.includes("official-course") === false);
     assert.ok(bottom.includes("学习"));
     // active 条目带 aria-current

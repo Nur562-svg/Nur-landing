@@ -6,18 +6,18 @@ import { resolveEffectiveMembershipTier } from "@/lib/membership";
 import type { MembershipTier } from "@/types/auth";
 
 /**
- * Hi doc 会话用户（server-only）：页面与 API 路由共用，避免两处各写一遍档位解析。
+ * Clew 会话用户（server-only）：页面与 API 路由共用，避免两处各写一遍档位解析。
  * 旧 lite 归一化为 basic；会员到期自动回退 free。
  */
 
-export type HiDocSessionUser = {
+export type ClewSessionUser = {
   id: string;
   email: string;
   displayName: string;
   tier: MembershipTier;
 };
 
-export async function getHiDocSessionUser(): Promise<HiDocSessionUser | null> {
+export async function getClewSessionUser(): Promise<ClewSessionUser | null> {
   let session;
   try {
     session = await getCurrentSession();

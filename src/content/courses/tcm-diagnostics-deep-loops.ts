@@ -209,7 +209,7 @@ export const deepLoopSources = [
     displayLabel: "NUR · 五个证据推理循环",
     status: "available",
     missingLabel: null,
-    citation: { label: "NUR LEARN 结构化教学与评分边界", edition: "2026-07-19", page: null, slide: null, academicYear: null, url: null },
+    citation: { label: "Ariadne 结构化教学与评分边界", edition: "2026-07-19", page: null, slide: null, academicYear: null, url: null },
     verifiedAt: null,
   },
 ] as const satisfies readonly SourceReference[];

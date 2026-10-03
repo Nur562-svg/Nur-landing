@@ -11,7 +11,7 @@ export const SITE_DOMAIN = process.env.NEXT_PUBLIC_SITE_DOMAIN ?? "nur-learn.exa
 export const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? `https://${SITE_DOMAIN}`;
 
 /** 站点名称。 */
-export const SITE_NAME = "NUR LEARN";
+export const SITE_NAME = "Ariadne";
 
 /** 站点描述。 */
 export const SITE_DESCRIPTION =

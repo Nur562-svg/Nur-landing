@@ -1,18 +1,19 @@
 import "server-only";
 
-import type { HiDocNoteModelInput } from "../note-heuristic";
-import { HiDocNoteProviderError, type HiDocNoteProvider } from "../note-provider";
-import { streamDashScopeChatCompletion } from "./dashscope-stream";
+import type { ClewNoteModelInput } from "../note-heuristic";
+import { ClewNoteProviderError, type ClewNoteProvider } from "../note-provider";
+import { streamChatCompletion } from "./chat-transport";
+import type { ResolvedClewModelConfig } from "./model-config";
 
 /**
- * DashScope 学霸笔记适配器（OpenAI 兼容 chat/completions，流式 markdown 输出）。
+ * 学霸笔记适配器（OpenAI 兼容 chat/completions，流式 markdown 输出；ZCODE-M4 起接收任务级解析配置）。
  * 只汇总给定的讲义要点、划重点、批注与追问；没提供的（例如某知识点没有追问）就如实略去，不得编造。
  */
 
 const requestTimeoutMs = 240_000;
 const maxOutputTokens = 4000;
 
-function buildPrompt(input: HiDocNoteModelInput): string {
+function buildPrompt(input: ClewNoteModelInput): string {
   const requiredShape = [
     "## 章首导读",
     "（2–4 句：本章覆盖范围、知识点数量、学习重点概览；只依据给定信息）",
@@ -31,7 +32,7 @@ function buildPrompt(input: HiDocNoteModelInput): string {
   ].join("\n");
 
   return [
-    "你是 NUR LEARN「Hi doc」的章级学霸笔记编写器。把学习者在某一章留下的学习痕迹汇总成一份可复习、可下载的中文笔记。",
+    "你是 Ariadne「Clew」的章级学霸笔记编写器。把学习者在某一章留下的学习痕迹汇总成一份可复习、可下载的中文笔记。",
     "输出要求（必须严格遵守，不要输出代码围栏，不要结构之外的寒暄）：",
     requiredShape,
     "约束：",
@@ -44,20 +45,16 @@ function buildPrompt(input: HiDocNoteModelInput): string {
   ].join("\n");
 }
 
-export function createDashScopeHiDocNoteProvider(
-  apiKey: string,
-  model: string,
-  baseUrl?: string,
-): HiDocNoteProvider {
+export function createDashScopeClewNoteProvider(
+  config: ResolvedClewModelConfig,
+): ClewNoteProvider {
   return {
-    id: "dashscope",
-    model,
+    id: config.provider,
+    model: config.model,
     async generateNote(input, onDelta) {
       try {
-        return await streamDashScopeChatCompletion({
-          apiKey,
-          model,
-          baseUrl,
+        return await streamChatCompletion({
+          config,
           messages: [
             {
               role: "system",
@@ -72,7 +69,7 @@ export function createDashScopeHiDocNoteProvider(
           timeoutMs: requestTimeoutMs,
         });
       } catch (error) {
-        throw new HiDocNoteProviderError(
+        throw new ClewNoteProviderError(
           error instanceof Error ? error.message : "学霸笔记模型调用失败",
         );
       }

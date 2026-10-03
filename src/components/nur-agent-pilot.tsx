@@ -278,7 +278,7 @@ export function NurAgentPilot({
     <section className={styles.agentCard} aria-live="polite">
       <div className={styles.heading}>
         <Bot aria-hidden="true" size={20} strokeWidth={1.5} />
-        <div><small>NUR AGENT · LOCAL RUNTIME (Qwen-powered)</small><h3>学习任务 Agent</h3></div>
+        <div><small>ARIADNE AGENT · LOCAL RUNTIME (Qwen-powered)</small><h3>学习任务 Agent</h3></div>
         <span>本地可运行 · 模型仅建议</span>
       </div>
       <p className={styles.boundary}>
@@ -444,7 +444,7 @@ export function NurAgentPilot({
           )}
           <button type="button" disabled={loading} onClick={() => requestReview(false)}>
             {loading ? <LoaderCircle className={styles.spinner} aria-hidden="true" size={17} /> : <Sparkles aria-hidden="true" size={17} />}
-            {loading ? "Agent 正在执行四步检查" : error ? "重新运行 NUR Agent" : "让 Agent 直接分析我写的答案（Qwen）"}
+            {loading ? "Agent 正在执行四步检查" : error ? "重新运行 Ariadne Agent" : "让 Agent 直接分析我写的答案（Qwen）"}
           </button>
           <small>Agent 严格基于本知识点注册的 criteria、sources 和你当前写的文字工作。模型只出建议，写入由你确认。</small>
         </div>

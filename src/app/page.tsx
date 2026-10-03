@@ -97,8 +97,8 @@ export default function Home() {
   return (
     <main className="min-h-screen bg-[#f7f4ef] text-black">
       <header className="site-shell sticky top-0 z-30 border-b border-black bg-[#f7f4ef]/92 backdrop-blur">
-        <Link href="/learn" className="brand-lockup" aria-label="NUR LEARN 学习首页">
-          <span>NUR LEARN</span>
+        <Link href="/learn" className="brand-lockup" aria-label="Ariadne 学习首页">
+          <span>Ariadne</span>
         </Link>
         <nav className="nav-links" aria-label="Main navigation">
           <a href="#build">学习闭环</a>
@@ -117,7 +117,7 @@ export default function Home() {
             {patternRows.map((_, rowIndex) => (
               <div className="pattern-row" key={rowIndex}>
                 {patternWords.map((__, wordIndex) => (
-                  <span key={wordIndex}>Nur learn</span>
+                  <span key={wordIndex}>Ariadne</span>
                 ))}
               </div>
             ))}
@@ -125,7 +125,7 @@ export default function Home() {
 
           <div className="hero-copy">
             <p>&nbsp;</p>
-            <h1>你好，这是 NUR LEARN</h1>
+            <h1>你好，这是 Ariadne</h1>
           </div>
 
           <div className="reveal-layer" style={revealStyle} aria-hidden="true">
@@ -165,7 +165,7 @@ export default function Home() {
           <div className="section-heading">
             <h2>顺着学习闭环走</h2>
             <p>
-              Nur learn专为医学生创建的学习闭环，从而提升学习效率、得分能力，用户还可选择提供已标注的学习资料来创建的属于自己的学习闭环
+              Ariadne专为医学生创建的学习闭环，从而提升学习效率、得分能力，用户还可选择提供已标注的学习资料来创建的属于自己的学习闭环
             </p>
           </div>
           <div className="row-list">
@@ -206,7 +206,7 @@ export default function Home() {
             把辨证能力真正转化为考场上的表达。
           </p>
           <Link href="/learn" className="contact-cta">
-            进入 NUR LEARN 学习平台 →
+            进入 Ariadne 学习平台 →
           </Link>
         </section>
       </div>

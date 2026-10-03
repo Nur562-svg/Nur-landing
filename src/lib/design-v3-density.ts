@@ -1,19 +1,19 @@
 /**
  * Design system v3 peer-card presentation.
- * The learn home and Hi doc shelf render from these caps so desktop and 390px
+ * The learn home and Clew shelf render from these caps so desktop and 390px
  * counts stay measurable without a second copy of the card list.
  *
  * Before-counts (pre-v3 source, 2026-09-24):
  * - /learn guest, weekly-plan drawer closed: 3 entry cards + case + 4 reasoning
  *   cards + dual-lens card + 3 progress rows = 12.
- * - Hi doc shelf with 5 active textbooks: quota panel + upload panel + 5
+ * - Clew shelf with 5 active textbooks: quota panel + upload panel + 5
  *   textbook cards = 7.
  */
 
 export const LEARN_PEER_CARDS_BEFORE = 12;
 
-export const HIDOC_SHELF_COMPARISON_ACTIVE_BOOKS = 5;
-export const HIDOC_SHELF_PEER_CARDS_BEFORE = 2 + HIDOC_SHELF_COMPARISON_ACTIVE_BOOKS;
+export const CLEW_SHELF_COMPARISON_ACTIVE_BOOKS = 5;
+export const CLEW_SHELF_PEER_CARDS_BEFORE = 2 + CLEW_SHELF_COMPARISON_ACTIVE_BOOKS;
 
 export const LEARN_PEER_CARD_IDS = [
   "case",

@@ -336,7 +336,7 @@ function buildPrompt(context: ResolvedNurAgentContext): string {
   // Proposals remain suggestions only; user action drives all state change.
 
   return [
-    "你是 NUR LEARN 里针对这个具体知识点的精准写作与推理导师。你不是通用医疗 AI，也不是老师评分官。",
+    "你是 Ariadne 里针对这个具体知识点的精准写作与推理导师。你不是通用医疗 AI，也不是老师评分官。",
     "你的唯一严格参考是本次提供的 criteria、answerFramework 和 sources。所有判断必须落地到这些注册材料上。",
     "最重要指令：你必须先认真阅读学生本次提交的 currentText。你的反馈要直接针对学生实际写的内容。",
     "在诊断时，必须在每个 omission 的 detail 开头用精确格式写出你引用的学生原文短语：以“你写了：“ + 学生原文中的原话 + ”” 开头，然后再分析问题。例如 detail 必须类似：你写了：“食欲旺盛且食量增加” —— 这句话只覆盖了症状，但缺少“食欲”的定义要素，与“定义准确”标准不符。必须用学生实际写的原话，不要改写或概括学生的话。",
@@ -370,8 +370,8 @@ export function createDashScopeNurAgentProvider(
       const schema = buildSchema(context);
       const prompt = buildPrompt(context);
       const system = context.request.privateRef === "nur-qwen-private-ref"
-        ? "你是 NUR LEARN 针对这个知识点的精准写作导师。必须先阅读并引用学生 currentText 中的具体句子进行分析。使用注册的 criteria 和 sources 作为严格参考。给出尖锐、直接、基于学生原文的结构建议。所有建议都是 proposal，写入由用户和确定性代码负责。返回严格 JSON tool call。"
-        : "你是 NUR LEARN 针对这个知识点的精准写作导师。必须先阅读并引用学生 currentText 中的具体句子进行分析。使用注册的 criteria 和 sources 作为严格参考。给出精炼、直接的反馈。rewriteSuggestions 必须是短小（20-120字）的可直接插入片段，而非整段。返回严格 JSON tool call。";
+        ? "你是 Ariadne 针对这个知识点的精准写作导师。必须先阅读并引用学生 currentText 中的具体句子进行分析。使用注册的 criteria 和 sources 作为严格参考。给出尖锐、直接、基于学生原文的结构建议。所有建议都是 proposal，写入由用户和确定性代码负责。返回严格 JSON tool call。"
+        : "你是 Ariadne 针对这个知识点的精准写作导师。必须先阅读并引用学生 currentText 中的具体句子进行分析。使用注册的 criteria 和 sources 作为严格参考。给出精炼、直接的反馈。rewriteSuggestions 必须是短小（20-120字）的可直接插入片段，而非整段。返回严格 JSON tool call。";
 
       const response = await fetch(chatCompletionsUrl, {
         method: "POST",

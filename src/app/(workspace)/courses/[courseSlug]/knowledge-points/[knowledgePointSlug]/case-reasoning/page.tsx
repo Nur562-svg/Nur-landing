@@ -46,11 +46,11 @@ export async function generateMetadata({
     : undefined;
 
   if (!course || !knowledgePoint || !caseDefinition) {
-    return { title: "案例推理训练室未找到｜NUR LEARN" };
+    return { title: "案例推理训练室未找到｜Ariadne" };
   }
 
   return {
-    title: `案例推理训练室｜${knowledgePoint.title}｜NUR LEARN`,
+    title: `案例推理训练室｜${knowledgePoint.title}｜Ariadne`,
     description: `围绕${knowledgePoint.title}训练证据、病机、证型与鉴别排除的完整推理链。`,
   };
 }

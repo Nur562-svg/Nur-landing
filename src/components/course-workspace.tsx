@@ -355,8 +355,8 @@ export function CourseWorkspace({ course, learnerState }: CourseWorkspaceProps) 
   return (
     <main className={styles.appShell}>
       <header className={styles.header}>
-        <Link className={styles.brand} href="/learn" aria-label="返回 NUR LEARN 学习首页">
-          NUR LEARN
+        <Link className={styles.brand} href="/learn" aria-label="返回 Ariadne 学习首页">
+          Ariadne
         </Link>
 
         <nav className={styles.navigation} aria-label="主导航">

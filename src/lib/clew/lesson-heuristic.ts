@@ -1,32 +1,43 @@
-import type { HiDocLessonGenerator, HiDocLessonStyle } from "@/types/hidoc";
-import { formatHiDocSourcePage, isHiDocDocx } from "./source-label";
+import type { ClewLessonGenerator, ClewLessonStyle } from "@/types/clew";
+import { formatClewSourcePage, isClewDocx } from "./source-label";
 
 /**
- * Hi doc 讲义规则层（纯函数，可测试）：风格/生成方式解析、结构校验、无模型时的启发式讲义。
+ * Clew 讲义规则层（纯函数，可测试）：风格/生成方式解析、结构校验、无模型时的启发式讲义。
  * 启发式只重排「萃取结果 + 教材原文片段」，不补充教材外知识，并明确标注「未接入模型」。
  */
 
-export const HIDOC_LESSON_STYLES: readonly HiDocLessonStyle[] = ["zh-primary"];
+export const CLEW_LESSON_STYLES: readonly ClewLessonStyle[] = [
+  "zh-primary",
+  "exam-cram",
+  "socratic",
+  "en-primary",
+];
 
-export const HIDOC_LESSON_STYLE_LABELS: Record<HiDocLessonStyle, string> = {
+export const CLEW_LESSON_STYLE_LABELS: Record<ClewLessonStyle, string> = {
   "zh-primary": "中文为主 · 术语首次标注原文",
+  "exam-cram": "考点速记 · 冲刺记忆",
+  socratic: "引导追问 · 问题链",
+  "en-primary": "英文为主 · 术语中英对照",
 };
 
+/** 校验任意输入是否为已注册的讲解风格（生成请求的参数校验用）。 */
+export function isClewLessonStyle(value: unknown): value is ClewLessonStyle {
+  return typeof value === "string" && (CLEW_LESSON_STYLES as readonly string[]).includes(value);
+}
+
 /** 未知/缺省风格一律回落 zh-primary（不猜测用户偏好）。 */
-export function resolveHiDocLessonStyle(value: unknown): HiDocLessonStyle {
-  return typeof value === "string" && (HIDOC_LESSON_STYLES as readonly string[]).includes(value)
-    ? (value as HiDocLessonStyle)
-    : "zh-primary";
+export function resolveClewLessonStyle(value: unknown): ClewLessonStyle {
+  return isClewLessonStyle(value) ? value : "zh-primary";
 }
 
 /** 生成方式入库格式："model:{provider}:{model}" | "heuristic"。 */
-export function formatHiDocLessonGenerator(generator: HiDocLessonGenerator): string {
+export function formatClewLessonGenerator(generator: ClewLessonGenerator): string {
   return generator.kind === "model"
     ? `model:${generator.provider}:${generator.model}`
     : "heuristic";
 }
 
-export function parseHiDocLessonGenerator(value: unknown): HiDocLessonGenerator {
+export function parseClewLessonGenerator(value: unknown): ClewLessonGenerator {
   if (typeof value !== "string") {
     return { kind: "heuristic" };
   }
@@ -37,22 +48,22 @@ export function parseHiDocLessonGenerator(value: unknown): HiDocLessonGenerator 
   return { kind: "heuristic" };
 }
 
-export function describeHiDocLessonGenerator(generator: HiDocLessonGenerator): string {
+export function describeClewLessonGenerator(generator: ClewLessonGenerator): string {
   return generator.kind === "model"
     ? `模型生成（${generator.provider} · ${generator.model}）`
     : "启发式整理 · 未接入模型";
 }
 
-export const HIDOC_LESSON_SECTIONS = ["定义", "要点", "易错点", "自测题"] as const;
+export const CLEW_LESSON_SECTIONS = ["定义", "要点", "易错点", "自测题"] as const;
 
-export type HiDocLessonSection = (typeof HIDOC_LESSON_SECTIONS)[number];
+export type ClewLessonSection = (typeof CLEW_LESSON_SECTIONS)[number];
 
 /** 讲义自测题数量（验收要求 3 道）。 */
-export const HIDOC_LESSON_SELF_TEST_COUNT = 3;
+export const CLEW_LESSON_SELF_TEST_COUNT = 3;
 
-export type HiDocLessonStructure = {
-  present: HiDocLessonSection[];
-  missing: HiDocLessonSection[];
+export type ClewLessonStructure = {
+  present: ClewLessonSection[];
+  missing: ClewLessonSection[];
   selfTestCount: number;
 };
 
@@ -65,7 +76,7 @@ function stripHeadingDecoration(line: string): string {
 }
 
 /** 小节标题判定：标题行或短行（≤24 字）精确等于小节名（容忍 `定义：` 之类的冒号）。 */
-function isSectionHeading(line: string, title: HiDocLessonSection): boolean {
+export function isSectionHeading(line: string, title: ClewLessonSection): boolean {
   const stripped = stripHeadingDecoration(line).replace(/[:：]\s*$/, "").trim();
   if (stripped === title) {
     return true;
@@ -85,14 +96,13 @@ function countSelfTestQuestions(body: string): number {
     .length;
 }
 
-/** 解析讲义小节结构与自测题数量（模型输出与启发式讲义共用同一判定）。 */
-export function inspectLessonMarkdown(markdown: string): HiDocLessonStructure {
-  const lines = markdown.replace(/\r\n/g, "\n").split("\n");
-  const sectionBodies = new Map<HiDocLessonSection, string[]>();
-  let current: HiDocLessonSection | null = null;
+/** 收集各小节的原始行（模型输出与启发式讲义共用同一判定；三视图派生也复用该解析定位小节）。 */
+export function collectLessonSectionBodies(lines: readonly string[]): Map<ClewLessonSection, string[]> {
+  const sectionBodies = new Map<ClewLessonSection, string[]>();
+  let current: ClewLessonSection | null = null;
 
   for (const line of lines) {
-    const matched = HIDOC_LESSON_SECTIONS.find((title) => isSectionHeading(line, title));
+    const matched = CLEW_LESSON_SECTIONS.find((title) => isSectionHeading(line, title));
     if (matched) {
       current = matched;
       if (!sectionBodies.has(matched)) {
@@ -104,23 +114,101 @@ export function inspectLessonMarkdown(markdown: string): HiDocLessonStructure {
       sectionBodies.get(current)?.push(line);
     }
   }
+  return sectionBodies;
+}
 
-  const present = HIDOC_LESSON_SECTIONS.filter((title) => sectionBodies.has(title));
-  const missing = HIDOC_LESSON_SECTIONS.filter((title) => !sectionBodies.has(title));
+/** 解析讲义小节结构与自测题数量（模型输出与启发式讲义共用同一判定）。 */
+export function inspectLessonMarkdown(markdown: string): ClewLessonStructure {
+  const lines = markdown.replace(/\r\n/g, "\n").split("\n");
+  const sectionBodies = collectLessonSectionBodies(lines);
+  const present = CLEW_LESSON_SECTIONS.filter((title) => sectionBodies.has(title));
+  const missing = CLEW_LESSON_SECTIONS.filter((title) => !sectionBodies.has(title));
   const selfTestBody = (sectionBodies.get("自测题") ?? []).join("\n");
   return { present: [...present], missing: [...missing], selfTestCount: countSelfTestQuestions(selfTestBody) };
 }
 
-export type HiDocLessonValidation = {
+export type ClewLessonSelfTestItem = {
+  /** 题号（保留讲义中的编号；编号异常时按出现顺序补）。 */
+  index: number;
+  question: string;
+  /** 参考答案（讲义未附则为 null，不猜测、不补写）。 */
+  answer: string | null;
+};
+
+/**
+ * 解析讲义「自测题」小节为 题干/参考答案 对。模型与启发式讲义共用同一内联格式：
+ * `1. 题干`（可加粗）+ 下一行缩进 `   参考答案：…`；也兼容题干行内联「参考答案：」。
+ */
+export function parseClewLessonSelfTest(markdown: string): ClewLessonSelfTestItem[] {
+  const lines = markdown.replace(/\r\n/g, "\n").split("\n");
+  const body = collectLessonSectionBodies(lines).get("自测题") ?? [];
+  const items: ClewLessonSelfTestItem[] = [];
+  let current: ClewLessonSelfTestItem | null = null;
+  let fallbackIndex = 0;
+
+  const stripBoldEdges = (value: string): string =>
+    value.replace(/^\*\*\s*/, "").replace(/\*\*\s*$/, "").trim();
+
+  for (const rawLine of body) {
+    const line = rawLine.trimEnd();
+    if (line.trim().length === 0) {
+      continue;
+    }
+
+    const numbered = line.match(/^\s*(?:\*\*)?(\d{1,2})\s*[.、)）]\s*(.*)$/);
+    if (numbered) {
+      fallbackIndex += 1;
+      let text = stripBoldEdges(numbered[2]);
+      let answer: string | null = null;
+      const inline = text.match(/^(.*?)(?:\*\*)?参考答案\s*[:：]\s*([\s\S]*)$/);
+      if (inline && inline[1].trim().length > 0) {
+        text = stripBoldEdges(inline[1]);
+        answer = stripBoldEdges(inline[2]);
+      }
+      current = {
+        index: Number.parseInt(numbered[1], 10) || fallbackIndex,
+        question: text,
+        answer,
+      };
+      items.push(current);
+      continue;
+    }
+
+    if (!current) {
+      continue;
+    }
+    const answerLine = line.match(/^\s*(?:\*\*)?参考答案\s*[:：]\s*(.*)$/);
+    if (answerLine) {
+      const extra = stripBoldEdges(answerLine[1]);
+      if (extra) {
+        current.answer = current.answer ? `${current.answer} ${extra}`.trim() : extra;
+      }
+      continue;
+    }
+    const text = stripBoldEdges(line);
+    if (!text) {
+      continue;
+    }
+    if (current.answer === null) {
+      current.question = `${current.question} ${text}`.trim();
+    } else {
+      current.answer = `${current.answer} ${text}`.trim();
+    }
+  }
+
+  return items;
+}
+
+export type ClewLessonValidation = {
   ok: boolean;
-  structure: HiDocLessonStructure;
+  structure: ClewLessonStructure;
   reason: string | null;
 };
 
 /**
  * 模型讲义结构校验：定义与要点必须存在，自测题不少于 3 道；不合格即如实报错，不静默兜底。
  */
-export function validateGeneratedLesson(markdown: string): HiDocLessonValidation {
+export function validateGeneratedLesson(markdown: string): ClewLessonValidation {
   const structure = inspectLessonMarkdown(markdown);
   if (structure.missing.includes("定义")) {
     return { ok: false, structure, reason: "缺少「定义」小节" };
@@ -128,11 +216,11 @@ export function validateGeneratedLesson(markdown: string): HiDocLessonValidation
   if (structure.missing.includes("要点")) {
     return { ok: false, structure, reason: "缺少「要点」小节" };
   }
-  if (structure.selfTestCount < HIDOC_LESSON_SELF_TEST_COUNT) {
+  if (structure.selfTestCount < CLEW_LESSON_SELF_TEST_COUNT) {
     return {
       ok: false,
       structure,
-      reason: `自测题只有 ${structure.selfTestCount} 道（要求 ${HIDOC_LESSON_SELF_TEST_COUNT} 道）`,
+      reason: `自测题只有 ${structure.selfTestCount} 道（要求 ${CLEW_LESSON_SELF_TEST_COUNT} 道）`,
     };
   }
   return { ok: true, structure, reason: null };
@@ -148,10 +236,10 @@ export function normalizeLessonMarkdown(raw: string): string {
   return text;
 }
 
-export type HiDocLessonHeaderInput = {
+export type ClewLessonHeaderInput = {
   title: string;
-  generator: HiDocLessonGenerator;
-  style: HiDocLessonStyle;
+  generator: ClewLessonGenerator;
+  style: ClewLessonStyle;
   generatedAtLabel: string;
   textbookTitle: string;
   chapterTitle: string;
@@ -163,25 +251,25 @@ export type HiDocLessonHeaderInput = {
 };
 
 /** 讲义固定页首（模型与启发式共用，保证生成方式与页码可溯源）。 */
-export function buildLessonHeader(input: HiDocLessonHeaderInput): string {
+export function buildLessonHeader(input: ClewLessonHeaderInput): string {
   return [
     `# ${input.title}`,
     "",
-    `> 生成方式：${describeHiDocLessonGenerator(input.generator)}`,
-    `> 风格：${HIDOC_LESSON_STYLE_LABELS[input.style]} · 生成时间：${input.generatedAtLabel}`,
-    `> 教材：《${input.textbookTitle}》· ${input.chapterTitle} · 依据${formatHiDocSourcePage(input.fileName ?? "", input.sourcePage)}`,
+    `> 生成方式：${describeClewLessonGenerator(input.generator)}`,
+    `> 风格：${CLEW_LESSON_STYLE_LABELS[input.style]} · 生成时间：${input.generatedAtLabel}`,
+    `> 教材：《${input.textbookTitle}》· ${input.chapterTitle} · 依据${formatClewSourcePage(input.fileName ?? "", input.sourcePage)}`,
     `> ${input.notice}`,
     "",
   ].join("\n");
 }
 
-export const HIDOC_HEURISTIC_LESSON_NOTICE =
+export const CLEW_HEURISTIC_LESSON_NOTICE =
   "本页未调用模型：内容由萃取结果与教材原文片段确定性地重排，请对照教材原文核对。";
 
-export const HIDOC_MODEL_LESSON_NOTICE =
+export const CLEW_MODEL_LESSON_NOTICE =
   "AI 生成内容，请对照教材原文核对；不是教师讲义或标准答案。";
 
-export type HiDocHeuristicLessonInput = {
+export type ClewHeuristicLessonInput = {
   knowledgePoint: {
     title: string;
     description: string;
@@ -194,7 +282,7 @@ export type HiDocHeuristicLessonInput = {
   chapterTitle: string;
   /** 教材原文片段（带【PDF 第 X 页】标记）；未读到则为 null。 */
   sourceExcerpt: string | null;
-  style: HiDocLessonStyle;
+  style: ClewLessonStyle;
   /** 由调用方格式化好的时间标签（纯函数不做时区假设）。 */
   generatedAtLabel: string;
 };
@@ -238,10 +326,10 @@ export function selectExcerptLines(
  * 未接入模型时的启发式讲义：结构满足定义/要点/易错点/自测题 3 道，
  * 内容只来自萃取结果与教材原文片段，并在页首明示「未接入模型」。
  */
-export function buildHeuristicLesson(input: HiDocHeuristicLessonInput): string {
+export function buildHeuristicLesson(input: ClewHeuristicLessonInput): string {
   const { knowledgePoint, textbookTitle, chapterTitle, sourceExcerpt, style, generatedAtLabel, fileName } = input;
-  const docx = isHiDocDocx(fileName ?? "");
-  const locator = formatHiDocSourcePage(fileName ?? "", knowledgePoint.sourcePage);
+  const docx = isClewDocx(fileName ?? "");
+  const locator = formatClewSourcePage(fileName ?? "", knowledgePoint.sourcePage);
   const excerptLines = selectExcerptLines(sourceExcerpt, knowledgePoint);
   const keyTerms = knowledgePoint.keyTerms.filter((term) => term.trim().length > 0);
   const prerequisites = knowledgePoint.prerequisites.filter((item) => item.trim().length > 0);
@@ -262,7 +350,7 @@ export function buildHeuristicLesson(input: HiDocHeuristicLessonInput): string {
       chapterTitle,
       sourcePage: knowledgePoint.sourcePage,
       fileName,
-      notice: HIDOC_HEURISTIC_LESSON_NOTICE,
+      notice: CLEW_HEURISTIC_LESSON_NOTICE,
     }),
     "## 定义",
     knowledgePoint.description,

@@ -1,5 +1,5 @@
 /**
- * Hi doc local intake. PDF stays on pdf.js text extraction (same library and
+ * Clew local intake. PDF stays on pdf.js text extraction (same library and
  * text-item joining as the existing text-layer path). DOCX uses mammoth.
  * Scans, images, and legacy .doc are refused out loud. Missing DOCX pages
  * stay 待确认 — this module does not invent a page count.
@@ -8,8 +8,8 @@ import { existsSync } from "node:fs";
 import path from "node:path";
 import { pathToFileURL } from "node:url";
 import { pdfPageItemsToParagraphs } from "@/lib/pdf-local-parser";
-import type { HiDocChapterDraft } from "./toc-heuristic";
-import { HIDOC_DOCX_PAGE_COUNT_PLACEHOLDER } from "./source-label";
+import type { ClewChapterDraft } from "./toc-heuristic";
+import { CLEW_DOCX_PAGE_COUNT_PLACEHOLDER } from "./source-label";
 
 const MIN_TEXT_LENGTH = 20;
 const PDF_WORKER_RELATIVE_PATH = path.join(
@@ -20,7 +20,7 @@ const PDF_WORKER_RELATIVE_PATH = path.join(
   "pdf.worker.mjs",
 );
 
-export type HiDocSourceSuccess = {
+export type ClewSourceSuccess = {
   ok: true;
   kind: "pdf" | "docx";
   text: string;
@@ -29,13 +29,13 @@ export type HiDocSourceSuccess = {
   html: string;
 };
 
-export type HiDocSourceFailure = {
+export type ClewSourceFailure = {
   ok: false;
   code: "invalid-file" | "unsupported-scan" | "pdf-unreadable";
   message: string;
 };
 
-export type HiDocSourceRead = HiDocSourceSuccess | HiDocSourceFailure;
+export type ClewSourceRead = ClewSourceSuccess | ClewSourceFailure;
 
 function stripTags(html: string): string {
   return html
@@ -54,11 +54,11 @@ function compactLength(value: string): number {
   return value.replace(/\s+/g, "").length;
 }
 
-function failure(code: HiDocSourceFailure["code"], message: string): HiDocSourceFailure {
+function failure(code: ClewSourceFailure["code"], message: string): ClewSourceFailure {
   return { ok: false, code, message };
 }
 
-async function readPdf(bytes: Uint8Array): Promise<HiDocSourceRead> {
+async function readPdf(bytes: Uint8Array): Promise<ClewSourceRead> {
   const workerPath = path.join(process.cwd(), PDF_WORKER_RELATIVE_PATH);
   if (!existsSync(workerPath)) {
     return failure("pdf-unreadable", "服务端 PDF 组件未就绪（缺少 pdf.worker.mjs），本次操作已中止。");
@@ -102,7 +102,7 @@ async function readPdf(bytes: Uint8Array): Promise<HiDocSourceRead> {
   }
 }
 
-async function readDocx(bytes: Uint8Array): Promise<HiDocSourceRead> {
+async function readDocx(bytes: Uint8Array): Promise<ClewSourceRead> {
   try {
     const mammoth = await import("mammoth");
     const arrayBuffer = bytes.buffer.slice(bytes.byteOffset, bytes.byteOffset + bytes.byteLength) as ArrayBuffer;
@@ -128,7 +128,7 @@ async function readDocx(bytes: Uint8Array): Promise<HiDocSourceRead> {
   }
 }
 
-export async function readHiDocSource(fileName: string, bytes: Uint8Array): Promise<HiDocSourceRead> {
+export async function readClewSource(fileName: string, bytes: Uint8Array): Promise<ClewSourceRead> {
   const lower = fileName.trim().toLowerCase();
   if (lower.endsWith(".doc") && !lower.endsWith(".docx")) {
     return failure("invalid-file", "暂不支持旧版 Word（.doc）。请另存为 .docx 后再上传。");
@@ -161,13 +161,13 @@ function headingTitles(html: string): string[] {
  * Chapter titles from mammoth HTML. Every chapter keeps the schema placeholder
  * page range; callers must label that range 待确认.
  */
-export function chaptersFromDocxHtml(html: string, fallbackTitle: string): HiDocChapterDraft[] {
+export function chaptersFromDocxHtml(html: string, fallbackTitle: string): ClewChapterDraft[] {
   const titles = headingTitles(html);
   const used = titles.length > 0 ? titles : [fallbackTitle.trim() || "正文"];
   return used.slice(0, 200).map((title) => ({
     title,
-    pageStart: HIDOC_DOCX_PAGE_COUNT_PLACEHOLDER,
-    pageEnd: HIDOC_DOCX_PAGE_COUNT_PLACEHOLDER,
+    pageStart: CLEW_DOCX_PAGE_COUNT_PLACEHOLDER,
+    pageEnd: CLEW_DOCX_PAGE_COUNT_PLACEHOLDER,
   }));
 }
 
