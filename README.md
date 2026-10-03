@@ -1,6 +1,6 @@
-# NUR LEARN
+# Ariadne
 
-NUR LEARN is a local-first product prototype for sustained medical-course learning. It currently focuses on Chinese students majoring in Integrated Traditional Chinese and Western Medicine Clinical Medicine, with 《中医诊断学》 as the pilot course.
+Ariadne is a local-first product prototype for sustained medical-course learning. It currently focuses on Chinese students majoring in Integrated Traditional Chinese and Western Medicine Clinical Medicine, with 《中医诊断学》 as the pilot course.
 
 The product combines evidence-led learning, careful TCM/modern-medicine comparison, exam-oriented drilling, complete subjective-answer practice, and syndrome-differentiation reasoning.
 

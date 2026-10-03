@@ -1,0 +1,366 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>NUR LEARN 重构蓝图 · 思维导图（2026-09-30 讨论稿）</title>
+<style>
+  :root {
+    --paper: #f7f4ee;
+    --paper-2: #fffdf8;
+    --ink: #16130e;
+    --muted: #6c6a66;
+    --line: rgba(22, 19, 14, 0.22);
+    --cinnabar: #b7432f;
+    --slate: #17659a;
+    --pine: #3f6b4f;
+    --amber: #9a6b1f;
+    --display: "Songti SC", "STSong", "Noto Serif SC", "SimSun", serif;
+    --sans: -apple-system, BlinkMacSystemFont, "PingFang SC", "Microsoft YaHei", "Helvetica Neue", sans-serif;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  html { background: var(--paper); }
+  body {
+    font-family: var(--sans);
+    color: var(--ink);
+    background:
+      radial-gradient(1200px 600px at 50% -200px, rgba(183, 67, 47, 0.05), transparent 60%),
+      var(--paper);
+    padding: 56px 40px 72px;
+    min-width: 1480px;
+  }
+
+  /* ---------- 页眉 ---------- */
+  header { text-align: center; margin-bottom: 34px; }
+  .kicker {
+    font-size: 11px; letter-spacing: 0.32em; color: var(--muted);
+    text-transform: uppercase; margin-bottom: 14px;
+  }
+  h1 {
+    font-family: var(--display); font-size: 40px; font-weight: 700;
+    letter-spacing: 0.04em; margin-bottom: 10px;
+  }
+  .sub { font-size: 13px; color: var(--muted); letter-spacing: 0.06em; }
+
+  /* ---------- 根节点 ---------- */
+  .root-wrap { display: flex; justify-content: center; }
+  .root {
+    background: var(--ink); color: var(--paper);
+    padding: 22px 44px; border-radius: 10px;
+    text-align: center; min-width: 620px;
+    box-shadow: 0 10px 30px rgba(22, 19, 14, 0.16);
+  }
+  .root .r-title { font-family: var(--display); font-size: 26px; font-weight: 700; letter-spacing: 0.05em; }
+  .root .r-sub { margin-top: 8px; font-size: 12.5px; color: rgba(247, 244, 238, 0.72); letter-spacing: 0.14em; }
+
+  /* ---------- 树干连线 ---------- */
+  .trunk {
+    display: grid; grid-template-columns: repeat(4, 1fr);
+    max-width: 1560px; margin: 0 auto; position: relative; height: 44px;
+  }
+  .trunk::before {
+    content: ""; position: absolute; top: 0; left: 12.5%; right: 12.5%;
+    border-top: 1.5px solid var(--line);
+  }
+  .trunk::after {
+    content: ""; position: absolute; top: -1px; left: 50%;
+    height: 16px; border-left: 1.5px solid var(--line);
+    transform: translateX(-50%);
+  }
+  .trunk .drop { position: relative; }
+  .trunk .drop::before {
+    content: ""; position: absolute; top: 0; left: 50%; height: 44px;
+    border-left: 1.5px solid var(--line); transform: translateX(-50%);
+  }
+
+  /* ---------- 四列 ---------- */
+  .board {
+    display: grid; grid-template-columns: repeat(4, 1fr);
+    gap: 26px; max-width: 1560px; margin: 0 auto;
+    align-items: start;
+  }
+  .branch-head {
+    border-radius: 10px; padding: 16px 18px 15px; color: #fff;
+    margin-bottom: 18px; position: relative;
+  }
+  .branch-head .no {
+    font-family: var(--display); font-size: 13px; opacity: 0.75;
+    letter-spacing: 0.2em; display: block; margin-bottom: 5px;
+  }
+  .branch-head .name { font-family: var(--display); font-size: 21px; font-weight: 700; letter-spacing: 0.06em; }
+  .branch-head .en { font-size: 10.5px; opacity: 0.72; letter-spacing: 0.18em; margin-top: 5px; text-transform: uppercase; }
+  .b1 .branch-head { background: var(--cinnabar); }
+  .b2 .branch-head { background: var(--slate); }
+  .b3 .branch-head { background: var(--pine); }
+  .b4 .branch-head { background: var(--amber); }
+
+  /* ---------- 树 ---------- */
+  .tree, .tree ul { list-style: none; }
+  .tree ul {
+    position: relative; margin-left: 11px; padding-left: 20px;
+  }
+  .tree ul::before {
+    content: ""; position: absolute; left: 0; top: -9px; bottom: 14px;
+    border-left: 1px solid var(--line);
+  }
+  .tree > li { margin-bottom: 14px; }
+  .tree ul > li { position: relative; margin: 9px 0; }
+  .tree ul > li::before {
+    content: ""; position: absolute; left: -20px; top: 17px; width: 20px;
+    border-top: 1px solid var(--line);
+  }
+
+  .node {
+    background: var(--paper-2); border: 1px solid var(--line);
+    border-radius: 8px; padding: 10px 13px 9px;
+  }
+  .node .t { font-size: 13.5px; font-weight: 700; letter-spacing: 0.02em; }
+  .node .d { font-size: 11.5px; color: var(--muted); margin-top: 3px; line-height: 1.55; }
+  .node.l2 { border-width: 1.5px; border-color: rgba(22,19,14,0.4); }
+  .node.l2 .t { font-size: 14.5px; font-family: var(--display); letter-spacing: 0.04em; }
+
+  /* 主题色二级节点左边条 */
+  .b1 .node.l2 { border-left: 4px solid var(--cinnabar); }
+  .b2 .node.l2 { border-left: 4px solid var(--slate); }
+  .b3 .node.l2 { border-left: 4px solid var(--pine); }
+  .b4 .node.l2 { border-left: 4px solid var(--amber); }
+
+  /* 缺口 / 新建 */
+  .node.gap { border: 1.5px dashed var(--cinnabar); background: rgba(183, 67, 47, 0.055); }
+  .node.gap .t { color: var(--cinnabar); }
+  .node.new { border: 1.5px solid var(--slate); background: rgba(23, 101, 154, 0.055); }
+  .node.new .t { color: var(--slate); }
+  .tag {
+    display: inline-block; font-size: 9.5px; font-weight: 700; letter-spacing: 0.12em;
+    padding: 1.5px 6px; border-radius: 4px; margin-right: 6px; vertical-align: 1px;
+  }
+  .tag.gap { background: var(--cinnabar); color: #fff; }
+  .tag.new { background: var(--slate); color: #fff; }
+  .tag.have { background: rgba(22,19,14,0.72); color: var(--paper); }
+
+  /* 步骤链（Hi doc 八步） */
+  .steps { counter-reset: step; }
+  .steps > li { counter-increment: step; }
+  .steps > li > .node .t::before {
+    content: counter(step); display: inline-flex; align-items: center; justify-content: center;
+    width: 18px; height: 18px; border-radius: 50%;
+    background: var(--slate); color: #fff; font-size: 10.5px; font-weight: 700;
+    margin-right: 7px; vertical-align: 1px;
+  }
+
+  /* ---------- 图例与脚注 ---------- */
+  .legend {
+    display: flex; justify-content: center; gap: 26px;
+    margin: 40px 0 0; font-size: 12px; color: var(--muted);
+  }
+  .legend span { display: inline-flex; align-items: center; gap: 7px; }
+  .swatch { width: 22px; height: 14px; border-radius: 4px; display: inline-block; }
+  .swatch.have { background: var(--paper-2); border: 1px solid var(--line); }
+  .swatch.gap { background: rgba(183,67,47,0.08); border: 1.5px dashed var(--cinnabar); }
+  .swatch.new { background: rgba(23,101,154,0.08); border: 1.5px solid var(--slate); }
+  footer {
+    text-align: center; margin-top: 26px; font-size: 11px; color: var(--muted);
+    letter-spacing: 0.08em; line-height: 1.8;
+  }
+  @media print {
+    body { padding: 20px; }
+    .board { gap: 14px; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="kicker">NUR LEARN · 重构讨论稿 · 2026-09-30</div>
+  <h1>一张图看懂：统一学习闭环蓝图</h1>
+  <div class="sub">三条供给线 · 一套学习引擎 · 一个状态层 —— 讨论未定稿，供逐条推翻</div>
+</header>
+
+<div class="root-wrap">
+  <div class="root">
+    <div class="r-title">NUR LEARN = 教材编译器 × 统一学习闭环</div>
+    <div class="r-sub">官方课程 / Hi doc / 题库 是三个内容供给器，共享同一个学习运行时</div>
+  </div>
+</div>
+
+<div class="trunk"><div class="drop"></div><div class="drop"></div><div class="drop"></div><div class="drop"></div></div>
+
+<div class="board">
+
+  <!-- ============ ① 学习闭环 ============ -->
+  <div class="b1">
+    <div class="branch-head">
+      <span class="no">分支 ①</span>
+      <div class="name">学习闭环 · 整体架构</div>
+      <div class="en">Learning Loop Architecture</div>
+    </div>
+    <ul class="tree">
+      <li>
+        <div class="node l2"><div class="t">三层架构</div></div>
+        <ul>
+          <li><div class="node"><div class="t">内容供给层</div><div class="d">官方课程（证据分级）· Hi doc（个人教材 AI 萃取）· 题库（15 套 / 9000+ 题）</div></div></li>
+          <li><div class="node"><div class="t">学习引擎层</div><div class="d">学 → 练 → 评 → 诊 → 复 → 迁移，六环节对所有供给线通用</div></div></li>
+          <li><div class="node new"><div class="t"><span class="tag new">新建</span>统一状态层</div><div class="d">LearningEvent 总线 · FSRS 调度 · 错题中心 · 弱 KP · 周计划 —— 三条线写入同一个学习者模型</div></div></li>
+        </ul>
+      </li>
+      <li>
+        <div class="node l2"><div class="t">六环节闭环</div></div>
+        <ul>
+          <li><div class="node"><div class="t">学</div><div class="d">lesson 讲义 / Hi doc 讲义 —— 理解</div></div></li>
+          <li><div class="node"><div class="t">练</div><div class="d">刷题 · 主观写作 · 病例四阶段 —— 应用</div></div></li>
+          <li><div class="node"><div class="t">评</div><div class="d">自核清单 · NUR 评分 · 模考 100 分 —— 反馈</div></div></li>
+          <li><div class="node"><div class="t">诊</div><div class="d">错题归因 · 弱知识点识别 —— 诊断</div></div></li>
+          <li><div class="node"><div class="t">复</div><div class="d">FSRS 间隔重复 · 即将遗忘提醒 —— 巩固</div></div></li>
+          <li><div class="node"><div class="t">迁移</div><div class="d">病例推理 · 跨场景应用 —— 会用</div></div></li>
+        </ul>
+      </li>
+      <li>
+        <div class="node l2"><div class="t">执行路径（学生视角）</div></div>
+        <ul>
+          <li><div class="node"><div class="t">日常</div><div class="d">/learn 今日任务（FSRS 到期 + 错题 + 周计划）→ 学练 → 确认尝试 → 状态更新</div></div></li>
+          <li><div class="node"><div class="t">每周</div><div class="d">周计划抽屉 → 弱 KP 定向训练</div></div></li>
+          <li><div class="node"><div class="t">考前</div><div class="d">模考 → 错题归因 → 回补知识点</div></div></li>
+        </ul>
+      </li>
+    </ul>
+  </div>
+
+  <!-- ============ ② Hi doc ============ -->
+  <div class="b2">
+    <div class="branch-head">
+      <span class="no">分支 ②</span>
+      <div class="name">Hi doc · 功能与路径</div>
+      <div class="en">Personal Textbook Engine</div>
+    </div>
+    <ul class="tree">
+      <li>
+        <div class="node l2"><div class="t">八步主路径（M0–M7 已建成）</div></div>
+        <ul class="steps">
+          <li><div class="node"><div class="t">上传</div><div class="d">名额校验 · PDF 文字层 / DOCX · 扫描件明确拒绝</div></div></li>
+          <li><div class="node"><div class="t">目录识别</div><div class="d">启发式 + 模型，SSE 流式</div></div></li>
+          <li><div class="node"><div class="t">章节修正</div><div class="d">人工确认章节边界</div></div></li>
+          <li><div class="node"><div class="t">知识点萃取</div><div class="d">按章 SSE · 页码溯源</div></div></li>
+          <li><div class="node"><div class="t">讲义 + 追问</div><div class="d">每 KP 一份讲义 · Agent 对话</div></div></li>
+          <li><div class="node"><div class="t">划重点 / 批注</div><div class="d">选中即划 · 多色 · 备注</div></div></li>
+          <li><div class="node"><div class="t">学霸笔记</div><div class="d">讲义+追问+划重点 → 汇总导出</div></div></li>
+          <li><div class="node"><div class="t">课题工作坊</div><div class="d">≤100 页短材料 · 检索答疑</div></div></li>
+        </ul>
+      </li>
+      <li>
+        <div class="node l2"><div class="t">三个缺口（重构补齐）</div></div>
+        <ul>
+          <li><div class="node gap"><div class="t"><span class="tag gap">缺口</span>学完即断</div><div class="d">讲义之后没有练 / 评环节，知识不固化</div></div></li>
+          <li><div class="node gap"><div class="t"><span class="tag gap">缺口</span>不进 FSRS</div><div class="d">萃取的 KP 无复习调度，学过就忘</div></div></li>
+          <li><div class="node gap"><div class="t"><span class="tag gap">缺口</span>孤岛</div><div class="d">与官方课、题库、错题中心零关联</div></div></li>
+        </ul>
+      </li>
+      <li>
+        <div class="node l2"><div class="t">名额机制（已定案）</div></div>
+        <ul>
+          <li><div class="node"><div class="t">当月有效</div><div class="d">basic 1 本 / pro 3 本 / max 10 本</div></div></li>
+          <li><div class="node"><div class="t">跨月冻结</div><div class="d">继续学需重占名额或升级档位；删除释放名额</div></div></li>
+        </ul>
+      </li>
+    </ul>
+  </div>
+
+  <!-- ============ ③ 连接 ============ -->
+  <div class="b3">
+    <div class="branch-head">
+      <span class="no">分支 ③</span>
+      <div class="name">官方闭环 × Hi doc · 连接</div>
+      <div class="en">The Connective Tissue</div>
+    </div>
+    <ul class="tree">
+      <li>
+        <div class="node l2"><div class="t">状态层贯通（核心）</div></div>
+        <ul>
+          <li><div class="node new"><div class="t"><span class="tag new">新建</span>Hi doc 确认尝试 → LearningEvent</div><div class="d">与官方课同一事件模型</div></div></li>
+          <li><div class="node new"><div class="t"><span class="tag new">新建</span>统一 FSRS / 错题 / 弱点</div><div class="d">Hi doc KP 到期也出现在今日任务</div></div></li>
+          <li><div class="node new"><div class="t"><span class="tag new">新建</span>Agent 全局上下文</div><div class="d">知道你在三条线分别学了什么、错了什么</div></div></li>
+        </ul>
+      </li>
+      <li>
+        <div class="node l2"><div class="t">能力复用</div></div>
+        <ul>
+          <li><div class="node new"><div class="t"><span class="tag new">新建</span>Hi doc KP → 写作室</div><div class="d">一键进主观写作训练（复用现有房间）</div></div></li>
+          <li><div class="node new"><div class="t"><span class="tag new">新建</span>工作坊材料 → 病例室</div><div class="d">课题材料生成病例题，进四阶段推理</div></div></li>
+        </ul>
+      </li>
+      <li>
+        <div class="node l2"><div class="t">内容升级通道</div></div>
+        <ul>
+          <li><div class="node new"><div class="t"><span class="tag new">新建</span>优质生成物 → 提交审核</div><div class="d">学生的 Hi doc 笔记 / 讲义可申请进入官方课</div></div></li>
+          <li><div class="node new"><div class="t"><span class="tag new">新建</span>审核通过 → editorial 来源</div><div class="d">降低官方课 authoring 成本</div></div></li>
+          <li><div class="node"><div class="t">铁律不变</div><div class="d">证据分级（可关联/不可直接等同）只属于官方闭环；Hi doc 生成物永不自动进注册表</div></div></li>
+        </ul>
+      </li>
+      <li>
+        <div class="node l2"><div class="t">导航贯通</div></div>
+        <ul>
+          <li><div class="node"><div class="t">首页三入口</div><div class="d">官方课程 / Hi doc / 题库（已建成）</div></div></li>
+          <li><div class="node"><div class="t">⌘K + 左栏</div><div class="d">全局可检索、可跳转</div></div></li>
+        </ul>
+      </li>
+    </ul>
+  </div>
+
+  <!-- ============ ④ 交互设定 ============ -->
+  <div class="b4">
+    <div class="branch-head">
+      <span class="no">分支 ④</span>
+      <div class="name">全站交互设定盘点</div>
+      <div class="en">Interaction Inventory</div>
+    </div>
+    <ul class="tree">
+      <li>
+        <div class="node l2"><div class="t">导航层</div></div>
+        <ul>
+          <li><div class="node"><div class="t">工作台壳</div><div class="d">280px 左栏 · 桌面优先 · v3 已落地</div></div></li>
+          <li><div class="node"><div class="t">⌘K 底栏</div><div class="d">全宽 · 每组 6 条 · 真检索</div></div></li>
+          <li><div class="node gap"><div class="t"><span class="tag gap">缺口</span>Agent dock 全局化</div><div class="d">现 11 处各自挂载、路由切换丢上下文 → 收编进壳、跨页存活</div></div></li>
+        </ul>
+      </li>
+      <li>
+        <div class="node l2"><div class="t">学习交互</div></div>
+        <ul>
+          <li><div class="node"><div class="t">lesson</div><div class="d">取证→对照→输出→迁移 四区块切换</div></div></li>
+          <li><div class="node"><div class="t">写作室</div><div class="d">草稿 → 逐项自核 → 聚焦重写</div></div></li>
+          <li><div class="node"><div class="t">病例室</div><div class="d">证据→机制→证型→鉴别 四阶段 + 修复</div></div></li>
+          <li><div class="node"><div class="t">Hi doc</div><div class="d">八步引导条 n/8 · SSE 流式 · 选中划重点</div></div></li>
+        </ul>
+      </li>
+      <li>
+        <div class="node l2"><div class="t">训练交互</div></div>
+        <ul>
+          <li><div class="node"><div class="t">题库</div><div class="d">筛选 chips · 题型排序 A1→病例 · 书写题看参考</div></div></li>
+          <li><div class="node"><div class="t">模考</div><div class="d">计时 · 答题卡 · 100 分卷面</div></div></li>
+          <li><div class="node"><div class="t">错题中心</div><div class="d">三 tab · 重做按类型分流 · 私有标记</div></div></li>
+        </ul>
+      </li>
+      <li>
+        <div class="node l2"><div class="t">账户与信任</div></div>
+        <ul>
+          <li><div class="node"><div class="t">会员</div><div class="d">free / basic / pro / max 四档配额</div></div></li>
+          <li><div class="node"><div class="t">支付</div><div class="d">下单 → 收银台 → notify 验签开通（支付宝沙箱已通）</div></div></li>
+          <li><div class="node"><div class="t">云同步</div><div class="d">SyncStatusBadge · 立即同步 · 同意管理 · 数据导出</div></div></li>
+        </ul>
+      </li>
+    </ul>
+  </div>
+
+</div>
+
+<div class="legend">
+  <span><i class="swatch have"></i>已建成（现状）</span>
+  <span><i class="swatch gap"></i>缺口（现有系统的洞）</span>
+  <span><i class="swatch new"></i>新建（重构要补的）</span>
+</div>
+
+<footer>
+  NUR LEARN 重构蓝图 · 2026-09-30 · 讨论稿，非实施计划<br>
+  未定案事项：统一状态层范围 · Hi doc 升级通道 · 实施顺序 —— 待逐条确认
+</footer>
+
+</body>
+</html>

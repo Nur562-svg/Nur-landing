@@ -873,3 +873,206 @@ playwright-core + 系统 Chrome（headless、无扩展），视口 **1440×900 /
 - 单测：`tests/design-v3-density.test.ts`、`tests/design-v3-flow.test.ts`，以及 `tests/search-index.test.ts` 的 6 条上限。`src/content/courses/` 与 `src/content/materials/` 无 diff。
 - 浏览器核对：生产构建 `next start` 上 `scripts/design-v3-check.mjs` 两轮 1440 与 390 路由矩阵均为 `V3 CHECK PASSED`（侧栏 280、主画布 ≥70%、无三入口卡、⌘K 贴底全宽且每组 ≤6、Hi doc 有进度/状态/下一步、390 `scrollWidth === clientWidth === 390`）。截图在当次 scratch 的 `v3-launch/`。本次不提交。
 
+
+## ZCODE-M1 — Ariadne 品牌迁移 + 代码清理 + 前端基础重写（2026-09-30）
+
+任务书 `docs/ZCODE-M1-ariadne-migration.md`，三阶段全部完成；`npm run check` exit 0 / `npm run test` 402/402。
+
+### Phase 1 代码清理
+
+- 删除 12 个已合并分支（保留 `main`、`feat/saturn-ring`）；删除未使用文件 `course-builder-workbench.tsx`（含 module.css）/`course-entitlements.ts`/`ui/button.tsx`；删除 118 项 Trae 提取脚本与元数据。
+- 任务书偏差：`src/lib/qb-course-transform.ts` 实际被 15 个 Tier 1 题库课程文件引用（任务书写 0 引用），按「误删即恢复」原则保留。
+- 基线修复：commit 20415fe 引入的 `tests/helpers/css-cjs-stub.cjs` 带一条既有 lint error（.cjs 里 require 导入），加行内 eslint-disable（.cjs 设计如此）使 check 恢复可过。
+- 既有问题（未动）：package.json `preview`/`deploy` 引用的 `scripts/clean-opennext.mjs` 本就不存在。
+
+### Phase 2 品牌迁移（NUR LEARN→Ariadne、Hi doc→Clew）
+
+- 文件/目录全部 git mv：`learn/hi-doc→learn/clew`、`api/hidoc→api/clew`、`lib/hidoc→lib/clew`、`types/hidoc.ts→clew.ts`、10 个 `hi-doc-*` 组件、7 个 `tests/hidoc-*`。
+- 全部大小写变体替换（HiDoc/HIDOC/hiDoc/hidoc/hi-doc/Hi doc/HI DOC/Hidoc/NUR LEARN/Nur Learn）；`nur-learn` localStorage 键前缀**保留**（浏览器本地数据连续性，也不匹配验收 grep 模式）。
+- Prisma：9 个模型 `HiDoc*→Clew*` 全部 `@@map` 保表名；字段 `clewLessonStyle @map("hiDocLessonStyle")`；validate/generate 通过；既有 migrations 未动。走查中实测抓到列名漂移（登录 500：`User.clewLessonStyle` 不存在）即此因，@map 后恢复。
+- 路由 `/learn/clew/*` + `next.config.ts` redirects `/learn/hi-doc/:path*`→`/learn/clew/:path*`（permanent=308）。
+- `.hidoc-storage→.clew-storage`（本地 1.9M 已传教材 mv 保留）+ .gitignore；package.json name=ariadne；AGENTS.md 已替换并跑 sync-agent-rules.sh。
+- 残留 grep 清零（src/ 含大小写/分隔符变体）；docs/ 历史文档与 prisma/migrations 作为史迹保留不改。
+- 测试守卫：design-v3-density「does not edit course or material truth」改为 diff 品牌令牌归一化后 1:1 相等断言——语义改动依然失败，纯品牌替换放行（9 个课程文件来源标注文案按任务书替换）。
+
+### Phase 3 前端基础重写
+
+- Page Chat：`NurAgentChat` 新增 `mode`（floating/embedded/page-chat，默认 floating 行为不变）+ `contextChip` props；Clew 学习页追问面板加显式 chip「当前知识点：{title} · 第 {sourcePage} 页」，点击展开 KP 说明。实现说明：Clew 追问保留专属 `/api/clew/kp/[id]/chat` 后端（服务端 chat-prompt 本就注入当前 KP 标题/页码/说明/术语），不接 `/api/nur-agent/chat`（官方课契约，接入会丢对话持久化与讲义上下文，Tier 3 边界）。
+- SpineEditor：编辑模式新增拖拽手柄（HTML5 DnD 排序）、相邻「并入上一章」（PDF 扩页码 / DOCX 拼标题）、底部确认栏（干净=「确认章节结构并开始萃取」，脏=「保存修改并萃取」+「放弃修改」）；服务端 `confirmClewTocStructure`（chapters.ts，复用手动修正事务+盖 `spineConfirmedAt`）+ `POST /api/clew/textbooks/[id]/toc/confirm`；萃取服务门禁未确认返回 409 `spine-not-confirmed`（走查实测在模型调用前触发）；重新识别/手动修正会作废既有确认。
+- 配额 chip：左栏底部常驻「本月教材名额 {used}/{limit} 本」+「本月模型调用 {n} 次」（真实数据：书架 quota + /api/auth/quotas 的 clew* 合计）。偏差：任务书「token 估算」按项目不造假数据原则替换为真实模型调用计数。
+- 走查（dev，1440×900 与 390×844）：名额 chip 两行显示；未确认→3 个萃取键全禁用+提示、确认→全解锁+「章节结构已确认」；编辑模式 3 手柄/2 合并按钮、合并后脏标签翻转、放弃修改恢复；chip 展开 aria-expanded 正常；390 两页 `scrollWidth===clientWidth===390`。截图 `docs/design-references/zcode-m1-*.png` 共 4 张。
+- 走查环境注：为两个既有一次性验证账号（hidoc-m2-*/hidoc-m4-verify-*@example.com）设置了已知本地密码（仅 dev.db，本地）。
+- 全部改动留在工作树未提交，等待用户决定提交/合并（AGENTS 约定不主动 commit）。
+
+
+## ZCODE-M2 — Clew Harness + Loop Profile + 教材编译管线（2026-10-01）
+
+任务书 `docs/ZCODE-M2-clew-harness.md`，Phase 0–4 全部完成；`npm run check` exit 0（0 error）/ `npm run test` 431/431（新增 29）。
+
+### Phase 0 NUR AGENT 品牌统一
+
+- 用户可见文案清零：`nur-agent-dock.tsx`（FAB aria-label、抽屉 aria-label、标题）、`nur-agent-pilot.tsx`（`ARIADNE AGENT · LOCAL RUNTIME`、重新运行按钮）、`clew-study.tsx`（`NUR 讲解`→`Clew 讲解`）、`private-practice-room.tsx`（问 Ariadne Agent）、`quotas.ts` 配额标签、`/learn` metadata、法务 AI 免责、design-system 预览 meta。
+- 按任务书保留：`nur-agent` 内部代码标识（文件路径/组件名/localStorage 前缀）、`NUR 结构`（答题结构域概念）、`NUR/Qwen 参考`（authority 标记）、代码注释与模型 prompt。
+
+### Phase 1–2 Harness + 编译管线（服务端）
+
+- 新文件：`src/lib/clew/agent-loop.ts`（ToolLoopAgent + 5 工具 + 配额门槛）、`providers/dashscope.ts`（server-only，qwen3.7-plus，baseURL 白名单 aliyuncs.com）、`prompts.ts`、`compiler.ts`（纯编排，ports 注入可测试）、`compiler-server.ts`（真实服务绑定 + 证据落库 + 编译缓存）、`evidence.ts`（页级证据原子 + bigram 相似度关联）、`structure.ts`（两层结构 + 三视图派生）、`resilience.ts`（失败隔离 + 指数退避）。
+- 既有萃取路由 `POST /api/clew/textbooks/[id]/chapters/[order]/extract` 改走 Harness（`extractChapterThroughHarness`），SSE 事件契约不变（progress 阶段/kp 逐条/result 不变）；新增全书编译 `POST /api/clew/textbooks/[id]/compile`（SSE：progress → chapter → done，单章失败隔离）。
+- 偏差说明（任务书 5.2）：讲义路由保留既有直连服务（`generateClewKnowledgePointLesson`），不改走 ToolLoopAgent 决策循环——M4 契约要求无 key 时启发式兜底 + SSE 事件/配额/持久化行为不变，强套 Agent 循环会多一次模型调用且破坏兜底。Agent 的 `generateLesson` 工具已绑定同一服务供 Harness 编排调用。
+- 萃取时 LoopProfile：`suggestClewKpLoopProfile` 规则引擎（描述长度折算时长，Clew KP hasLesson=true），落库 `loopProfileId + loopProfileAssignedBy`。
+
+### Phase 3 学习页按 Profile 渲染（浏览器验证）
+
+- 新组件 `clew-loop-profile.tsx`：`ClewLoopProfileBadge`（点击展开六选一下拉，走 `PATCH /api/clew/kp/[id]/loop-profile`，落库 user-selected）+ `ClewStageNav`（按 profile 渲染环节，Lucide 细线图标 BookOpen/PenLine/ClipboardCheck/Stethoscope/RotateCw/Route——按设计规则用图标不用 emoji）。
+- 学习页 KP 头部行（kicker + 徽章）、描述下环节导航 + 退出行为说明；左栏知识点列表加 profile 名小字。
+- 浏览器走查（dev，1280×720，登录 m2qa@ariadne.test / M2qa-test-2026，本地 dev.db 测试账户+种子教材）：
+  - 「概念理解」KP 环节导航只显示 01 学 / 02 评 / 03 复 ✓（验收标准）。
+  - 切换「技能应用」：PATCH 200 → DB `loopProfileId=skill-application, assignedBy=user-selected` → 徽章与环节导航即时变为 01 学…05 复 ✓。
+  - 整页截图核对：徽章/环节导航/左栏列表无重叠溢出，象牙纸黑字方角编辑风格一致 ✓。
+  - 注：走查初期一台旧 dev server（陈旧 webpack 编译）显示旧值，重启后正确；左栏列表 profile 名为 SSR 初始值，切换后下次加载刷新（徽章区即时更新）。
+
+### Phase 4 会话管理（服务器持久化）
+
+- Prisma 新增 4 模型（migration `20261001155909_zcode_m2_clew_harness`）：`ClewStudySession`、`ClewCompileCache`（含 contentFingerprint）、`ClewEvidenceAtom`（@@unique [chapterId,pageNumber]）、`ClewKnowledgePointEvidence`（@@unique [kpId,evidenceId]，isPrimary）；`ClewKnowledgePoint` 加 `loopProfileId/loopProfileAssignedBy`。
+- `src/lib/clew/session.ts`（getOrCreateSession/updateSessionStage/completeSession/abandonSession/getUserSessions）+ `POST|GET /api/clew/sessions`、`PATCH|POST /api/clew/sessions/[id]`。
+- 学习页挂载即创建/恢复会话；点环节写 `stageStates`（走查实测：点「04 诊」→ DB `diagnose: active`）；讲义生成完成 → learn 环节 completed（旁路记录，失败不阻塞学习页）。
+
+### 测试
+
+- `tests/loop-profile.test.ts`（14 条：规则引擎六分支/六 profile 契约/切换校验/coerce）+ `tests/clew-compiler.test.ts`（15 条：失败隔离/进度事件/证据原子与关联/三视图/重试/配额门槛/步数上限 10）。
+- 全套 431/431 通过；`npm run check` 0 error。
+
+
+## ZCODE-M3 — 统一状态层 + Mentrix 化学习页 + Page Chat 固化（2026-10-02）
+
+任务书 `docs/ZCODE-M3-unified-state.md`，Phase 0–4 全部完成。`npm run test` **453/453**（新增 22：toc-view 5 + unified-events 7 + unified-state 4 + compile-scope 6）、`npm run check` exit 0（0 error / 189 warning，未增）。migration `20261001172813_zcode_m3_unified_events` 已应用（`prisma migrate status` 干净）。
+
+### Phase 0 spine 解耦（M2 预验收遗留）
+
+- `textbook-view.ts`：新增 `parseClewSpineConfirmedAt`（typeof string 即有效），`toClewTextbookView` 用它取值——非法 strategy（如种子数据 "manual"）不再连坐丢弃确认章；recognition 严格解析行为不变。
+- `chapters.ts` `writeManualChapters`：回填 strategy 前过 `tocStrategyWhitelist`（textbook-view 导出），非法值回落 `"none"`（确认流程可自愈）。
+- `tests/clew-toc-view.test.ts` 5 条：解耦读取 / 合法路径回归 / 无确认章 null / 非法输入不猜测 / 白名单契约与自愈闭环。
+
+### Phase 1 统一事件总线
+
+- Prisma `UnifiedLearningEvent`（`@@unique([userId, sourceKey])` + timestamp/contentType 索引）；手写幂等（先 findMany 再补缺失，批内去重；SQLite 不用 skipDuplicates）。
+- `src/types/unified-learning.ts`（只声明本期写入子集）+ `src/lib/unified-events.ts`（6 个 builder 纯函数 + `appendUnifiedLearningEvents` 整体 try/catch 不抛错；与 payment/service 同一「注释标注 server-only」约定使 node:test 可导入）。
+- 写路径 A（session.ts）：新建会话 → session-started；active → stage-entered；completed → stage-completed（skipped 本期 eventType 子集不含、UI 未产出，不写）；completeSession 改 findFirst+update 以取 stageStates 摘要 → session-completed。
+- 写路径 B（learner-state-sync-server.ts）：`recordConfirmedAttemptServer` create 成功（dedupe 命中不发）→ attempt 事件；`upsertAttemptsBatchServer` 仅本批 created；`addQbAttemptServer` 新建后经注册表（flattenCourseAssessmentItems + 章节，进程内缓存）解析归属，解析不到 console.warn 跳过。全部独立 try/catch。
+
+### Phase 2 /learn 学习动态
+
+- `src/lib/unified-state.ts`（server-only 约定同上）：`selectUnifiedLearningFeed`（官方课/题库走 publishedCourses 注册表 + 进程缓存，Clew 走 kp→章→教材批量查询；已删除内容如实回落「已删除的内容」+ href null）+ `selectContinueLearningTarget`（最近 active 会话 → 深链 + 下一环节，entryStage 兜底）。
+- `GET /api/learn/unified-feed`（thin adapter）；`/learn` 页改 async + force-dynamic 服务端取数传入（未登录 undefined 不渲染区块、登录空数据渲染空态一行）；`learning-dashboard.tsx` 双视角区块后新增「学习动态」（来源标签三色描边、相对时间、整行可点、继续上次学习按钮）。不新增 peerCard（v3 密度计数不变：桌面 5 / 390 3）。
+- 走查：初始空态一行 + 继续按钮；点「评」环节后 feed 出现 `Clew · 测试知识点 1 · M2 QA 教材 · 进入环节「评」 · 8 分钟前`；continueTarget 随 stageStates 推进到（复）。
+
+### Phase 3 编译全书接线
+
+- `compile-scope.ts`（纯函数：`filterCompileChapters` pending|failed 计入、`resolveCompileScope` 指纹不同强制 all + 提示文案）；`compiler.ts` `extractAllChapters` 增可选 `options.chapters`（路由层过滤，纯编排不动）；`compiler-server.ts` 新增 `getClewCompileCacheView` + `compileTextbookThroughHarness`（指纹接线：开始时计算并写回缓存、缓存指纹不同先发提示事件再强制全量、结束写 state）。
+- compile 路由：`GET` 缓存视图；`POST body { scope }` 默认 pending，无待编译章节 SSE error 事件明确提示不空跑。
+- 教材页（`clew-textbook.tsx`）：spine 确认后显示「编译全书」区（上次编译状态 + 相对时间、待编译 N 章 + 预计模型调用数、SSE 文字流、完成汇总、失败章「单独重试」锚链接）；编译运行时单章萃取按钮禁用（防重入）；编译后刷新 detail + 缓存。
+- 走查（f650452b）：pending=1（failed 第 3 章）→ 点编译 → 流式「精读第 1/1 章：第三章 闻诊 → 读取第 7–7 页」→ 诚实失败「文字层内容过少（约 25 字）」+ 隔离提示 + 单独重试链接（任务书 3.3 预期的正确行为）；刷新后「上次编译：编译失败 · 刚刚」保留。
+
+### Phase 4 学习页双模式 + Page Chat 回归
+
+- `nur-learn:clew-study-mode`（focus 默认 / workspace；首渲染默认值避免 hydration mismatch，挂载后读实际值）；切换控件在 KP 头部行（profile 徽章后，≤1200px 隐藏，aria-pressed 分段按钮）。
+- 单 DOM 双布局：`data-study-mode` 属性 + CSS（focus = 240px + 主列 + 追问 `grid-column:2` 下置；workspace = 三栏 240/1fr/320），不改组件树。
+- 走查：focus 布局实测 `240px 684px` + 追问 static 下置；切 workspace `240px 344px 320px` + chip 保留；刷新后保持 workspace（localStorage）；390×844 两模式 `scrollWidth===clientWidth===390` 且切换控件隐藏；追问草稿双向切换不丢；console 0 错误（dev 浮层 clean）。
+
+### 最终门槛
+
+- sqlite3 抽查：`clew-kp|1、official-kp|1、qb-chapter|1` 三线均有行；同内容重跑 round1→round2 计数不变（幂等）。
+- 截图 `docs/design-references/zcode-m3-*.png` 4 张：learn-feed / study-focus / study-workspace / compile-progress。
+- 走查环境注：期间 dev server 出现陈旧 .next 缓存导致的路由重试循环（SSR curl 完整、无服务端错误），清 `.next` 重启后恢复，非产品代码问题；验证数据（3 条事件 + m3-verify-attempt-1）留在 dev.db 供复查。
+
+### 验收补充（2026-10-02，Hermes 预验收）
+
+- 复现 453/453 后**发现并修复一处缺陷**：`upsertCompileCache` 的 update 分支忽略 `contentFingerprint` —— 首编译建行（空串）后指纹永远写不进去，「内容变化 → 强制全量编译」实际是死功能。修复（`compiler-server.ts` update 分支补写指纹）+ 新增回归 `tests/clew-compile-cache.test.ts`（3 条，隔离 SQLite）→ 全量 **456/456**；活体复验：f650452b 编译后指纹 = `f514196b…`（64 hex，= 教材文件 sha256）。
+- 测试基建补丁：`tests/helpers/css-cjs-stub.cjs` 增加 `server-only` 的 CJS 车道映射（tsx require 车道不咨询 ESM 钩子，否则测试导入带 `import "server-only"` 的 lib 直接 MODULE_NOT_FOUND）。
+- 浏览器复走（m2qa，1440/390，console 0 错误）：/learn 三线动态行（题库/官方课/Clew）+ 继续上次学习正确深链（含执行人自己点击产生的真实事件）；学习页 focus 默认 `240px+主列`、切 workspace `240/1fr/320` 且刷新保持、chip 保留；教材页「编译全书」pending=1 文字流 → 诚实失败 + 隔离提示 + 刷新续存。
+- 环节按钮取证（M2 语义遗留）：点击仅移动 aria-current/边框高亮 + 写 stage 事件（DB 可见，用户 18:04 连点均有记录），无内容/无跳转——已列入下一步体验补丁讨论。
+
+### 体验补丁：竖向脊柱 +「评」自测 + 讲解风格（2026-10-02，Hermes 实施 + 验收）
+
+用户拍板 A 包「1+2+3 合并」后由 Hermes 直接实施；上一节遗留的「环节按钮无内容/无跳转」在此关闭。
+
+- 竖向闭环脊柱（替换横向环节条）：84px 贴讲义侧时间轴、sticky 跟随；done 实心 / current 描边环 / todo / unavailable 虚线+「未接入」标签四态；节点 = 真实动作（学→滚讲义；评→自测；诊→「还需看」清单并自动筛选；迁移→`/learn/clew/w` 真跳转）；练/复无功能面如实标「未接入」，删除「进入间隔复习」空头句；≤980px 折叠为横向条（连接线隐藏）。
+- 「评」自测：`parseClewLessonSelfTest` 解析讲义自测题（题干+参考答案；模型 `1. … /   参考答案：…` 与启发式同格式，兼容加粗与题干行内联）；面板含 显示/收起参考答案、会了/还需看、全部标记自动提交 → 新 API `POST /api/clew/kp/[id]/self-check`（`src/lib/clew/self-check.ts`）写 `wrong-question-added` 统一事件（sourceKey `clew-selftest:{kpId}:{generatedAt}:{index}` 幂等）+ `stage-completed(assess)`；标记存 localStorage（按 KP + 讲义版本，换版本自动重置）。
+- 「讲解追问」→「问 Clew」；讲解风格选择器 4 档（zh-primary / exam-cram / socratic / en-primary，各配提示词块），生成时显式发送并写账户默认（DB 已核 `exam-cram`）；左栏 KP 徽标切换后即时刷新（本地 override）；会话 `stageStates` 回读——刷新后「评」完成态连续（此前刷新即丢）。
+- 验证：`npm run test` **466/466**（+10：解析 5 / 自测事件 5，隔离 SQLite）；`npm run check` exit 0；活体走查（m2qa，1440×900 + 390×844）：选「考点速记」真实生成（qwen3.7-plus，notes 含风格落账）→ 3 道自测解析 → 标记 2 条「还需看」→ DB `clew-selftest:*` 事件 2 条 + assess 完成 → `/learn` 学习动态如实展示 → 重载标记与完成态恢复 → 诊节点自动筛选 → 迁移跳转（课题工作坊 200）→ 390 溢出 0、脊柱横向折叠；console/pageerror 0（首跑 1 次 hydration 告警未复现，判定 dev 首编译伪影）。
+- 已知边界：首编译新 API 时提交窗口 >1.8s（dev 现象）；「练/复」仍无功能面（如实标注，列入后续闭环）。
+
+## ZCODE-M4 — 三视图派生 + 章级知识图谱 + 多模型接入（2026-10-03）
+
+任务书 `docs/ZCODE-M4-views-graph-multimodel.md`，三阶段全部完成。`npm run test` **490/490**（基线 466 + 新增 24：lesson-variants 8 / kp-graph 7 / model-config 9）、`npm run check` exit 0（lint 0 error）、`npx prisma migrate status` 与基线一致（无 schema 变更、无 migration）。改动全部留在工作区未提交。
+
+### Phase 1 三视图派生（初学 / 复习 / 备考）
+
+- `src/lib/clew/lesson-variants.ts`（纯函数、client-safe）：`deriveClewLessonVariant` 按任务书 §1.1 规则表逐条实现——full 恒等；review 仅在「自测题」小节删参考答案行（整行形态与题干行内联形态，判定正则与 `parseClewLessonSelfTest` 同形）；exam 删自测题整节（含标题）+「定义」截首句（到第一个「。」含，无「。」整行保留）；页首引用块与要点/易错点不动；幂等。实现取舍：review/exam 的行内折叠要求「参考答案」后带冒号（与面板解析器完全一致，避免「视图截了面板没截」的分裂）。
+- 小节定位复用既有解析：`lesson-heuristic.ts` 的 `collectLessonSectionBodies` 与 `isSectionHeading` 仅加 `export`（行为零变化）；未复制任何解析逻辑。
+- 学习页（`clew-study.tsx` + `clew.module.css`）：panelHead 行内三档分段控件 `lessonVariantToggle`（复用 studyModeToggle 视觉语言，aria-pressed，生成中禁用）；note 小字行包 `aria-live="polite"`；正文 `ClewMarkdown key={generatedAt:variant}`；localStorage `nur-learn:clew-lesson-view`（首渲染默认值防 hydration mismatch）。
+- 划重点重锚：`ClewHighlightLayer` 新增 `bodyVariant` 并入 `bodyVersion`——视图切换触发重定位；被视图折叠的划线如实进「未定位」，切回初学恢复。
+- 走查（m2qa，f650452b 第 1 章 KP01）：初学正文 3 处参考答案 → 复习 0 处（题干与「自测题」标题保留，note 正确）→ 备考无自测题节 + 定义仅首句；**DevTools 全程 0 网络请求**；刷新后保持「备考」（localStorage `exam`）；自测面板 3 道题不受视图影响；划重点交错验证：初学划答案句（已定位 1）→ 复习（未定位 1，如实列表）→ 切回初学（恢复已定位 1），划线数据无增删。console 0 错误。
+
+### Phase 2 章级知识图谱（纯 SVG · 只读）
+
+- `src/lib/clew/knowledge-graph.ts`（纯函数、client-safe，零依赖）：`buildClewKpGraph` 程序校验（先修标题同章 trim 全等匹配、未匹配如实计数忽略、自环丢弃、同对同 kind 去重、术语交集边含 sharedTerms、DFS 三色环检测 + 确定性破环：删环内 `to.order` 最大先修边→并列 `from.order` 最大→再并列 `from.id` 字典序）；`layoutClewKpGraph` 先修最长路径分层（layer 0 = 无先修者），`x=80+layer*220 / y=60+idx*96`，同输入必同输出。构建器为泛型：nodes 保留输入摘要的全部字段（如 `hasLesson`）。
+- `src/components/clew-graph.tsx`（纯展示、无状态）：panelHead「知识图谱」+ stats 行；实线箭头先修边（marker）/ 虚线术语边（共享数标中点）；节点 = 圆点+序号+截断标题，当前 KP 墨色描边加粗、有讲义实心/未生成描边、hover 纯 CSS；节点即 next/link → 既有 `?kp={id}` 形态，aria-label「知识点 {title}，先修 n 条，术语关联 m 条」；`figcaption` + 可视隐藏关系 `<ul>`；未匹配/成环诚实行有则显示；<2 个知识点空态一行。挂在学习页 `ClewNotePanel` 之后、`footNote` 之前。
+- 走查：3 节点渲染（01 实心有讲义、02/03 描边），「3 个知识点 · 先修 1 条 · 术语关联 0 条」与关系清单「四诊合参原则先修于望闻问切互相印证」自洽；点节点 03 → URL `?kp=cmuprmns8000n5epx1br2dnro`、KP 标题/左栏高亮/图谱 aria-current 全部同步；390×844 `scrollWidth===clientWidth===390`（viewBox 自适应）；console 0 错误。
+
+### Phase 3 多模型接入（ClewModelConfig 预留接口落地）
+
+- `src/lib/clew/providers/model-config.ts`（server-only）：任务级 env 解析（任务 ∈ toc/extraction/lesson/chat/note；任务级 `CLEW_{TASK}_PROVIDER/MODEL/BASE_URL/API_KEY` > 全局 `CLEW_MODEL_PROVIDER/MODEL/BASE_URL(/API_KEY)` > 缺省；lesson/chat/note 保留既有 `CLEW_EXTRACT_MODEL` 回落链，dashscope 保留 `DASHSCOPE_BASE_URL`）；`dashscope`→https+*.aliyuncs.com、`openai-compatible`→https（loopback localhost/127.0.0.1/[::1] 允许 http）；`deepseek|kimi|zhipu` 等未实现值抛 `ClewProviderConfigError`（消息含已核实端点示例），绝不静默回落。纯函数核心 `*From(task, env)` 供测试直接传 env 对象。
+- `src/lib/clew/providers/chat-transport.ts`（由 `dashscope-stream.ts` 泛化改名，旧文件删除、全仓引用更新）：SSE 解析逐字保留；`enable_thinking: false` 仅 provider==="dashscope" 注入；新增非流式 `completeChatJson`（供 toc/extract 复用，两个 adapter 各自的私有 fetch/响应解包删除）；`resolveChatCompletionsUrl` 容错无路径 / `/v1` / 多段前缀 / 尾斜杠 / 已含端点（测试锁定）。
+- 五个 adapter（dashscope-{toc,extract,lesson,chat,note}.ts）改收 `ResolvedClewModelConfig`，`id` 如实取 `config.provider`；五个任务工厂改「resolve → 校验 → 动态 import」，无 key 返回 null（既有启发式兜底/如实报错路径不变）；六个服务调用点（lesson/chat/note/extraction/toc-recognition/workshops）把 `ClewProviderConfigError` 映射为各自 `ok:false, 503` 明确失败（toc 不再静默回落启发式）；`compiler-server.ts` Agent 模型获取改走 `getClewModelForTask("lesson")`（`ClewProviderConfigError` → 503 ClewHarnessError）；facade `dashscope.ts` 的 `getClewModel/isClewModelConfigured/describeClewModel` 语义改基于任务解析（默认 task=lesson），`getModelForTask` 空壳替换为真实 `getClewModelForTask`。
+- `.env.example` 补全多模型变量说明与已核实端点示例。
+- 桩集成验证（脚本 `/tmp/clew-m4-stub-verify.ts`，进程内 env 覆盖，未动 `.env.local`）原始输出留档：
+  ```
+  === 用例 1：openai-compatible 桩走通讲义生成 ===
+  provider.id = openai-compatible
+  provider.model = qwen3.7-plus
+  SSE 增量块数 = 4
+  最终文本字符数 = 225（与桩应答逐字节一致：true）
+  请求路径 = /v1/chat/completions
+  请求体 model = qwen3.7-plus · stream = true · enable_thinking 存在 = false
+  === 用例 2：CLEW_LESSON_PROVIDER=deepseek 明确报错 ===
+  抛错类型 = ClewProviderConfigError
+  报错消息 = Clew 模型 provider "deepseek" 尚未实现；可用 openai-compatible + 对应 baseURL。已核实端点示例：DeepSeek https://api.deepseek.com ｜ Kimi https://api.moonshot.cn/v1 ｜ 智谱 GLM https://open.bigmodel.cn/api/paas/v4 ｜ 本地 Ollama http://localhost:11434/v1（API key 可填任意占位值，如 ollama）。
+  === 用例 3：未配置 key → 返回 null（既有启发式兜底路径保持）===
+  无 key 时 createClewLessonProviderFromEnv() = null（调用方走「未接入模型」启发式兜底）
+  === 桩集成验证全部通过 ===
+  ```
+- 默认路径活体回归（无任何新 env，m2qa）：KP02「四诊合参原则」真实生成讲义成功（notes「来源：模型生成（dashscope · qwen3.7-plus），结构校验通过」，3 道自测题解析）；问 Clew 真实流式回答（chip 保留）。describeClewModel 产物格式仍为 `{provider}:{model}`。
+- 验证边界：`completeChatJson`（toc/extract）的真实 DashScope 端到端未在本期活体重放（重萃取会覆盖既有 QA 数据），其 URL/请求体/响应解包与流式路径同源并被单元测试 + openai-compatible 桩覆盖。
+
+### 截图索引（docs/design-references/）
+
+- `zcode-m4-lesson-full.png` 初学视图（完整讲义，三档控件渲染）
+- `zcode-m4-lesson-review.png` 复习视图（note 行 + 参考答案折叠）
+- `zcode-m4-lesson-exam.png` 备考视图（定义首句 + 无自测题节 + 备考高亮）
+- `zcode-m4-kp-graph.png` 章级知识图谱（3 节点、02→03 先修箭头、01 实心）
+- `zcode-m4-390-graph.png` 390×844 图谱与划重点（无横向溢出）
+
+### 走查环境注
+
+走查前重启了 dev server 并清 `.next`（避免 M3 曾出现的陈旧缓存）；走查期间产生的验证数据（KP02 讲义、KP01 一条琥珀划线、一轮 KP03 追问）留在 dev.db 供复查。验证结束时 dev server 保持运行（localhost:3000）。
+
+### 最终门槛
+
+- [x] `npm run lint` 0 error + `npx tsc --noEmit` 通过
+- [x] `npm run test` 全绿 **490/490**（466 + 24 新增）
+- [x] `npm run check` exit 0
+- [x] 无 migration 新增（`npx prisma migrate status`：14 migrations，up to date，与基线一致）
+- [x] 桩集成验证原始输出留档（上文）
+- [x] 浏览器走查清单 1–5 全部通过，console 0 错误
+- [x] 文档更新：本节 + `docs/PROJECT_STATE.md` + 任务书状态行
+
+### 预验收复核（Hermes，2026-10-04）
+
+独立复验，不依赖执行者脚本（复核脚本在 `/tmp/clew-m4-qa/`，未进仓库）：
+
+- **门槛独立复跑**：`npm run test` **490/490**（pass 490 / fail 0 / cancelled 0）、`npm run check` exit 0（lint 0 error）、`npx prisma migrate status` 14 migrations up to date（与基线一致）；`package.json` 仅品牌改名、无新依赖。日志中一条 `unified-events` PrismaClientValidationError 为既有「写入失败不抛错（旁路契约）」测试的故意注入，非缺陷。
+- **Phase 3 桩独立复验**（`/tmp/clew-m4-stub-verify-hermes.ts`，进程内 env 覆盖，未动 `.env.local`）：openai-compatible 桩端到端——`provider.id=openai-compatible`、SSE 增量、最终文本与桩应答逐字节一致、请求路径 `/v1/chat/completions`、`Authorization: Bearer`、请求体无 `enable_thinking`；`completeChatJson` 非流式走通（stream=false、response_format 透传、无 enable_thinking）；`enable_thinking` 仅 dashscope；`deepseek` 抛 `ClewProviderConfigError`（消息含已核实端点指引，不静默回落）；无 key → null（启发式兜底路径保持）。
+- **浏览器独立复走**（playwright-core + 系统 Chrome，m2qa）：三档产物逐条核验（初学 3 处参考答案 → 复习 0 处且标题保留 + note → 备考无自测题节、定义 63→27 字截首句、要点/易错点保留）；**「零请求」定论**：等 dev HMR 静默后连切 5 次，窗口内 **0 请求**（首轮观测到的 22 个请求全部为 dev hot-update 与重挂载副产物，非视图切换行为）；localStorage 持久 + 刷新保持；划重点交错 1→未定位 1→恢复 1（DB 行数前后一致，无增删）；图谱 3 节点 / 统计行与关系清单自洽 / 点击节点 03 → `?kp=…` + aria-current 同步 / SVG 节点可聚焦 / hover 与 focus-visible 纯 CSS；自测面板跨视图恒 3 题；390×844 `scrollWidth===clientWidth===390`；console error 0、pageerror 0。
+- **边界抽查**：多模型相关模块全部 server-only（model-config / chat-transport / 五个 adapter），客户端组件零引用；`instanceof ClewProviderConfigError` 映射点 7 处（含 compiler 503）；`dashscope-stream` 全仓引用清零；`src/content/` 变更全部为 ZCODE-M1 品牌串替换（24/24 行对称），无内容真相改动。
+- 备注：首轮自动化登录因 dev 首编译/HMR 时序未跳转（重试即通过）——dev 环境现象，未见产品缺陷。

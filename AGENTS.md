@@ -8,7 +8,7 @@ This block is written and re-added by `next dev` — verify at `node_modules/nex
 
 <!-- END:nextjs-agent-rules -->
 
-# NUR LEARN — Project Instructions
+# Ariadne — Project Instructions
 
 ## Mandatory Context Before Work
 
@@ -25,7 +25,7 @@ Treat `docs/PROJECT_STATE.md` as the single source of truth when prior conversat
 
 ## Product Mission
 
-NUR LEARN first serves Chinese students majoring in Integrated Traditional Chinese and Western Medicine Clinical Medicine. The pilot course is 《中医诊断学》. The first release supports sustained whole-semester learning for domestic university courses and final exams; postgraduate entrance-exam support comes later.
+Ariadne first serves Chinese students majoring in Integrated Traditional Chinese and Western Medicine Clinical Medicine. The pilot course is 《中医诊断学》. The first release supports sustained whole-semester learning for domestic university courses and final exams; postgraduate entrance-exam support comes later.
 
 The product must:
 
@@ -39,7 +39,7 @@ The product must:
 
 ## Current Product State
 
-- `/` — restored interactive promotional homepage. The upper-left `NUR LEARN` entry links to `/learn`; do not overwrite it with a product workspace.
+- `/` — restored interactive promotional homepage. The upper-left `Ariadne` entry links to `/learn`; do not overwrite it with a product workspace.
 - `/learn` — approved evidence-first weekly learning homepage.
 - `/learn/course-builder` — completed evidence-gated Course Builder workbench for the allow-listed TCM material pack, with honest no-key fallback, a full typed course draft, source/coverage issues, JSON export, browser-local human approval, private-material intake, DOCX review, one-time model transfer, and strict browser-local material admission.
 - `/courses/tcm-diagnostics` — approved 《中医诊断学》 course workspace and current total course entry.
@@ -64,18 +64,20 @@ The product must:
 
 ## Next Product Priority
 
-**Hi doc（2026-09-16 定案）是当前唯一实施主线**：NUR LEARN 内的 Mentrix 镜像级产品（用户上传教材 → 目录识别 → 知识点萃取 → 讲义+AI 教学追问 → 划重点/批注 → 学霸笔记 → 课题工作坊）。完整方案、数据模型、API、八期实施（M0–M7）与开源借鉴见 `docs/HI_DOC_PLAN.md`（唯一实施真相源）。已定案的四条决定：
+**Clew（2026-09-16 定案）是当前唯一实施主线**：Ariadne 内的 Mentrix 镜像级产品（用户上传教材 → 目录识别 → 知识点萃取 → 讲义+AI 教学追问 → 划重点/批注 → 学霸笔记 → 课题工作坊）。完整方案、数据模型、API、八期实施（M0–M7）与开源借鉴见 `docs/HI_DOC_PLAN.md`（唯一实施真相源）。已定案的四条决定：
 
 1. 教材存服务器（仅本人可见，跨设备可学），满血实现；
 2. 教材名额仅当月有效，跨月冻结、重占名额或升级档位；
-3. Hi doc 全面替代「我的资料」本地快练（替代前保留并挂提示）；
+3. Clew 全面替代「我的资料」本地快练（替代前保留并挂提示）；
 4. 试点课（中医诊断学、生理学）对所有人免费，不占名额。
 
-会员档位迁移：`free|lite|pro` → `free(=trial)|basic|pro|max`（basic 权益=原 lite）。首页改为三入口：官方课程学习闭环（试点课免费）/ Hi doc / 传统刷题题库。Hi doc 的 AI 生成物按通用 AI 产品方式直接呈现，**不挂**官方课的证据分级（可关联/不可直接等同等标签只属于官方闭环）。实施时遵守下文全部 Core Code Boundaries：Hi doc 服务端代码放 `src/lib/hidoc/`（Tier 3 模式：provider-neutral、key 只在服务端、SSE 带 Bearer、配额不足明确报错不静默放行），页面放 `src/app/learn/hi-doc/`（thin adapters），数据模型进 `prisma/schema.prisma`（全部挂 userId 私有），类型进 `src/types/`。
+会员档位迁移：`free|lite|pro` → `free(=trial)|basic|pro|max`（basic 权益=原 lite）。首页改为三入口：官方课程学习闭环（试点课免费）/ Clew / 传统刷题题库。Clew 的 AI 生成物按通用 AI 产品方式直接呈现，**不挂**官方课的证据分级（可关联/不可直接等同等标签只属于官方闭环）。实施时遵守下文全部 Core Code Boundaries：Clew 服务端代码放 `src/lib/clew/`（Tier 3 模式：provider-neutral、key 只在服务端、SSE 带 Bearer、配额不足明确报错不静默放行），页面放 `src/app/learn/clew/`（thin adapters），数据模型进 `prisma/schema.prisma`（全部挂 userId 私有），类型进 `src/types/`。
 
-**进度（2026-09-19）**：M0 四档会员迁移+官方课名额+首页三入口、M1 上传/书架/当月名额、M2 目录识别+章节修正、M3 知识点萃取 SSE 带页码溯源、M4 学习页（每知识点讲义生成 + 讲解追问 SSE，含未接入模型启发式兜底）、M5 划重点/批注与学霸笔记、M6 课题工作坊替代「我的资料」（≤100 页短材料 + 确定性关键词检索答疑 SSE，扫描件/图片明确拒绝，无 key 明确报错不兜底）、**M7 支付打通（mock→支付宝沙箱，四档订阅真实生效：下单→收银台→notify 验签开通→额度即时变化；缺密钥 503 明确报错不回落 mock；计费页三列档位卡+月/季/年分段控件；正式定价 2026-09-18 拍板落 `plans.ts`；真实支付宝 notify 回调待公网部署后补验）** 均已完成并验收（commits `36e8efc`/`2f41e98`/`1debd1a`/`93dfa6d`/`285c3d1` + M5/M6/M7 提交；lint 0 error / test 379 / check 通过）。**Hi doc M0–M7 全部完成**；后续主线：设计系统 v2 框架重构（桌面优先）与部署上线准备（ICP 备案 + 真实商户号 + 生产密钥/网关 + 公网 notify 补验）。本节中「Do not ... server material store」等旧约束已被上述四条决定取代，Hi doc 实现以 `docs/HI_DOC_PLAN.md` 为准。
+**进度（2026-09-19）**：M0 四档会员迁移+官方课名额+首页三入口、M1 上传/书架/当月名额、M2 目录识别+章节修正、M3 知识点萃取 SSE 带页码溯源、M4 学习页（每知识点讲义生成 + 讲解追问 SSE，含未接入模型启发式兜底）、M5 划重点/批注与学霸笔记、M6 课题工作坊替代「我的资料」（≤100 页短材料 + 确定性关键词检索答疑 SSE，扫描件/图片明确拒绝，无 key 明确报错不兜底）、**M7 支付打通（mock→支付宝沙箱，四档订阅真实生效：下单→收银台→notify 验签开通→额度即时变化；缺密钥 503 明确报错不回落 mock；计费页三列档位卡+月/季/年分段控件；正式定价 2026-09-18 拍板落 `plans.ts`；真实支付宝 notify 回调待公网部署后补验）** 均已完成并验收（commits `36e8efc`/`2f41e98`/`1debd1a`/`93dfa6d`/`285c3d1` + M5/M6/M7 提交；lint 0 error / test 379 / check 通过）。**Clew M0–M7 全部完成**；后续主线：设计系统 v2 框架重构（桌面优先）与部署上线准备（ICP 备案 + 真实商户号 + 生产密钥/网关 + 公网 notify 补验）。本节中「Do not ... server material store」等旧约束已被上述四条决定取代，Clew 实现以 `docs/HI_DOC_PLAN.md` 为准。
 
-历史主线（已完成）：private-material analysis 与 official-course compilation 分离、browser-local attempt memory、constrained local Agent 等见 `docs/PROJECT_STATE.md` 与 `docs/CONTENT_ARCHITECTURE.md`。原 Course Builder 对学生显示为建设中，Hi doc **不是**旧 course-builder 的换壳。
+**进度（2026-09-30）**：ZCODE-M1 三阶段完成（未提交，待用户审阅合并）：① 代码清理（12 个已合并分支、3 个未使用文件、118 项 Trae 提取脚本删除；`src/lib/qb-course-transform.ts` 因被 15 个 Tier 1 题库课程文件引用而保留）；② 品牌迁移（NUR LEARN→Ariadne、Hi doc→Clew，路由 `/learn/clew/*` 带 308 重定向，Prisma 9 模型 `@@map` 保表名零漂移，`nur-learn` localStorage 键前缀保留）；③ 前端基础重写（NurAgentChat mode/contextChip 契约、Clew 学习页「当前知识点」上下文 chip、SpineEditor 章节确认后萃取含服务端 409 门禁与 `POST /api/clew/textbooks/[id]/toc/confirm`、左栏常驻配额 chip）。验证：check exit 0 / test 402/402 / 残留 grep 清零 / 1440+390 浏览器走查通过（`design-qa.md` ZCODE-M1 节）。下一主线：ZCODE-M2 可配置闭环（Loop Profile）。
+
+历史主线（已完成）：private-material analysis 与 official-course compilation 分离、browser-local attempt memory、constrained local Agent 等见 `docs/PROJECT_STATE.md` 与 `docs/CONTENT_ARCHITECTURE.md`。原 Course Builder 对学生显示为建设中，Clew **不是**旧 course-builder 的换壳。
 
 ## Tech Stack
 
@@ -198,4 +200,4 @@ These files are UI, routing, and presentation. Changes here do not affect teachi
 
 ## Legacy Template Reference
 
-The repository began as a reverse-engineering template. Legacy research guidance remains available at `docs/research/INSPECTION_GUIDE.md`, but current NUR LEARN product decisions take precedence.
+The repository began as a reverse-engineering template. Legacy research guidance remains available at `docs/research/INSPECTION_GUIDE.md`, but current Ariadne product decisions take precedence.
