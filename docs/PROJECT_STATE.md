@@ -1,6 +1,6 @@
 # NUR LEARN — Canonical Project State
 
-Last updated: 2026-10-02 (Asia/Shanghai) — ZCODE-M3 完成 + Clew 体验补丁（竖向脊柱 / 「评」自测 / 讲解风格 / 「问 Clew」命名）落地（均未提交待验收）。重构主线真相源 `docs/RESTRUCTURE_PLAN.md`；ZCODE-M1/M2 与 Hi doc M0–M7、设计系统 v3 均为已完成基线。
+Last updated: 2026-10-04 (Asia/Shanghai) — 设计系统 v4「Quiet」批 1 落地（token 层 + Clew 学习页换装 + 壳侧栏合并；Hermes 预验收复核通过 2026-10-04，未提交待终审）；ZCODE-M1–M4 与体验补丁为既有未提交基线，设计语言真相源 `docs/DESIGN_V4.md`。
 
 This file is the durable source of truth for continuing NUR LEARN when conversation history is unavailable. Update it after material product decisions, completed milestones, verification changes, or priority changes.
 
@@ -1814,4 +1814,23 @@ R4 = R4-1（`feat(design): R4 command palette content search`）+ R4-2（`feat(d
 - **验证边界**：`completeChatJson`（toc/extract）未在本期做真实 DashScope 端到端重放（重萃取会覆盖既有 QA 数据），由单元测试 + openai-compatible 桩覆盖同一传输层。
 - **状态**：全部改动在工作树未提交（与 M1/M2/M3 及体验补丁一起等待审阅）。**Hermes 预验收复核通过（2026-10-04）**：独立复跑门槛（test 490/490 / check exit 0 / migrate 与基线一致）+ 独立桩复验 + 独立浏览器复走（三视图零请求定论、图谱、390、console 0）全部通过，见 `design-qa.md`「预验收复核（Hermes，2026-10-04）」。
 
-**下一主线**：ZCODE-M5（候选）「练/复」功能面——复查清单与错题中心 Clew 线聚合、FSRS 调度接入（`fsrsEnabled` profile 兑现）、可配置闭环完整版剩余项（官方课 KP `loopProfileId`、学习页按 profile 动态渲染剩余环节）；部署上线准备（ICP + 商户号 + 生产密钥）并行推进。
+## 设计系统 v4「Quiet」批 1 — token 层 + Clew 学习页换装（2026-10-04 完成，未提交）
+
+任务书 `docs/DESIGN_V4.md`（方向已由 Nur 拍板 + Hermes 评审通过 + P0 四项裁决闭环）第一批实施完成；走查与截图证据见 `design-qa.md`「DESIGN_V4 批 1」节。设计语言真相源为 `docs/DESIGN_V4.md` §三/§四。
+
+- **Token 层（globals.css，全局生效即全站观感变化，无过渡态）**：亮色侧栏收为一档灰 `--v2-sidebar #f2f0e8`；暗色页面底调为更暖更暗暖炭 `--bg-100 #201e19`、侧栏 `#191813`；`--v3-cinnabar` 收敛为 `--v2-primary` 的别名（brand-500/暗 #d97757 为唯一交互强调，全仓 8 处 cinnabar 引用自动统一）；石板蓝降为信息色（链接/溯源定位，暗色换 #86b7dc 保对比）；新增选中态统一 token `--v3-selected-bg/fg`（亮 8% / 暗 12% 朱砂底 + brand-700 字）、楷体栈 `--v3-font-kai`（Kaiti SC，只给品牌「知径」）、文档正文单值 `--v4-doc-size/leading`（15px/1.85，只给学习文档面）；非颜色 token（spacing/阴影/动效/浮层/状态色）沿用 v2 不动（P1-8）。
+- **壳侧栏合并（P1-6）**：`workspace-shell` 280px → 264px，品牌换朱砂印章 logo（知/径 两行楷体）+「知径 · 工作台」；新增 `data-sidebar-context-slot` 上下文槽，Clew 学习页把「本章知识点列表」经 `createPortal` 注入壳侧栏（主导航与配额 chip 之间），页面内 240px studyAside 撤销。回归清单（/learn、/courses、/question-bank、/account/billing、书架、教材详情、工作坊列表、wrong-questions、design-system × 1440/1200/980）走查通过。
+- **Clew 学习页换装（§四）**：登录态页面撤销自带第二套 header；文档主列（max 700 居中）= 面包屑 → 文档标题（宋体 30px h1）→ 元信息（石板蓝溯源）→ 描述（15/1.85）→ 安静进度线 → 视图 tabs → 讲义正文（无卡片包裹）→ 自测/划重点/笔记/图谱（细分隔线文档节）；`clew.module.css` v2 桥细边框降为 text 12%/6% 两档、全部方角硬边与墨底按钮换为圆角 token + 朱砂主按钮、宋体收缩（h3 及以下/卡片标题/KP 标题改 sans）、卡片无阴影（仅浮层保留）、user 气泡改中性暖灰、AI 回答改无气泡纯文本（对齐 ChatGPT/Claude 公共语言）。
+- **安静进度线（P0-1 裁决落地）**：`ClewPathGuide` 重写为 2px 细线（role=progressbar）+ 一行小字（「教材路径 6 / 8 · 当前：X」）+ 线尾轻量「下一步」文字链（min-height 44 保触控标准）——只替代八步教材管线呈现，竖向环节脊柱与 LoopProfileBadge 保留（功能不动、视觉降噪），文案用「教材路径」与 Loop Profile（3–6 环节）区分。
+- **视图 tabs**：讲义三视图分段控件改为下划线文字 tab（初学/复习/备考，朱砂选中下划线）；派生契约零变化（同一份讲义确定性派生、零请求，测试锁定）。
+- **复制/重新生成小图标行（§五唯一借鉴项）**：AI 回答下方 Copy/RefreshCw 26px 图标钮——「复制」= 纯前端写剪贴板该回答 markdown（1.6s Check 反馈）；「重新生成」= 对同一条提问重新请求一次（复用既有 chat 路径：计入一次 ClewChats 配额、提问与回答追加为新消息，不静默覆盖历史；流式期间禁用）。零服务端改动。
+- **双模式（P0-4 裁决 B）**：默认模式改为工作台（三栏：文档主列 + 右栏 320px 常驻「问 Clew」），`nur-learn:clew-study-mode=focus` 老键沿用不删、已存 focus 偏好用户尊重其选择；focus 模式（追问下置单列）与 workspace 模式都过全套验收矩阵。
+- **配套更新**：`/design-system` 预览页增「v4 Quiet token」节（新 token 色板/选中态药丸/楷体/15px 文档样张）并把眉题改为 V4 QUIET；`scripts/design-v3-check.mjs` 断言从 v3 契约更新为 v4（264px、progressbar+「教材路径」）；`tests/design-v3-flow.test.ts`、`tests/design-v3-density.test.ts` 同步更新断言（安静进度线 DOM、264px）；AGENTS.md Design Rules 段按 v4 修订并已跑 `bash scripts/sync-agent-rules.sh`。
+- **验证**：`npm run test` **490/490**、`npm run check` exit 0（0 error，仅既有 warning）；暗色 WCAG 审计重跑通过——`design-r2-dark-audit.mjs`（书架/教材详情/学习页/工作坊/设计系统）与 `design-r3-dark-audit.mjs`（15 条路由）暗色低对比文本元素均 **0 个**；`design-v3-check.mjs`（生产构建 `next start` 上两次连跑）PASSED。浏览器走查（v4qa 用户 + 克隆 M4 QA 教材数据）：1440/1200/980/390 × 明/暗 × workspace/focus 全通过，console error 0、pageerror 0，390 无横向溢出；真实「重新生成」一次成功（模型调用、追加不覆盖）；截图 17 张入 `docs/design-references/v4-*.png`。走查数据（v4qa-textbook-1 及关联行）留 dev.db 供复查。
+- **边界与不变量**：教学真相/评分/考试结构/provenance/会员名额/试点课免费规则不在范围；Tier 1–4 零改动、零服务端改动、零 migration；`nur-learn:` localStorage 键全部保留。
+- **批 1 遗留到后续批次**：批 2 = 工作台壳其余面（/learn、官方课、题库、计费、营销首页 `/`）按 v4 token 归一 + ⌘K/抽屉回归；批 3 = 「依据范围」开关（`chat-prompt.ts` 向后兼容新增 + composer chip 排，讲解风格 chip 迁 composer 与讲义生成共用偏好）。dev 环境注：`next build` 与运行中的 dev server 共写 `.next` 会使 dev 崩溃/吐陈旧 chunk（走查前须重启 dev 并清 `.next`；偶发 "Invalid or unexpected token" pageerror 为 dev HMR 噪音，生产构建两次连跑无此错误）。
+
+- **Hermes 预验收复核通过（2026-10-04）**：独立复跑 `npm run test` 490/490、`npm run check` exit 0、`prisma migrate status` 与基线一致；独立重跑暗色 WCAG 审计（r2 五面 + r3 十五路由）均 0 低对比；独立浏览器复走（m2qa，复核脚本不进仓库）——默认工作台 + 旧 focus 偏好尊重、壳侧栏 264 + KP rail portal（含 390 抽屉）、安静进度线（6/8 · 75% · 下一步链接）、视图 tabs 零请求、复制剪贴板、重新生成端到端（4 → 6 行追加不覆盖、reload 持久、EventLog 计次）、10 格明暗×双模式×断点矩阵与 9 路由 × 三档回归全过、console error 0；首轮 dev 热更竞态在干净重启后不可复现（环境现象）。详见 `design-qa.md`「预验收复核（Hermes，2026-10-04）」。
+
+**下一主线**：DESIGN_V4 批 2（其余面按 v4 token 归一）与批 3（「依据范围」）；ZCODE-M5（候选）「练/复」功能面与部署上线准备（ICP + 商户号 + 生产密钥）并行推进。
+

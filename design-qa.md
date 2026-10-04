@@ -1076,3 +1076,73 @@ playwright-core + 系统 Chrome（headless、无扩展），视口 **1440×900 /
 - **浏览器独立复走**（playwright-core + 系统 Chrome，m2qa）：三档产物逐条核验（初学 3 处参考答案 → 复习 0 处且标题保留 + note → 备考无自测题节、定义 63→27 字截首句、要点/易错点保留）；**「零请求」定论**：等 dev HMR 静默后连切 5 次，窗口内 **0 请求**（首轮观测到的 22 个请求全部为 dev hot-update 与重挂载副产物，非视图切换行为）；localStorage 持久 + 刷新保持；划重点交错 1→未定位 1→恢复 1（DB 行数前后一致，无增删）；图谱 3 节点 / 统计行与关系清单自洽 / 点击节点 03 → `?kp=…` + aria-current 同步 / SVG 节点可聚焦 / hover 与 focus-visible 纯 CSS；自测面板跨视图恒 3 题；390×844 `scrollWidth===clientWidth===390`；console error 0、pageerror 0。
 - **边界抽查**：多模型相关模块全部 server-only（model-config / chat-transport / 五个 adapter），客户端组件零引用；`instanceof ClewProviderConfigError` 映射点 7 处（含 compiler 503）；`dashscope-stream` 全仓引用清零；`src/content/` 变更全部为 ZCODE-M1 品牌串替换（24/24 行对称），无内容真相改动。
 - 备注：首轮自动化登录因 dev 首编译/HMR 时序未跳转（重试即通过）——dev 环境现象，未见产品缺陷。
+
+## DESIGN_V4 批 1 —「Quiet」token 层 + Clew 学习页换装（2026-10-04，Zcode 执行）
+
+任务书：`docs/DESIGN_V4.md`（Nur 拍板 + Hermes 评审通过 + P0 四项裁决闭环后的第一批）。范围：token 层修订（globals.css + clew.module.css v2 桥）+ Clew 学习页三栏换装 + 壳侧栏 264px 合并（P1-6）+ 复制/重新生成小图标行 + `/design-system` 同步 + 明暗双主题验收（Hermes 增补全部并入）。
+
+### 落地内容
+
+- **Token 层**：亮侧栏 `#f2f0e8`；暗底暖炭 `#201e19` / 暗侧栏 `#191813`；`--v3-cinnabar` → `--v2-primary` 别名（唯一交互强调，暗 #d97757）；石板蓝降信息色（暗 #86b7dc）；新增 `--v3-selected-bg/fg`（选中态统一 token，导航药丸与 KP 药丸共用）、`--v3-font-kai`、`--v4-doc-size/leading`（15/1.85）；非颜色 token 沿用 v2（P1-7/P1-8）。
+- **壳（workspace-shell）**：侧栏 280→264px；品牌 = 朱砂印章（知/径 楷体两行）+「Ariadne · 知径 · 工作台」；`data-sidebar-context-slot` 上下文槽。
+- **学习页**：撤销登录态自带 header（壳顶栏唯一）；面包屑 → 宋体 30px 文档标题 → 元信息（溯源=石板蓝）→ 描述 15/1.85 → 安静进度线 → 视图 tabs（下划线）→ 无卡片讲义正文 → 自测/划重点/笔记/图谱细分隔文档节；右栏 320px 常驻「问 Clew」（状态点 + 诚实提示 + 上下文 chip + 无气泡 AI 回答 + 中性暖灰 user 气泡 + composer 图标发送键）；KP 列表经 portal 注入壳侧栏（13 行纯文本行 + 药丸选中态）；竖向脊柱保留（视觉降噪）；默认工作台、focus 老键沿用（P0-4B）。
+- **安静进度线（P0-1）**：2px 细线 + role=progressbar + 「教材路径 6 / 8 · 当前：X」+ 线尾「下一步：…」文字链（44px 触控）；八步 chips 呈现退役，脊柱/LoopProfileBadge 功能不动。
+- **复制/重新生成行**：AI 回答下 26px 图标钮 ×2；复制 = 前端剪贴板（Check 反馈 1.6s）；重新生成 = 同问重发（计一次 ClewChats 配额、追加不覆盖、流式中禁用）。零服务端改动。
+
+### 验证记录
+
+- [x] `npm run test` **490/490**（更新 `design-v3-flow` 路径线断言 / `design-v3-density` 264px 断言后全绿）
+- [x] `npm run check` exit 0（0 error；warning 均为既有）
+- [x] 暗色 WCAG 审计重跑（Hermes 增补）：`design-r2-dark-audit.mjs` 5 面（bookshelf/textbook-detail/study/workshop-room/design-system）低对比文本 **0 个**；`design-r3-dark-audit.mjs` 15 路由低对比文本 **0 个**（dev 与生产构建各跑一遍 r2/r3 均通过）
+- [x] `scripts/design-v3-check.mjs` 断言更新至 v4 契约（264 / progressbar / 「教材路径」）后，在 `next start` 生产构建上**两次连跑 PASSED**（用于排除 dev HMR 噪音；dev 下偶发 "Invalid or unexpected token" pageerror 判定为热更竞态，生产两次均无）
+- [x] 浏览器走查（playwright-core + 系统 Chrome；v4qa 用户，教材数据由 M4 QA 数据行克隆为 `v4qa-textbook-1`）：
+  - 侧栏 264px 实测、KP rail 注入壳侧栏（13 行、选中态 aria-current）、教材路径线（6/8 · 75% 填充）、右栏 320px、user 气泡 `#e9e6dc`、AI 回答无底色、小图标行 2×N、composer 发送键
+  - 视图 tabs ×3、切「复习」派生 note 出现（零请求）、复制写入剪贴板 700 字符、真实「重新生成」成功追加新问答（模型调用，历史未覆盖）
+  - 1440/1200/980/390 × 明/暗 × workspace/focus 全通过；focus 模式追问面板确证下置（agentTop == mainBottom）；390×844 `scrollWidth===clientWidth===390`
+  - 回归面 9 条路由（/learn、/courses、/question-bank、/account/billing、书架、教材详情、工作坊列表、wrong-questions、/design-system）× 1440/1200/980 无横向溢出；最终一轮 **console error 0、pageerror 0**
+- [x] 文档同批：AGENTS.md Design Rules → v4（含「默认工作台」「朱砂唯一强调」「宋体收缩」）+ `bash scripts/sync-agent-rules.sh`；`docs/PROJECT_STATE.md` 增本节；`docs/DESIGN_V4.md` 状态行更新
+
+### 截图索引（docs/design-references/，v4- 前缀共 17 张）
+
+- `v4-study-workspace-light-1440.png` / `v4-study-workspace-dark-1440.png` 学习页工作台明暗（核心对照样张）
+- `v4-study-focus-light-1440.png` 单任务模式（追问下置）
+- `v4-study-workspace-light-1200/980/390.png` 断点档
+- `v4-reg-*.png` 回归面 9 张（含 design-system 明暗两张）
+
+### 走查环境注
+
+- 走查前重启 dev server 并清 `.next`（`next build` 与运行中的 dev server 共写 `.next` 会使 dev 崩溃或吐陈旧 chunk——本轮两次 500/中断均源于此，非产品缺陷）。
+- 走查产生/使用的数据：新增 v4qa 用户 + `v4qa-textbook-1`（19 章 / 13 KP / 2 讲义 / 1 对话 / 1 划线，内容克隆自既有 M4 QA 数据）留 dev.db 供复查；真实重新生成消耗一次 ClewChats 配额。r2/r3 审计脚本自建自删的临时账号照旧。
+- 生产构建 `next start` 本地无法走认证流程（PROJECT_STATE：生产强制 Postgres DATABASE_URL，禁 sqlite）——未认证检查（v3-check 布局读回）在生产上验证，认证流程走查在 dev 上完成。
+- 结束时 dev server 保持运行（localhost:3000，已清缓存重启）。
+
+### 最终门槛
+
+- [x] `npm run lint` 0 error + `npx tsc --noEmit` 通过
+- [x] `npm run test` 全绿 **490/490**
+- [x] `npm run check` exit 0
+- [x] 无 migration 新增（零 Prisma 变更）
+- [x] 明暗双主题 + 双模式验收矩阵通过，console 0 错误
+- [x] 暗色 WCAG 审计（r2 + r3）重跑通过
+- [x] 文档更新：本节 + `docs/PROJECT_STATE.md` + AGENTS.md（已 sync）+ `docs/DESIGN_V4.md` 状态行
+
+### 预验收复核（Hermes，2026-10-04）
+
+独立复验，不复用执行者脚本（复核脚本自写、存 `/tmp/hermes-v4-qa/`，未进仓库；账户 m2qa，口令运行时从本文件提取，不打印）。
+
+- **门槛独立复跑**：`npm run test` **490/490**（pass 490 / fail 0 / cancelled 0）、`npm run check` **exit 0**（lint 0 error + typecheck + build 全过，日志 `/tmp/hermes-v4-qa/check.log`）；`npx prisma migrate status` 14 migrations up to date（与基线一致）；`git diff` 无 `prisma/`、无依赖变更。
+- **暗色 WCAG 审计独立重跑**：`scripts/design-r2-dark-audit.mjs` 5 面 0 低对比；`scripts/design-r3-dark-audit.mjs` 15 路由 0 低对比（均 `DARK CONTRAST AUDIT PASSED`）。
+- **浏览器独立复走**（干净重启 dev + 预热后；自写脚本，playwright-core + 系统 Chrome）：
+  - 默认模式：无键新用户 → workspace；`nur-learn:clew-study-mode=focus` 老键被尊重（focus 布局下置、aria-pressed 正确）；切换控件写/读一致。
+  - 壳侧栏 264px 实测；KP rail portal 确在壳侧栏内（3 行、aria-current=true）；390 抽屉内 rail 可达（width=243）。
+  - 文档主列实测 698px（≤700）；右栏 320 常驻；脊柱保留（6 环节）+ LoopProfileBadge 保留。
+  - 安静进度线：role=progressbar +「教材路径 6 / 8 · 当前：划重点与批注」+ 75% 填充 + 线尾「下一步」链接（`…/c/1#note`）。
+  - 宋体 h1 实测（Songti SC）；元信息石板蓝 `rgb(23,101,154)`。
+  - 视图 tabs：初学 3 处参考答案 → 复习 0 处且 note 出现；切换窗口非 dev 请求 **0**。
+  - 复制：剪贴板写入核验（82 字符 = 该回答 markdown）+「已复制」反馈。
+  - 重新生成端到端：请求体 = 原提问、HTTP 200（≈2.1s）、问答追加（4 → 6 行、原 4 行不动）、reload 后持久、无错误横幅；`EventLog` 两条 `clew_kp_chat` success（qwen3.7-plus）→ 事件/配额路径实际走过。
+  - 暗色 token 实测：`--v2-background #201e19`、壳侧栏 `#191813`、`--v2-primary #d97757`、`--v3-cinnabar` 别名生效、石板蓝 `#86b7dc`。
+  - 矩阵 10 格（1440/1200/980/390 × 明暗 × workspace/focus）全部 `scrollWidth===clientWidth`、0 console error、0 pageerror。
+  - 回归面 9 路由 × 1440/1200/980 = 27 次加载全 200、无溢出、0 错误；`/design-system` V4 节可见。
+- **环境注（不影响结论）**：首轮走查时 dev server 一次热更竞态（worker 重启）造成首个加载未水合（`SyntaxError: Invalid or unexpected token`）、一次导航 ERR_ABORTED、一次路由超时；按既有协议「重启 dev + 清 `.next` + 预热」后全部不可复现，生产构建与全部门槛无此现象。复核脚手架自身一处问题（对 SSE 端点的 route 拦截会挂起客户端）修正后复跑，非产品缺陷。
+- **结论**：**批 1 验收成立，未发现需返工项**；等待终审。

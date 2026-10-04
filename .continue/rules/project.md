@@ -82,7 +82,7 @@ The product must:
 
 **进度（2026-09-19）**：M0 四档会员迁移+官方课名额+首页三入口、M1 上传/书架/当月名额、M2 目录识别+章节修正、M3 知识点萃取 SSE 带页码溯源、M4 学习页（每知识点讲义生成 + 讲解追问 SSE，含未接入模型启发式兜底）、M5 划重点/批注与学霸笔记、M6 课题工作坊替代「我的资料」（≤100 页短材料 + 确定性关键词检索答疑 SSE，扫描件/图片明确拒绝，无 key 明确报错不兜底）、**M7 支付打通（mock→支付宝沙箱，四档订阅真实生效：下单→收银台→notify 验签开通→额度即时变化；缺密钥 503 明确报错不回落 mock；计费页三列档位卡+月/季/年分段控件；正式定价 2026-09-18 拍板落 `plans.ts`；真实支付宝 notify 回调待公网部署后补验）** 均已完成并验收（commits `36e8efc`/`2f41e98`/`1debd1a`/`93dfa6d`/`285c3d1` + M5/M6/M7 提交；lint 0 error / test 379 / check 通过）。**Clew M0–M7 全部完成**；后续主线：设计系统 v2 框架重构（桌面优先）与部署上线准备（ICP 备案 + 真实商户号 + 生产密钥/网关 + 公网 notify 补验）。本节中「Do not ... server material store」等旧约束已被上述四条决定取代，Clew 实现以 `docs/HI_DOC_PLAN.md` 为准。
 
-**进度（2026-09-30）**：ZCODE-M1 三阶段完成（未提交，待用户审阅合并）：① 代码清理（12 个已合并分支、3 个未使用文件、118 项 Trae 提取脚本删除；`src/lib/qb-course-transform.ts` 因被 15 个 Tier 1 题库课程文件引用而保留）；② 品牌迁移（NUR LEARN→Ariadne、Hi doc→Clew，路由 `/learn/clew/*` 带 308 重定向，Prisma 9 模型 `@@map` 保表名零漂移，`nur-learn` localStorage 键前缀保留）；③ 前端基础重写（NurAgentChat mode/contextChip 契约、Clew 学习页「当前知识点」上下文 chip、SpineEditor 章节确认后萃取含服务端 409 门禁与 `POST /api/clew/textbooks/[id]/toc/confirm`、左栏常驻配额 chip）。验证：check exit 0 / test 402/402 / 残留 grep 清零 / 1440+390 浏览器走查通过（`design-qa.md` ZCODE-M1 节）。下一主线：ZCODE-M2 可配置闭环（Loop Profile）。
+**进度（2026-09-30）**：ZCODE-M1 三阶段完成（未提交，待用户审阅合并）：① 代码清理（12 个已合并分支、3 个未使用文件、118 项 Trae 提取脚本删除；`src/lib/qb-course-transform.ts` 因被 15 个 Tier 1 题库课程文件引用而保留）；② 品牌迁移（NUR LEARN→Ariadne、Hi doc→Clew，路由 `/learn/clew/*` 带 308 重定向，Prisma 9 模型 `@@map` 保表名零漂移，`nur-learn` localStorage 键前缀保留）；③ 前端基础重写（NurAgentChat mode/contextChip 契约、Clew 学习页「当前知识点」上下文 chip、SpineEditor 章节确认后萃取含服务端 409 门禁与 `POST /api/clew/textbooks/[id]/toc/confirm`、左栏常驻配额 chip）。验证：check exit 0 / test 402/402 / 残留 grep 清零 / 1440+390 浏览器走查通过（`design-qa.md` ZCODE-M1 节）。下一主线：设计系统 v4「Quiet」（`docs/DESIGN_V4.md`，批 1 token 层 + Clew 学习页换装已于 2026-10-04 落地未提交；批 2 其余面归一、批 3「依据范围」待做）与 ZCODE-M2 可配置闭环（Loop Profile）。
 
 历史主线（已完成）：private-material analysis 与 official-course compilation 分离、browser-local attempt memory、constrained local Agent 等见 `docs/PROJECT_STATE.md` 与 `docs/CONTENT_ARCHITECTURE.md`。原 Course Builder 对学生显示为建设中，Clew **不是**旧 course-builder 的换壳。
 
@@ -192,8 +192,12 @@ These files are UI, routing, and presentation. Changes here do not affect teachi
 
 ## Design Rules
 
-- Approved direction: warm ivory paper, black ink, thin rules, Songti-style Chinese display headings, restrained sans-serif metadata, square containers, muted cinnabar and slate-blue semantic accents.
-- Preserve the selected homepage concept: “从证据开始辨证”.
+- Approved direction (v4 「Quiet」，真相源 `docs/DESIGN_V4.md`): warm ivory / warm-charcoal dual themes as first-class citizens (every surface ships light + dark), flat painted surfaces, hierarchy by grayscale, hairline borders or none, shadows only for floating layers; motion is limited to the streaming caret, spinner, and status transitions — decorative motion stays banned.
+- Single interactive accent: cinnabar via `--v2-primary` (`--v3-cinnabar` is an alias, not a second red); slate blue is an information color for links and source locators only. Selected states (nav pills, knowledge-point pills) share the `--v3-selected-*` tokens.
+- Songti display type is reserved for document titles (h1/h2) and the brand; every other level uses bold sans. Learning-document body uses `--v4-doc-size`/`--v4-doc-leading` (15px/1.85); other surfaces stay 14/1.5. The seal (「知径」, Kaiti via `--v3-font-kai`) is only the top-left logo.
+- The workspace sidebar is 264px and carries shell nav plus route context — the Clew study page merges its chapter knowledge-point list into it (portal slot), and the Clew study page defaults to workspace (three-pane) mode while the legacy focus mode stays selectable; both modes must pass light/dark acceptance.
+- Official-course evidence-grading labels (可关联 / 帮助理解 / 不可直接等同) keep their semantics — v4 re-skins without retouching them, and Clew surfaces still never show them.
+- Preserve the selected homepage concept: “从证据开始辨证” (v4 unifies its visual language without changing the concept).
 - Preserve the borrowed weekly-plan bottom drawer behavior.
 - The course workspace remains an overview and navigation surface; deep teaching belongs on knowledge-point, subjective-writing, case-reasoning, and review pages.
 - Build one complete vertical learning loop before filling every navigation route.
