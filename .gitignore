@@ -67,6 +67,8 @@ prisma/dev.db-journal
 .workbuddy/
 .qoder/
 .codebuddy/
+.mimosa/
+.zcode*
 
 # 题库提取源 PDF（受版权原始资料，只读区，绝不提交）
 src/source_pdfs*
