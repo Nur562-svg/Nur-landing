@@ -1,0 +1,501 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Ariadne 墨・印・光 探针 · 静态样张（动效已解禁，非产品代码）</title>
+<!--
+  Ariadne 设计探针 第二版（2026-10-04）——「墨・印・光」
+  用户授权：探针内可打破 v3 红线（装饰动效等），仅用于观感验证，不改产品代码。
+  配方来源：水墨「墨分六彩 · 一抹印泥红 · 留白即意」+ 编辑排印「大字戏剧性 / 字要回应」
+  + feTurbulence 纸纹与墨晕技法。
+  八个升级动作：
+  ① 墨分六彩：焦浓重淡清的暖墨阶梯，深墨「问 Clew」锚点面板
+  ② 大字戏剧：72px 宋体页题 + 朱砂首字下沉 + 巨字水印「診」
+  ③ 竖排文脉：左缘竖排导航 + 竖排「第一章 · 绪论」
+  ④ 笔意动效：笔锋线自绘、印章盖入、当前环节朱砂晕环（一次性/状态性动效）
+  ⑤ 一点金：铜金发丝线用于 Pro 徽与深墨面板描线
+  ⑥ 纸工艺：叠纸错位 + 笺纸内框 + 纤维噪点 + 墨晕暗角
+  ⑦ 小印节标：定义/要点/易错点/自测题 = 楷书小印 + 宋体节名
+  ⑧ 流式微光：「Clew 正在讲解」的墨面扫光（状态性动效）
+-->
+<style>
+  :root {
+    --paper: #f1ecdf;
+    --paper-bright: #faf6ea;
+    --paper-deep: #eae3d1;
+    --ink: #26221b;          /* 浓墨 */
+    --ink-2: #4a4438;        /* 重墨 */
+    --ink-3: #6f675a;        /* 淡墨 */
+    --ink-4: #a49a89;        /* 清墨 */
+    --dark: #241f17;         /* 焦墨面板 */
+    --dark-2: #1b1710;
+    --dark-text: #ece2cf;
+    --dark-muted: #9a8f7c;
+    --line: rgba(38, 34, 27, 0.36);
+    --line-soft: rgba(38, 34, 27, 0.14);
+    --cinnabar: #9e3a2b;
+    --cinnabar-bright: #b8462f;
+    --cinnabar-soft: rgba(158, 58, 43, 0.12);
+    --bronze: #a8834f;
+    --bronze-line: rgba(168, 131, 79, 0.45);
+    --amber-mark: rgba(214, 168, 74, 0.32);
+    --shadow-warm: 0 2px 4px rgba(93, 58, 26, 0.08), 0 14px 34px rgba(93, 58, 26, 0.14);
+    --serif: "Songti SC", "Noto Serif SC", "STSong", "SimSun", serif;
+    --sans: -apple-system, "PingFang SC", "Helvetica Neue", "Microsoft YaHei", sans-serif;
+    --kai: "Kaiti SC", "STKaiti", "KaiTi", serif;
+  }
+
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; background: var(--paper); color: var(--ink);
+    font-family: var(--sans); font-size: 15px; line-height: 1.9;
+    -webkit-font-smoothing: antialiased; overflow-x: hidden;
+  }
+  ::selection { background: rgba(158, 58, 43, 0.24); }
+  ::-webkit-scrollbar { width: 10px; }
+  ::-webkit-scrollbar-track { background: var(--paper); }
+  ::-webkit-scrollbar-thumb { background: rgba(38,34,27,.3); border: 3px solid var(--paper); border-radius: 6px; }
+
+  /* ---------- 氛围层：纤维噪点 + 墨晕暗角 + 巨字水印 ---------- */
+  .grain {
+    position: fixed; inset: 0; z-index: 60; pointer-events: none;
+    opacity: 0.055; mix-blend-mode: multiply;
+    background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="180" height="180"><filter id="n"><feTurbulence type="fractalNoise" baseFrequency="0.8" numOctaves="2" stitchTiles="stitch"/><feColorMatrix type="saturate" values="0"/></filter><rect width="180" height="180" filter="url(%23n)"/></svg>');
+  }
+  .vignette {
+    position: fixed; inset: 0; z-index: 59; pointer-events: none;
+    background: radial-gradient(130% 100% at 46% 6%, transparent 52%, rgba(64, 42, 18, 0.12) 100%);
+  }
+  .wm {
+    position: fixed; right: -3vw; bottom: -14vh; z-index: 0; pointer-events: none; user-select: none;
+    font-family: var(--serif); font-weight: 900; font-size: 58vh; line-height: 1;
+    color: rgba(38, 34, 27, 0.038);
+    animation: drift 30s ease-in-out infinite alternate;
+  }
+  @keyframes drift { to { transform: translateY(-16px); } }
+
+  /* ---------- 一次性 / 状态性动效 ---------- */
+  .rise { opacity: 0; animation: rise .75s cubic-bezier(.25,.7,.25,1) forwards; }
+  @keyframes rise { from { opacity: 0; transform: translateY(16px); } to { opacity: 1; transform: none; } }
+  .d1 { animation-delay: .05s } .d2 { animation-delay: .16s } .d3 { animation-delay: .27s }
+  .d4 { animation-delay: .38s } .d5 { animation-delay: .5s } .d6 { animation-delay: .62s }
+  @media (prefers-reduced-motion: reduce) {
+    .rise, .wm, .halo, .shimmer span, .brush path { animation: none !important; opacity: 1 !important; }
+  }
+
+  /* ---------- 左缘竖排 ---------- */
+  .edge {
+    position: sticky; top: 0; height: 100vh; width: 78px; z-index: 20;
+    display: flex; flex-direction: column; align-items: center;
+    padding: 22px 0 18px; border-right: 1px solid var(--line-soft);
+    background: color-mix(in srgb, var(--paper) 70%, transparent);
+  }
+  .seal { width: 56px; height: 56px; flex: none; filter: drop-shadow(0 2px 3px rgba(93,58,26,.3)); transform: rotate(-2deg); animation: stamp .55s cubic-bezier(.2,.9,.3,1.2) .25s both; }
+  @keyframes stamp {
+    0% { opacity: 0; transform: scale(1.55) rotate(-9deg); }
+    62% { opacity: 1; transform: scale(.94) rotate(-1deg); }
+    100% { opacity: 1; transform: scale(1) rotate(-2deg); }
+  }
+  .vnav { margin-top: 26px; display: grid; gap: 13px; justify-items: center; }
+  .vnav a {
+    writing-mode: vertical-rl; text-decoration: none; color: var(--ink-3);
+    font-size: 12.5px; letter-spacing: .34em; padding: 8px 4px;
+  }
+  .vnav a:hover { color: var(--ink); }
+  .vnav a.active { color: var(--paper-bright); background: var(--ink); font-weight: 600; }
+  .vquota {
+    margin-top: auto; writing-mode: vertical-rl; font-size: 10.5px; color: var(--ink-4); letter-spacing: .3em;
+  }
+
+  .stage { max-width: 1280px; margin: 0 auto; padding: 26px 34px 60px; position: relative; }
+
+  /* ---------- 顶行 ---------- */
+  .toprow { display: flex; align-items: center; justify-content: space-between; gap: 18px; }
+  .search {
+    display: flex; align-items: center; gap: 10px; width: 380px; max-width: 40vw;
+    border: 1px solid var(--line); background: var(--paper-bright);
+    padding: 8px 12px; font-size: 13px; color: var(--ink-3);
+  }
+  .search kbd { margin-left: auto; font-size: 11px; color: var(--ink-3); border: 1px solid var(--line-soft); padding: 0 5px; background: var(--paper); }
+  .member { display: flex; align-items: center; gap: 12px; font-size: 12.5px; color: var(--ink-3); }
+  .foil {
+    border: 1px solid var(--bronze-line); color: var(--bronze); font-size: 11.5px; letter-spacing: .18em;
+    padding: 3px 12px 3px 14px; background: linear-gradient(160deg, rgba(168,131,79,.14), rgba(168,131,79,.04));
+  }
+
+  /* ---------- 页首：大字 + 竖排 + 笔锋线 ---------- */
+  .titleblock { display: flex; align-items: flex-start; gap: 16px; margin-top: 40px; position: relative; }
+  .titleblock::before {
+    content: ""; position: absolute; left: -70px; top: -60px; width: 300px; height: 220px;
+    background: radial-gradient(closest-side, rgba(158,58,43,.07), transparent 72%); pointer-events: none;
+  }
+  .kicker { font-size: 12px; letter-spacing: .4em; color: var(--cinnabar); margin: 0 0 14px; }
+  h1.page-title {
+    font-family: var(--serif); font-weight: 900; font-size: clamp(44px, 5.2vw, 72px);
+    line-height: 1.14; letter-spacing: .015em; margin: 0; width: fit-content;
+  }
+  .vsub {
+    writing-mode: vertical-rl; font-family: var(--serif); font-weight: 700;
+    font-size: 21px; letter-spacing: .5em; color: var(--ink-2);
+    border-left: 1px solid var(--line-soft); padding-left: 15px; margin-top: 6px;
+    max-height: 240px;
+  }
+  .vsub .dot { color: var(--cinnabar); }
+  .brush { display: block; width: min(560px, 60%); height: 12px; margin-top: 6px; }
+  .brush path {
+    stroke: var(--cinnabar); stroke-width: 5; fill: none; stroke-linecap: round; opacity: .82;
+    stroke-dasharray: 1; stroke-dashoffset: 1;
+    animation: draw 1.15s cubic-bezier(.55,.05,.35,1) .5s forwards;
+  }
+  @keyframes draw { to { stroke-dashoffset: 0; } }
+  .page-meta { display: flex; gap: 16px; flex-wrap: wrap; font-size: 12.5px; color: var(--ink-3); margin-top: 14px; }
+  .page-meta .num { font-family: var(--serif); color: var(--ink-2); }
+
+  /* ---------- 行旅线（步进 + 当前晕环 + 一个动作） ---------- */
+  .journey { display: flex; align-items: flex-start; margin: 34px 0 8px; }
+  .jstep { flex: 1; position: relative; display: grid; justify-items: center; gap: 8px; }
+  .jstep::before {
+    content: ""; position: absolute; top: 7px; left: calc(-50% + 12px); right: calc(50% + 12px);
+    height: 1px; background: var(--line-soft);
+  }
+  .jstep:first-child::before { display: none; }
+  .jstep.done::before { background: rgba(38,34,27,.4); }
+  .jdot {
+    width: 15px; height: 15px; border-radius: 50%; border: 1px solid var(--line);
+    background: var(--paper-bright); margin-top: 0; z-index: 1;
+  }
+  .jstep.done .jdot { background: var(--ink); border-color: var(--ink); }
+  .jstep.current .jdot { background: var(--cinnabar); border-color: var(--cinnabar); animation: halo 2.4s ease-out infinite; }
+  @keyframes halo {
+    0% { box-shadow: 0 0 0 0 rgba(158, 58, 43, .38); }
+    75% { box-shadow: 0 0 0 11px rgba(158, 58, 43, 0); }
+    100% { box-shadow: 0 0 0 0 rgba(158, 58, 43, 0); }
+  }
+  .jlb { font-size: 11.5px; color: var(--ink-4); letter-spacing: .1em; }
+  .jstep.done .jlb { color: var(--ink-2); }
+  .jstep.current .jlb { color: var(--cinnabar); font-weight: 600; }
+  .jrow { display: flex; align-items: center; justify-content: space-between; gap: 20px; }
+  .next-btn {
+    background: var(--cinnabar); color: #f8eee2; border: none; cursor: pointer;
+    padding: 9px 22px; font-size: 13.5px; letter-spacing: .14em;
+    box-shadow: 0 1px 0 rgba(93,58,26,.4); transition: transform .06s ease;
+  }
+  .next-btn:active { transform: translateY(1px); box-shadow: none; }
+
+  /* ---------- 学习区 ---------- */
+  .study { display: grid; grid-template-columns: 196px minmax(0, 1fr) 300px; gap: 24px; margin-top: 30px; align-items: start; }
+
+  .kps { display: grid; gap: 10px; }
+  .kps-head { font-size: 12px; letter-spacing: .2em; color: var(--ink-3); margin-bottom: 2px; }
+  .kp {
+    display: block; text-decoration: none; color: var(--ink); background: var(--paper-bright);
+    border: 1px solid var(--line-soft); padding: 10px 12px; transition: border-color .15s ease;
+  }
+  .kp:hover { border-color: var(--line); }
+  .kp.active { background: var(--ink); color: var(--paper-bright); border-color: var(--ink); box-shadow: var(--shadow-warm); }
+  .kp .r1 { display: flex; gap: 10px; align-items: baseline; font-size: 13.5px; }
+  .kp .num { font-family: var(--serif); color: var(--cinnabar); font-size: 12px; }
+  .kp.active .num { color: #e2bd93; }
+  .kp .meta { font-size: 11.5px; color: var(--ink-4); margin-top: 3px; padding-left: 22px; }
+  .kp.active .meta { color: rgba(249,246,236,.66); }
+
+  /* ---------- 讲义：叠纸 + 笺纸内框 + 小印节标 ---------- */
+  .paperwrap { position: relative; }
+  .sheet-back {
+    position: absolute; inset: 12px -9px -12px 9px; background: var(--paper-deep);
+    border: 1px solid var(--line-soft); transform: rotate(.45deg);
+  }
+  .sheet {
+    position: relative; background: var(--paper-bright);
+    border: 1.5px solid var(--ink);
+    box-shadow: 9px 11px 0 rgba(38, 34, 27, 0.08), var(--shadow-warm);
+    padding: 24px 28px 30px;
+  }
+  .sheet::before { content: ""; position: absolute; inset: 8px; border: 1px solid var(--line-soft); pointer-events: none; }
+  .lesson-head { display: flex; align-items: center; gap: 14px; padding-bottom: 12px; border-bottom: 2px solid var(--ink); position: relative; }
+  .lesson-head::after { content: ""; position: absolute; left: 0; right: 0; bottom: -5px; border-bottom: 1px solid var(--ink); }
+  .lesson-head h2 { font-family: var(--serif); font-weight: 900; font-size: 22px; margin: 0; letter-spacing: .06em; }
+  .lesson-head .gen { font-size: 11.5px; color: var(--ink-3); margin-right: auto; }
+  .seg { display: inline-flex; border: 1px solid var(--line); background: var(--paper); }
+  .seg button { border: none; background: none; padding: 4px 13px; font-size: 12px; color: var(--ink-3); cursor: pointer; }
+  .seg button + button { border-left: 1px solid var(--line-soft); }
+  .seg button[aria-pressed="true"] { background: var(--ink); color: var(--paper-bright); font-weight: 600; }
+
+  .sec { display: flex; align-items: center; gap: 10px; margin: 24px 0 8px; }
+  .sec .mini {
+    width: 23px; height: 23px; background: var(--cinnabar); color: #f6ecdd; flex: none;
+    font-family: var(--kai); font-size: 13px; display: grid; place-items: center;
+    transform: rotate(-2.5deg); box-shadow: 1px 1px 0 rgba(93,58,26,.3);
+  }
+  .sec h3 { font-family: var(--serif); font-size: 18px; font-weight: 900; letter-spacing: .08em; margin: 0; }
+  .sec::after { content: ""; flex: 1; border-bottom: 1px solid var(--line-soft); transform: translateY(-3px); }
+  .sec .aside-lb { font-size: 11px; color: var(--ink-4); letter-spacing: .12em; }
+
+  .lede::first-letter {
+    float: left; font-family: var(--serif); font-weight: 900; font-size: 54px;
+    line-height: .92; color: var(--cinnabar); padding: 4px 10px 0 0;
+  }
+  .lesson article p { margin: 0 0 4px; }
+  .qmeta { font-size: 12px; color: var(--ink-3); }
+  .qmeta .loc { color: var(--slate, #3b547c); }
+  .lesson article ul { margin: 6px 0; padding-left: 20px; }
+  .lesson article li { margin-bottom: 3px; }
+  .lesson article li::marker { font-family: var(--serif); color: var(--cinnabar); }
+  mark.hl {
+    background: linear-gradient(transparent 52%, var(--amber-mark) 52%);
+    color: inherit; padding: 0 2px;
+    border-bottom: 1px solid rgba(164,120,36,.5);
+  }
+
+  .selfq { display: flex; gap: 14px; align-items: baseline; margin: 8px 0; }
+  .selfq .zhnum { font-family: var(--serif); font-weight: 900; font-size: 20px; color: var(--cinnabar); flex: none; }
+  .selfq p { margin: 0; font-size: 15px; }
+  .chips { display: flex; gap: 8px; margin: 12px 0 0; }
+  .chip {
+    border: 1px solid var(--line); background: none; font-size: 12px; color: var(--ink-3);
+    padding: 3px 13px; cursor: pointer;
+  }
+  .chip:hover { color: var(--ink); }
+  .chip.shaky { border-color: var(--cinnabar); color: var(--cinnabar); background: var(--cinnabar-soft); }
+  .chip.pressed { border-color: var(--ink); color: var(--ink); background: rgba(38,34,27,.07); font-weight: 600; }
+
+  /* ---------- 问 Clew：焦墨锚点面板 ---------- */
+  .chat {
+    background: linear-gradient(165deg, var(--dark) 0%, var(--dark-2) 100%);
+    color: var(--dark-text); border: 1px solid rgba(0, 0, 0, 0.5);
+    box-shadow: var(--shadow-warm);
+    padding: 18px 18px 20px; display: flex; flex-direction: column; gap: 13px;
+  }
+  .chat .head { display: flex; align-items: baseline; justify-content: space-between; border-bottom: 1px solid var(--bronze-line); padding-bottom: 10px; }
+  .chat h2 { font-family: var(--serif); font-weight: 900; font-size: 18px; letter-spacing: .08em; margin: 0; }
+  .chat h2 i { font-style: normal; color: var(--cinnabar-bright); }
+  .chat .head small { font-size: 10.5px; color: var(--dark-muted); letter-spacing: .14em; }
+  .chipctx { font-size: 11.5px; color: #d8b9a8; border: 1px dashed rgba(158,58,43,.6); padding: 4px 9px; align-self: flex-start; }
+  .msg { font-size: 13px; line-height: 1.85; border-left: 2px solid var(--cinnabar); padding-left: 11px; color: #ddd2bd; }
+  .msg .who { font-size: 10.5px; color: var(--dark-muted); letter-spacing: .16em; margin-bottom: 3px; }
+  .stream { font-size: 12px; color: transparent; }
+  .shimmer {
+    background: linear-gradient(90deg, #6f6353 20%, #efe4cc 50%, #6f6353 80%);
+    background-size: 200% 100%; -webkit-background-clip: text; background-clip: text;
+    animation: sweep 2.1s linear infinite;
+  }
+  @keyframes sweep { to { background-position: -200% 0; } }
+  .chat form { display: flex; gap: 8px; margin-top: 2px; }
+  .chat input {
+    flex: 1; min-width: 0; background: var(--dark-2); border: 1px solid rgba(168,131,79,.35);
+    color: var(--dark-text); font-size: 13px; padding: 8px 10px; font-family: var(--sans);
+  }
+  .chat input::placeholder { color: var(--dark-muted); }
+  .chat input:focus-visible { outline: 1.5px solid var(--bronze); outline-offset: 1px; }
+  .chat form button {
+    border: 1px solid var(--cinnabar); background: var(--cinnabar); color: #f8eee2;
+    font-size: 12.5px; padding: 0 15px; cursor: pointer; letter-spacing: .1em;
+  }
+  .chat form button:active { transform: translateY(1px); }
+
+  /* ---------- 学霸笔记空态 ---------- */
+  .notegap {
+    margin-top: 24px; border: 1px solid var(--line-soft); background: var(--paper-bright);
+    padding: 20px 24px; display: flex; gap: 24px; align-items: center; position: relative;
+  }
+  .notegap::before { content: ""; position: absolute; inset: 6px; border: 1px dashed var(--line-soft); pointer-events: none; }
+  .notegap svg { flex: none; }
+  .notegap .t b { font-family: var(--serif); font-size: 16px; font-weight: 900; display: block; margin-bottom: 3px; letter-spacing: .06em; }
+  .notegap .t { font-size: 13px; }
+  .notegap .hint { color: var(--ink-3); font-size: 12.5px; }
+  .notegap .make { margin-left: auto; border: 1px solid var(--cinnabar); color: var(--cinnabar); background: none; padding: 9px 20px; font-size: 13px; cursor: pointer; white-space: nowrap; letter-spacing: .1em; }
+  .notegap .make:hover { background: var(--cinnabar-soft); }
+  .notegap .make:active { transform: translateY(1px); }
+
+  /* ---------- 说明 ---------- */
+  .notes { max-width: 1280px; margin: 34px auto 70px; padding: 0 34px; }
+  .notes h2 { font-family: var(--serif); font-size: 18px; font-weight: 900; letter-spacing: .08em; margin: 0 0 10px; }
+  .notes ol { margin: 0; padding-left: 22px; font-size: 13px; color: var(--ink-2); columns: 2; column-gap: 44px; }
+  .notes li { break-inside: avoid; margin-bottom: 5px; }
+  .notes li b { font-weight: 700; }
+  .notes .fine { font-size: 12px; color: var(--ink-3); margin-top: 12px; }
+</style>
+</head>
+<body>
+<div class="grain" aria-hidden="true"></div>
+<div class="vignette" aria-hidden="true"></div>
+<div class="wm" aria-hidden="true">診</div>
+
+<div style="display:grid; grid-template-columns: 78px minmax(0,1fr);">
+  <!-- 左缘竖排 -->
+  <aside class="edge">
+    <svg class="seal" viewBox="0 0 48 48" role="img" aria-label="知径印章">
+      <path fill="#9e3a2b" d="M7.5 6.8 Q6 4.5 9 4.6 L39.5 4 Q42.5 4 42.6 7 L43.4 39.5 Q43.5 42.8 40.2 43 L8.8 43.8 Q5.5 43.8 5.6 40.6 L6.6 8.5 Z"/>
+      <path fill="none" stroke="#f6ecdd" stroke-opacity="0.55" stroke-width="1.2" stroke-dasharray="52 7 30 5 44 8"
+        d="M11.5 10.4 Q10.6 8.6 12.6 8.6 L37.8 8.2 Q39.8 8.2 39.9 10.2 L40.5 37.8 Q40.6 39.8 38.6 40 L12.4 40.6 Q10.2 40.6 10.3 38.6 L10.9 12.2 Z"/>
+      <text x="24" y="22.5" text-anchor="middle" font-family="Kaiti SC, STKaiti, KaiTi, serif" font-size="16" font-weight="700" fill="#f6ecdd">知</text>
+      <text x="24" y="40" text-anchor="middle" font-family="Kaiti SC, STKaiti, KaiTi, serif" font-size="16" font-weight="700" fill="#f6ecdd">径</text>
+    </svg>
+    <nav class="vnav" aria-label="主导航">
+      <a href="#">学习主环</a>
+      <a href="#" class="active">Clew</a>
+      <a href="#">官方课程</a>
+      <a href="#">题库</a>
+      <a href="#">会员</a>
+    </nav>
+    <div class="vquota">名额 2 / 3 · 调用 4 次</div>
+  </aside>
+
+  <div class="stage">
+    <div class="toprow rise d1">
+      <div class="search">⌕ 搜索课程、教材、题库…<kbd>⌘K</kbd></div>
+      <div class="member">Nur <span class="foil">PRO 会员</span></div>
+    </div>
+
+    <!-- 页首 -->
+    <header>
+      <p class="kicker rise d1">CLEW · 知识学习</p>
+      <div class="titleblock rise d2">
+        <h1 class="page-title">《中医诊断学》</h1>
+        <div class="vsub">第一章<span class="dot">·</span>绪论</div>
+      </div>
+      <svg class="brush rise d3" viewBox="0 0 600 12" preserveAspectRatio="none" aria-hidden="true">
+        <path d="M2 8.5 C 130 3.5, 330 2.5, 598 6.5" pathLength="1"/>
+      </svg>
+      <p class="page-meta rise d3">
+        <span>第 <span class="num">3–8</span> 页 · 已萃取</span>
+        <span>依据《中医诊断学》（第三版）</span>
+        <span>知识点 <span class="num">3</span> · 讲义 <span class="num">2</span> 份</span>
+      </p>
+    </header>
+
+    <!-- 行旅线 -->
+    <div class="jrow rise d4">
+      <div class="journey" style="flex:1" aria-label="学习路径">
+        <div class="jstep done"><span class="jdot"></span><span class="jlb">上传</span></div>
+        <div class="jstep done"><span class="jdot"></span><span class="jlb">目录识别</span></div>
+        <div class="jstep done"><span class="jdot"></span><span class="jlb">章节修正</span></div>
+        <div class="jstep done"><span class="jdot"></span><span class="jlb">知识点萃取</span></div>
+        <div class="jstep done"><span class="jdot"></span><span class="jlb">讲义 · 追问</span></div>
+        <div class="jstep current"><span class="jdot"></span><span class="jlb">划重点 · 批注</span></div>
+        <div class="jstep"><span class="jdot"></span><span class="jlb">学霸笔记</span></div>
+        <div class="jstep"><span class="jdot"></span><span class="jlb">课题工作坊</span></div>
+      </div>
+      <button class="next-btn" type="button">下一步 · 学霸笔记</button>
+    </div>
+
+    <!-- 学习区 -->
+    <div class="study">
+      <aside class="kps rise d4">
+        <div class="kps-head">知识点 · 3</div>
+        <a class="kp active" href="#">
+          <span class="r1"><span class="num">壹</span>中医诊断学的基本任务</span>
+          <span class="meta">第 3 页 · 已有讲义</span>
+        </a>
+        <a class="kp" href="#">
+          <span class="r1"><span class="num">贰</span>四诊合参原则</span>
+          <span class="meta">第 3 页 · 已有讲义</span>
+        </a>
+        <a class="kp" href="#">
+          <span class="r1"><span class="num">叁</span>望闻问切互相印证</span>
+          <span class="meta">第 4 页 · 已有讲义</span>
+        </a>
+      </aside>
+
+      <div class="paperwrap rise d5">
+        <div class="sheet-back" aria-hidden="true"></div>
+        <section class="sheet">
+          <div class="lesson-head">
+            <h2>讲义</h2>
+            <span class="gen">模型生成 · qwen3.7-plus · 复习视图（参考答案已折叠）</span>
+            <div class="seg" role="group" aria-label="讲义视图">
+              <button type="button">初学</button>
+              <button type="button" aria-pressed="true">复习</button>
+              <button type="button">备考</button>
+            </div>
+          </div>
+
+          <article>
+            <div class="sec"><span class="mini">定</span><h3>定义</h3></div>
+            <p class="lede">中医诊断学的基本任务，是确立该学科的核心职能与研究范畴：收集症状与体征、辨别证候、推断疾病本质，并为防治提供依据。这一任务是学习中医诊断学的起点。</p>
+            <p class="qmeta"><span class="loc">依据第 3 页原文</span> · AI 生成内容，请对照教材核对</p>
+
+            <div class="sec"><span class="mini">要</span><h3>要点</h3></div>
+            <ul>
+              <li>基本任务是确立核心职能与研究范畴。</li>
+              <li>作为学习起点，为理解四诊奠定基础。</li>
+              <li>本章介绍基本任务与<mark class="hl">四诊合参原则</mark>。</li>
+              <li>四诊合参强调望闻问切互相印证。</li>
+            </ul>
+
+            <div class="sec"><span class="mini">误</span><h3>易错点</h3></div>
+            <ul>
+              <li>勿将「基本任务」与具体的「四诊操作」混淆：前者是理论定位，后者是方法手段。</li>
+              <li>「四诊合参」的核心要求是「互相印证」，而非单独使用某一诊法。</li>
+            </ul>
+
+            <div class="sec"><span class="mini">测</span><h3>自测题</h3><span class="aside-lb">复习视图 · 答案已折叠</span></div>
+            <div class="selfq"><span class="zhnum">一</span><p>中医诊断学基本任务的主要目的是什么？</p></div>
+            <div class="selfq"><span class="zhnum">二</span><p>根据第 3 页，本章绪论主要介绍了哪两项内容？</p></div>
+            <div class="selfq"><span class="zhnum">三</span><p>「四诊合参」在第 4 页中被强调为何种关系？</p></div>
+            <div class="chips">
+              <button class="chip pressed" type="button">会了</button>
+              <button class="chip shaky" type="button">还需看</button>
+              <button class="chip" type="button">显示参考答案</button>
+            </div>
+          </article>
+        </section>
+      </div>
+
+      <!-- 问 Clew：焦墨锚点 -->
+      <aside class="chat rise d6">
+        <div class="head">
+          <h2>问 <i>Clew</i></h2>
+          <small>AI 讲解 · 请对照教材</small>
+        </div>
+        <span class="chipctx">当前知识点：中医诊断学的基本任务 · 第 3 页</span>
+        <div class="msg">
+          <div class="who">CLEW 讲解</div>
+          基本任务是「学什么、为什么学」的理论定位；四诊是「怎么收集证据」的方法手段。前者回答范畴，后者回答操作，二者不能互相替代。
+        </div>
+        <div class="stream"><span class="shimmer">Clew 正在对照第 3–4 页原文，继续生成讲解…</span></div>
+        <form onsubmit="return false">
+          <input type="text" placeholder="就这个知识点继续问…" aria-label="追问输入" />
+          <button type="submit">发送</button>
+        </form>
+      </aside>
+
+      <!-- 学霸笔记空态 -->
+      <div class="notegap rise d6" style="grid-column: 1 / 4;">
+        <svg width="116" height="84" viewBox="0 0 120 86" fill="none" stroke="#26221b" stroke-width="1.3" aria-hidden="true">
+          <rect x="14" y="8" width="86" height="70"/>
+          <rect x="17" y="11" width="80" height="64" stroke-opacity="0.45"/>
+          <rect x="24" y="18" width="20" height="40" stroke-width="1"/>
+          <text x="34" y="30" font-family="Songti SC, serif" font-size="9" fill="#26221b" stroke="none" text-anchor="middle" writing-mode="tb" letter-spacing="2">中医诊断</text>
+          <circle cx="96" cy="16" r="2"/><circle cx="96" cy="35" r="2"/><circle cx="96" cy="54" r="2"/><circle cx="96" cy="71" r="2"/>
+          <path d="M96 16 L96 35 M96 35 L96 54 M96 54 L96 71" stroke-opacity="0.7"/>
+          <path d="M104 26 Q114 22 112 12 M104 26 Q113 30 116 24" stroke="#9e3a2b" stroke-width="1.1"/>
+        </svg>
+        <div class="t">
+          <b>学霸笔记 · 尚未生成</b>
+          汇总本章 <span style="font-family:var(--serif)">3</span> 个知识点的讲义要点、你的划重点与追问，整理成一份可复习的章级笔记。
+          <div class="hint">未接入模型时走确定性整理，并明确标注「未接入模型」。</div>
+        </div>
+        <button class="make" type="button">生成学霸笔记</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="notes">
+  <h2>「墨・印・光」——本探针相对第一版的升级</h2>
+  <ol>
+    <li><b>墨分六彩</b>：焦（深墨面板）浓（正文）重（标题）淡（辅助）清（发丝线）的暖墨阶梯；「问 Clew」改为焦墨锚点面板，全页唯一深色块。</li>
+    <li><b>大字戏剧</b>：页题最大 72px 宋体特黑 + 朱砂首字下沉 + 背景巨字水印「診」（3.8% 墨色、缓慢漂移）。</li>
+    <li><b>竖排文脉</b>：左缘竖排导航 + 竖排「第一章 · 绪论」，古典构图直接进入界面。</li>
+    <li><b>笔意动效</b>：朱砂笔锋线加载自绘、印章「盖入」落定、当前环节晕环脉冲（均为一次性/状态性动效，非循环装饰；prefers-reduced-motion 全部关闭）。</li>
+    <li><b>一点金</b>：铜金发丝线只出现在 Pro 徽与深墨面板描线，作为「贵重感」的细部信号。</li>
+    <li><b>纸工艺</b>：讲义为叠纸（错位衬纸 + 版画平影 + 暖影）+ 笺纸内框；全屏纤维噪点 + 墨晕暗角。</li>
+    <li><b>小印节标</b>：定/要/误/测 四枚楷书小印作节标，替代纯文字节名。</li>
+    <li><b>流式微光</b>：深墨面板上「Clew 正在讲解…」的扫光文字——状态性动效，替代转圈。</li>
+  </ol>
+  <p class="fine">红线说明：动效与深墨面板为本探针经用户授权临时豁免 v3 红线；若转产品化，需 Hermes 评审哪些动效保留（建议保留：笔锋线自绘、印章盖入、晕环、扫光——均为一次性或状态性；漂移水印可降级为静态）。</p>
+</div>
+</body>
+</html>

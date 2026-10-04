@@ -1,0 +1,272 @@
+<!DOCTYPE html>
+<html lang="zh-CN" data-theme="light">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Ariadne Quiet 探针 · AI 桌面标准形（非产品代码）</title>
+<!--
+  Ariadne 设计探针 第四版（2026-10-04）——「Quiet / 安静的 AI 桌面」
+  校准对象：ChatGPT / Claude / Grok 的公共语言。
+  规则：层级 = 灰度；表面 = 平涂；强调色只有朱砂一个；装饰 = 零；动效 = 只有流式光标。
+  保留的 DNA：暖底、宋体标题、印章（仅作 logo）、朱砂。右上角可切换 明/暗 双主题。
+-->
+<style>
+  :root {
+    --bg: #faf9f5;            /* 主区：暖象牙平涂（Claude 式） */
+    --bg-side: #f2f0e8;       /* 侧栏 */
+    --bg-hover: rgba(38, 34, 27, 0.05);
+    --bg-active: rgba(158, 58, 43, 0.08);
+    --text: #2b2721;
+    --text-2: #6b6459;
+    --text-3: #9b937f;
+    --border: rgba(38, 34, 27, 0.1);
+    --border-soft: rgba(38, 34, 27, 0.06);
+    --accent: #b8462f;        /* 朱砂：全页唯一强调色 */
+    --accent-soft: rgba(184, 70, 47, 0.08);
+    --mark: rgba(214, 168, 74, 0.28);
+    --bubble: #efece3;
+    --caret: #b8462f;
+  }
+  [data-theme="dark"] {
+    --bg: #201e19;
+    --bg-side: #191813;
+    --bg-hover: rgba(250, 246, 235, 0.05);
+    --bg-active: rgba(208, 90, 65, 0.12);
+    --text: #e8e0cf;
+    --text-2: #a89e8a;
+    --text-3: #6e6754;
+    --border: rgba(240, 233, 216, 0.1);
+    --border-soft: rgba(240, 233, 216, 0.06);
+    --accent: #d05a41;
+    --accent-soft: rgba(208, 90, 65, 0.12);
+    --mark: rgba(214, 168, 74, 0.24);
+    --bubble: #2b2921;
+    --caret: #d05a41;
+  }
+
+  * { box-sizing: border-box; }
+  html, body { height: 100%; }
+  body {
+    margin: 0; background: var(--bg); color: var(--text);
+    font-family: -apple-system, "PingFang SC", "Helvetica Neue", "Microsoft YaHei", sans-serif;
+    font-size: 14.5px; line-height: 1.85; -webkit-font-smoothing: antialiased;
+  }
+  ::selection { background: rgba(184, 70, 47, 0.18); }
+  .serif { font-family: "Songti SC", "Noto Serif SC", "STSong", serif; }
+
+  .app { display: grid; grid-template-columns: 264px minmax(0, 1fr) 320px; height: 100vh; }
+
+  /* ---------- 侧栏：平涂、纯文本行 ---------- */
+  .side {
+    background: var(--bg-side); border-right: 1px solid var(--border-soft);
+    display: flex; flex-direction: column; padding: 14px 10px 12px; min-height: 0;
+  }
+  .brand { display: flex; align-items: center; gap: 10px; padding: 4px 10px 14px; }
+  .brand svg { width: 26px; height: 26px; }
+  .brand .n { font-size: 13px; font-weight: 600; letter-spacing: .04em; }
+  .nav { display: grid; gap: 1px; }
+  .nav a {
+    display: flex; align-items: center; gap: 9px; text-decoration: none; color: var(--text-2);
+    font-size: 13px; padding: 6px 10px; border-radius: 8px;
+  }
+  .nav a:hover { background: var(--bg-hover); color: var(--text); }
+  .nav a.active { background: var(--bg-active); color: var(--accent); font-weight: 600; }
+  .divider { border: 0; border-top: 1px solid var(--border-soft); margin: 12px 8px; }
+  .side-label { font-size: 11px; color: var(--text-3); letter-spacing: .1em; padding: 0 10px 6px; }
+  .kps { display: grid; gap: 1px; overflow-y: auto; }
+  .kp { display: block; text-decoration: none; padding: 7px 10px; border-radius: 8px; }
+  .kp:hover { background: var(--bg-hover); }
+  .kp .t { display: block; font-size: 13px; color: var(--text-2); }
+  .kp .m { display: block; font-size: 11px; color: var(--text-3); margin-top: 1px; }
+  .kp.active { background: var(--bg-active); }
+  .kp.active .t { color: var(--accent); font-weight: 600; }
+  .quota { margin-top: auto; padding: 10px; font-size: 11px; color: var(--text-3); }
+
+  /* ---------- 中央 ---------- */
+  .main { overflow-y: auto; min-height: 0; }
+  .maininner { max-width: 700px; margin: 0 auto; padding: 42px 36px 70px; }
+  .crumb { font-size: 11.5px; color: var(--text-3); margin: 0 0 14px; }
+  .crumb span { color: var(--text-2); }
+  h1.doc-title { font-family: "Songti SC", "Noto Serif SC", serif; font-weight: 900; font-size: 30px; line-height: 1.3; margin: 0 0 6px; letter-spacing: .01em; }
+  .meta { font-size: 12px; color: var(--text-3); margin: 0 0 22px; }
+
+  /* 进度：一条安静的细线 + 一行小字（替代结点行旅线） */
+  .progress { margin: 0 0 30px; }
+  .progress .bar { height: 2px; background: var(--border-soft); border-radius: 2px; overflow: hidden; }
+  .progress .bar i { display: block; height: 100%; width: 68%; background: var(--accent); }
+  .progress p { font-size: 11.5px; color: var(--text-3); margin: 6px 0 0; }
+
+  /* 视图切换：安静的文字 tab + 下划线 */
+  .tabs { display: flex; gap: 20px; border-bottom: 1px solid var(--border-soft); margin-bottom: 22px; }
+  .tabs button {
+    border: none; background: none; cursor: pointer; padding: 6px 2px 8px;
+    font-size: 13px; color: var(--text-3); border-bottom: 2px solid transparent; margin-bottom: -1px;
+  }
+  .tabs button[aria-pressed="true"] { color: var(--accent); border-bottom-color: var(--accent); font-weight: 600; }
+
+  .lesson h2 { font-family: "Songti SC", serif; font-size: 17px; font-weight: 700; margin: 26px 0 8px; }
+  .lesson p { margin: 0 0 8px; }
+  .lesson ul { margin: 4px 0 10px; padding-left: 22px; }
+  .lesson li::marker { color: var(--text-3); }
+  .based { font-size: 12px; color: var(--text-3); border-left: 2px solid var(--border); padding-left: 10px; margin: 0 0 8px; }
+  mark.hl { background: var(--mark); color: inherit; padding: 0 3px; border-radius: 3px; }
+  .selfq { margin: 6px 0; font-size: 14.5px; }
+  .selfq b { font-family: "Songti SC", serif; color: var(--accent); font-weight: 700; margin-right: 10px; }
+  .chips { display: flex; gap: 8px; margin: 12px 0 0; }
+  .chip {
+    border: 1px solid var(--border); background: none; color: var(--text-2);
+    font-size: 12.5px; padding: 4px 14px; border-radius: 8px; cursor: pointer;
+  }
+  .chip:hover { background: var(--bg-hover); }
+  .chip.pressed { border-color: var(--accent); color: var(--accent); background: var(--accent-soft); font-weight: 600; }
+
+  /* ---------- 右栏：Clew ---------- */
+  .clew { border-left: 1px solid var(--border-soft); display: flex; flex-direction: column; min-height: 0; }
+  .clew .head { display: flex; align-items: center; justify-content: space-between; padding: 14px 16px 12px; border-bottom: 1px solid var(--border-soft); }
+  .clew .head .t { font-size: 13px; font-weight: 600; }
+  .clew .head .dot { width: 7px; height: 7px; border-radius: 50%; background: var(--accent); opacity: .8; }
+  .clew .ctx { font-size: 11.5px; color: var(--text-3); padding: 10px 16px 0; }
+  .clew .body { flex: 1; overflow-y: auto; padding: 14px 16px; display: flex; flex-direction: column; gap: 12px; min-height: 0; }
+  .msg.user {
+    align-self: flex-end; max-width: 85%; background: var(--bubble);
+    border-radius: 14px 14px 4px 14px; padding: 8px 13px; font-size: 13px; color: var(--text);
+  }
+  .msg.ai { font-size: 13px; color: var(--text); }
+  .msg.ai .who { font-size: 11px; color: var(--text-3); margin-bottom: 3px; }
+  .caret { display: inline-block; width: 7px; height: 15px; background: var(--caret); vertical-align: -2px; margin-left: 2px; animation: blink 1.1s steps(1) infinite; }
+  @keyframes blink { 50% { opacity: 0; } }
+  .clew form { display: flex; gap: 8px; padding: 12px 14px 14px; }
+  .clew input {
+    flex: 1; min-width: 0; border: 1px solid var(--border); background: var(--bg);
+    color: var(--text); border-radius: 12px; font-size: 13px; padding: 9px 14px; font-family: inherit;
+  }
+  .clew input::placeholder { color: var(--text-3); }
+  .clew input:focus-visible { outline: 2px solid var(--accent-soft); border-color: var(--accent); }
+  .clew form button {
+    width: 38px; border: none; border-radius: 12px; background: var(--accent);
+    color: #fff7ef; font-size: 15px; cursor: pointer;
+  }
+  .clew form button:active { opacity: .85; }
+
+  /* 顶栏（极简） */
+  .topbar {
+    position: fixed; top: 10px; right: 336px; display: flex; gap: 8px; z-index: 10;
+  }
+  .iconbtn {
+    border: 1px solid var(--border); background: var(--bg); color: var(--text-2);
+    border-radius: 8px; font-size: 12px; padding: 4px 10px; cursor: pointer;
+  }
+  .iconbtn:hover { background: var(--bg-hover); }
+  @media (prefers-reduced-motion: reduce) { .caret { animation: none; } }
+</style>
+</head>
+<body>
+<div class="app">
+  <!-- 侧栏 -->
+  <aside class="side">
+    <div class="brand">
+      <svg viewBox="0 0 48 48" role="img" aria-label="知径">
+        <path fill="#b8462f" d="M7.5 6.8 Q6 4.5 9 4.6 L39.5 4 Q42.5 4 42.6 7 L43.4 39.5 Q43.5 42.8 40.2 43 L8.8 43.8 Q5.5 43.8 5.6 40.6 L6.6 8.5 Z"/>
+        <text x="24" y="22.5" text-anchor="middle" font-family="Kaiti SC, serif" font-size="16" font-weight="700" fill="#faf6ec">知</text>
+        <text x="24" y="40" text-anchor="middle" font-family="Kaiti SC, serif" font-size="16" font-weight="700" fill="#faf6ec">径</text>
+      </svg>
+      <span class="n">Ariadne · 知径</span>
+    </div>
+    <nav class="nav">
+      <a href="#">学习主环</a>
+      <a href="#" class="active">Clew 学习台</a>
+      <a href="#">官方课程</a>
+      <a href="#">题库</a>
+      <a href="#">会员</a>
+    </nav>
+    <hr class="divider" />
+    <p class="side-label">本章 · 第一章 绪论</p>
+    <div class="kps">
+      <a class="kp" href="#"><span class="t">中医诊断学的基本任务</span><span class="m">第 3 页 · 已有讲义</span></a>
+      <a class="kp" href="#"><span class="t">四诊合参原则</span><span class="m">第 3 页 · 已有讲义</span></a>
+      <a class="kp active" href="#"><span class="t">望闻问切互相印证</span><span class="m">第 4 页 · 进行中</span></a>
+      <a class="kp" href="#"><span class="t">常见脉象</span><span class="m">第 5 页 · 未生成讲义</span></a>
+    </div>
+    <p class="quota">教材名额 2/3 · 模型调用 4 次</p>
+  </aside>
+
+  <!-- 中央 -->
+  <main class="main">
+    <div class="topbar">
+      <button class="iconbtn" type="button">⌘K</button>
+      <button class="iconbtn" type="button" id="theme" title="切换明暗">◐</button>
+    </div>
+    <div class="maininner">
+      <p class="crumb">Clew / 《中医诊断学》 / <span>第一章 绪论</span></p>
+      <h1 class="doc-title">望闻问切互相印证</h1>
+      <p class="meta">知识点 叁 · 依据第 4 页 · 讲义由模型生成（qwen3.7-plus）· 复习视图（参考答案已折叠）</p>
+
+      <div class="progress">
+        <div class="bar"><i></i></div>
+        <p>学习路径 6 / 8 · 当前：划重点与批注</p>
+      </div>
+
+      <div class="tabs" role="group" aria-label="讲义视图">
+        <button type="button">初学 · 完整</button>
+        <button type="button" aria-pressed="true">复习 · 折叠答案</button>
+        <button type="button">备考 · 要点</button>
+      </div>
+
+      <article class="lesson">
+        <h2>定义</h2>
+        <p class="based">依据第 4 页原文 · AI 生成内容，请对照教材核对</p>
+        <p>四诊合参，是指望、闻、问、切四种诊法互相印证、彼此校准，综合判断证候，而不是孤立地使用任何单一诊法下结论。</p>
+
+        <h2>要点</h2>
+        <ul>
+          <li>每一诊法都只反映疾病的一个侧面。</li>
+          <li>四诊的信息必须<mark class="hl">互相印证</mark>，才能定位证候。</li>
+          <li>单一诊法的结论只是线索，不是判断。</li>
+        </ul>
+
+        <h2>易错点</h2>
+        <ul>
+          <li>勿把「合参」理解为四种诊法的简单相加。</li>
+          <li>当诊法结论冲突时，应回到原文与更多证据，而非取其一。</li>
+        </ul>
+
+        <h2>自测题</h2>
+        <p class="selfq"><b>一</b>「四诊合参」的核心要求是什么？</p>
+        <p class="selfq"><b>二</b>为什么单一诊法不能直接下结论？</p>
+        <div class="chips">
+          <button class="chip pressed" type="button">会了</button>
+          <button class="chip" type="button">还需看</button>
+          <button class="chip" type="button">显示参考答案</button>
+        </div>
+      </article>
+    </div>
+  </main>
+
+  <!-- Clew -->
+  <aside class="clew">
+    <div class="head">
+      <span class="t">问 Clew</span>
+      <span class="dot" title="在线"></span>
+    </div>
+    <p class="ctx">当前知识点：望闻问切互相印证 · 第 4 页</p>
+    <div class="body">
+      <div class="msg user">为什么四诊结论冲突时不能直接取其一？</div>
+      <div class="msg ai">
+        <div class="who">Clew</div>
+        因为每一诊法只覆盖证候的一个侧面：脉象与其他诊法冲突时，可能是兼夹证，也可能是诊法误差——教材第 4 页强调「互相印证」，就是要用其余三诊去校准这一诊，而不是在冲突里挑一个听。<span class="caret"></span>
+      </div>
+    </div>
+    <form onsubmit="return false">
+      <input type="text" placeholder="就这个知识点继续问…" aria-label="追问输入" />
+      <button type="submit" aria-label="发送">↑</button>
+    </form>
+  </aside>
+</div>
+<script>
+  document.getElementById("theme").addEventListener("click", () => {
+    const root = document.documentElement;
+    root.dataset.theme = root.dataset.theme === "dark" ? "light" : "dark";
+  });
+</script>
+</body>
+</html>

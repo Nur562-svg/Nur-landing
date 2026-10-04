@@ -1,0 +1,456 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Ariadne 暗夜金线探针 · AI 桌面级学习平台样张（非产品代码）</title>
+<!--
+  Ariadne 设计探针 第三版（2026-10-04）——「暗夜金线 / The Luminous Thread」
+  命题：结构 = 成熟 AI 桌面工作台；语言 = 阿里阿德涅神话（线 / 迷宫 / 暗中的光）。
+  纸与墨退役为「纸卷阅读模式」+ 品牌仪式（印章、宋体）。
+  设计语言：
+  · 暗夜 = 迷宫之夜：暖炭底（非赛博冷蓝，保持医学的庄重与火把的温度）
+  · 金线 = 引路的线：朱砂→金 的渐变线贯穿导航/路径/知识点/图谱，流向 = 进行中
+  · 光 = 状态：点亮（进行中·晕环）/ 余烬（完成）/ 熄灭（未至）；扫光 = AI 正在思考
+  · 迷宫水印 + 星座化知识图谱（知识点关系 = 星图上的连线）
+  · 品牌 DNA 保留：宋体、印章、暖象牙文字色（连续性），纸墨仅作为阅读模式留待后续
+-->
+<style>
+  :root {
+    --night: #14110c;
+    --night-2: #1a1710;
+    --panel: rgba(250, 243, 226, 0.035);
+    --panel-strong: rgba(250, 243, 226, 0.06);
+    --thread-cinnabar: #c14a33;
+    --thread-gold: #d9a441;
+    --thread-pale: #ecd9a0;
+    --thread-line: linear-gradient(90deg, #c14a33, #d9a441 55%, #e8cf92);
+    --thread-line-v: linear-gradient(180deg, #c14a33, #d9a441 55%, #e8cf92);
+    --glow: rgba(217, 164, 65, 0.4);
+    --ink-text: #ece2cf;
+    --ink-2: #b8ad99;
+    --ink-3: #857a66;
+    --ink-4: #5d5443;
+    --hairline: rgba(236, 217, 160, 0.16);
+    --hairline-soft: rgba(236, 217, 160, 0.08);
+    --serif: "Songti SC", "Noto Serif SC", "STSong", serif;
+    --latin: Georgia, "Times New Roman", serif;
+    --sans: -apple-system, "PingFang SC", "Helvetica Neue", "Microsoft YaHei", sans-serif;
+    --kai: "Kaiti SC", "STKaiti", "KaiTi", serif;
+  }
+
+  * { box-sizing: border-box; }
+  html, body { height: 100%; }
+  body {
+    margin: 0; color: var(--ink-text); font-family: var(--sans); font-size: 14.5px; line-height: 1.9;
+    background: radial-gradient(120% 90% at 30% 0%, var(--night-2) 0%, var(--night) 60%, #0e0c08 100%);
+    -webkit-font-smoothing: antialiased; overflow: hidden;
+  }
+  ::selection { background: rgba(217, 164, 65, 0.28); color: #fff8e8; }
+  ::-webkit-scrollbar { width: 9px; }
+  ::-webkit-scrollbar-thumb { background: rgba(236,217,160,.16); border-radius: 6px; border: 2px solid transparent; background-clip: padding-box; }
+  ::-webkit-scrollbar-track { background: transparent; }
+
+  /* 氛围：暗噪点 + 迷宫水印 */
+  .grain {
+    position: fixed; inset: 0; z-index: 80; pointer-events: none; opacity: .05; mix-blend-mode: overlay;
+    background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="200" height="200"><filter id="n"><feTurbulence type="fractalNoise" baseFrequency="0.75" numOctaves="2" stitchTiles="stitch"/><feColorMatrix type="saturate" values="0"/></filter><rect width="200" height="200" filter="url(%23n)"/></svg>');
+  }
+  .maze {
+    position: fixed; right: -60px; bottom: -80px; width: 58vh; height: 58vh; z-index: 0; pointer-events: none; opacity: .5;
+    -webkit-mask-image: radial-gradient(closest-side, #000 30%, transparent 78%);
+    mask-image: radial-gradient(closest-side, #000 30%, transparent 78%);
+  }
+  .maze path { stroke: rgba(236, 217, 160, 0.05); stroke-width: 1.4; fill: none; }
+
+  .app { display: grid; grid-template-rows: 54px minmax(0, 1fr); grid-template-columns: 236px minmax(0, 1fr) 316px; height: 100vh; position: relative; z-index: 1; }
+
+  /* ---------- 顶栏 ---------- */
+  .topbar {
+    grid-column: 1 / 4; display: flex; align-items: center; gap: 22px;
+    padding: 0 20px; border-bottom: 1px solid var(--hairline-soft);
+    background: rgba(20, 17, 12, 0.72); backdrop-filter: blur(8px);
+  }
+  .brand { display: flex; align-items: center; gap: 12px; }
+  .brand svg { width: 34px; height: 34px; filter: drop-shadow(0 0 6px rgba(193, 74, 51, .35)); }
+  .brand .name { font-family: var(--latin); letter-spacing: .34em; font-size: 15px; color: var(--thread-pale); }
+  .brand .cn { font-family: var(--serif); font-size: 12px; color: var(--ink-3); letter-spacing: .3em; }
+  .cmd {
+    margin: 0 auto; display: flex; align-items: center; gap: 10px; width: 430px; max-width: 38vw;
+    border: 1px solid var(--hairline); border-radius: 999px; padding: 7px 16px;
+    color: var(--ink-3); font-size: 12.5px; background: rgba(250, 243, 226, 0.03);
+  }
+  .cmd kbd { margin-left: auto; font-size: 10.5px; border: 1px solid var(--hairline); padding: 1px 6px; color: var(--ink-3); }
+  .topright { display: flex; align-items: center; gap: 14px; font-size: 12px; color: var(--ink-3); }
+  .foil { border: 1px solid rgba(217, 164, 65, .45); color: var(--thread-gold); padding: 2px 10px; font-size: 10.5px; letter-spacing: .2em; }
+  .avatar { width: 26px; height: 26px; border: 1px solid var(--hairline); display: grid; place-items: center; font-family: var(--serif); font-size: 12px; color: var(--thread-pale); }
+
+  /* ---------- 左栏：导航 + 知识点金线 ---------- */
+  .rail {
+    grid-row: 2; border-right: 1px solid var(--hairline-soft);
+    display: flex; flex-direction: column; min-height: 0;
+  }
+  .nav { display: grid; gap: 2px; padding: 14px 10px; border-bottom: 1px solid var(--hairline-soft); }
+  .nav a {
+    display: flex; align-items: center; gap: 10px; text-decoration: none; color: var(--ink-3);
+    font-size: 12.5px; padding: 7px 12px; letter-spacing: .06em;
+  }
+  .nav a:hover { color: var(--ink-text); background: rgba(250,243,226,.03); }
+  .nav a.active { color: var(--thread-pale); background: linear-gradient(90deg, rgba(217,164,65,.12), transparent 80%); box-shadow: inset 2px 0 0 var(--thread-gold); }
+  .nav .ic { width: 14px; text-align: center; opacity: .8; }
+
+  .threadwrap { padding: 16px 14px; overflow: auto; min-height: 0; }
+  .panel-lb { font-size: 10.5px; letter-spacing: .3em; color: var(--ink-4); margin: 0 0 10px; }
+  .knots { position: relative; padding-left: 22px; display: grid; gap: 4px; }
+  .knots::before {
+    content: ""; position: absolute; left: 5px; top: 8px; bottom: 8px; width: 2px;
+    background: linear-gradient(180deg, #d9a441 0%, #d9a441 38%, rgba(236,217,160,.14) 38%);
+  }
+  .knot { position: relative; display: block; text-decoration: none; padding: 8px 10px; border-radius: 4px; }
+  .knot::before {
+    content: ""; position: absolute; left: -22px; top: 16px; width: 8px; height: 8px; border-radius: 50%;
+    background: var(--night); border: 1.5px solid var(--ink-4); transform: translateX(1.5px);
+  }
+  .knot:hover { background: rgba(250,243,226,.03); }
+  .knot .t { font-size: 13px; color: var(--ink-2); display: block; }
+  .knot .m { font-size: 11px; color: var(--ink-4); display: block; margin-top: 1px; }
+  .knot.done::before { background: var(--thread-gold); border-color: var(--thread-gold); box-shadow: 0 0 6px rgba(217,164,65,.4); }
+  .knot.done .t { color: var(--ink-text); }
+  .knot.current { background: linear-gradient(90deg, rgba(217,164,65,.1), transparent 85%); }
+  .knot.current::before {
+    background: var(--thread-pale); border-color: var(--thread-gold);
+    box-shadow: 0 0 0 3px rgba(217,164,65,.15), 0 0 14px rgba(217,164,65,.55);
+    animation: pulse 2.4s ease-out infinite;
+  }
+  .knot.current .t { color: var(--thread-pale); font-weight: 600; }
+  @keyframes pulse {
+    0% { box-shadow: 0 0 0 2px rgba(217,164,65,.25), 0 0 10px rgba(217,164,65,.45); }
+    70% { box-shadow: 0 0 0 7px rgba(217,164,65,0), 0 0 18px rgba(217,164,65,.3); }
+    100% { box-shadow: 0 0 0 2px rgba(217,164,65,0), 0 0 10px rgba(217,164,65,.45); }
+  }
+
+  /* ---------- 中央学习面 ---------- */
+  .main { grid-row: 2; overflow-y: auto; min-height: 0; padding: 30px 34px 50px; position: relative; }
+  .kicker { font-size: 11px; letter-spacing: .42em; color: var(--thread-gold); margin: 0 0 12px; }
+  .titlerow { display: flex; align-items: baseline; gap: 18px; flex-wrap: wrap; }
+  h1.page-title { font-family: var(--serif); font-weight: 900; font-size: 42px; line-height: 1.2; margin: 0; color: #f4ecda; letter-spacing: .02em; }
+  .sub { font-family: var(--serif); font-size: 17px; color: var(--ink-2); letter-spacing: .2em; }
+  .goldline { height: 1.5px; margin: 16px 0 0; background: linear-gradient(90deg, var(--thread-cinnabar), var(--thread-gold) 40%, rgba(232,207,146,.25) 75%, transparent); }
+
+  /* 路径 = 一条被点亮的金线 */
+  .journey { position: relative; display: flex; margin: 26px 0 6px; }
+  .journey::before {
+    content: ""; position: absolute; top: 7px; left: 4%; right: 4%; height: 2px;
+    background: rgba(236,217,160,.12);
+  }
+  .journey .lit { position: absolute; top: 7px; left: 4%; width: 62%; height: 2px; background: var(--thread-line); }
+  .journey .lit::after {
+    content: ""; position: absolute; top: -1px; bottom: -1px; width: 56px;
+    background: linear-gradient(90deg, transparent, rgba(255, 236, 180, .85), transparent);
+    animation: flow 4.5s ease-in-out infinite;
+  }
+  @keyframes flow { 0% { left: -56px; } 60%, 100% { left: 100%; } }
+  .jstep { flex: 1; position: relative; display: grid; justify-items: center; gap: 7px; z-index: 1; }
+  .jdot { width: 10px; height: 10px; border-radius: 50%; border: 1.5px solid var(--ink-4); background: var(--night); margin-top: 2px; }
+  .jstep.done .jdot { background: var(--thread-gold); border-color: var(--thread-gold); box-shadow: 0 0 8px rgba(217,164,65,.35); }
+  .jstep.current .jdot { background: var(--thread-pale); border-color: var(--thread-gold); box-shadow: 0 0 0 3px rgba(217,164,65,.18), 0 0 16px rgba(217,164,65,.6); animation: pulse 2.4s ease-out infinite; }
+  .jlb { font-size: 11px; color: var(--ink-4); letter-spacing: .1em; }
+  .jstep.done .jlb { color: var(--ink-2); }
+  .jstep.current .jlb { color: var(--thread-gold); font-weight: 600; }
+
+  /* 讲义面：暗色玻璃 + 金线插头 */
+  .surface {
+    position: relative; margin-top: 28px; border: 1px solid var(--hairline);
+    background: linear-gradient(175deg, rgba(250,243,226,.05), rgba(250,243,226,.018) 45%);
+    border-radius: 10px; padding: 24px 30px 30px;
+  }
+  .surface .plug {
+    position: absolute; left: -34px; top: 44px; width: 34px; height: 2px;
+    background: linear-gradient(90deg, rgba(217,164,65,.25), var(--thread-gold));
+    box-shadow: 0 0 8px rgba(217,164,65,.35);
+  }
+  .lesson-head { display: flex; align-items: center; gap: 14px; padding-bottom: 12px; border-bottom: 1px solid var(--hairline-soft); }
+  .lesson-head h2 { font-family: var(--serif); font-weight: 900; font-size: 20px; margin: 0; letter-spacing: .08em; color: #f4ecda; }
+  .lesson-head .gen { font-size: 11px; color: var(--ink-4); margin-right: auto; }
+  .seg { display: inline-flex; border: 1px solid var(--hairline); border-radius: 6px; overflow: hidden; }
+  .seg button { border: none; background: none; padding: 4px 13px; font-size: 12px; color: var(--ink-3); cursor: pointer; }
+  .seg button + button { border-left: 1px solid var(--hairline-soft); }
+  .seg button[aria-pressed="true"] { background: rgba(217,164,65,.16); color: var(--thread-pale); font-weight: 600; }
+
+  .sec { display: flex; align-items: center; gap: 10px; margin: 24px 0 8px; }
+  .sec .mini {
+    width: 22px; height: 22px; flex: none; display: grid; place-items: center;
+    font-family: var(--kai); font-size: 12px; color: var(--thread-gold);
+    border: 1px solid rgba(217,164,65,.55); border-radius: 3px; transform: rotate(-2deg);
+    box-shadow: inset 0 0 6px rgba(217,164,65,.12), 0 0 8px rgba(217,164,65,.12);
+  }
+  .sec h3 { font-family: var(--serif); font-size: 17px; font-weight: 900; letter-spacing: .1em; margin: 0; color: #efe5d1; }
+  .sec::after { content: ""; flex: 1; height: 1px; background: linear-gradient(90deg, var(--hairline-soft), transparent); }
+  .sec .aside-lb { font-size: 10.5px; color: var(--ink-4); letter-spacing: .12em; }
+
+  .lede::first-letter {
+    float: left; font-family: var(--serif); font-weight: 900; font-size: 50px; line-height: .92;
+    color: var(--thread-gold); padding: 4px 10px 0 0; text-shadow: 0 0 18px rgba(217,164,65,.35);
+  }
+  .lesson p { margin: 0 0 4px; }
+  .qmeta { font-size: 11.5px; color: var(--ink-4); }
+  .qmeta .loc { color: var(--thread-gold); opacity: .85; }
+  .lesson ul { margin: 6px 0; padding-left: 20px; }
+  .lesson li { margin-bottom: 3px; }
+  .lesson li::marker { color: var(--thread-gold); }
+  mark.hl {
+    background: linear-gradient(transparent 58%, rgba(217,164,65,.28) 58%);
+    color: inherit; padding: 0 2px; border-bottom: 1px solid rgba(217,164,65,.55);
+  }
+
+  .selfq { display: flex; gap: 14px; align-items: baseline; margin: 9px 0; }
+  .selfq .zhnum { font-family: var(--serif); font-weight: 900; font-size: 19px; color: var(--thread-gold); flex: none; text-shadow: 0 0 12px rgba(217,164,65,.35); }
+  .selfq p { margin: 0; }
+  .chips { display: flex; gap: 8px; margin: 12px 0 0; }
+  .chip {
+    border: 1px solid var(--hairline); background: none; font-size: 12px; color: var(--ink-3);
+    padding: 3px 13px; cursor: pointer; border-radius: 4px;
+  }
+  .chip:hover { color: var(--ink-text); }
+  .chip.shaky { border-color: rgba(193,74,51,.65); color: #e08a72; background: rgba(193,74,51,.1); }
+  .chip.pressed { border-color: var(--thread-gold); color: var(--thread-pale); background: rgba(217,164,65,.12); font-weight: 600; }
+
+  /* ---------- 星图（知识点关系） ---------- */
+  .constella { margin-top: 26px; border: 1px solid var(--hairline-soft); border-radius: 10px; padding: 16px 20px 12px; }
+  .constella .head { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 4px; }
+  .constella h3 { font-family: var(--serif); font-size: 14px; font-weight: 900; letter-spacing: .16em; color: var(--ink-2); margin: 0; }
+  .constella .stats { font-size: 11px; color: var(--ink-4); }
+  .constella svg { display: block; width: 100%; height: auto; }
+
+  /* ---------- 问 Clew ---------- */
+  .clew {
+    grid-row: 2; border-left: 1px solid var(--hairline-soft); display: flex; flex-direction: column; min-height: 0;
+    background: linear-gradient(180deg, rgba(250,243,226,.03), transparent 30%);
+  }
+  .clew .head { padding: 16px 18px 12px; border-bottom: 1px solid var(--hairline-soft); position: relative; }
+  .clew .streamline { position: absolute; left: 0; right: 0; top: -1px; height: 2px; background: var(--thread-line); opacity: 0; }
+  .clew .head .row { display: flex; align-items: baseline; justify-content: space-between; }
+  .clew h2 { font-family: var(--serif); font-weight: 900; font-size: 17px; letter-spacing: .1em; margin: 0; color: #f4ecda; }
+  .clew h2 i { font-style: normal; color: var(--thread-gold); }
+  .clew .state { font-size: 10.5px; color: var(--thread-gold); letter-spacing: .2em; display: inline-flex; align-items: center; gap: 6px; }
+  .clew .state::before { content: ""; width: 6px; height: 6px; border-radius: 50%; background: var(--thread-gold); box-shadow: 0 0 8px var(--glow); animation: pulse 2s ease-out infinite; }
+  .clew .head small { display: block; font-size: 10.5px; color: var(--ink-4); margin-top: 3px; letter-spacing: .1em; }
+  .clew .body { flex: 1; overflow-y: auto; padding: 14px 18px; display: flex; flex-direction: column; gap: 12px; min-height: 0; }
+  .chipctx { font-size: 11px; color: var(--ink-2); border: 1px dashed rgba(217,164,65,.4); border-radius: 4px; padding: 4px 9px; align-self: flex-start; }
+  .msg.user { align-self: flex-end; max-width: 88%; background: rgba(250,243,226,.05); border: 1px solid var(--hairline-soft); border-radius: 8px 8px 2px 8px; padding: 8px 12px; font-size: 12.5px; color: var(--ink-2); }
+  .msg.ai { border-left: 2px solid var(--thread-gold); padding-left: 11px; font-size: 12.5px; color: #d9cfba; border-radius: 2px 8px 8px 8px; background: linear-gradient(180deg, rgba(217,164,65,.05), transparent 70%); }
+  .msg .who { font-size: 10px; color: var(--ink-4); letter-spacing: .18em; margin-bottom: 3px; }
+  .stream { font-size: 11.5px; }
+  .shimmer {
+    background: linear-gradient(90deg, #5d5443 18%, #ecd9a0 50%, #5d5443 82%);
+    background-size: 200% 100%; -webkit-background-clip: text; background-clip: text; color: transparent;
+    animation: sweep 2.2s linear infinite;
+  }
+  @keyframes sweep { to { background-position: -200% 0; } }
+  .clew form { display: flex; gap: 8px; padding: 12px 18px 16px; border-top: 1px solid var(--hairline-soft); }
+  .clew input {
+    flex: 1; min-width: 0; background: rgba(250,243,226,.04); border: 1px solid var(--hairline);
+    border-radius: 6px; color: var(--ink-text); font-size: 12.5px; padding: 8px 11px; font-family: var(--sans);
+  }
+  .clew input::placeholder { color: var(--ink-4); }
+  .clew input:focus-visible { outline: 1.5px solid var(--thread-gold); outline-offset: 1px; }
+  .clew form button {
+    border: none; border-radius: 6px; background: var(--thread-line); color: #241a0c;
+    font-size: 12.5px; font-weight: 600; padding: 0 16px; cursor: pointer; letter-spacing: .08em;
+  }
+  .clew form button:active { transform: translateY(1px); }
+
+  /* 说明 */
+  details.note { margin-top: 26px; border: 1px solid var(--hairline-soft); border-radius: 8px; padding: 12px 18px; color: var(--ink-3); font-size: 12px; }
+  details.note summary { cursor: pointer; color: var(--ink-2); font-size: 12.5px; letter-spacing: .08em; }
+  details.note ol { margin: 10px 0 0; padding-left: 20px; }
+  details.note li { margin-bottom: 4px; }
+  details.note li b { color: var(--ink-text); font-weight: 600; }
+  @media (prefers-reduced-motion: reduce) {
+    .journey .lit::after, .knot.current::before, .jstep.current .jdot, .shimmer, .clew .state::before { animation: none !important; }
+  }
+</style>
+</head>
+<body>
+<div class="grain" aria-hidden="true"></div>
+<!-- 迷宫水印：同心回纹 -->
+<svg class="maze" viewBox="0 0 200 200" aria-hidden="true">
+  <path d="M100 100 h30 v-30 h-60 v60 h90 v-90 h-120 v120 h150 v-150 h-180 v180"/>
+  <path d="M100 100 h14 v-14 h-28 v28 h42 v-42 h-56 v56 h70" opacity=".6"/>
+</svg>
+
+<div class="app">
+  <!-- 顶栏 -->
+  <header class="topbar">
+    <div class="brand">
+      <svg viewBox="0 0 48 48" role="img" aria-label="知径印章">
+        <path fill="#c14a33" d="M7.5 6.8 Q6 4.5 9 4.6 L39.5 4 Q42.5 4 42.6 7 L43.4 39.5 Q43.5 42.8 40.2 43 L8.8 43.8 Q5.5 43.8 5.6 40.6 L6.6 8.5 Z"/>
+        <path fill="none" stroke="#ecd9a0" stroke-opacity="0.5" stroke-width="1.1" stroke-dasharray="52 7 30 5 44 8"
+          d="M11.5 10.4 Q10.6 8.6 12.6 8.6 L37.8 8.2 Q39.8 8.2 39.9 10.2 L40.5 37.8 Q40.6 39.8 38.6 40 L12.4 40.6 Q10.2 40.6 10.3 38.6 L10.9 12.2 Z"/>
+        <text x="24" y="22.5" text-anchor="middle" font-family="Kaiti SC, serif" font-size="16" font-weight="700" fill="#f6ecdd">知</text>
+        <text x="24" y="40" text-anchor="middle" font-family="Kaiti SC, serif" font-size="16" font-weight="700" fill="#f6ecdd">径</text>
+      </svg>
+      <div>
+        <div class="name">ARIADNE</div>
+        <div class="cn">知径 · 一步一线索</div>
+      </div>
+    </div>
+    <div class="cmd">⌕ 搜索课程、教材、题库，或输入 > 执行命令…<kbd>⌘K</kbd></div>
+    <div class="topright">
+      <span>教材名额 2/3 · 调用 4 次</span>
+      <span class="foil">PRO</span>
+      <span class="avatar">N</span>
+    </div>
+  </header>
+
+  <!-- 左栏 -->
+  <aside class="rail">
+    <nav class="nav">
+      <a href="#"><span class="ic">◍</span>学习主环</a>
+      <a href="#" class="active"><span class="ic">✦</span>Clew 学习台</a>
+      <a href="#"><span class="ic">◎</span>官方课程</a>
+      <a href="#"><span class="ic">▤</span>题库</a>
+      <a href="#"><span class="ic">◇</span>会员</a>
+    </nav>
+    <div class="threadwrap">
+      <p class="panel-lb">本章 · 知识之线</p>
+      <div class="knots">
+        <a class="knot done" href="#"><span class="t">壹 · 中医诊断学的基本任务</span><span class="m">第 3 页 · 余烬</span></a>
+        <a class="knot done" href="#"><span class="t">贰 · 四诊合参原则</span><span class="m">第 3 页 · 余烬</span></a>
+        <a class="knot current" href="#"><span class="t">叁 · 望闻问切互相印证</span><span class="m">第 4 页 · 进行中</span></a>
+        <a class="knot" href="#"><span class="t">肆 · 常见脉象</span><span class="m">第 5 页 · 未至</span></a>
+      </div>
+    </div>
+  </aside>
+
+  <!-- 中央 -->
+  <main class="main">
+    <p class="kicker">CLEW · 知识学习</p>
+    <div class="titlerow">
+      <h1 class="page-title">《中医诊断学》</h1>
+      <span class="sub">第一章 · 绪论</span>
+    </div>
+    <div class="goldline"></div>
+
+    <div class="journey" aria-label="学习路径">
+      <div class="lit" aria-hidden="true"></div>
+      <div class="jstep done"><span class="jdot"></span><span class="jlb">上传</span></div>
+      <div class="jstep done"><span class="jdot"></span><span class="jlb">目录识别</span></div>
+      <div class="jstep done"><span class="jdot"></span><span class="jlb">章节修正</span></div>
+      <div class="jstep done"><span class="jdot"></span><span class="jlb">萃取</span></div>
+      <div class="jstep done"><span class="jdot"></span><span class="jlb">讲义 · 追问</span></div>
+      <div class="jstep current"><span class="jdot"></span><span class="jlb">划重点</span></div>
+      <div class="jstep"><span class="jdot"></span><span class="jlb">学霸笔记</span></div>
+      <div class="jstep"><span class="jdot"></span><span class="jlb">工作坊</span></div>
+    </div>
+
+    <!-- 讲义面 -->
+    <section class="surface">
+      <span class="plug" aria-hidden="true"></span>
+      <div class="lesson-head">
+        <h2>望闻问切互相印证</h2>
+        <span class="gen">模型生成 · qwen3.7-plus · 依据第 4 页</span>
+        <div class="seg" role="group" aria-label="讲义视图">
+          <button type="button">初学</button>
+          <button type="button" aria-pressed="true">复习</button>
+          <button type="button">备考</button>
+        </div>
+      </div>
+
+      <div class="sec"><span class="mini">定</span><h3>定义</h3></div>
+      <p class="lede">四诊合参，是指望、闻、问、切四种诊法互相印证、彼此校准，综合判断证候，而不是孤立地使用任何单一诊法下结论。</p>
+      <p class="qmeta"><span class="loc">依据第 4 页原文</span> · AI 生成内容，请对照教材核对</p>
+
+      <div class="sec"><span class="mini">要</span><h3>要点</h3></div>
+      <ul>
+        <li>每一诊法都只反映疾病的一个侧面。</li>
+        <li>四诊的信息必须<mark class="hl">互相印证</mark>，才能定位证候。</li>
+        <li>单一诊法的结论只是线索，不是判断。</li>
+      </ul>
+
+      <div class="sec"><span class="mini">误</span><h3>易错点</h3></div>
+      <ul>
+        <li>勿把「合参」理解为四种诊法的简单相加。</li>
+        <li>当诊法结论冲突时，应回到原文与更多证据，而非取其一。</li>
+      </ul>
+
+      <div class="sec"><span class="mini">测</span><h3>自测题</h3><span class="aside-lb">复习视图 · 答案已折叠</span></div>
+      <div class="selfq"><span class="zhnum">一</span><p>「四诊合参」的核心要求是什么？</p></div>
+      <div class="selfq"><span class="zhnum">二</span><p>为什么单一诊法不能直接下结论？</p></div>
+      <div class="chips">
+        <button class="chip pressed" type="button">会了</button>
+        <button class="chip shaky" type="button">还需看</button>
+        <button class="chip" type="button">显示参考答案</button>
+      </div>
+    </section>
+
+    <!-- 星图 -->
+    <section class="constella">
+      <div class="head">
+        <h3>知识星图 · 本章</h3>
+        <span class="stats">3 节点 · 先修 1 线 · 金线示学习路径</span>
+      </div>
+      <svg viewBox="0 0 640 150" aria-label="知识点关系星图">
+        <defs>
+          <linearGradient id="gthread" x1="0" y1="0" x2="1" y2="0">
+            <stop offset="0" stop-color="#c14a33"/><stop offset=".55" stop-color="#d9a441"/><stop offset="1" stop-color="#e8cf92"/>
+          </linearGradient>
+        </defs>
+        <!-- 先修线（已走完的学习路径：壹→叁） -->
+        <path d="M70 96 L 300 42" stroke="url(#gthread)" stroke-width="1.6" fill="none"/>
+        <path d="M300 42 L 540 96" stroke="url(#gthread)" stroke-width="1.6" fill="none" opacity=".9"/>
+        <!-- 术语虚线 -->
+        <path d="M70 96 L 300 96 L 540 96" stroke="rgba(236,217,160,.22)" stroke-width="1" stroke-dasharray="4 5" fill="none"/>
+        <!-- 节点 -->
+        <circle cx="70" cy="96" r="5" fill="#d9a441" opacity=".85"/>
+        <circle cx="300" cy="96" r="5" fill="#d9a441" opacity=".85"/>
+        <circle cx="300" cy="42" r="6.5" fill="#ecd9a0" stroke="#d9a441"/>
+        <circle cx="300" cy="42" r="11" fill="none" stroke="#d9a441" stroke-opacity=".35"><animate attributeName="r" values="9;16" dur="2.4s" repeatCount="indefinite"/><animate attributeName="stroke-opacity" values=".4;0" dur="2.4s" repeatCount="indefinite"/></circle>
+        <circle cx="540" cy="96" r="5" fill="none" stroke="#857a66" stroke-width="1.4"/>
+        <text x="70" y="120" text-anchor="middle" font-size="11" fill="#b8ad99" font-family="PingFang SC, sans-serif">壹 基本任务</text>
+        <text x="300" y="120" text-anchor="middle" font-size="11" fill="#b8ad99" font-family="PingFang SC, sans-serif">贰 四诊合参</text>
+        <text x="300" y="26" text-anchor="middle" font-size="12" fill="#ecd9a0" font-family="PingFang SC, sans-serif">叁 望闻问切互相印证 · 进行中</text>
+        <text x="540" y="120" text-anchor="middle" font-size="11" fill="#5d5443" font-family="PingFang SC, sans-serif">肆 常见脉象</text>
+      </svg>
+    </section>
+
+    <details class="note">
+      <summary>「暗夜金线」语言说明（点击展开）</summary>
+      <ol>
+        <li><b>结构</b>：成熟 AI 桌面工作台骨架——顶栏命令条、左导航 + 知识线、中央学习面、右侧常驻 AI、分区独立滚动。</li>
+        <li><b>金线 = 引路</b>：路径、知识点、星图共用一条朱砂→金的渐变线；线上流动的高光 = 「进行中」；走过的结点留余烬色。</li>
+        <li><b>光 = 状态</b>：亮起（进行中）、余烬（完成）、熄灭（未至）、扫光（AI 思考中）——所有动效都是状态信息。</li>
+        <li><b>迷宫水印</b>：同心回纹迷宫暗示「学习即走出迷宫」，只出现在背景 5% 以下。</li>
+        <li><b>DNA 连续性</b>：印章、宋体、暖象牙文字色保留；纸与墨退为后续的「纸卷阅读模式」（长文沉浸读时切换浅色纸面）。</li>
+        <li><b>动效均状态性</b>：金线流光、晕环脉冲、扫光皆为进行中信号；prefers-reduced-motion 全部静止。</li>
+      </ol>
+    </details>
+  </main>
+
+  <!-- 问 Clew -->
+  <aside class="clew">
+    <div class="head">
+      <div class="streamline" aria-hidden="true"></div>
+      <div class="row">
+        <h2>问 <i>Clew</i></h2>
+        <span class="state">在线</span>
+      </div>
+      <small>沿金线回溯教材原文 · 请对照教材核对</small>
+    </div>
+    <div class="body">
+      <span class="chipctx">当前知识点：望闻问切互相印证 · 第 4 页</span>
+      <div class="msg user">为什么四诊结论冲突时不能直接取其一？</div>
+      <div class="msg ai">
+        <div class="who">CLEW 讲解</div>
+        因为每一诊法只覆盖证候的一个侧面：脉象冲突时，可能是兼夹证，也可能是诊法误差——教材第 4 页强调「互相印证」，就是要用其余三诊去校准这一诊。
+      </div>
+      <div class="stream"><span class="shimmer">正在沿金线回溯第 4–5 页原文…</span></div>
+    </div>
+    <form onsubmit="return false">
+      <input type="text" placeholder="就这个知识点继续问…" aria-label="追问输入" />
+      <button type="submit">发送</button>
+    </form>
+  </aside>
+</div>
+</body>
+</html>
