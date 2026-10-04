@@ -1,4 +1,5 @@
-/* NUR Workspace 壳 — v3：280px 固定侧栏 + 单一主画布。只消费 globals.css 的 v2/v3 token。 */
+/* NUR Workspace 壳 — v4 Quiet：264px 固定侧栏 + 单一主画布（DESIGN_V4 §四/P1-6：壳侧栏 280 与 Clew 学习页 studyAside 240 合并为一栏 264）。
+   只消费 globals.css 的 v2/v3/v4 token。 */
 
 .app {
   background: var(--v2-background);
@@ -6,7 +7,7 @@
   display: grid;
   flex: 1;
   font: 400 var(--v3-body-size)/var(--v3-body-leading) var(--v2-font-sans);
-  grid-template-columns: 280px minmax(0, 1fr);
+  grid-template-columns: 264px minmax(0, 1fr);
   min-width: 0;
   width: 100%;
 }
@@ -21,11 +22,12 @@
   height: 100vh;
   height: 100dvh;
   overflow-y: auto;
-  padding: calc(var(--v2-spacing) * 6) calc(var(--v2-spacing) * 4);
+  overflow-x: clip;
+  padding: calc(var(--v2-spacing) * 5) calc(var(--v2-spacing) * 2.5);
   position: sticky;
   top: 0;
-  width: 280px;
-  min-width: 280px;
+  width: 264px;
+  min-width: 264px;
   z-index: 60;
 }
 
@@ -36,16 +38,22 @@
   text-decoration: none;
 }
 
+/* v4 品牌：印章只做左上角 logo（朱砂方章），「知径」楷体字样随 logo 出现（DESIGN_V4 §三 品牌行） */
 .brandMark {
   align-items: center;
-  background: var(--brand-500);
-  border-radius: var(--v2-radius-md);
-  color: var(--v2-sidebar-primary-foreground);
+  background: var(--v2-primary);
+  border-radius: 9px;
+  color: #fbf6ec;
   display: inline-flex;
-  font: 700 18px/1 var(--v2-font-sans);
-  height: 38px;
+  flex-direction: column;
+  flex-shrink: 0;
+  font-family: var(--v3-font-kai);
+  font-size: 13px;
+  font-weight: 700;
+  height: 36px;
   justify-content: center;
-  width: 38px;
+  line-height: 1.08;
+  width: 36px;
 }
 
 .brandText {
@@ -63,9 +71,18 @@
 
 .brandSub {
   color: var(--v2-muted-foreground);
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
   font: 400 10px/1.4 var(--v2-font-mono);
   letter-spacing: 0.04em;
   white-space: nowrap;
+}
+
+.brandKai {
+  font-family: var(--v3-font-kai);
+  font-size: 11px;
+  letter-spacing: 0.08em;
 }
 
 .navGroup {
@@ -107,13 +124,13 @@
 }
 
 .navLinkActive {
-  background: var(--brand-100);
-  color: var(--brand-700);
+  background: var(--v3-selected-bg);
+  color: var(--v3-selected-fg);
 }
 
 .navLinkActive:hover {
-  background: var(--brand-100);
-  color: var(--brand-700);
+  background: var(--v3-selected-bg);
+  color: var(--v3-selected-fg);
 }
 
 .navLinkText {
@@ -358,7 +375,7 @@
     position: fixed;
     top: 0;
     transform: translateX(-105%);
-    width: 280px;
+    width: 264px;
     z-index: 80;
   }
 
@@ -440,4 +457,12 @@
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+}
+
+/* v4 侧栏上下文 slot（DESIGN_V4 §四/P1-6）：Clew 学习页经 portal 把「本章知识点列表」
+   注入主导航与配额 chip 之间；无注入时为空，不占位。 */
+.sidebarContext {
+  display: grid;
+  gap: calc(var(--v2-spacing) * 1);
+  min-width: 0;
 }

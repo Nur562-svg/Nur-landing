@@ -118,8 +118,9 @@ describe("design system v3 density and shell", () => {
     assert.match(globals, /\[data-peer-card\]\[data-compact-hide="true"\]\s*\{\s*display:\s*none;/);
 
     const shellBase = shell.split("@media")[0] ?? "";
-    assert.match(shellBase, /grid-template-columns:\s*280px/);
-    assert.match(shellBase, /width:\s*280px/);
+    // v4（DESIGN_V4 §四/P1-6）：壳侧栏 280 → 264px，与 Clew 学习页 studyAside 合并为一栏
+    assert.match(shellBase, /grid-template-columns:\s*264px/);
+    assert.match(shellBase, /width:\s*264px/);
     assert.match(shellBase, /font:\s*400 var\(--v3-body-size\)\/var\(--v3-body-leading\)/);
 
     const paletteBase = palette.split("@media")[0] ?? "";

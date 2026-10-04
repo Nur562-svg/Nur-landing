@@ -37,6 +37,15 @@ const SEMANTIC_SWATCHES: readonly { cls: string; token: string }[] = [
   { cls: styles.semSidebarAccent, token: "--v2-sidebar-accent" },
 ];
 
+const V4_TOKEN_SWATCHES: readonly { cls: string; token: string; note: string }[] = [
+  { cls: styles.semBackground, token: "--v2-background", note: "亮 #FAF9F5 · 暗 #201E19 暖炭" },
+  { cls: styles.semSidebar, token: "--v2-sidebar", note: "亮 #F2F0E8 · 暗 #191813" },
+  { cls: styles.semPrimary, token: "--v2-primary", note: "唯一交互强调（暗 #D97757）" },
+  { cls: styles.semCinnabar, token: "--v3-cinnabar", note: "别名 → --v2-primary" },
+  { cls: styles.semSlate, token: "--v3-slate-blue", note: "信息色：链接/溯源定位" },
+  { cls: styles.semSelected, token: "--v3-selected-bg", note: "选中态底（导航/KP 药丸共用）" },
+];
+
 const TAB_ITEMS = [
   { id: "lesson", label: "讲义" },
   { id: "writing", label: "写作室" },
@@ -62,12 +71,13 @@ export function DesignSystemPreview() {
     <div className={styles.page}>
       <header className={styles.head}>
         <div>
-          <p className={styles.eyebrow}>Ariadne · DESIGN SYSTEM V2 · R1</p>
+          <p className={styles.eyebrow}>Ariadne · DESIGN SYSTEM V4 · QUIET</p>
           <h1 className={styles.title}>设计系统预览</h1>
           <p className={styles.lead}>
-            暖纸体系 v2：terracotta 主强调、宋体显示标题、8–24px 圆角。
-            本页是后续逐面迁移（R2/R3）的对照基准；token 唯一来源是 globals.css。
-            明暗切换用壳顶栏右侧的日/月按钮（R2-2 起全局生效）。
+            v4 Quiet（docs/DESIGN_V4.md）：暖象牙/暖炭双主题平涂、层级靠灰度、朱砂唯一强调
+            （--v2-primary，--v3-cinnabar 为别名）、宋体只给文档标题与品牌、细边框或无边框、
+            阴影仅浮层、动效仅流式光标/spinner/状态过渡。非颜色 token 沿用 v2 不动；
+            token 唯一来源是 globals.css。明暗切换用壳顶栏右侧的日/月按钮。
           </p>
         </div>
       </header>
@@ -200,6 +210,42 @@ export function DesignSystemPreview() {
         </div>
       </section>
 
+      <section className={styles.section} aria-label="v4 Quiet token">
+        <h2 className={styles.sectionTitle}>v4 Quiet token（批 1，2026-10-04）</h2>
+        <p className={styles.sectionNote}>
+          暗色页面底调为暖炭 #201E19（原 #262624）、侧栏 #191813；亮色侧栏收为一档灰 #F2F0E8。
+          --v2-primary 为唯一交互强调 token，--v3-cinnabar 收敛为其别名；石板蓝降为信息色。
+        </p>
+        <div className={styles.semanticGrid}>
+          {V4_TOKEN_SWATCHES.map((swatch) => (
+            <div key={swatch.token} className={styles.semanticCard}>
+              <span className={`${styles.semanticDot} ${swatch.cls}`} aria-hidden="true" />
+              <span>
+                {swatch.token}
+                <span className={styles.v4TokenNote}>{swatch.note}</span>
+              </span>
+            </div>
+          ))}
+        </div>
+        <div className={styles.v4DemoRow}>
+          <div>
+            <p className={styles.demoLabel}>选中态药丸（--v3-selected-*，导航与知识点共用）</p>
+            <div className={styles.v4PillRow}>
+              <span className={`${styles.v4Pill} ${styles.v4PillActive}`}>Clew 学习台</span>
+              <span className={styles.v4Pill}>官方课程</span>
+              <span className={styles.v4Pill}>题库</span>
+            </div>
+          </div>
+          <div>
+            <p className={styles.demoLabel}>知识点评选行</p>
+            <div className={styles.v4PillRow}>
+              <span className={`${styles.v4KpRow} ${styles.v4PillActive}`}>02 四诊合参原则 · 已有讲义</span>
+              <span className={styles.v4KpRow}>03 望舌色 · 未生成讲义</span>
+            </div>
+          </div>
+        </div>
+      </section>
+
       <section className={styles.section} aria-label="字体样张">
         <h2 className={styles.sectionTitle}>字体栈（v2 定案映射）</h2>
         <div className={styles.typeGrid}>
@@ -218,6 +264,14 @@ export function DesignSystemPreview() {
           <div className={styles.typeSample}>
             <p className={styles.typeMono}>--v2-radius 8/12/16/20/24px · --v2-spacing 4px · 2026-09-19</p>
             <p className={styles.typeMeta}>--v2-font-mono · 与既有 --font-mono 相同</p>
+          </div>
+          <div className={styles.typeSample}>
+            <p className={styles.typeKai}>知径</p>
+            <p className={styles.typeMeta}>--v3-font-kai（v4 新增）· Kaiti SC / STKaiti / KaiTi · 只给品牌「知径」</p>
+          </div>
+          <div className={styles.typeSample}>
+            <p className={styles.typeDoc}>学习文档面正文：四诊合参是指望、闻、问、切四种诊法互相印证、彼此校准，综合判断证候。</p>
+            <p className={styles.typeMeta}>--v4-doc-size 15px / --v4-doc-leading 1.85（v4 新增）· 只给学习文档主列</p>
           </div>
         </div>
       </section>

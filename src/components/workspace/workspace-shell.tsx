@@ -253,13 +253,20 @@ export function WorkspaceShell({
         aria-label="工作台导航"
       >
         <Link className={styles.brand} href="/learn" aria-label="Ariadne 学习主页">
-          <span className={styles.brandMark} aria-hidden="true">N</span>
+          <span className={styles.brandMark} aria-hidden="true">
+            <span>知</span>
+            <span>径</span>
+          </span>
           <span className={styles.brandText}>
             <span className={styles.brandName}>Ariadne</span>
-            <span className={styles.brandSub}>工作台</span>
+            <span className={styles.brandSub}>
+              <span className={styles.brandKai}>知径</span> · 工作台
+            </span>
           </span>
         </Link>
         <SidebarNav activeId={activeId} pathname={pathname} textbooks={textbooks} onNavigate={closeDrawer} />
+        {/* v4 侧栏上下文 slot：Clew 学习页经 portal 注入「本章知识点列表」（DESIGN_V4 §四） */}
+        <div className={styles.sidebarContext} data-sidebar-context-slot="" />
         {user ? (
           <div className={styles.quotaChip} aria-label="本月用量">
             {quota ? (

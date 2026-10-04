@@ -3,11 +3,13 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import {
+  Check,
   CircleAlert,
+  Copy,
   CornerDownLeft,
   Loader2,
-  MessageSquareText,
   RefreshCw,
   Sparkles,
 } from "lucide-react";
@@ -33,6 +35,7 @@ import {
 import { formatClewPageRange, formatClewSourcePage } from "@/lib/clew/source-label";
 import { resolveClewGuide } from "@/lib/clew/step-guide";
 import {
+  CLEW_LESSON_VARIANT_LABELS,
   CLEW_LESSON_VARIANT_SHORT_LABELS,
   CLEW_LESSON_VARIANTS,
   deriveClewLessonVariant,
@@ -54,9 +57,12 @@ import { ClewPathGuide } from "./clew-path-guide";
 import styles from "./clew.module.css";
 
 /**
- * Clew 学习页（客户端）：左侧知识点列表 + 竖向闭环脊柱 + 讲义（SSE 生成/流式预览）+ 划重点层 + 自测（评）+ 讲解追问（SSE 流式）+ 章级学霸笔记。
- * 所有生成都走服务端 API；这里只负责展示、确认覆盖与事件解析。
- * 体验补丁（2026-10-02）：环节脊柱 = 真实动作入口（能点的都真的做事，未建的不装）；「讲解追问」品牌化为「问 Clew」；生成时可显式选择讲解风格。
+ * Clew 学习页（客户端，v4 Quiet 换装）：文档主列（面包屑 → 文档标题 → 教材路径线 → 视图 tabs →
+ * 讲义正文 → 自测 → 划重点/笔记/图谱）+ 右栏「问 Clew」；本章知识点列表经 portal 并入壳侧栏
+ * （docs/DESIGN_V4.md §四/P1-6）。所有生成都走服务端 API；这里只负责展示、确认覆盖与事件解析。
+ * 体验补丁（2026-10-02）：环节脊柱 = 真实动作入口（能点的都真的做事，未建的不装）；「讲解追问」品牌化为「问 Clew」。
+ * v4（2026-10-04）：AI 回答下方复制/重新生成小图标行——重新生成 = 对同一条提问重新请求一次，
+ * 计入一次问答配额，结果追加为新回答，不静默覆盖历史（§五 P2 语义）。
  */
 
 type ClewStudyRoomProps = {
@@ -137,9 +143,13 @@ export function ClewStudyRoom({ textbookId, chapter, selected }: ClewStudyRoomPr
   const [selfCheckSubmitting, setSelfCheckSubmitting] = useState(false);
   const [selfCheckNote, setSelfCheckNote] = useState<string | null>(null);
 
-  // ZCODE-M3 Phase 4：显示模式（localStorage 持久，默认 focus；
-  // 首渲染用默认值避免 hydration mismatch，挂载后读实际值）
-  const [studyMode, setStudyMode] = useState<ClewStudyMode>("focus");
+  // ZCODE-M3 Phase 4：显示模式（localStorage 持久；v4 P0-4 裁决：默认改为工作台（三栏），
+  // 已保存 focus 偏好的用户尊重其选择、键沿用不删；首渲染用默认值避免 hydration mismatch）
+  const [studyMode, setStudyMode] = useState<ClewStudyMode>("workspace");
+
+  // v4 侧栏上下文 slot：本章知识点列表 portal 进壳侧栏（workspace-shell 的 data-sidebar-context-slot）
+  const [railSlot, setRailSlot] = useState<HTMLElement | null>(null);
+  const [copiedIndex, setCopiedIndex] = useState<number | null>(null);
 
   useEffect(() => {
     try {
@@ -148,8 +158,12 @@ export function ClewStudyRoom({ textbookId, chapter, selected }: ClewStudyRoomPr
         setStudyMode(raw);
       }
     } catch {
-      // localStorage 不可用时保持默认 focus
+      // localStorage 不可用时保持默认工作台
     }
+  }, []);
+
+  useEffect(() => {
+    setRailSlot(document.querySelector<HTMLElement>("[data-sidebar-context-slot]"));
   }, []);
 
   // 讲解风格偏好：本机记住上次选择；没有记录时跟随当前讲义（都没有则 zh-primary）
@@ -410,15 +424,13 @@ export function ClewStudyRoom({ textbookId, chapter, selected }: ClewStudyRoomPr
     }
   }
 
-  async function onSendMessage() {
-    const question = chatDraft.trim();
+  async function sendChat(question: string) {
     if (question.length === 0 || streaming) {
       return;
     }
     setStreaming(true);
     setChatError(null);
     setChatNotes([]);
-    setChatDraft("");
     setMessages((current) => [
       ...current,
       { role: "user", content: question, createdAt: new Date().toISOString() },
@@ -468,6 +480,42 @@ export function ClewStudyRoom({ textbookId, chapter, selected }: ClewStudyRoomPr
       if (chatListRef.current) {
         chatListRef.current.scrollTop = chatListRef.current.scrollHeight;
       }
+    }
+  }
+
+  async function onSendMessage() {
+    const question = chatDraft.trim();
+    if (question.length === 0 || streaming) {
+      return;
+    }
+    setChatDraft("");
+    await sendChat(question);
+  }
+
+  /** 「重新生成」（DESIGN_V4 §五 P2 语义）：对同一条提问重新请求一次——计入一次问答配额，
+   *  结果作为新回答追加在历史之后，不静默覆盖任何已保存内容。 */
+  function onRegenerateAnswer(index: number) {
+    if (streaming) {
+      return;
+    }
+    for (let i = index - 1; i >= 0; i -= 1) {
+      if (messages[i]?.role === "user") {
+        void sendChat(messages[i].content);
+        return;
+      }
+    }
+  }
+
+  /** 「复制」= 纯前端复制该回答 markdown（DESIGN_V4 §五）。剪贴板不可用时静默失败。 */
+  async function onCopyAnswer(index: number, content: string) {
+    try {
+      await navigator.clipboard.writeText(content);
+      setCopiedIndex(index);
+      window.setTimeout(() => {
+        setCopiedIndex((current) => (current === index ? null : current));
+      }, 1600);
+    } catch {
+      // 隐私模式/权限拒绝：不打断阅读
     }
   }
 
@@ -659,23 +707,18 @@ export function ClewStudyRoom({ textbookId, chapter, selected }: ClewStudyRoomPr
     hasNote: Boolean(chapter.note),
   });
 
-  return (
-    <div className={styles.studyLayout} data-study-mode={studyMode}>
-      <ClewPathGuide guide={guide} />
-      <aside className={styles.studyAside} aria-label="知识点列表">
-        <div className={styles.studyAsideHead}>
-          <h2>知识点</h2>
-          <span>
-            {chapter.knowledgePoints.length} 个 · 讲义 {chapter.lessonCount} 份
-          </span>
-        </div>
-        <p className={styles.studyAsideMeta}>
-          第 {chapter.chapterIndex}/{chapter.chapterTotal} 章《{chapter.chapter.title}》·{" "}
-          {formatClewPageRange(chapter.textbook.fileName, chapter.chapter.pageStart, chapter.chapter.pageEnd)} · {statusLabels[chapter.chapter.status]}
+  /** 本章知识点列表（v4：portal 注入壳侧栏，替代原页面内 studyAside）。 */
+  const kpRail = railSlot
+    ? createPortal(
+      <nav className={styles.railNav} aria-label="本章知识点列表">
+        <p className={styles.railHead}>本章 · 第 {chapter.chapterIndex}/{chapter.chapterTotal} 章</p>
+        <p className={styles.railMeta}>
+          《{chapter.chapter.title}》 ·{" "}
+          {formatClewPageRange(chapter.textbook.fileName, chapter.chapter.pageStart, chapter.chapter.pageEnd)} ·{" "}
+          {statusLabels[chapter.chapter.status]}
         </p>
-
         {chapter.knowledgePoints.length === 0 ? (
-          <p className={styles.studyAsideEmpty}>
+          <p className={styles.railEmpty}>
             本章还没有知识点。回到
             <Link href={`/learn/clew/t/${textbookId}`}> 教材详情 </Link>
             对本章运行「萃取知识点」。
@@ -709,12 +752,25 @@ export function ClewStudyRoom({ textbookId, chapter, selected }: ClewStudyRoomPr
             })}
           </ul>
         )}
-      </aside>
+      </nav>,
+      railSlot,
+    )
+    : null;
+
+  return (
+    <div className={styles.studyLayout} data-study-mode={studyMode}>
+      {kpRail}
 
       <section className={styles.studyMain} aria-label="讲义与追问">
         <header className={styles.studyKpHead}>
           <div className={styles.studyKpHeadRow}>
-            <p className={styles.kicker}>知识点 {String(knowledgePoint.order).padStart(2, "0")}</p>
+            <p className={styles.studyBreadcrumb}>
+              <Link href="/learn/clew">Clew</Link>
+              <span className={styles.studyBreadcrumbSep} aria-hidden="true">/</span>
+              <Link href={`/learn/clew/t/${textbookId}`}>《{chapter.textbook.title}》</Link>
+              <span className={styles.studyBreadcrumbSep} aria-hidden="true">/</span>
+              <span>第 {chapter.chapter.order} 章 · {chapter.chapter.title}</span>
+            </p>
             <div className={styles.studyKpHeadActions}>
               <ClewLoopProfileBadge
                 profileId={profileId}
@@ -734,7 +790,7 @@ export function ClewStudyRoom({ textbookId, chapter, selected }: ClewStudyRoomPr
                 <button
                   type="button"
                   aria-pressed={studyMode === "workspace"}
-                  title="工作台视图：知识点 / 讲义 / 追问三栏"
+                  title="工作台视图：文档主列 + 右栏 Clew"
                   onClick={() => onSwitchStudyMode("workspace")}
                 >
                   工作台
@@ -742,9 +798,9 @@ export function ClewStudyRoom({ textbookId, chapter, selected }: ClewStudyRoomPr
               </div>
             </div>
           </div>
-          <h2 className={styles.studyKpTitle}>{knowledgePoint.title}</h2>
+          <h1 className={styles.studyKpTitle}>{knowledgePoint.title}</h1>
           <p className={styles.studyKpMeta}>
-            {formatClewSourcePage(chapter.textbook.fileName, knowledgePoint.sourcePage)}
+            {`知识点 ${String(knowledgePoint.order).padStart(2, "0")} · ${formatClewSourcePage(chapter.textbook.fileName, knowledgePoint.sourcePage)}`}
             {knowledgePoint.keyTerms.length > 0 ? ` · 术语：${knowledgePoint.keyTerms.join("、")}` : ""}
             {knowledgePoint.prerequisites.length > 0
               ? ` · 先修：${knowledgePoint.prerequisites.join("、")}`
@@ -758,6 +814,8 @@ export function ClewStudyRoom({ textbookId, chapter, selected }: ClewStudyRoomPr
         </div>
 
         <div className={styles.studyContentCol}>
+          {/* v4 §四 顺序：面包屑 → 文档标题 → 元信息 → 安静进度线 → 视图 tabs → 讲义正文 */}
+          <ClewPathGuide guide={guide} />
           <section ref={lessonPanelRef} className={styles.lessonPanel} aria-labelledby="clew-lesson-title">
             <div className={styles.panelHead}>
               <h2 id="clew-lesson-title">讲义</h2>
@@ -772,24 +830,25 @@ export function ClewStudyRoom({ textbookId, chapter, selected }: ClewStudyRoomPr
               ) : (
                 <p>尚未生成</p>
               )}
-              <div
-                className={styles.lessonVariantToggle}
-                role="group"
-                aria-label="讲义视图（同一份讲义确定性派生）"
-              >
-                {CLEW_LESSON_VARIANTS.map((variant) => (
-                  <button
-                    key={variant}
-                    type="button"
-                    aria-pressed={lessonVariant === variant}
-                    disabled={generating}
-                    title={variant === "full" ? "完整讲义" : undefined}
-                    onClick={() => onSwitchLessonVariant(variant)}
-                  >
-                    {CLEW_LESSON_VARIANT_SHORT_LABELS[variant]}
-                  </button>
-                ))}
-              </div>
+            </div>
+
+            <div
+              className={styles.lessonVariantTabs}
+              role="group"
+              aria-label="讲义视图（同一份讲义确定性派生）"
+            >
+              {CLEW_LESSON_VARIANTS.map((variant) => (
+                <button
+                  key={variant}
+                  type="button"
+                  aria-pressed={lessonVariant === variant}
+                  disabled={generating}
+                  title={CLEW_LESSON_VARIANT_LABELS[variant]}
+                  onClick={() => onSwitchLessonVariant(variant)}
+                >
+                  {CLEW_LESSON_VARIANT_SHORT_LABELS[variant]}
+                </button>
+              ))}
             </div>
 
             <div className={styles.actionRow}>
@@ -1053,12 +1112,15 @@ export function ClewStudyRoom({ textbookId, chapter, selected }: ClewStudyRoomPr
 
       <aside className={styles.studyAgent} aria-label="Clew 追问">
         <section className={styles.chatPanel} aria-labelledby="clew-chat-title">
-          <div className={styles.panelHead}>
-            <h2 id="clew-chat-title">
-              <MessageSquareText aria-hidden="true" size={17} strokeWidth={1.6} /> 问 Clew
-            </h2>
-            <p>AI 讲解，可能出错；请对照教材原文与讲义核对</p>
+          <div className={styles.chatHead}>
+            <h2 id="clew-chat-title">问 Clew</h2>
+            <span
+              className={styles.chatStatusDot}
+              aria-hidden="true"
+              title="AI 讲解，可能出错；请对照教材原文与讲义核对"
+            />
           </div>
+          <p className={styles.chatHeadNote}>AI 讲解，可能出错；请对照教材原文与讲义核对</p>
 
           <div className={styles.chatList} ref={chatListRef} aria-live="polite">
             {messages.length === 0 ? (
@@ -1081,6 +1143,34 @@ export function ClewStudyRoom({ textbookId, chapter, selected }: ClewStudyRoomPr
                       message.content
                     )}
                   </div>
+                  {message.role === "assistant" ? (
+                    <div className={styles.chatMsgActions}>
+                      <button
+                        type="button"
+                        className={styles.chatMsgAction}
+                        title={copiedIndex === index ? "已复制" : "复制这条回答"}
+                        aria-label="复制这条回答"
+                        disabled={streaming}
+                        onClick={() => void onCopyAnswer(index, message.content)}
+                      >
+                        {copiedIndex === index ? (
+                          <Check aria-hidden="true" size={14} strokeWidth={1.7} />
+                        ) : (
+                          <Copy aria-hidden="true" size={14} strokeWidth={1.6} />
+                        )}
+                      </button>
+                      <button
+                        type="button"
+                        className={styles.chatMsgAction}
+                        title="重新生成：对同一条提问重新请求一次（计一次问答配额，追加为新回答）"
+                        aria-label="重新生成这条回答"
+                        disabled={streaming}
+                        onClick={() => onRegenerateAnswer(index)}
+                      >
+                        <RefreshCw aria-hidden="true" size={14} strokeWidth={1.6} />
+                      </button>
+                    </div>
+                  ) : null}
                 </div>
               ))
             )}
@@ -1138,29 +1228,29 @@ export function ClewStudyRoom({ textbookId, chapter, selected }: ClewStudyRoomPr
             }}
           >
             <label className={styles.chatField}>
-              <span className={styles.chatFieldLabel}>追问（Enter 发送）</span>
               <input
                 className={styles.chatInput}
                 type="text"
                 value={chatDraft}
                 maxLength={1000}
                 placeholder="就这个知识点继续问…"
+                aria-label="追问（Enter 发送）"
                 disabled={streaming}
                 onChange={(event) => setChatDraft(event.target.value)}
               />
             </label>
-            <V2Button
-              className={styles.v2Button}
+            <button
               type="submit"
+              className={styles.chatSendButton}
               disabled={streaming || chatDraft.trim().length === 0}
+              aria-label={streaming ? "回答中" : "发送"}
             >
               {streaming ? (
                 <Loader2 className={styles.spin} aria-hidden="true" size={16} strokeWidth={1.8} />
               ) : (
                 <CornerDownLeft aria-hidden="true" size={16} strokeWidth={1.6} />
               )}
-              {streaming ? "回答中" : "发送"}
-            </V2Button>
+            </button>
           </form>
         </section>
 

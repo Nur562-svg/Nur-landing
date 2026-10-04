@@ -136,7 +136,11 @@ describe("design system v3 Clew path and local parsers", () => {
     assert.equal(shelfWithBook.nextHref, "/learn/clew/t/tb-9#recognize");
     assert.equal(resolveClewGuide({ surface: "shelf", signedIn: false }).nextHref, "/login?next=/learn/clew");
     assert.match(guideHtml, /下一步/);
-    assert.match(guideHtml, /<progress/);
+    // v4 安静进度线（DESIGN_V4 §四/P0-1）：2px 细线 + role=progressbar + 「教材路径」措辞，线尾保留下一步文字链
+    assert.match(guideHtml, /role="progressbar"/);
+    assert.match(guideHtml, /aria-label="教材路径进度"/);
+    assert.match(guideHtml, /教材路径/);
+    assert.match(guideHtml, /pathBarFill/);
     assert.match(guideHtml, /role="status"/);
     assert.equal(guideHtml.includes("可关联"), false);
     assert.equal(guideHtml.includes("不可直接等同"), false);

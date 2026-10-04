@@ -1,5 +1,6 @@
 /**
- * Design system v3 layout readback.
+ * Design system layout readback（R3 引入；DESIGN_V4 批 1 起断言更新为 v4 契约：
+ * 壳侧栏 264px、安静进度线 role=progressbar + 「教材路径」措辞）。
  * Usage: node scripts/design-v3-check.mjs --base http://127.0.0.1:3000 --out <dir>
  */
 import { chromium } from "playwright-core";
@@ -73,12 +74,13 @@ async function readLayout(page) {
         : null,
       groups,
       hasEntryGrid: text.includes("官方课程学习闭环") || text.includes("传统刷题题库"),
+      // v4（DESIGN_V4 §四/P0-1）：安静进度线 = 2px 细线（role=progressbar）+ 一行小字；
+      // 八步名称 chips 已由路径线取代，改为校验「教材路径」措辞。
       hiDoc: {
-        progress: Boolean(document.querySelector("progress")),
+        progress: Boolean(document.querySelector("[role='progressbar'] i")),
         status: Boolean(document.querySelector("[role='status']")),
         next: text.includes("下一步"),
-        steps: ["上传", "目录识别", "章节修正", "知识点萃取", "讲义生成 + 追问", "划重点/批注", "学霸笔记", "课题工作坊"]
-          .every((name) => text.includes(name)),
+        path: text.includes("教材路径"),
       },
       overflow: {
         scrollWidth: document.documentElement.scrollWidth,
@@ -114,7 +116,8 @@ for (const run of [1, 2]) {
   const learn = await readLayout(page);
   desktopReads.push({ run, route: "/learn", ...learn });
   console.log(`[1440 run ${run}] /learn sidebar=${learn.sidebar} canvas=${learn.canvas} viewport=1440 canvasRatio=${(learn.canvas / 1440).toFixed(3)} entryCards=${learn.hasEntryGrid}`);
-  if (learn.sidebar !== 280) fail(`run ${run} sidebar ${learn.sidebar}`);
+  // v4（DESIGN_V4 §四/P1-6）：壳侧栏 280 → 264px
+  if (learn.sidebar !== 264) fail(`run ${run} sidebar ${learn.sidebar}`);
   if (learn.canvas < 1440 * 0.7) fail(`run ${run} canvas ${learn.canvas}`);
   if (learn.hasEntryGrid) fail(`run ${run} still shows the three entry cards`);
   await page.keyboard.press("Meta+k");
@@ -142,11 +145,12 @@ for (const run of [1, 2]) {
   if (hiStatus !== 200) fail(`run ${run} /learn/hi-doc status ${hiStatus}`);
   const hi = await readLayout(page);
   desktopReads.push({ run, route: "/learn/hi-doc", ...hi });
-  if (!hi.hiDoc.progress || !hi.hiDoc.status || !hi.hiDoc.next || !hi.hiDoc.steps) {
+  if (!hi.hiDoc.progress || !hi.hiDoc.status || !hi.hiDoc.next || !hi.hiDoc.path) {
     fail(`run ${run} hi doc guide ${JSON.stringify(hi.hiDoc)}`);
   }
-  console.log(`[1440 run ${run}] /learn/hi-doc sidebar=${hi.sidebar} canvas=${hi.canvas} progress=${hi.hiDoc.progress} status=${hi.hiDoc.status} next=${hi.hiDoc.next} steps=${hi.hiDoc.steps}`);
-  if (hi.sidebar !== 280 || hi.canvas < 1440 * 0.7) {
+  console.log(`[1440 run ${run}] /learn/hi-doc sidebar=${hi.sidebar} canvas=${hi.canvas} progress=${hi.hiDoc.progress} status=${hi.hiDoc.status} next=${hi.hiDoc.next} path=${hi.hiDoc.path}`);
+  // v4（DESIGN_V4 §四/P1-6）：壳侧栏 280 → 264px
+  if (hi.sidebar !== 264 || hi.canvas < 1440 * 0.7) {
     fail(`run ${run} hi doc shell ${hi.sidebar}/${hi.canvas}`);
   }
   await page.screenshot({ path: resolve(OUT, `v3-hidoc-1440-run${run}.png`), fullPage: false });

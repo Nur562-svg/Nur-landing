@@ -283,8 +283,8 @@ button:not(.icon-only-large),
   --v2-chart-3: #ded8c4;
   --v2-chart-4: #dbd3f0;
   --v2-chart-5: #b4552d;
-  /* sidebar（工作台侧栏 #F5F4EE） */
-  --v2-sidebar: #f5f4ee;
+  /* sidebar（工作台侧栏；v4 收为一档暖灰 #f2f0e8，见 docs/DESIGN_V4.md §三） */
+  --v2-sidebar: #f2f0e8;
   --v2-sidebar-foreground: #3d3d3a;
   --v2-sidebar-primary: var(--brand-500);
   --v2-sidebar-primary-foreground: #fbfbfb;
@@ -315,8 +315,17 @@ button:not(.icon-only-large),
   --v3-body-size: 14px;
   --v3-body-leading: 1.5;
   --v3-title-size: 24px;
-  --v3-cinnabar: var(--brand-600);
+  /* v4 Quiet（2026-10-04，docs/DESIGN_V4.md §三/P1-7/P1-8）：
+     --v2-primary 是唯一交互强调 token；--v3-cinnabar 收敛为其别名（不再单独取 brand-600）。
+     石板蓝降为信息色（链接/溯源定位）。选中态统一一枚 token（壳导航药丸与知识点药丸共用）。
+     --v3-font-kai 楷体栈只给品牌「知径」；--v4-doc-* 只给学习文档主列正文（其余面仍 14/1.5）。 */
+  --v3-cinnabar: var(--v2-primary);
   --v3-slate-blue: #17659a;
+  --v3-selected-bg: color-mix(in srgb, var(--v2-primary) 8%, transparent);
+  --v3-selected-fg: var(--brand-700);
+  --v3-font-kai: "Kaiti SC", "STKaiti", "KaiTi", "Noto Serif SC", serif;
+  --v4-doc-size: 15px;
+  --v4-doc-leading: 1.85;
   /* 阴影 */
   --v2-shadow-2xs: 0 1px 3px 0px rgba(0, 0, 0, 0.05);
   --v2-shadow-xs: 0 1px 3px 0px rgba(0, 0, 0, 0.05);
@@ -357,8 +366,9 @@ button:not(.icon-only-large),
   --text-700: #d8d6cd;
   --text-800: #f1f1ef;
   --text-900: #faf9f5;
+  /* v4：页面底调为更暖更暗的暖炭 #201e19（原 #262624），与亮色暖底同族（DESIGN_V4 §三/P1-5） */
   --bg-50: #1b1b19;
-  --bg-100: #262624;
+  --bg-100: #201e19;
   --bg-200: #2c2c2b;
   --bg-300: #30302e;
   --bg-400: #3e3e38;
@@ -439,7 +449,7 @@ button:not(.icon-only-large),
   --v2-chart-3: #1a1915;
   --v2-chart-4: #2f2b48;
   --v2-chart-5: #b4552d;
-  --v2-sidebar: #1f1e1d;
+  --v2-sidebar: #191813;
   --v2-sidebar-foreground: #c3c0b6;
   --v2-sidebar-primary: #343434;
   --v2-sidebar-primary-foreground: #fbfbfb;
@@ -447,6 +457,9 @@ button:not(.icon-only-large),
   --v2-sidebar-accent-foreground: #c3c0b6;
   --v2-sidebar-border: #ebebeb;
   --v2-sidebar-ring: #b5b5b5;
+  /* v4 选中态：暗色下底色占比提高一档（8% → 12%）；石板蓝信息色在暗色换浅一档保证对比 */
+  --v3-selected-bg: color-mix(in srgb, var(--v2-primary) 12%, transparent);
+  --v3-slate-blue: #86b7dc;
 }
 
 @layer base {

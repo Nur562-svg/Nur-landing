@@ -4,7 +4,6 @@ import { notFound } from "next/navigation";
 import { ClewStudyRoom } from "@/components/clew-study";
 import { getClewSessionUser } from "@/lib/clew/session-user";
 import { getClewChapterStudy, getClewKnowledgePointStudy } from "@/lib/clew/study";
-import { getMembershipTierLabel } from "@/lib/membership";
 import styles from "@/components/clew.module.css";
 
 export const metadata: Metadata = {
@@ -105,32 +104,9 @@ export default async function ClewChapterStudyPage({
 
   return (
     <main className={styles.page}>
-      <header className={styles.header}>
-        <Link className={styles.brand} href="/learn">
-          Ariadne
-        </Link>
-        <div className={styles.headerMeta}>
-          <span>
-            {user.displayName} · {getMembershipTierLabel(user.tier)}
-          </span>
-          <Link className={styles.headerLink} href={`/learn/clew/t/${id}`}>
-            教材详情
-          </Link>
-          <Link className={styles.headerLink} href="/learn/clew">
-            返回书架
-          </Link>
-        </div>
-      </header>
-
+      {/* v4 Quiet 换装（docs/DESIGN_V4.md §四）：壳顶栏承担用户/主题，页面不再渲染第二套 header；
+          面包屑、文档标题与元信息由学习页文档主列承担（见 ClewStudyRoom）。 */}
       <div className={styles.studyContent}>
-        <p className={styles.kicker}>CLEW · 知识学习</p>
-        <h1 className={styles.title}>{chapterStudy.data.textbook.title}</h1>
-        <p className={styles.intro}>
-          第 {chapterStudy.data.chapterIndex}/{chapterStudy.data.chapterTotal} 章《
-          {chapterStudy.data.chapter.title}》：左侧选知识点，右侧生成讲义（定义 / 要点 / 易错点 / 自测题）
-          并就讲义与教材原文继续追问。
-        </p>
-
         {pointStudy?.ok ? (
           <ClewStudyRoom
             key={pointStudy.data.knowledgePoint.id}
