@@ -21,6 +21,10 @@ import { useSession } from "@/hooks/use-session";
 import { getMembershipTierLabel, normalizeMembershipTier } from "@/lib/membership";
 import type { CourseSearchSource } from "@/lib/search-index";
 import {
+  PanelLeftClose,
+  PanelLeftOpen,
+} from "lucide-react";
+import {
   ACTIVE_COURSE_ENTRIES,
   PRIMARY_ENTRIES,
   fetchShelfSummary,
@@ -32,6 +36,9 @@ import { CommandPalette } from "./command-palette";
 import styles from "./workspace-shell.module.css";
 
 type NavIcon = typeof BookOpen;
+
+/** 桌面侧栏折叠状态持久化键（交互批；nur-learn: 前缀规则不变）。 */
+const SHELL_RAIL_STORAGE_KEY = "nur-learn:shell-rail";
 
 const PRIMARY_ICONS: Readonly<Record<string, NavIcon>> = {
   learn: Home,
@@ -74,6 +81,7 @@ function SidebarNav({
               key={entry.id}
               href={entry.href}
               onClick={onNavigate}
+              title={entry.label}
               className={[
                 styles.navLink,
                 activeId === entry.id ? styles.navLinkActive : "",
@@ -145,15 +153,34 @@ export function WorkspaceShell({
   const [quota, setQuota] = useState<ShellQuota | null>(null);
   const [clewModelCalls, setClewModelCalls] = useState<number | null>(null);
   const [dark, setDark] = useState(false);
+  /** 桌面侧栏折叠为 56px 图标轨（交互批；⌘B / 顶栏按钮切换，本机持久化；≤900px 抽屉态不受影响）。 */
+  const [railCollapsed, setRailCollapsed] = useState(false);
 
   // R2-2 明暗切换：挂载后读当前主题（根 layout 的防闪烁脚本可能已在 hydration 前挂上 .dark）。
   // rAF 包裹避免 set-state-in-effect 级联渲染（仓库既有惯例，见 use-draggable-fab.ts）。
   useEffect(() => {
     const raf = requestAnimationFrame(() => {
       setDark(document.documentElement.classList.contains("dark"));
+      try {
+        setRailCollapsed(window.localStorage.getItem(SHELL_RAIL_STORAGE_KEY) === "collapsed");
+      } catch {
+        // localStorage 不可用时保持展开
+      }
     });
     return () => cancelAnimationFrame(raf);
   }, []);
+
+  const toggleRail = () => {
+    setRailCollapsed((current) => {
+      const next = !current;
+      try {
+        window.localStorage.setItem(SHELL_RAIL_STORAGE_KEY, next ? "collapsed" : "expanded");
+      } catch {
+        // 持久化失败不影响本次切换
+      }
+      return next;
+    });
+  };
 
   const toggleTheme = () => {
     const next = !document.documentElement.classList.contains("dark");
@@ -207,6 +234,11 @@ export function WorkspaceShell({
         event.preventDefault();
         setPaletteOpen((open) => !open);
       }
+      // 交互批：⌘B 折叠/展开侧栏（桌面图标轨）
+      if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === "b") {
+        event.preventDefault();
+        toggleRail();
+      }
     };
     window.addEventListener("keydown", handler);
     return () => window.removeEventListener("keydown", handler);
@@ -245,12 +277,18 @@ export function WorkspaceShell({
   const closeDrawer = () => setDrawerOpen(false);
 
   return (
-    <div className={styles.app}>
+    <div
+      className={[styles.app, railCollapsed ? styles.appRail : ""].filter(Boolean).join(" ")}
+    >
       <aside
         ref={drawerRef}
         data-shell-drawer={drawerOpen ? "open" : undefined}
-        className={[styles.sidebar, drawerOpen ? styles.sidebarOpen : ""].filter(Boolean).join(" ")}
         aria-label="工作台导航"
+        className={[
+          styles.sidebar,
+          railCollapsed ? styles.sidebarRail : "",
+          drawerOpen ? styles.sidebarOpen : "",
+        ].filter(Boolean).join(" ")}
       >
         <Link className={styles.brand} href="/learn" aria-label="Ariadne 学习主页">
           <span className={styles.brandMark} aria-hidden="true">
@@ -291,6 +329,21 @@ export function WorkspaceShell({
               aria-expanded={drawerOpen}
             >
               <Menu size={20} strokeWidth={1.6} aria-hidden="true" />
+            </button>
+            {/* 交互批：桌面侧栏折叠切换（≤900px 抽屉态隐藏） */}
+            <button
+              type="button"
+              className={styles.railToggle}
+              onClick={toggleRail}
+              aria-label={railCollapsed ? "展开侧栏（⌘B）" : "折叠侧栏（⌘B）"}
+              aria-pressed={railCollapsed}
+              title={railCollapsed ? "展开侧栏（⌘B）" : "折叠侧栏（⌘B）"}
+            >
+              {railCollapsed ? (
+                <PanelLeftOpen size={18} strokeWidth={1.6} aria-hidden="true" />
+              ) : (
+                <PanelLeftClose size={18} strokeWidth={1.6} aria-hidden="true" />
+              )}
             </button>
             <button
               type="button"

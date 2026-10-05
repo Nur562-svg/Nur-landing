@@ -95,14 +95,18 @@ export default function Home() {
   } as CSSProperties;
 
   return (
-    <main className="min-h-screen bg-[#f7f4ef] text-black">
-      <header className="site-shell sticky top-0 z-30 border-b border-black bg-[#f7f4ef]/92 backdrop-blur">
+    <main className="site-home min-h-screen bg-[var(--v2-background)] text-[var(--v2-foreground)]">
+      <header className="site-shell sticky top-0 z-30 border-b border-[var(--v2-border)] bg-[var(--v2-background)]/92 backdrop-blur">
         <Link href="/learn" className="brand-lockup" aria-label="Ariadne 学习首页">
+          <span className="brand-mark" aria-hidden="true">
+            <span>知</span>
+            <span>径</span>
+          </span>
           <span>Ariadne</span>
         </Link>
         <nav className="nav-links" aria-label="Main navigation">
           <a href="#build">学习闭环</a>
-          <a href="#journal">辨证札记</a>
+          <a href="#journal">学习方法札记</a>
           <Link href="/learn">进入应用</Link>
         </nav>
       </header>
@@ -184,7 +188,7 @@ export default function Home() {
 
         <section id="journal" className="list-section">
           <div className="section-heading">
-            <h2>辨证札记</h2>
+            <h2>学习方法札记</h2>
           </div>
           <div className="row-list">
             {journalRows.map(([index, title]) => (
@@ -202,8 +206,11 @@ export default function Home() {
         <section id="contact" className="contact-band">
           <h2>把理解落到答题上</h2>
           <p>
-            每个知识点从证据出发，用双镜对照建立理解，再通过主观题写作与案例推理，
+            官方试点课里，每个知识点从证据出发，用双镜对照建立理解，再通过主观题写作与案例推理，
             把辨证能力真正转化为考场上的表达。
+          </p>
+          <p>
+            任何教材也能用 Clew 建立自己的学习环：上传 → 知识点萃取 → 讲义与追问 → 划重点与笔记。
           </p>
           <Link href="/learn" className="contact-cta">
             进入 Ariadne 学习平台 →

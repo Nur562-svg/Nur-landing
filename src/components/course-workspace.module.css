@@ -5,8 +5,8 @@
   --paper: var(--bg-200);
   --paper-bright: var(--bg-100);
   --muted: var(--text-500);
-  --line: color-mix(in srgb, var(--text-900) 38%, transparent);
-  --soft-line: color-mix(in srgb, var(--text-900) 16%, transparent);
+  --line: color-mix(in srgb, var(--text-900) 12%, transparent);
+  --soft-line: color-mix(in srgb, var(--text-900) 6%, transparent);
   --red: var(--error-600);
   --blue: var(--v2-ring);
   background: var(--paper);
@@ -28,7 +28,7 @@
 .header {
   align-items: center;
   background: color-mix(in srgb, var(--bg-200) 96%, transparent);
-  border-bottom: 1px solid var(--ink);
+  border-bottom: 1px solid var(--v2-border);
   display: grid;
   grid-template-columns: minmax(210px, 1fr) auto minmax(210px, 1fr);
   height: 81px;
@@ -73,7 +73,7 @@
 }
 
 .navigation :is(a)::after {
-  background: var(--ink);
+  background: var(--v2-primary);
   bottom: 14px;
   content: "";
   height: 2px;
@@ -109,7 +109,7 @@
 .avatar {
   align-items: center;
   background: var(--ink);
-  border: 1px solid var(--ink);
+  border: 1px solid var(--v2-border);
   border-radius: 50%;
   box-shadow: inset 0 0 0 5px var(--ink), inset 0 0 0 6px color-mix(in srgb, var(--paper-bright) 80%, transparent);
   color: var(--paper-bright);
@@ -129,7 +129,7 @@
 
 .accountPanel {
   background: var(--paper-bright);
-  border: 1px solid var(--ink);
+  border: 1px solid var(--v2-border);
   box-shadow: 8px 8px 0 color-mix(in srgb, var(--text-900) 10%, transparent);
   display: grid;
   gap: 18px;
@@ -139,6 +139,7 @@
   top: 67px;
   width: 270px;
   z-index: 80;
+  border-radius: var(--v3-card-radius);
 }
 
 .accountPanel > div {
@@ -152,7 +153,6 @@
 }
 
 .accountPanel > div strong {
-  font-family: "Songti SC", "STSong", serif;
   font-size: 23px;
 }
 
@@ -229,10 +229,11 @@
 }
 
 .courseHero {
-  border: 1px solid var(--ink);
+  border: 1px solid var(--v2-border);
   display: grid;
   grid-template-columns: minmax(0, 1fr) 392px;
   min-height: 260px;
+  border-radius: var(--v2-radius-sm);
 }
 
 .courseIntro {
@@ -256,7 +257,6 @@
 }
 
 .courseDescription {
-  font-family: "Songti SC", "STSong", serif;
   font-size: 17px;
   line-height: 1.7;
   margin: 22px 0 23px;
@@ -276,7 +276,7 @@
 }
 
 .courseProgress {
-  border-left: 1px solid var(--ink);
+  border-left: 1px solid var(--v2-border);
   display: flex;
   flex-direction: column;
   padding: 27px 30px 24px;
@@ -312,13 +312,14 @@
 .progressTrack {
   appearance: none;
   background: transparent;
-  border: 1px solid var(--ink);
+  border: 1px solid var(--v2-border);
   box-sizing: border-box;
   display: block;
   height: 9px;
   margin-top: 18px;
   padding: 2px;
   width: 100%;
+  border-radius: var(--v2-radius-sm);
 }
 
 .progressTrack::-webkit-progress-bar {
@@ -326,11 +327,11 @@
 }
 
 .progressTrack::-webkit-progress-value {
-  background: var(--red);
+  background: var(--v2-primary);
 }
 
 .progressTrack::-moz-progress-bar {
-  background: var(--red);
+  background: var(--v2-primary);
 }
 
 .courseProgress > p {
@@ -349,9 +350,10 @@
 .courseProgress > button,
 .continueLearning {
   align-items: center;
-  background: var(--ink);
-  border: 1px solid var(--ink);
-  color: var(--paper-bright);
+  background: var(--v2-primary);
+  border: none;
+  color: #ffffff;
+  border-radius: var(--v2-radius-sm);
   cursor: pointer;
   display: flex;
   flex: 1;
@@ -362,6 +364,7 @@
   padding: 14px 17px 13px 20px;
   text-align: left;
   transition: background 160ms ease, color 160ms ease;
+  border-radius: var(--v2-radius-sm);
 }
 
 .courseProgress > button:hover,
@@ -385,7 +388,7 @@
 }
 
 .guidedPath {
-  border-bottom: 1px solid var(--ink);
+  border-bottom: 1px solid var(--v2-border);
   display: grid;
   gap: 24px;
   grid-template-columns: minmax(240px, 0.75fr) minmax(0, 1.7fr);
@@ -399,7 +402,7 @@
 
 .guidedPathIntro > span,
 .guidedPathLinks > a > span {
-  color: var(--red);
+  color: var(--v2-primary);
   font-size: 10px;
   font-weight: 700;
   letter-spacing: 0.1em;
@@ -415,7 +418,6 @@
 
 .guidedPathIntro p {
   color: var(--muted);
-  font-family: "Songti SC", "STSong", serif;
   font-size: 11px;
   line-height: 1.65;
   margin: 0;
@@ -442,8 +444,8 @@
 }
 
 .guidedPathLinks > a:hover {
-  background: var(--ink);
-  color: var(--paper-bright);
+  background: transparent;
+  border-color: var(--muted);
 }
 
 .guidedPathLinks > a:hover > span {
@@ -452,7 +454,6 @@
 
 .guidedPathLinks strong {
   align-self: center;
-  font-family: "Songti SC", "STSong", serif;
   font-size: 18px;
   letter-spacing: -0.03em;
 }
@@ -471,7 +472,7 @@
 
 .scopeBar {
   align-items: center;
-  border-bottom: 1px solid var(--ink);
+  border-bottom: 1px solid var(--v2-border);
   display: flex;
   gap: 16px;
   justify-content: space-between;
@@ -522,7 +523,6 @@
 
 .scopeTriggerValue {
   color: var(--ink);
-  font-family: "Songti SC", "STSong", serif;
   font-size: 13px;
   letter-spacing: 0.01em;
 }
@@ -534,9 +534,9 @@
 }
 
 .scopeSwitcherOpen .scopeTrigger {
-  background: var(--ink);
-  border-color: var(--ink);
-  color: var(--paper-bright);
+  background: var(--v3-selected-bg);
+  border-color: transparent;
+  color: var(--v3-selected-fg);
 }
 
 .scopeSwitcherOpen .scopeTriggerLabel,
@@ -552,7 +552,7 @@
 .scopeOptions {
   align-items: stretch;
   background: var(--paper-bright);
-  border: 1px solid var(--ink);
+  border: 1px solid var(--v2-border);
   /* 软阴影：紧贴边框、向外柔化，避免硬偏移方块越界 */
   box-shadow: 0 2px 6px color-mix(in srgb, var(--text-900) 6%, transparent), 0 1px 2px color-mix(in srgb, var(--text-900) 4%, transparent);
   display: grid;
@@ -566,6 +566,7 @@
   transform: translateX(-4px);
   transition: opacity 140ms ease, transform 140ms ease;
   z-index: 60;
+  border-radius: var(--v2-radius-sm);
 }
 
 .scopeSwitcherOpen .scopeOptions {
@@ -605,9 +606,9 @@
 
 /* 激活态：用极浅朱砂 + 右侧 1.5px 实色阶，让"自成一格"但不溢出框架 */
 .scopeOption.scopeActive {
-  background: color-mix(in srgb, var(--red) 12%, transparent);
-  box-shadow: inset -1.5px 0 0 var(--red);
-  color: var(--red);
+  background: var(--v3-selected-bg);
+  box-shadow: inset -1.5px 0 0 var(--v2-primary);
+  color: var(--v3-selected-fg);
   font-weight: 650;
 }
 
@@ -616,13 +617,13 @@
 }
 
 .scopeOption.scopeActive:hover {
-  background: color-mix(in srgb, var(--red) 20%, transparent);
-  box-shadow: inset -1.5px 0 0 var(--red);
-  color: var(--red);
+  background: var(--v3-selected-bg);
+  box-shadow: inset -1.5px 0 0 var(--v2-primary);
+  color: var(--v3-selected-fg);
 }
 
 .scopeBar > p span {
-  background: var(--red);
+  background: var(--v2-primary);
   border-radius: 50%;
   height: 7px;
   width: 7px;
@@ -641,8 +642,8 @@
 }
 
 .chapterRail {
-  border-left: 1px solid var(--ink);
-  border-right: 1px solid var(--ink);
+  border-left: 1px solid var(--v2-border);
+  border-right: 1px solid var(--v2-border);
 }
 
 .railHeading,
@@ -682,8 +683,8 @@
 }
 
 .chapterList .chapterActive {
-  background: var(--ink);
-  color: var(--paper-bright);
+  background: var(--v3-selected-bg);
+  color: var(--v3-selected-fg);
 }
 
 .chapterIndex {
@@ -702,7 +703,6 @@
 }
 
 .chapterName strong {
-  font-family: "Songti SC", "STSong", serif;
   font-size: 15px;
 }
 
@@ -721,7 +721,7 @@
 }
 
 .chapterDetail {
-  border-right: 1px solid var(--ink);
+  border-right: 1px solid var(--v2-border);
   min-height: 730px;
   padding: 22px 22px 24px;
 }
@@ -733,7 +733,7 @@
 }
 
 .detailHeading p {
-  color: var(--red);
+  color: var(--v2-primary);
   font-size: 10px;
   font-weight: 700;
   letter-spacing: 0.11em;
@@ -769,7 +769,6 @@
 
 .chapterFocus {
   color: var(--muted);
-  font-family: "Songti SC", "STSong", serif;
   font-size: 14px;
   line-height: 1.6;
   margin: 12px 0 16px;
@@ -784,7 +783,7 @@
 .routeTabs button {
   align-items: flex-start;
   background: transparent;
-  border: 1px solid var(--ink);
+  border: 1px solid var(--v2-border);
   cursor: pointer;
   display: flex;
   flex-direction: column;
@@ -792,6 +791,7 @@
   padding: 10px 12px 11px;
   text-align: left;
   transition: background 160ms ease, color 160ms ease;
+  border-radius: var(--v2-radius-sm);
 }
 
 .routeTabs button:hover {
@@ -804,7 +804,6 @@
 }
 
 .routeTabs button strong {
-  font-family: "Songti SC", "STSong", serif;
   font-size: 17px;
   margin: 5px 0 7px;
 }
@@ -816,8 +815,8 @@
 }
 
 .routeTabs .routeActive {
-  background: var(--ink);
-  color: var(--paper-bright);
+  background: var(--v3-selected-bg);
+  color: var(--v3-selected-fg);
 }
 
 .routeTabs .routeActive > span {
@@ -860,7 +859,7 @@
 }
 
 .unitList {
-  border-top: 1px solid var(--ink);
+  border-top: 1px solid var(--v2-border);
   display: grid;
 }
 
@@ -884,8 +883,8 @@
 }
 
 .unitList .unitActive {
-  background: color-mix(in srgb, var(--red) 7%, transparent);
-  box-shadow: inset 3px 0 0 var(--red);
+  background: var(--v3-selected-bg);
+  box-shadow: inset 3px 0 0 var(--v2-primary);
   padding-left: 12px;
 }
 
@@ -900,9 +899,9 @@
 }
 
 .unitStatus:has(svg) {
-  background: var(--ink);
-  border-color: var(--ink);
-  color: var(--paper-bright);
+  background: var(--v3-selected-bg);
+  border-color: transparent;
+  color: var(--v3-selected-fg);
 }
 
 .unitCopy {
@@ -918,14 +917,13 @@
 }
 
 .currentSelection {
-  color: var(--red);
+  color: var(--v2-primary);
   font-size: 8px;
   font-weight: 700;
   letter-spacing: 0.06em;
 }
 
 .unitCopy strong {
-  font-family: "Songti SC", "STSong", serif;
   font-size: 14px;
 }
 
@@ -942,19 +940,20 @@
 }
 
 .unitActive .frequency {
-  border-color: var(--red);
-  color: var(--red);
+  border-color: var(--v2-primary);
+  color: var(--v2-primary);
 }
 
 .selectedAction {
   align-items: center;
-  border: 1px solid var(--ink);
+  border: 1px solid var(--v2-border);
   display: flex;
   gap: 14px;
   justify-content: space-between;
   margin-top: 16px;
   min-height: 56px;
   padding: 8px 14px 8px 16px;
+  border-radius: var(--v2-radius-sm);
 }
 
 .selectedAction > div {
@@ -969,7 +968,6 @@
 }
 
 .selectedAction > div strong {
-  font-family: "Songti SC", "STSong", serif;
   font-size: 13px;
 }
 
@@ -980,9 +978,10 @@
 
 .selectedAction > button {
   align-items: center;
-  background: var(--ink);
-  border: 1px solid var(--ink);
-  color: var(--paper-bright);
+  background: var(--v2-primary);
+  border: none;
+  color: #ffffff;
+  border-radius: var(--v2-radius-sm);
   cursor: pointer;
   display: inline-flex;
   flex: 0 0 auto;
@@ -991,11 +990,12 @@
   gap: 6px;
   padding: 8px 12px;
   transition: background 160ms ease, color 160ms ease;
+  border-radius: var(--v2-radius-sm);
 }
 
 .selectedAction > button:hover {
-  background: var(--red);
-  border-color: var(--red);
+  background: var(--brand-600);
+  border-color: transparent;
 }
 
 .selectedAction > button:disabled {
@@ -1017,11 +1017,11 @@
 }
 
 .insightRail {
-  border-right: 1px solid var(--ink);
+  border-right: 1px solid var(--v2-border);
 }
 
 .insightRail section {
-  border-bottom: 1px solid var(--ink);
+  border-bottom: 1px solid var(--v2-border);
   padding: 0 18px 18px;
 }
 
@@ -1053,14 +1053,13 @@
 }
 
 .sourceCard li b {
-  color: var(--red);
+  color: var(--v2-primary);
   font-weight: 600;
 }
 
 .sourceCard > p,
 .examNotice {
   color: var(--muted);
-  font-family: "Songti SC", "STSong", serif;
   font-size: 10px;
   line-height: 1.6;
   margin: 14px 0 0;
@@ -1119,11 +1118,11 @@
 }
 
 .examRows progress::-webkit-progress-value {
-  background: var(--ink);
+  background: var(--v2-primary);
 }
 
 .examRows progress::-moz-progress-bar {
-  background: var(--ink);
+  background: var(--v2-primary);
 }
 
 .examNotice {
@@ -1132,7 +1131,7 @@
 }
 
 .examNotice b {
-  color: var(--red);
+  color: var(--v2-primary);
   font-family: var(--font-serif), Georgia, serif;
   font-size: 15px;
   font-weight: 400;
@@ -1155,7 +1154,7 @@
 }
 
 .sessionCard li > span {
-  color: var(--red);
+  color: var(--v2-primary);
   font-family: var(--font-serif), Georgia, serif;
   font-size: 16px;
 }
@@ -1166,7 +1165,6 @@
 }
 
 .sessionCard li strong {
-  font-family: "Songti SC", "STSong", serif;
   font-size: 11px;
 }
 
@@ -1178,9 +1176,10 @@
 .sessionCard > button,
 .sessionStartLink {
   align-items: center;
-  background: var(--red);
-  border: 1px solid var(--red);
-  color: var(--paper-bright);
+  background: var(--v2-primary);
+  border: none;
+  border-radius: var(--v2-radius-sm);
+  color: #ffffff;
   cursor: pointer;
   display: flex;
   font-size: 11px;
@@ -1237,7 +1236,7 @@
 }
 
 .trainingShortcuts {
-  border-top: 1px solid var(--ink);
+  border-top: 1px solid var(--v2-border);
   display: grid;
   margin-top: 18px;
   padding-top: 13px;
@@ -1278,7 +1277,6 @@
 }
 
 .trainingShortcuts > a strong {
-  font-family: "Songti SC", "STSong", serif;
   font-size: 12px;
 }
 
@@ -1288,7 +1286,7 @@
 }
 
 .trainingShortcuts > a:hover strong {
-  color: var(--red);
+  color: var(--v2-primary);
 }
 
 .sessionBackdrop {
@@ -1304,7 +1302,7 @@
 .sessionDrawer {
   animation: drawer-in 260ms cubic-bezier(0.22, 1, 0.36, 1);
   background: var(--paper-bright);
-  border-left: 1px solid var(--ink);
+  border-left: 1px solid var(--v2-border);
   box-shadow: -12px 0 0 color-mix(in srgb, var(--text-900) 7%, transparent);
   display: flex;
   flex-direction: column;
@@ -1318,7 +1316,7 @@
 .drawerClose {
   align-items: center;
   background: transparent;
-  border: 1px solid var(--ink);
+  border: 1px solid var(--v2-border);
   cursor: pointer;
   display: flex;
   min-height: 44px;
@@ -1328,6 +1326,7 @@
   position: absolute;
   right: 18px;
   top: 18px;
+  border-radius: var(--v2-radius-sm);
 }
 
 .drawerEyebrow {
@@ -1346,9 +1345,8 @@
 }
 
 .drawerUnit {
-  border-bottom: 1px solid var(--ink);
+  border-bottom: 1px solid var(--v2-border);
   color: var(--muted);
-  font-family: "Songti SC", "STSong", serif;
   font-size: 14px;
   margin: 17px 0 27px;
   padding-bottom: 20px;
@@ -1378,22 +1376,22 @@
 }
 
 .drawerPlan article strong {
-  font-family: "Songti SC", "STSong", serif;
   font-size: 15px;
 }
 
 .readyState {
   align-items: center;
-  border: 1px solid var(--ink);
+  border: 1px solid var(--v2-border);
   display: flex;
   flex-direction: column;
   padding: 32px 25px;
   text-align: center;
+  border-radius: var(--v3-card-radius);
 }
 
 .readyState > span {
   align-items: center;
-  background: var(--red);
+  background: var(--v2-primary);
   border-radius: 50%;
   color: var(--paper-bright);
   display: flex;
@@ -1403,7 +1401,6 @@
 }
 
 .readyState h3 {
-  font-family: "Songti SC", "STSong", serif;
   font-size: 21px;
   margin: 18px 0 9px;
 }
@@ -1424,9 +1421,10 @@
 
 .readyLink {
   align-items: center;
-  background: var(--ink);
-  border: 1px solid var(--ink);
-  color: var(--paper-bright);
+  background: var(--v2-primary);
+  border: none;
+  color: #ffffff;
+  border-radius: var(--v2-radius-sm);
   display: flex;
   font-size: 11px;
   font-weight: 650;
@@ -1435,6 +1433,7 @@
   min-height: 48px;
   padding: 0 15px 0 18px;
   width: 100%;
+  border-radius: var(--v2-radius-sm);
 }
 
 .readyLink:hover {
@@ -1444,9 +1443,10 @@
 
 .drawerAction {
   align-items: center;
-  background: var(--ink);
-  border: 1px solid var(--ink);
-  color: var(--paper-bright);
+  background: var(--v2-primary);
+  border: none;
+  border-radius: var(--v2-radius-sm);
+  color: #ffffff;
   cursor: pointer;
   display: flex;
   font-size: 13px;
@@ -1455,6 +1455,7 @@
   justify-content: space-between;
   margin-top: auto;
   padding: 0 19px 0 24px;
+  border-radius: var(--v2-radius-sm);
 }
 
 .drawerNote {
@@ -1471,9 +1472,8 @@
 }
 
 .examDrawerLead {
-  border-bottom: 1px solid var(--ink);
+  border-bottom: 1px solid var(--v2-border);
   color: var(--muted);
-  font-family: "Songti SC", "STSong", serif;
   font-size: 13px;
   line-height: 1.7;
   margin: 16px 0 22px;
@@ -1500,7 +1500,7 @@
 }
 
 .examDraftRows {
-  border-top: 1px solid var(--ink);
+  border-top: 1px solid var(--v2-border);
 }
 
 .examDraftRows article {
@@ -1553,11 +1553,8 @@
   font-weight: 400;
   text-align: center;
 }
-
-.examDraftRows article > 
-
 .examDraftRows article > button:hover {
-  color: var(--red);
+  color: var(--v2-primary);
 }
 
 .addExamRow {
@@ -1594,8 +1591,8 @@
 
 .examDraftSummary {
   align-items: center;
-  border-bottom: 1px solid var(--ink);
-  border-top: 1px solid var(--ink);
+  border-bottom: 1px solid var(--v2-border);
+  border-top: 1px solid var(--v2-border);
   display: flex;
   justify-content: space-between;
   margin-top: 18px;
@@ -1641,8 +1638,9 @@
 
 
 .examDrawerActions button:last-child {
-  background: var(--ink);
-  color: var(--paper-bright);
+  background: var(--v2-primary);
+  border-radius: var(--v2-radius-sm);
+  color: #ffffff;
   font-weight: 650;
   justify-content: space-between;
   min-width: 220px;
@@ -1680,18 +1678,18 @@
   }
 
   .insightRail {
-    border-left: 1px solid var(--ink);
+    border-left: 1px solid var(--v2-border);
     display: grid;
     grid-column: 1 / -1;
     grid-template-columns: repeat(3, minmax(0, 1fr));
   }
 
   .insightRail section {
-    border-bottom: 1px solid var(--ink);
+    border-bottom: 1px solid var(--v2-border);
   }
 
   .insightRail section + section {
-    border-left: 1px solid var(--ink);
+    border-left: 1px solid var(--v2-border);
   }
 }
 
@@ -1709,7 +1707,7 @@
 
   .navigation {
     background: var(--paper);
-    border-bottom: 1px solid var(--ink);
+    border-bottom: 1px solid var(--v2-border);
     gap: 31px;
     height: 49px;
     left: 0;
@@ -1761,7 +1759,7 @@
 
   .courseProgress {
     border-left: 0;
-    border-top: 1px solid var(--ink);
+    border-top: 1px solid var(--v2-border);
   }
 
   .courseProgress > button,
@@ -1874,7 +1872,7 @@
   }
 
   .chapterRail {
-    border-bottom: 1px solid var(--ink);
+    border-bottom: 1px solid var(--v2-border);
   }
 
   .chapterList {
@@ -1885,7 +1883,7 @@
 
 
   .chapterDetail {
-    border-left: 1px solid var(--ink);
+    border-left: 1px solid var(--v2-border);
   }
 
   .detailHeading h2 {

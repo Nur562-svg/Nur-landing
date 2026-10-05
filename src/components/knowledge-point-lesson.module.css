@@ -5,8 +5,8 @@
   --paper: var(--bg-200);
   --paper-bright: var(--bg-100);
   --muted: var(--text-500);
-  --line: color-mix(in srgb, var(--text-900) 38%, transparent);
-  --soft-line: color-mix(in srgb, var(--text-900) 16%, transparent);
+  --line: color-mix(in srgb, var(--text-900) 12%, transparent);
+  --soft-line: color-mix(in srgb, var(--text-900) 6%, transparent);
   --red: var(--error-600);
   --blue: var(--v2-ring);
   background: var(--paper);
@@ -28,7 +28,7 @@
 .header {
   align-items: center;
   background: color-mix(in srgb, var(--bg-200) 96%, transparent);
-  border-bottom: 1px solid var(--ink);
+  border-bottom: 1px solid var(--v2-border);
   display: grid;
   grid-template-columns: minmax(210px, 1fr) auto minmax(210px, 1fr);
   height: 81px;
@@ -106,7 +106,7 @@
 .avatar {
   align-items: center;
   background: var(--ink);
-  border: 1px solid var(--ink);
+  border: 1px solid var(--v2-border);
   border-radius: 50%;
   box-shadow: inset 0 0 0 5px var(--ink), inset 0 0 0 6px color-mix(in srgb, var(--paper-bright) 80%, transparent);
   color: var(--paper-bright);
@@ -126,7 +126,7 @@
 
 .accountPanel {
   background: var(--paper-bright);
-  border: 1px solid var(--ink);
+  border: 1px solid var(--v2-border);
   box-shadow: 8px 8px 0 color-mix(in srgb, var(--text-900) 10%, transparent);
   display: grid;
   gap: 18px;
@@ -136,6 +136,7 @@
   top: 67px;
   width: 270px;
   z-index: 80;
+  border-radius: var(--v3-card-radius);
 }
 
 .accountPanel > div {
@@ -149,7 +150,6 @@
 }
 
 .accountPanel > div strong {
-  font-family: "Songti SC", "STSong", serif;
   font-size: 23px;
 }
 
@@ -225,10 +225,11 @@
 }
 
 .lessonHero {
-  border: 1px solid var(--ink);
+  border: 1px solid var(--v2-border);
   display: grid;
   grid-template-columns: minmax(0, 1fr) 392px;
   min-height: 276px;
+  border-radius: var(--v2-radius-sm);
 }
 
 .heroCopy {
@@ -252,13 +253,12 @@
 }
 
 .heroCopy h1 span {
-  color: var(--red);
+  color: var(--v2-primary);
   font-family: var(--font-serif), Georgia, serif;
   font-weight: 400;
 }
 
 .heroCopy > p:not(.eyebrow) {
-  font-family: "Songti SC", "STSong", serif;
   font-size: 16px;
   line-height: 1.75;
   margin: 21px 0 23px;
@@ -278,7 +278,7 @@
 }
 
 .heroProgress {
-  border-left: 1px solid var(--ink);
+  border-left: 1px solid var(--v2-border);
   display: flex;
   flex-direction: column;
   padding: 27px 30px 24px;
@@ -326,12 +326,12 @@
 
 .heroProgress > progress::-webkit-progress-value,
 .sessionCard > progress::-webkit-progress-value {
-  background: var(--red);
+  background: var(--v2-primary);
 }
 
 .heroProgress > progress::-moz-progress-bar,
 .sessionCard > progress::-moz-progress-bar {
-  background: var(--red);
+  background: var(--v2-primary);
 }
 
 .heroProgress > p {
@@ -349,9 +349,10 @@
 
 .heroNotice {
   align-items: flex-start;
-  background: var(--ink);
-  border: 1px solid var(--ink);
-  color: var(--paper-bright);
+  background: color-mix(in srgb, var(--red) 5%, transparent);
+  border: 1px solid color-mix(in srgb, var(--red) 30%, transparent);
+  border-radius: var(--v3-card-radius);
+  color: var(--ink);
   display: flex;
   flex: 1;
   font-size: 11px;
@@ -359,6 +360,7 @@
   line-height: 1.65;
   min-height: 74px;
   padding: 15px 17px;
+  border-radius: var(--v2-radius-sm);
 }
 
 .heroNotice svg {
@@ -367,9 +369,9 @@
 }
 
 .sectionNav {
-  border-bottom: 1px solid var(--ink);
-  border-left: 1px solid var(--ink);
-  border-right: 1px solid var(--ink);
+  border-bottom: 1px solid var(--v2-border);
+  border-left: 1px solid var(--v2-border);
+  border-right: 1px solid var(--v2-border);
   display: grid;
   grid-template-columns: repeat(4, 1fr);
 }
@@ -394,7 +396,7 @@
 }
 
 .sectionNav button::after {
-  background: var(--red);
+  background: var(--v2-primary);
   bottom: -1px;
   content: "";
   height: 3px;
@@ -416,14 +418,13 @@
 }
 
 .sectionNav button > span {
-  color: var(--red);
+  color: var(--v2-primary);
   font-family: var(--font-serif), Georgia, serif;
   font-size: 17px;
   grid-row: 1 / 3;
 }
 
 .sectionNav button strong {
-  font-family: "Songti SC", "STSong", serif;
   font-size: 18px;
 }
 
@@ -441,8 +442,9 @@
 }
 
 .lessonBody {
-  border: 1px solid var(--ink);
+  border: 1px solid var(--v2-border);
   min-width: 0;
+  border-radius: var(--v2-radius-sm);
 }
 
 .sectionPanel {
@@ -452,14 +454,14 @@
 
 .sectionHeading {
   align-items: flex-end;
-  border-bottom: 1px solid var(--ink);
+  border-bottom: 1px solid var(--v2-border);
   display: flex;
   justify-content: space-between;
   padding-bottom: 21px;
 }
 
 .sectionHeading p {
-  color: var(--red);
+  color: var(--v2-primary);
   font-size: 10px;
   font-weight: 750;
   letter-spacing: 0.12em;
@@ -485,7 +487,6 @@
 
 .sectionLead {
   color: var(--muted);
-  font-family: "Songti SC", "STSong", serif;
   font-size: 14px;
   line-height: 1.75;
   margin: 20px 0 25px;
@@ -498,8 +499,8 @@
 }
 
 .evidenceGrid > article {
-  border-right: 1px solid var(--ink);
-  border-top: 1px solid var(--ink);
+  border-right: 1px solid var(--v2-border);
+  border-top: 1px solid var(--v2-border);
   padding: 23px;
 }
 
@@ -508,11 +509,11 @@
 }
 
 .evidenceGrid > article:nth-child(-n + 2) {
-  border-top: 1px solid var(--ink);
+  border-top: 1px solid var(--v2-border);
 }
 
 .evidenceGrid > article:nth-last-child(-n + 2) {
-  border-bottom: 1px solid var(--ink);
+  border-bottom: 1px solid var(--v2-border);
 }
 
 .groupHeading {
@@ -523,14 +524,13 @@
 }
 
 .groupHeading > span {
-  color: var(--red);
+  color: var(--v2-primary);
   font-family: var(--font-serif), Georgia, serif;
   font-size: 16px;
   padding-top: 1px;
 }
 
 .groupHeading h3 {
-  font-family: "Songti SC", "STSong", serif;
   font-size: 20px;
   margin: 0;
 }
@@ -579,8 +579,8 @@
 }
 
 .promptList .promptSelected > span {
-  background: var(--ink);
-  color: var(--paper-bright);
+  background: var(--v3-selected-bg);
+  color: var(--v3-selected-fg);
 }
 
 .promptList button > div {
@@ -604,9 +604,10 @@
 }
 
 .lensGrid > article {
-  border: 1px solid var(--ink);
+  border: 1px solid var(--v2-border);
   padding: 27px;
   position: relative;
+  border-radius: var(--v3-card-radius);
 }
 
 .lensGrid > article + article {
@@ -614,11 +615,11 @@
 }
 
 .tcmLens {
-  box-shadow: inset 4px 0 0 var(--red);
+  box-shadow: inset 4px 0 0 var(--v2-primary);
 }
 
 .modernLens {
-  box-shadow: inset 4px 0 0 var(--blue);
+  box-shadow: inset 4px 0 0 var(--v3-slate-blue);
 }
 
 .lensGrid > article > p:first-child {
@@ -630,7 +631,6 @@
 }
 
 .lensGrid h3 {
-  font-family: "Songti SC", "STSong", serif;
   font-size: 24px;
   line-height: 1.25;
   margin: 0;
@@ -648,7 +648,6 @@
 
 .lensSummary {
   color: var(--muted);
-  font-family: "Songti SC", "STSong", serif;
   font-size: 13px;
   line-height: 1.75;
   margin: 20px 0;
@@ -672,13 +671,13 @@
 
 .lensGrid li > span,
 .answerFramework li > span {
-  color: var(--red);
+  color: var(--v2-primary);
   font-family: var(--font-serif), Georgia, serif;
   font-size: 17px;
 }
 
 .modernLens li > span {
-  color: var(--blue);
+  color: var(--v3-slate-blue);
 }
 
 .lensGrid li p {
@@ -701,9 +700,10 @@
 }
 
 .relationshipBlock {
-  border: 1px solid var(--ink);
+  border: 1px solid var(--v2-border);
   border-top: 0;
   padding: 22px 25px 25px;
+  border-radius: var(--v3-card-radius);
 }
 
 .relationshipBlock > div:first-child,
@@ -719,7 +719,6 @@
 .answerFramework h3,
 .rubricHeading h3,
 .reasoningReveal h3 {
-  font-family: "Songti SC", "STSong", serif;
   font-size: 18px;
   margin: 0;
 }
@@ -785,8 +784,10 @@
 }
 
 .answerPrompt {
-  background: var(--ink);
-  color: var(--paper-bright);
+  background: var(--paper-bright);
+  border: 1px solid var(--v2-border);
+  border-radius: var(--v3-card-radius);
+  color: var(--ink);
   padding: 21px 24px;
 }
 
@@ -798,7 +799,6 @@
 }
 
 .answerPrompt p {
-  font-family: "Songti SC", "STSong", serif;
   font-size: 14px;
   line-height: 1.75;
   margin: 10px 0 0;
@@ -811,11 +811,12 @@
 }
 
 .answerArea {
-  border: 1px solid var(--ink);
+  border: 1px solid var(--v2-border);
   display: grid;
   grid-template-rows: auto 1fr auto;
   min-height: 330px;
   padding: 20px;
+  border-radius: var(--v3-card-radius);
 }
 
 .answerArea label {
@@ -834,7 +835,6 @@
   );
   border: 0;
   color: var(--ink);
-  font-family: "Songti SC", "STSong", serif;
   font-size: 13px;
   line-height: 28px;
   min-height: 230px;
@@ -856,9 +856,10 @@
 
 .answerFramework {
   background: var(--paper-bright);
-  border: 1px solid var(--ink);
+  border: 1px solid var(--v2-border);
   border-left: 0;
   padding: 20px;
+  border-radius: var(--v3-card-radius);
 }
 
 .answerFramework ol {
@@ -883,7 +884,7 @@
 
 .rubricHeading {
   align-items: center;
-  border-bottom: 1px solid var(--ink);
+  border-bottom: 1px solid var(--v2-border);
   display: flex;
   justify-content: space-between;
   margin-top: 27px;
@@ -891,7 +892,7 @@
 }
 
 .rubricHeading > strong {
-  color: var(--red);
+  color: var(--v2-primary);
   font-family: var(--font-serif), Georgia, serif;
   font-size: 30px;
   font-weight: 400;
@@ -938,8 +939,8 @@
 }
 
 .rubricSelected .rubricCheck {
-  background: var(--ink);
-  color: var(--paper-bright);
+  background: var(--v3-selected-bg);
+  color: var(--v3-selected-fg);
 }
 
 .rubricPerspective {
@@ -950,13 +951,13 @@
 }
 
 .rubricPerspective[data-perspective="tcm"] {
-  border-color: var(--red);
-  color: var(--red);
+  border-color: var(--v2-primary);
+  color: var(--v2-primary);
 }
 
 .rubricPerspective[data-perspective="modern-medicine"] {
-  border-color: var(--blue);
-  color: var(--blue);
+  border-color: var(--v3-slate-blue);
+  color: var(--v3-slate-blue);
 }
 
 .rubricCopy {
@@ -983,12 +984,13 @@
 
 .writingRoomEntry {
   background: var(--paper-bright);
-  border: 1px solid var(--ink);
+  border: 1px solid var(--v2-border);
   display: grid;
   gap: 20px;
   grid-template-columns: minmax(0, 1fr) auto;
   margin-top: 28px;
   padding: 22px 24px;
+  border-radius: var(--v3-card-radius);
 }
 
 .writingRoomEntry > div {
@@ -999,7 +1001,7 @@
 }
 
 .writingRoomEntry > div > svg {
-  color: var(--red);
+  color: var(--v2-primary);
   margin-top: 2px;
 }
 
@@ -1011,7 +1013,6 @@
 }
 
 .writingRoomEntry h3 {
-  font-family: "Songti SC", "STSong", serif;
   font-size: 18px;
   margin: 6px 0 7px;
 }
@@ -1027,9 +1028,10 @@
 .writingRoomEntry > a {
   align-items: center;
   align-self: stretch;
-  background: var(--ink);
-  border: 1px solid var(--ink);
-  color: var(--paper-bright);
+  background: var(--v2-primary);
+  border: none;
+  border-radius: var(--v2-radius-sm);
+  color: #ffffff;
   display: flex;
   font-size: 11px;
   font-weight: 700;
@@ -1037,6 +1039,7 @@
   justify-content: space-between;
   min-width: 210px;
   padding: 0 17px;
+  border-radius: var(--v2-radius-sm);
 }
 
 .writingRoomEntry > a:hover {
@@ -1045,13 +1048,14 @@
 }
 
 .caseCard {
-  border: 1px solid var(--ink);
+  border: 1px solid var(--v2-border);
   margin-top: 24px;
   padding: 30px;
+  border-radius: var(--v3-card-radius);
 }
 
 .caseCard > p {
-  color: var(--red);
+  color: var(--v2-primary);
   font-size: 9px;
   font-weight: 750;
   letter-spacing: 0.12em;
@@ -1059,15 +1063,13 @@
 }
 
 .caseCard h3 {
-  font-family: "Songti SC", "STSong", serif;
   font-size: 27px;
   margin: 0;
 }
 
 .caseStem {
   background: var(--paper-bright);
-  border-left: 3px solid var(--ink);
-  font-family: "Songti SC", "STSong", serif;
+  border-left: 3px solid var(--v2-border);
   font-size: 14px;
   line-height: 1.85;
   margin: 23px 0 18px;
@@ -1088,9 +1090,10 @@
 
 .caseCard > button {
   align-items: center;
-  background: var(--ink);
-  border: 1px solid var(--ink);
-  color: var(--paper-bright);
+  background: var(--v2-primary);
+  border: none;
+  border-radius: var(--v2-radius-sm);
+  color: #ffffff;
   cursor: pointer;
   display: flex;
   font-size: 12px;
@@ -1100,6 +1103,7 @@
   min-height: 58px;
   padding: 0 18px 0 21px;
   width: 100%;
+  border-radius: var(--v2-radius-sm);
 }
 
 .caseCard > button:hover {
@@ -1108,9 +1112,10 @@
 }
 
 .reasoningReveal {
-  border: 1px solid var(--ink);
+  border: 1px solid var(--v2-border);
   border-top: 0;
   padding: 25px 30px;
+  border-radius: var(--v3-card-radius);
 }
 
 .reasoningReveal ol {
@@ -1128,7 +1133,7 @@
 }
 
 .reasoningReveal li span {
-  color: var(--red);
+  color: var(--v2-primary);
   font-family: var(--font-serif), Georgia, serif;
   font-size: 19px;
 }
@@ -1156,7 +1161,7 @@
 
 .sectionFooter {
   align-items: stretch;
-  border-top: 1px solid var(--ink);
+  border-top: 1px solid var(--v2-border);
   display: flex;
   justify-content: space-between;
   min-height: 68px;
@@ -1177,8 +1182,8 @@
 
 .sectionFooter > button,
 .sectionFooter .finishLink {
-  background: var(--ink);
-  border-left: 1px solid var(--ink);
+  background: var(--v2-primary);
+  border-left: 1px solid var(--v2-border);
   color: var(--paper-bright);
   font-weight: 650;
   justify-content: space-between;
@@ -1199,13 +1204,13 @@
 
 .insightRail > section {
   background: var(--paper-bright);
-  border-bottom: 1px solid var(--ink);
-  border-right: 1px solid var(--ink);
+  border-bottom: 1px solid var(--v2-border);
+  border-right: 1px solid var(--v2-border);
   padding: 21px 22px;
 }
 
 .insightRail > section:first-child {
-  border-top: 1px solid var(--ink);
+  border-top: 1px solid var(--v2-border);
 }
 
 .cardHeading {
@@ -1314,7 +1319,7 @@
 }
 
 .materialCard li b {
-  color: var(--red);
+  color: var(--v2-primary);
   font-weight: 650;
 }
 
@@ -1338,7 +1343,7 @@
   }
 
   .lensGrid > article + article {
-    border-left: 1px solid var(--ink);
+    border-left: 1px solid var(--v2-border);
     border-top: 0;
   }
 
@@ -1375,7 +1380,7 @@
   }
 
   .insightRail > section:first-child {
-    border-left: 1px solid var(--ink);
+    border-left: 1px solid var(--v2-border);
     border-top: 0;
   }
 
@@ -1444,7 +1449,7 @@
 
   .heroProgress {
     border-left: 0;
-    border-top: 1px solid var(--ink);
+    border-top: 1px solid var(--v2-border);
     padding: 23px;
   }
 
@@ -1493,11 +1498,11 @@
   }
 
   .evidenceGrid > article:last-child {
-    border-bottom: 1px solid var(--ink);
+    border-bottom: 1px solid var(--v2-border);
   }
 
   .answerFramework {
-    border-left: 1px solid var(--ink);
+    border-left: 1px solid var(--v2-border);
     border-top: 0;
   }
 
@@ -1550,7 +1555,7 @@
 
   .insightRail > section,
   .insightRail > section:first-child {
-    border-left: 1px solid var(--ink);
+    border-left: 1px solid var(--v2-border);
     border-top: 0;
   }
 }

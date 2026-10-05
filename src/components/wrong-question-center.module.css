@@ -5,8 +5,8 @@
   --ink: var(--text-900);
   --paper: var(--bg-200);
   --muted: var(--text-500);
-  --rule: color-mix(in srgb, var(--text-900) 16%, transparent);
-  --cinnabar: var(--brand-600);
+  --rule: color-mix(in srgb, var(--text-900) 12%, transparent);
+  --cinnabar: var(--error-600);
   max-width: 1280px;
   margin: 0 auto;
   padding: 48px 64px 96px;
@@ -40,7 +40,7 @@
 }
 
 .title {
-  font-family: var(--font-song, "Songti SC", "STSong", serif);
+  font-family: var(--v2-font-display);
   font-size: 36px;
   font-weight: 700;
   margin: 0 0 8px;
@@ -65,6 +65,7 @@
 .tabActive {
   appearance: none;
   border: 1px solid var(--rule);
+  border-radius: var(--v2-radius-sm);
   background: transparent;
   color: var(--muted);
   font-family: inherit;
@@ -77,13 +78,14 @@
 
 .tab:hover {
   color: var(--ink);
-  border-color: var(--ink);
+  border-color: var(--muted);
 }
 
+/* 选中态统一 token（DESIGN_V4 P2） */
 .tabActive {
-  background: var(--ink);
-  border-color: var(--ink);
-  color: var(--paper);
+  background: var(--v3-selected-bg);
+  border-color: color-mix(in srgb, var(--v2-primary) 45%, transparent);
+  color: var(--v3-selected-fg);
   font-weight: 600;
   cursor: default;
 }
@@ -118,18 +120,18 @@
 
 .statItem strong {
   font-size: 28px;
-  font-weight: 700;
+  font-weight: 600;
   color: var(--ink);
-  font-family: var(--font-song, "Songti SC", "STSong", serif);
+  font-variant-numeric: tabular-nums;
   line-height: 1;
 }
 
 .statAccent {
-  color: var(--cinnabar);
+  color: var(--ink);
 }
 
 .statAccent strong {
-  color: var(--cinnabar);
+  color: var(--ink);
 }
 
 /* ── Section heading ── */
@@ -143,7 +145,7 @@
 }
 
 .sectionTitle {
-  font-family: var(--font-song, "Songti SC", "STSong", serif);
+  font-family: var(--v2-font-display);
   font-size: 20px;
   font-weight: 600;
   margin: 0;
@@ -173,15 +175,16 @@
   gap: 12px;
   padding: 20px 24px;
   border: 1px solid var(--rule);
-  background: color-mix(in srgb, var(--text-900) 35%, transparent);
+  border-radius: var(--v3-card-radius);
+  background: var(--bg-100);
   text-decoration: none;
   color: inherit;
   transition: border-color 0.15s, background 0.15s;
 }
 
 .weakKpCard:hover {
-  border-color: var(--ink);
-  background: color-mix(in srgb, var(--text-900) 60%, transparent);
+  border-color: var(--muted);
+  background: var(--paper-bright);
 }
 
 .weakKpCardTop {
@@ -191,8 +194,7 @@
 }
 
 .weakKpTitle {
-  font-family: var(--font-song, "Songti SC", "STSong", serif);
-  font-size: 16px;
+  font-size: 14px;
   font-weight: 600;
   margin: 0;
   line-height: 1.4;
@@ -221,6 +223,7 @@
 .ratioBar {
   width: 80px;
   height: 4px;
+  border-radius: 2px;
   background: var(--rule);
   overflow: hidden;
 }
@@ -244,6 +247,8 @@
   display: flex;
   flex-direction: column;
   border: 1px solid var(--rule);
+  border-radius: var(--v3-card-radius);
+  overflow: hidden;
 }
 
 .wrongItem {
@@ -263,7 +268,7 @@
 }
 
 .wrongItem:hover {
-  background: color-mix(in srgb, var(--text-900) 40%, transparent);
+  background: color-mix(in srgb, var(--text-900) 4%, transparent);
 }
 
 .wrongItemIndex {
@@ -303,7 +308,7 @@
 
 .wrongItemStats {
   font-size: 12px;
-  color: var(--cinnabar);
+  color: var(--muted);
   white-space: nowrap;
 }
 
@@ -321,6 +326,8 @@
   display: flex;
   flex-direction: column;
   border: 1px solid var(--rule);
+  border-radius: var(--v3-card-radius);
+  overflow: hidden;
 }
 
 .weaknessItem {
@@ -356,8 +363,7 @@
   align-items: baseline;
   flex-wrap: wrap;
   gap: 4px 10px;
-  font-family: var(--font-song, "Songti SC", "STSong", serif);
-  font-size: 15px;
+  font-size: 14px;
   font-weight: 600;
   line-height: 1.4;
 }
@@ -395,12 +401,12 @@
   gap: 8px;
   padding: 80px 24px;
   text-align: center;
-  border: 1px solid var(--rule);
+  border: 1px dashed var(--rule);
+  border-radius: var(--v3-card-radius);
 }
 
 .emptyState strong {
-  font-family: var(--font-song, "Songti SC", "STSong", serif);
-  font-size: 18px;
+  font-size: 16px;
   font-weight: 600;
 }
 
@@ -416,16 +422,17 @@
   gap: 6px;
   min-height: 44px;
   padding: 10px 20px;
-  background: var(--ink);
-  color: var(--paper);
+  background: var(--v2-primary);
+  color: #ffffff;
   font-size: 14px;
   text-decoration: none;
-  border: 1px solid var(--ink);
-  transition: opacity 0.15s;
+  border: none;
+  border-radius: var(--v2-radius-sm);
+  transition: background 0.15s;
 }
 
 .emptyStateLink:hover {
-  opacity: 0.85;
+  background: var(--brand-600);
 }
 
 /* ── Responsive ── */

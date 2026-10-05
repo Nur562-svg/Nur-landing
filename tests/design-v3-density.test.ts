@@ -16,7 +16,9 @@ import type { ClewShelf, ClewTextbookView } from "@/types/clew";
 
 register("./helpers/css-module-hooks.mjs", import.meta.url);
 
-const ENTRY_LABELS = ["官方课程学习闭环", "Clew", "传统刷题题库"] as const;
+// 三入口卡标签（v4 文案分层后 /learn 副句可含「Clew」一词，断言收紧为完整入口卡短语）
+const ENTRY_LABELS = ["官方课程学习闭环", "传统刷题题库"] as const;
+const ENTRY_CLEW_CARD = "Clew 学习台";
 
 function peerCardTags(html: string): string[] {
   return html.match(/<[^>]*\sdata-peer-card="[^"]+"[^>]*>/g) ?? [];
@@ -74,7 +76,7 @@ describe("design system v3 density and shell", () => {
   });
 
   it("removes the three learn-home entry cards and keeps shell destinations", () => {
-    for (const label of ENTRY_LABELS) {
+    for (const label of [...ENTRY_LABELS, ENTRY_CLEW_CARD]) {
       assert.equal(learnHtml.includes(label), false, label);
     }
     assert.match(shellHtml, /href="\/courses"/);
@@ -112,7 +114,7 @@ describe("design system v3 density and shell", () => {
     assert.match(globals, /--v3-body-leading:\s*1\.5/);
     assert.match(globals, /--v3-card-radius:\s*12px/);
     assert.match(globals, /--v3-card-border:\s*transparent/);
-    assert.match(globals, /--v3-card-shadow:\s*0 1px 3px 0px rgba\(0, 0, 0, 0\.05\)/);
+    assert.match(globals, /--v3-card-shadow:\s*none/); // v4：阴影仅浮层（DESIGN_V4 §三）
     assert.match(globals, /--v3-cinnabar:/);
     assert.match(globals, /--v3-slate-blue:\s*#17659a/);
     assert.match(globals, /\[data-peer-card\]\[data-compact-hide="true"\]\s*\{\s*display:\s*none;/);

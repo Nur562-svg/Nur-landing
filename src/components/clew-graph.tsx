@@ -1,20 +1,19 @@
 "use client";
 
 import Link from "next/link";
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import type { ClewKnowledgePointStudySummary } from "@/types/clew";
-import {
-  buildClewKpGraph,
-  layoutClewKpGraph,
-  type ClewGraphEdge,
-} from "@/lib/clew/knowledge-graph";
+import { buildClewKpGraph, type ClewGraphEdge } from "@/lib/clew/knowledge-graph";
+import { ClewGraphFigure } from "./clew-graph-figure";
 import styles from "./clew.module.css";
 
 /**
- * Clew 章级知识图谱（ZCODE-M4 Phase 2，纯 SVG 只读展示）：
- * 先修边 = 实线箭头，术语边 = 虚线；节点可点击跳转对应 KP 学习页（复用既有 URL 形态）。
- * 纪律：只读（不支持拖节点、手动加删边）；关系来自 buildClewKpGraph 的程序校验结果；
- * 未匹配/成环等被忽略的关系如实展示，不伪造。
+ * Clew 章级知识结构（图谱改良，2026-10-05 讨论定案）：
+ * 默认 = 先修链列表（每行 = 知识点 → 先修状态 → 术语关联；点行跳转 KP），
+ * 关系边 ≥3 时可切换到 SVG 关系图（节点按掌握状态着色）。
+ * 设计依据：概念图证据在「自己构建」，只读图偏导航/元认知；多数时刻要的是「下一步」而非全景
+ * （Khan/Duolingo 实践 + Obsidian local graph 共识），故列表为默认、图为可选。
+ * 纪律不变：关系来自 buildClewKpGraph 程序校验；未匹配/成环如实展示，不伪造。
  */
 
 type ClewGraphProps = {
@@ -24,78 +23,59 @@ type ClewGraphProps = {
   chapterOrder: number;
 };
 
-const NODE_RADIUS = 14;
-const NODE_TITLE_MAX_CHARS = 10;
-
-function formatNodeTitle(title: string): string {
-  return title.length > NODE_TITLE_MAX_CHARS
-    ? `${title.slice(0, NODE_TITLE_MAX_CHARS)}…`
-    : title;
+/** 先修边的掌握状态（节点级）：hasLesson = 已学过（浅证据，如实命名）。 */
+function prerequisiteStates(
+  edges: readonly ClewGraphEdge[],
+  nodes: readonly ClewKnowledgePointStudySummary[],
+): Map<string, { title: string; hasLesson: boolean }[]> {
+  const byId = new Map(nodes.map((node) => [node.id, node]));
+  const map = new Map<string, { title: string; hasLesson: boolean }[]>();
+  for (const edge of edges) {
+    if (edge.kind !== "prerequisite") {
+      continue;
+    }
+    const target = byId.get(edge.from);
+    if (!target) {
+      continue;
+    }
+    const list = map.get(edge.to) ?? [];
+    list.push({ title: target.title, hasLesson: target.hasLesson });
+    map.set(edge.to, list);
+  }
+  for (const list of map.values()) {
+    list.sort((a, b) => a.title.localeCompare(b.title, "zh-Hans-CN"));
+  }
+  return map;
 }
 
-/** 把边端点收缩到节点圆外，避免线压住圆点。 */
-function trimmedLine(x1: number, y1: number, x2: number, y2: number): {
-  x1: number;
-  y1: number;
-  x2: number;
-  y2: number;
-} {
-  const dx = x2 - x1;
-  const dy = y2 - y1;
-  const length = Math.hypot(dx, dy);
-  if (length <= NODE_RADIUS * 2 + 4) {
-    return { x1, y1, x2, y2 };
+function termNeighborCount(edges: readonly ClewGraphEdge[]): Map<string, number> {
+  const counts = new Map<string, number>();
+  for (const edge of edges) {
+    if (edge.kind !== "term") {
+      continue;
+    }
+    counts.set(edge.from, (counts.get(edge.from) ?? 0) + 1);
+    counts.set(edge.to, (counts.get(edge.to) ?? 0) + 1);
   }
-  const ux = dx / length;
-  const uy = dy / length;
-  return {
-    x1: x1 + ux * (NODE_RADIUS + 2),
-    y1: y1 + uy * (NODE_RADIUS + 2),
-    x2: x2 - ux * (NODE_RADIUS + 2),
-    y2: y2 - uy * (NODE_RADIUS + 2),
-  };
+  return counts;
 }
 
 export function ClewGraph({ knowledgePoints, activeKpId, textbookId, chapterOrder }: ClewGraphProps) {
+  const [showFigure, setShowFigure] = useState(false);
   const graph = useMemo(() => buildClewKpGraph(knowledgePoints), [knowledgePoints]);
-  const layout = useMemo(() => layoutClewKpGraph(graph), [graph]);
   const { stats } = graph;
+  const prereqStates = useMemo(() => prerequisiteStates(graph.edges, graph.nodes), [graph]);
+  const termCounts = useMemo(() => termNeighborCount(graph.edges), [graph]);
+  const totalEdges = stats.prerequisiteEdges + stats.termEdges;
+  const graphWorthIt = totalEdges >= 3;
 
-  const titleById = useMemo(
-    () => new Map(graph.nodes.map((node) => [node.id, node.title])),
-    [graph.nodes],
-  );
-
-  const incomingPrerequisiteCount = useMemo(() => {
-    const counts = new Map<string, number>();
-    for (const edge of graph.edges) {
-      if (edge.kind === "prerequisite") {
-        counts.set(edge.to, (counts.get(edge.to) ?? 0) + 1);
-      }
-    }
-    return counts;
-  }, [graph.edges]);
-
-  const incidentTermCount = useMemo(() => {
-    const counts = new Map<string, number>();
-    for (const edge of graph.edges) {
-      if (edge.kind === "term") {
-        counts.set(edge.from, (counts.get(edge.from) ?? 0) + 1);
-        counts.set(edge.to, (counts.get(edge.to) ?? 0) + 1);
-      }
-    }
-    return counts;
-  }, [graph.edges]);
-
-  if (knowledgePoints.length < 2) {
+  if (knowledgePoints.length === 0) {
     return (
       <section className={styles.graphPanel} aria-labelledby="clew-graph-title">
         <div className={styles.panelHead}>
-          <h2 id="clew-graph-title">知识图谱</h2>
+          <h2 id="clew-graph-title">本章知识结构</h2>
         </div>
-        <p className={styles.graphEmpty}>
-          本章只有 {knowledgePoints.length} 个知识点，暂无可视化关系。
-        </p>
+        <p className={styles.graphEmpty}>本章还没有知识点。</p>
       </section>
     );
   }
@@ -103,10 +83,9 @@ export function ClewGraph({ knowledgePoints, activeKpId, textbookId, chapterOrde
   return (
     <section className={styles.graphPanel} aria-labelledby="clew-graph-title">
       <div className={styles.panelHead}>
-        <h2 id="clew-graph-title">知识图谱</h2>
+        <h2 id="clew-graph-title">本章知识结构</h2>
         <p>
-          {graph.nodes.length} 个知识点 · 先修 {stats.prerequisiteEdges} 条 · 术语关联{" "}
-          {stats.termEdges} 条
+          {graph.nodes.length} 个知识点 · 先修 {stats.prerequisiteEdges} 条 · 术语关联 {stats.termEdges} 条
         </p>
       </div>
 
@@ -119,115 +98,66 @@ export function ClewGraph({ knowledgePoints, activeKpId, textbookId, chapterOrde
         <p className={styles.graphHonest}>已删除 {stats.droppedCycleEdges} 条成环先修边。</p>
       ) : null}
 
-      <figure className={styles.graphFigure}>
-        <svg
-          className={styles.graphSvg}
-          viewBox={`0 0 ${layout.width} ${layout.height}`}
-          role="img"
-          aria-label={`本章知识点关系图（只读）：${graph.nodes.length} 个知识点，先修 ${stats.prerequisiteEdges} 条，术语关联 ${stats.termEdges} 条`}
-        >
-          <defs>
-            <marker
-              id="clew-graph-arrow"
-              viewBox="0 0 10 10"
-              refX="9"
-              refY="5"
-              markerWidth="7"
-              markerHeight="7"
-              orient="auto-start-reverse"
-            >
-              <path d="M 0 1 L 9 5 L 0 9 z" className={styles.graphArrow} />
-            </marker>
-          </defs>
-
-          {graph.edges.map((edge: ClewGraphEdge) => {
-            const from = layout.nodes.find((node) => node.id === edge.from);
-            const to = layout.nodes.find((node) => node.id === edge.to);
-            if (!from || !to) {
-              return null;
-            }
-            const line = trimmedLine(from.x, from.y, to.x, to.y);
-            if (edge.kind === "prerequisite") {
-              return (
-                <line
-                  key={`${edge.kind}:${edge.from}:${edge.to}`}
-                  {...line}
-                  className={styles.graphEdgePrereq}
-                  markerEnd="url(#clew-graph-arrow)"
-                />
-              );
-            }
+      {showFigure && graphWorthIt ? (
+        <ClewGraphFigure
+          graph={graph}
+          activeKpId={activeKpId}
+          textbookId={textbookId}
+          chapterOrder={chapterOrder}
+        />
+      ) : (
+        <ul className={styles.structureList} aria-label="本章知识点先修链">
+          {graph.nodes.map((node) => {
+            const prerequisites = prereqStates.get(node.id) ?? [];
+            const termCount = termCounts.get(node.id) ?? 0;
+            const unlearned = prerequisites.filter((item) => !item.hasLesson);
             return (
-              <g key={`${edge.kind}:${edge.from}:${edge.to}`}>
-                <line {...line} className={styles.graphEdgeTerm} />
-                {edge.sharedTerms && edge.sharedTerms.length > 0 ? (
-                  <text
-                    className={styles.graphTermCount}
-                    x={(from.x + to.x) / 2}
-                    y={(from.y + to.y) / 2 - 6}
-                    textAnchor="middle"
-                  >
-                    {edge.sharedTerms.length}
-                  </text>
-                ) : null}
-              </g>
-            );
-          })}
-
-          {layout.nodes.map((node) => {
-            const isActive = node.id === activeKpId;
-            const prerequisiteCount = incomingPrerequisiteCount.get(node.id) ?? 0;
-            const termCount = incidentTermCount.get(node.id) ?? 0;
-            return (
-              <g key={node.id} transform={`translate(${node.x} ${node.y})`}>
+              <li key={node.id} className={node.id === activeKpId ? styles.structureRowActive : undefined}>
                 <Link
+                  className={styles.structureRow}
                   href={`/learn/clew/t/${textbookId}/c/${chapterOrder}?kp=${node.id}`}
-                  className={styles.graphNodeLink}
-                  aria-label={`知识点 ${node.title}，先修 ${prerequisiteCount} 条，术语关联 ${termCount} 条`}
-                  aria-current={isActive ? "true" : undefined}
+                  aria-current={node.id === activeKpId ? "true" : undefined}
                 >
-                  <title>{node.title}</title>
-                  <circle
-                    r={NODE_RADIUS}
-                    className={[
-                      styles.graphNodeCircle,
-                      node.hasLesson ? styles.graphNodeHasLesson : "",
-                      isActive ? styles.graphNodeActive : "",
-                    ].join(" ").trim()}
-                  />
-                  <text className={styles.graphNodeIndex} y={4} textAnchor="middle">
-                    {String(node.order).padStart(2, "0")}
-                  </text>
-                  <text
-                    className={isActive ? styles.graphNodeTitleActive : styles.graphNodeTitle}
-                    y={NODE_RADIUS + 20}
-                    textAnchor="middle"
-                  >
-                    {formatNodeTitle(node.title)}
-                  </text>
+                  <span className={styles.structureIndex}>{String(node.order).padStart(2, "0")}</span>
+                  <span className={styles.structureMain}>
+                    <span className={styles.structureTitle}>
+                      {node.title}
+                      {node.hasLesson ? <em className={styles.structureLearned}>已学过</em> : null}
+                    </span>
+                    <span className={styles.structureMeta}>
+                      {prerequisites.length === 0
+                        ? "无同章先修"
+                        : `先修 ${prerequisites.length} 条：${prerequisites
+                            .map((item) => (item.hasLesson ? `✓${item.title}` : `○${item.title}`))
+                            .join("、")}`}
+                      {termCount > 0 ? ` · 术语关联 ${termCount} 处` : ""}
+                    </span>
+                  </span>
+                  {unlearned.length > 0 ? (
+                    <span className={styles.structureGap}>先修未学 {unlearned.length}</span>
+                  ) : null}
                 </Link>
-              </g>
+              </li>
             );
           })}
-        </svg>
-        <figcaption className={styles.graphCaption}>
-          图谱为只读派生：实线箭头为先修关系，虚线为共享术语（数字为共享数）；点击节点跳转对应知识点学习页。
-        </figcaption>
-      </figure>
+        </ul>
+      )}
 
-      <ul className={styles.graphRelationList} aria-label="知识点关系清单">
-        {graph.edges.map((edge) => {
-          const fromTitle = titleById.get(edge.from) ?? edge.from;
-          const toTitle = titleById.get(edge.to) ?? edge.to;
-          return (
-            <li key={`${edge.kind}:${edge.from}:${edge.to}`}>
-              {edge.kind === "prerequisite"
-                ? `「${fromTitle}」先修于「${toTitle}」`
-                : `「${fromTitle}」与「${toTitle}」共享术语：${(edge.sharedTerms ?? []).join("、")}`}
-            </li>
-          );
-        })}
-      </ul>
+      <div className={styles.structureFoot}>
+        {graphWorthIt ? (
+          <button
+            type="button"
+            className={styles.lessonFoldToggle}
+            onClick={() => setShowFigure((current) => !current)}
+          >
+            {showFigure ? "回到先修链列表" : "查看关系图"}
+          </button>
+        ) : totalEdges > 0 ? (
+          <span className={styles.structureFootNote}>关系较少，以列表呈现更清楚。</span>
+        ) : (
+          <span className={styles.structureFootNote}>本章知识点之间暂无程序可确认的先修/术语关系。</span>
+        )}
+      </div>
     </section>
   );
 }

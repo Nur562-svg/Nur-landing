@@ -286,7 +286,7 @@ export async function recognizeClewToc(
           source = "model";
           modelOutcome = "success";
           modelChapterCount = entries.length;
-          notes.push(`来源：模型解析（${provider.id} · ${provider.model}，${entries.length} 条一级章节）。`);
+          notes.push(`来源：模型解析 · ${provider.model}，${entries.length} 条一级章节。`);
         } catch (error) {
           const message = error instanceof Error ? error.message : "未知错误";
           console.error("[clew] 目录解析模型调用失败", error);

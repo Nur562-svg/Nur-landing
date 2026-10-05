@@ -989,6 +989,53 @@
   margin-top: 14px;
 }
 
+/* 讲义长文折叠（交互批）：高度帽裁剪 + 底部渐隐；DOM 常驻，划重点层零影响 */
+.lessonBodyClipped {
+  max-height: 560px;
+  overflow: hidden;
+  position: relative;
+}
+
+.lessonBodyClipped::after {
+  background: linear-gradient(to bottom, transparent, var(--v2-background) 82%);
+  bottom: 0;
+  content: "";
+  height: 88px;
+  left: 0;
+  pointer-events: none;
+  position: absolute;
+  right: 0;
+}
+
+.lessonFoldToggle {
+  align-items: center;
+  background: none;
+  border: none;
+  color: var(--v2-primary);
+  cursor: pointer;
+  display: inline-flex;
+  font-size: 13px;
+  font-weight: 500;
+  gap: 5px;
+  min-height: 36px;
+  margin-top: 6px;
+  padding: 0 2px;
+}
+
+.lessonFoldToggle:hover {
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+/* 学霸笔记摘要（交互批） */
+.noteSummary {
+  color: var(--muted);
+  font-size: 13.5px;
+  line-height: 1.85;
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+
 .confirmNote {
   align-items: center;
   color: var(--red);
@@ -2269,6 +2316,99 @@
   margin: 10px 0 0;
 }
 
+/* ---------- 图谱改良（2026-10-05）：先修链列表（默认视图） ---------- */
+.structureList {
+  border-top: 1px solid var(--line-soft);
+  display: grid;
+  list-style: none;
+  margin: 14px 0 0;
+  padding: 0;
+}
+
+.structureRow {
+  align-items: flex-start;
+  border-bottom: 1px solid var(--line-soft);
+  color: inherit;
+  display: flex;
+  gap: 12px;
+  padding: 11px 4px;
+  text-decoration: none;
+}
+
+.structureRow:hover {
+  background: color-mix(in srgb, var(--text-900) 4%, transparent);
+}
+
+li.structureRowActive > .structureRow {
+  background: var(--v3-selected-bg);
+}
+
+.structureIndex {
+  color: var(--muted);
+  flex: none;
+  font-size: 12px;
+  font-variant-numeric: tabular-nums;
+  padding-top: 2px;
+}
+
+.structureMain {
+  display: grid;
+  gap: 3px;
+  min-width: 0;
+}
+
+.structureTitle {
+  font-size: 13.5px;
+  font-weight: 600;
+  line-height: 1.5;
+  overflow-wrap: anywhere;
+}
+
+li.structureRowActive .structureTitle {
+  color: var(--v3-selected-fg);
+}
+
+.structureLearned {
+  color: var(--v2-primary);
+  font-size: 11px;
+  font-style: normal;
+  font-weight: 500;
+  margin-left: 8px;
+}
+
+.structureMeta {
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 1.6;
+  overflow-wrap: anywhere;
+}
+
+/* 先修未学缺口徽标：提示这条链上有洞（下一步行动线索） */
+.structureGap {
+  background: color-mix(in srgb, var(--error-600) 8%, transparent);
+  border-radius: 999px;
+  color: var(--error-600);
+  flex: none;
+  font-size: 11px;
+  font-weight: 600;
+  margin-left: auto;
+  margin-top: 2px;
+  padding: 2px 10px;
+  white-space: nowrap;
+}
+
+.structureFoot {
+  align-items: center;
+  display: flex;
+  gap: 12px;
+  margin-top: 4px;
+}
+
+.structureFootNote {
+  color: var(--muted);
+  font-size: 12px;
+}
+
 /* 可视隐藏的关系清单（图谱的可访问性备份，屏幕阅读器可读） */
 .graphRelationList {
   clip-path: inset(50%);
@@ -2558,29 +2698,145 @@
   margin: 12px 0 0;
 }
 
-/* 讲解风格选择 */
-.lessonStyleField {
-  align-items: center;
+/* 讲解风格同步显示（批 3：选择器已迁右栏 composer chip 排，此处只读展示） */
+.lessonStyleBadge {
   color: var(--muted);
-  display: inline-flex;
   font-size: 12px;
-  gap: 8px;
   margin-right: auto;
 }
 
-.lessonStyleSelect {
-  background: var(--paper);
-  border: 1px solid var(--line);
-  color: var(--ink);
+/* 讲解设置（批 3 返工）：单入口安静控制 + 弹出面板，替代 chip 墙 */
+.chatSettingsWrap {
+  position: relative;
+  display: flex;
+  justify-content: flex-start;
+  margin-top: 12px;
+}
+
+.chatSettingsButton {
+  align-items: center;
+  background: none;
+  border: none;
+  border-radius: 6px;
+  color: var(--muted);
   cursor: pointer;
+  display: inline-flex;
+  gap: 6px;
   font-size: 12px;
   min-height: 32px;
   padding: 0 8px;
 }
 
-.lessonStyleSelect:disabled {
-  cursor: default;
-  opacity: 0.6;
+.chatSettingsButton:hover {
+  background: color-mix(in srgb, var(--text-900) 5%, transparent);
+  color: var(--ink);
+}
+
+.chatSettingsButton span {
+  max-width: 240px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.chatSettingsPanel {
+  background: var(--paper-bright);
+  border: 1px solid var(--line);
+  border-radius: var(--v2-radius-sm);
+  bottom: calc(100% + 6px);
+  box-shadow: var(--v2-shadow-lg);
+  left: 0;
+  padding: 12px;
+  position: absolute;
+  width: 268px;
+  z-index: 40;
+}
+
+.chatSettingsHead {
+  color: var(--muted);
+  font-size: 10.5px;
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  margin: 10px 0 4px;
+}
+
+.chatSettingsHead:first-child {
+  margin-top: 0;
+}
+
+.chatOption,
+.chatOptionActive {
+  align-items: center;
+  background: none;
+  border: none;
+  border-radius: 6px;
+  color: var(--ink);
+  cursor: pointer;
+  display: flex;
+  gap: 8px;
+  justify-content: space-between;
+  min-height: 34px;
+  padding: 0 8px;
+  text-align: left;
+  width: 100%;
+}
+
+.chatOption:hover {
+  background: color-mix(in srgb, var(--text-900) 5%, transparent);
+}
+
+.chatOptionActive {
+  background: var(--v3-selected-bg);
+  color: var(--v3-selected-fg);
+  font-weight: 600;
+}
+
+.chatOptionName {
+  flex: 1;
+  min-width: 0;
+}
+
+.chatSettingsHint {
+  border-top: 1px solid var(--line-soft);
+  color: var(--muted);
+  font-size: 11px;
+  line-height: 1.6;
+  margin: 10px 0 0;
+  padding-top: 8px;
+}
+
+/* 流式前真实阶段状态行（批 3）：muted 文字 + 朱砂单色 opacity 呼吸点（无位移） */
+.chatStatusLine {
+  align-items: center;
+  color: var(--muted);
+  display: flex;
+  font-size: 12.5px;
+  gap: 8px;
+  line-height: 1.6;
+  margin: 0;
+}
+
+.chatStatusBreath {
+  animation: chatBreath 1.2s ease-in-out infinite alternate;
+  background: var(--v2-primary);
+  border-radius: 50%;
+  flex: none;
+  height: 8px;
+  opacity: 0.4;
+  width: 8px;
+}
+
+@keyframes chatBreath {
+  to {
+    opacity: 0.9;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .chatStatusBreath {
+    animation: none;
+    opacity: 0.7;
+  }
 }
 
 /* ≤980px：脊柱变横向条（贴内容上方），时间轴连接线隐藏 */

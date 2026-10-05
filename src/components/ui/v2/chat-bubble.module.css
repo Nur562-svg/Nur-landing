@@ -2,7 +2,6 @@
    user = 主色实底；assistant = 纸卡 + 边框；thread = 会话线程容器。 */
 .bubble {
   border-radius: calc(var(--v2-radius) + 2px);
-  box-shadow: var(--v2-shadow-sm);
   display: grid;
   gap: 8px;
   max-width: 280px;
@@ -64,7 +63,6 @@
   background: var(--v2-popover);
   border: 1px solid var(--v2-border);
   border-radius: calc(var(--v2-radius) + 6px);
-  box-shadow: var(--v2-shadow-sm);
   display: grid;
   gap: 12px;
   padding: calc(var(--v2-spacing) * 4);

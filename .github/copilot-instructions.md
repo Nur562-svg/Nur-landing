@@ -80,6 +80,8 @@ The product must:
 
 **进度（2026-09-30）**：ZCODE-M1 三阶段完成（未提交，待用户审阅合并）：① 代码清理（12 个已合并分支、3 个未使用文件、118 项 Trae 提取脚本删除；`src/lib/qb-course-transform.ts` 因被 15 个 Tier 1 题库课程文件引用而保留）；② 品牌迁移（NUR LEARN→Ariadne、Hi doc→Clew，路由 `/learn/clew/*` 带 308 重定向，Prisma 9 模型 `@@map` 保表名零漂移，`nur-learn` localStorage 键前缀保留）；③ 前端基础重写（NurAgentChat mode/contextChip 契约、Clew 学习页「当前知识点」上下文 chip、SpineEditor 章节确认后萃取含服务端 409 门禁与 `POST /api/clew/textbooks/[id]/toc/confirm`、左栏常驻配额 chip）。验证：check exit 0 / test 402/402 / 残留 grep 清零 / 1440+390 浏览器走查通过（`design-qa.md` ZCODE-M1 节）。下一主线：设计系统 v4「Quiet」（`docs/DESIGN_V4.md`，批 1 token 层 + Clew 学习页换装已于 2026-10-04 落地未提交；批 2 其余面归一、批 3「依据范围」待做）与 ZCODE-M2 可配置闭环（Loop Profile）。
 
+**进度（2026-10-05）**：ZCODE-M2（Clew Harness + Loop Profile + 编译管线）、M3（统一状态层 UnifiedLearningEvent + Mentrix 化学习页 + Page Chat 固化）、M4（讲义三视图 + 章级知识图谱 + 多模型配置）与设计系统 v4 批 1–3（含对话体验/交互/图谱文案/补遗批）已全部落地（详见 `docs/PROJECT_STATE.md` 各节与 `design-qa.md`）。**ZCODE-M5「练/复」已实施完毕（未提交）**：Clew 自测「还需看」→ Prisma `ClewReviewItem` FSRS 调度（`fsrsEnabled=false` 不建条目；`src/lib/fsrs.ts` 零改动）→ `/learn`「我的学习」今日复习区（已到期 + 7 天内即将到期）+ 右栏计数并入 + 学习页三键打分（again/hard/good）+ 脊柱「复」点亮 + 错题中心第五 tab「Clew 教材」+ `review-scheduled/completed` 统一事件；官方课 KP 的 FSRS 不混入（M6+）。验证：test 501/501 / check exit 0 / migrate status 干净 / 真实链路走查 + 明暗×1440/390 热态 console 0（`design-qa.md` ZCODE-M5 节）。
+
 历史主线（已完成）：private-material analysis 与 official-course compilation 分离、browser-local attempt memory、constrained local Agent 等见 `docs/PROJECT_STATE.md` 与 `docs/CONTENT_ARCHITECTURE.md`。原 Course Builder 对学生显示为建设中，Clew **不是**旧 course-builder 的换壳。
 
 ## Tech Stack

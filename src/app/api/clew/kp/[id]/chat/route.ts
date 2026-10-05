@@ -34,6 +34,8 @@ export async function POST(
   }
 
   let message: string;
+  let style: string | undefined;
+  let scope: string | undefined;
   try {
     const text = await request.text();
     if (new TextEncoder().encode(text).length > maxRequestBytes) {
@@ -48,6 +50,21 @@ export async function POST(
       return clewFailure(400, "invalid-request", "请输入要追问的问题。");
     }
     message = candidate;
+    // 批 3 可选字段：style / scope（校验在服务编排层，非法值 400）
+    const styleCandidate = (parsed as { style?: unknown }).style;
+    if (styleCandidate !== undefined) {
+      if (typeof styleCandidate !== "string") {
+        return clewFailure(400, "invalid-request", "请求格式无效。");
+      }
+      style = styleCandidate;
+    }
+    const scopeCandidate = (parsed as { scope?: unknown }).scope;
+    if (scopeCandidate !== undefined) {
+      if (typeof scopeCandidate !== "string") {
+        return clewFailure(400, "invalid-request", "请求格式无效。");
+      }
+      scope = scopeCandidate;
+    }
   } catch {
     return clewFailure(400, "invalid-request", "请求格式无效。");
   }
@@ -72,7 +89,10 @@ export async function POST(
           userId: user.id,
           kpId: id,
           message,
+          style,
+          scope,
           onDelta: (text: string) => send({ type: "delta", text }),
+          onStatus: (phase, statusMessage) => send({ type: "status", phase, message: statusMessage }),
         });
 
         if (!result.ok) {

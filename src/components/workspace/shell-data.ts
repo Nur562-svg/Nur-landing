@@ -12,9 +12,9 @@ export type ShellEntry = {
   href: string;
 };
 
-/** 主入口：学习主环为默认工作台；Clew / 题库为从属入口（IA 拍板 2026-09-21）。 */
+/** 主入口：我的学习为默认工作台（个人学习状态 + 官方更新）；Clew / 题库为从属入口（IA 拍板 2026-09-21；命名 2026-10-05 改定——「学习闭环」叙事属官方课，本页不冒用）。 */
 export const PRIMARY_ENTRIES: readonly ShellEntry[] = [
-  { id: "learn", label: "学习主环", href: "/learn" },
+  { id: "learn", label: "我的学习", href: "/learn" },
   { id: "clew", label: "Clew", href: "/learn/clew" },
   { id: "courses", label: "官方课程", href: "/courses" },
   { id: "question-bank", label: "题库", href: "/question-bank" },

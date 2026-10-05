@@ -8,8 +8,8 @@
   --paper: var(--bg-200);
   --paper-bright: var(--bg-100);
   --muted: var(--text-500);
-  --line: color-mix(in srgb, var(--text-900) 38%, transparent);
-  --line-soft: color-mix(in srgb, var(--text-900) 16%, transparent);
+  --line: color-mix(in srgb, var(--text-900) 12%, transparent);
+  --line-soft: color-mix(in srgb, var(--text-900) 6%, transparent);
   --red: var(--error-600);
   --blue: var(--v2-ring);
   --jade: var(--success-600);
@@ -60,16 +60,11 @@
   font-weight: 600;
 }
 
-.statusTierBasic {
-  color: var(--brand-600);
-}
-
-.statusTierPro {
-  color: var(--blue);
-}
-
+/* v4：档位徽章灰度分层，不再三色编码（当前套餐由 .cardCurrent 描边表达） */
+.statusTierBasic,
+.statusTierPro,
 .statusTierMax {
-  color: var(--jade);
+  color: var(--muted);
 }
 
 /* ---------- 错误与等待面板 ---------- */
@@ -87,6 +82,7 @@
 .payPanel {
   background: var(--paper-bright);
   border: 1px solid var(--line);
+  border-radius: var(--v3-card-radius);
   margin: 24px 0 0;
   padding: 20px 22px;
 }
@@ -147,8 +143,9 @@
 
 .alipayLink {
   align-items: center;
-  background: var(--ink);
-  color: var(--paper);
+  background: var(--v2-primary);
+  border-radius: var(--v2-radius-sm);
+  color: #ffffff;
   display: inline-flex;
   gap: 8px;
   font-size: 14px;
@@ -157,7 +154,7 @@
 }
 
 .alipayLink:hover {
-  background: color-mix(in srgb, var(--ink) 90%, var(--paper));
+  background: var(--brand-600);
 }
 
 .statusPaid {
@@ -183,7 +180,7 @@
 
 .pricingHead {
   align-items: flex-end;
-  border-bottom: 1px solid var(--ink);
+  border-bottom: 1px solid var(--v2-border);
   display: flex;
   flex-wrap: wrap;
   gap: 14px;
@@ -192,9 +189,8 @@
 }
 
 .pricingTitle {
-  font-family: var(--font-serif), "Times New Roman", serif;
-  font-size: 21px;
-  font-weight: 700;
+  font-size: 18px;
+  font-weight: 600;
   letter-spacing: 0.02em;
   margin: 0;
 }
@@ -208,6 +204,7 @@
 /* 分段控件（月/季/年） */
 .segment {
   border: 1px solid var(--line);
+  border-radius: var(--v2-radius-sm);
   display: inline-flex;
   padding: 3px;
 }
@@ -215,6 +212,7 @@
 .segmentButton {
   background: transparent;
   border: 0;
+  border-radius: 6px;
   color: var(--muted);
   cursor: pointer;
   font-size: 13px;
@@ -226,12 +224,13 @@
 }
 
 .segmentButtonActive {
-  background: var(--ink);
-  color: var(--paper);
+  background: var(--v3-selected-bg);
+  color: var(--v3-selected-fg);
+  font-weight: 600;
 }
 
 .segmentButtonActive:hover {
-  color: var(--paper);
+  color: var(--v3-selected-fg);
 }
 
 .cards {
@@ -244,14 +243,15 @@
 .card {
   background: var(--paper-bright);
   border: 1px solid var(--line);
+  border-radius: var(--v3-card-radius);
   display: flex;
   flex-direction: column;
   padding: 22px 22px 24px;
 }
 
-/* 当前套餐：描边高亮 + 顶部角标（角标为 V2Badge，见 .currentBadge） */
+/* 当前套餐：朱砂描边高亮 + 顶部角标（角标为 V2Badge，见 .currentBadge） */
 .cardCurrent {
-  border: 2px solid var(--ink);
+  border: 2px solid var(--v2-primary);
   position: relative;
 }
 
@@ -269,9 +269,8 @@
 }
 
 .cardName {
-  font-family: var(--font-serif), "Times New Roman", serif;
-  font-size: 19px;
-  font-weight: 700;
+  font-size: 17px;
+  font-weight: 600;
   letter-spacing: 0.02em;
   margin: 0;
 }
@@ -289,9 +288,9 @@
 }
 
 .priceNum {
-  font-family: var(--font-serif), "Times New Roman", serif;
-  font-size: 40px;
-  font-weight: 700;
+  font-size: 38px;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
   letter-spacing: 0.01em;
   line-height: 1;
 }
@@ -359,10 +358,9 @@
 }
 
 .ordersTitle {
-  border-bottom: 1px solid var(--ink);
-  font-family: var(--font-serif), "Times New Roman", serif;
-  font-size: 18px;
-  font-weight: 700;
+  border-bottom: 1px solid var(--v2-border);
+  font-size: 16px;
+  font-weight: 600;
   letter-spacing: 0.02em;
   margin: 0;
   padding-bottom: 12px;

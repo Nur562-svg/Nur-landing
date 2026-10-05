@@ -22,14 +22,14 @@ export default async function CourseBuilderPage() {
         <p className={styles.kicker}>Ariadne</p>
         <h1 className={styles.title}>建课 · Max 专属</h1>
         <p className={styles.message}>
-          材料建课仅对 Max 会员开放。升级后可从学习主环进入。
+          材料建课仅对 Max 会员开放。升级后可从「我的学习」进入。
         </p>
         <div style={{ display: "flex", gap: 16, flexWrap: "wrap" }}>
           <Link className={styles.back} href="/account/billing">
             查看会员
           </Link>
           <Link className={styles.back} href="/learn">
-            返回学习主环
+            返回我的学习
           </Link>
         </div>
       </main>

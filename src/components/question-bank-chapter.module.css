@@ -4,8 +4,8 @@
   --ink: var(--text-900);
   --paper: var(--bg-200);
   --muted: var(--text-500);
-  --line: color-mix(in srgb, var(--text-900) 38%, transparent);
-  --soft-line: color-mix(in srgb, var(--text-900) 16%, transparent);
+  --line: color-mix(in srgb, var(--text-900) 12%, transparent);
+  --soft-line: color-mix(in srgb, var(--text-900) 6%, transparent);
   --red: var(--error-600);
   --blue: var(--v2-ring);
   background: var(--paper);
@@ -82,11 +82,11 @@
 }
 
 .progressTrack::-webkit-progress-value {
-  background: var(--red);
+  background: var(--v2-primary);
 }
 
 .progressTrack::-moz-progress-bar {
-  background: var(--red);
+  background: var(--v2-primary);
 }
 
 .progressLabel {
@@ -97,7 +97,7 @@
 
 .filterRow {
   align-items: center;
-  border-top: 1px solid var(--ink);
+  border-top: 1px solid var(--v2-border);
   border-bottom: 1px solid var(--soft-line);
   display: flex;
   flex-wrap: wrap;
@@ -108,6 +108,7 @@
 
 .kindTag {
   border: 1px solid var(--line);
+  border-radius: var(--v2-radius-sm);
   background: transparent;
   color: var(--ink);
   cursor: pointer;
@@ -117,9 +118,10 @@
 }
 
 .kindTagActive {
-  background: var(--ink);
-  color: var(--paper);
-  border-color: var(--ink);
+  background: var(--v3-selected-bg);
+  color: var(--v3-selected-fg);
+  border-color: color-mix(in srgb, var(--v2-primary) 45%, transparent);
+  font-weight: 600;
 }
 
 .startActions {
@@ -131,9 +133,10 @@
 .startButton,
 .startFilteredButton {
   align-items: center;
-  border: 1px solid var(--ink);
-  background: transparent;
-  color: var(--ink);
+  border: 1px solid transparent;
+  border-radius: var(--v2-radius-sm);
+  background: var(--v2-primary);
+  color: #ffffff;
   cursor: pointer;
   display: inline-flex;
   gap: 6px;
@@ -146,14 +149,22 @@
 }
 
 .startFilteredButton {
-  background: var(--ink);
-  color: var(--paper);
+  background: transparent;
+  border-color: var(--v2-border);
+  color: var(--ink);
 }
 
 .startButton:hover,
 .startFilteredButton:hover {
-  background: var(--ink);
-  color: var(--paper);
+  background: var(--brand-600);
+  border-color: transparent;
+  color: #ffffff;
+}
+
+.startFilteredButton:hover {
+  background: transparent;
+  border-color: var(--v2-primary);
+  color: var(--v2-primary);
 }
 
 .itemList {
@@ -197,6 +208,7 @@
 
 .itemKind {
   border: 1px solid var(--line);
+  border-radius: var(--v2-radius-sm);
   font-size: 12px;
   padding: 2px 8px;
   white-space: nowrap;
@@ -222,7 +234,7 @@
 }
 
 .itemStatusCorrect {
-  color: var(--red);
+  color: var(--success-600);
 }
 
 .favoriteStar {
@@ -240,7 +252,8 @@
 
 .practiceLink {
   align-items: center;
-  border: 1px solid var(--ink);
+  border: 1px solid var(--v2-border);
+  border-radius: var(--v2-radius-sm);
   color: var(--ink);
   display: inline-flex;
   font-size: 13px;
@@ -250,8 +263,8 @@
 }
 
 .practiceLink:hover {
-  background: var(--ink);
-  color: var(--paper);
+  border-color: var(--v2-primary);
+  color: var(--v2-primary);
 }
 
 .readonlyLabel {
@@ -260,7 +273,8 @@
 }
 
 .emptyState {
-  border: 1px solid var(--line);
+  border: 1px dashed var(--line);
+  border-radius: var(--v3-card-radius);
   padding: 48px 24px;
   text-align: center;
 }

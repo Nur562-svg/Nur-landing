@@ -5,7 +5,7 @@
   --paper: var(--bg-200);
   --paper-bright: var(--bg-100);
   --muted: var(--text-500);
-  --line: color-mix(in srgb, var(--text-900) 38%, transparent);
+  --line: color-mix(in srgb, var(--text-900) 12%, transparent);
   --red: var(--error-600);
   --blue: var(--v2-ring);
   background: var(--v2-background);
@@ -29,7 +29,7 @@
 .header {
   align-items: center;
   background: color-mix(in srgb, var(--bg-200) 96%, transparent);
-  border-bottom: 1px solid var(--ink);
+  border-bottom: 1px solid var(--v2-border);
   display: grid;
   grid-template-columns: minmax(210px, 1fr) auto minmax(210px, 1fr);
   height: 81px;
@@ -107,9 +107,9 @@
   font-size: 10px;
   font-weight: 700;
   line-height: 1;
-  color: var(--paper);
+  color: #ffffff;
   background: var(--red);
-  border-radius: 0;
+  border-radius: 999px;
 }
 
 .accountArea {
@@ -133,7 +133,7 @@
 .avatarLarge {
   align-items: center;
   background: var(--ink);
-  border: 1px solid var(--ink);
+  border: none;
   border-radius: 50%;
   color: var(--paper-bright);
   display: flex;
@@ -168,8 +168,9 @@
 
 .accountPanel {
   background: var(--paper-bright);
-  border: 1px solid var(--ink);
-  box-shadow: 8px 8px 0 color-mix(in srgb, var(--text-900) 10%, transparent);
+  border: 1px solid var(--v2-border);
+  border-radius: var(--v3-card-radius);
+  box-shadow: var(--v2-shadow-lg);
   display: grid;
   gap: 18px;
   max-height: calc(100vh - 90px);
@@ -203,14 +204,15 @@
 }
 
 .accountPanelHeading strong {
-  font-family: "Songti SC", "STSong", serif;
-  font-size: 22px;
+  font-size: 16px;
+  font-weight: 600;
 }
 
 .accountPanelHeading button {
   align-items: center;
   background: transparent;
-  border: 1px solid var(--ink);
+  border: 1px solid var(--v2-border);
+  border-radius: var(--v2-radius-sm);
   cursor: pointer;
   display: flex;
   justify-content: center;
@@ -238,7 +240,7 @@
 }
 
 .avatarEditor > span:last-child {
-  border-bottom: 1px solid var(--ink);
+  border-bottom: 1px solid var(--muted);
   font-size: 13px;
   padding-bottom: 2px;
 }
@@ -256,7 +258,8 @@
 
 .accountField input {
   background: transparent;
-  border: 1px solid var(--ink);
+  border: 1px solid var(--v2-border);
+  border-radius: var(--v2-radius-sm);
   color: var(--ink);
   height: 44px;
   outline: none;
@@ -264,15 +267,20 @@
 }
 
 .accountField input:focus {
-  box-shadow: inset 0 0 0 2px var(--paper-bright), inset 0 0 0 3px var(--ink);
+  border-color: var(--blue);
 }
 
 .accountSave {
-  background: var(--ink);
-  border: 1px solid var(--ink);
-  color: var(--paper-bright);
+  background: var(--v2-primary);
+  border: none;
+  border-radius: var(--v2-radius-sm);
+  color: #ffffff;
   cursor: pointer;
   height: 46px;
+}
+
+.accountSave:hover {
+  background: var(--brand-600);
 }
 
 .accountSummary {
@@ -480,7 +488,8 @@
 }
 
 .accountLoginLink {
-  border: 1px solid var(--ink);
+  border: 1px solid var(--v2-border);
+  border-radius: var(--v2-radius-sm);
   color: var(--ink);
   display: block;
   font-size: 13px;
@@ -489,8 +498,7 @@
 }
 
 .accountLoginLink:hover {
-  background: var(--ink);
-  color: var(--paper-bright);
+  border-color: var(--muted);
 }
 
 .accountLocalSection {
@@ -580,9 +588,11 @@
 }
 
 .entryGrid {
-  border: 1px solid var(--ink);
+  border: 1px solid var(--v2-border);
+  border-radius: var(--v3-card-radius);
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
+  overflow: hidden;
 }
 
 .entryCard {
@@ -608,6 +618,7 @@
 .entryIcon {
   align-items: center;
   border: 1px solid var(--line);
+  border-radius: var(--v2-radius-sm);
   display: flex;
   height: 44px;
   justify-content: center;
@@ -620,8 +631,8 @@
 }
 
 .entryCopy strong {
-  font-family: "Songti SC", "STSong", serif;
-  font-size: 18px;
+  font-size: 15px;
+  font-weight: 600;
   letter-spacing: 0.02em;
 }
 
@@ -630,53 +641,14 @@
   font-size: 12px;
   line-height: 1.5;
 }
-
-.entryCard:hover > svg {
-  transform: translateX(4px);
-}
-
-.caseSection {
-  margin-top: 31px;
-  max-width: 688px;
-}
-
-.sectionLabel {
-  font-size: 16px;
-  font-weight: 650;
-  letter-spacing: 0.04em;
-  margin: 0 0 11px;
-}
-
-.caseCard {
-  align-items: center;
-  border: 1px solid var(--ink);
-  display: flex;
-  font-family: "Songti SC", "STSong", serif;
-  font-size: 20px;
-  letter-spacing: 0.04em;
-  line-height: 1.75;
-  margin: 0;
-  min-height: 118px;
-  padding: 25px 39px;
-}
-
-.reasoningSection {
-  margin-top: 35px;
-}
-
-.reasoningHeading {
-  align-items: baseline;
-  display: flex;
-  gap: 18px;
-  justify-content: space-between;
-}
-
-.reasoningHeading > span {
+/* 文案分层（2026-10-05）：h1 副句 = 主环语言 */
+.headSub {
   color: var(--muted);
-  font-size: 12px;
-  padding-right: 5px;
+  font-size: 13.5px;
+  line-height: 1.8;
+  margin: 10px 0 0;
+  max-width: 560px;
 }
-
 .reasoningFlow {
   align-items: stretch;
   display: grid;
@@ -689,106 +661,7 @@
   align-items: center;
   display: flex;
   min-width: 0;
-}
-
-.reasoningCard {
-  background: color-mix(in srgb, var(--bg-200) 55%, transparent);
-  border: 1px solid var(--ink);
-  color: var(--ink);
-  cursor: pointer;
-  display: flex;
-  flex: 1 1 auto;
-  flex-direction: column;
-  height: 183px;
-  min-width: 0;
-  padding: 23px 24px 18px;
-  text-align: left;
-}
-
-.reasoningCard:hover {
-  transform: none;
-}
-
-.reasoningCardActive {
-  border: 2px solid var(--red);
-  padding: 22px 23px 17px;
-}
-
-.stepIndex {
-  color: var(--muted);
-  font-size: 16px;
-  margin-bottom: 12px;
-}
-
-.reasoningCardActive .stepIndex {
-  color: var(--red);
-}
-
-.reasoningCard strong {
-  font-family: "Songti SC", "STSong", serif;
-  font-size: 21px;
-  font-weight: 700;
-  letter-spacing: 0.04em;
-  white-space: nowrap;
-}
-
-.cardRule {
-  border-top: 1px dotted color-mix(in srgb, var(--text-900) 26%, transparent);
-  margin: 18px 0 13px;
-  width: 100%;
-}
-
-.reasoningCard small {
-  color: var(--muted);
-  font-family: "Songti SC", "STSong", serif;
-  font-size: 14px;
-  line-height: 1.55;
-}
-
-.reasoningCardActive small {
-  color: var(--ink);
-}
-
-.reasoningCardActive small::before {
-  background: var(--red);
-  border-radius: 50%;
-  box-shadow: inset 0 0 0 5px var(--red), inset 0 0 0 7px var(--paper);
-  content: "";
-  display: inline-block;
-  height: 16px;
-  margin-right: 8px;
-  transform: translateY(3px);
-  width: 16px;
-}
-
-.flowArrow {
-  flex: 0 0 44px;
-  margin: 0 4px;
-}
-
-.primaryAction {
-  min-height: 44px;
-  align-items: center;
-  background: var(--ink);
-  border: 1px solid var(--ink);
-  color: var(--paper-bright);
-  cursor: pointer;
-  display: flex;
-  font-size: 17px;
-  font-weight: 620;
-  height: 66px;
-  justify-content: space-between;
-  margin-top: 28px;
-  padding: 0 27px 0 61px;
-  width: min(100%, 370px);
-}
-
-.primaryAction:hover {
-  background: var(--paper-bright);
-  color: var(--ink);
-}
-
-.dualLens {
+}.dualLens {
   margin-top: 33px;
 }
 
@@ -800,7 +673,7 @@
 }
 
 .dualLensCard {
-  border: 1px solid var(--ink);
+  border: 1px solid var(--v2-border);
   display: grid;
   grid-template-columns: 1fr 1.14fr;
   min-height: 118px;
@@ -823,8 +696,8 @@
   border: 1px solid currentColor;
   border-radius: 50%;
   display: flex;
-  font-family: "Songti SC", "STSong", serif;
-  font-size: 28px;
+  font-size: 24px;
+  font-weight: 600;
   height: 58px;
   justify-content: center;
   width: 58px;
@@ -912,9 +785,9 @@
 }
 
 .progressItem p b {
-  font-family: var(--font-serif), Georgia, serif;
   font-size: 31px;
-  font-weight: 400;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
   line-height: 0.8;
 }
 
@@ -950,10 +823,6 @@
   line-height: 1.45;
 }
 
-.builderEntry:hover > svg {
-  transform: translateX(4px);
-}
-
 .planToggle {
   min-height: 44px;
   align-items: center;
@@ -977,7 +846,9 @@
 .planDrawer {
   align-items: stretch;
   background: var(--paper-bright);
-  border: 1px solid var(--ink);
+  border: 1px solid var(--v2-border);
+  border-radius: var(--v3-card-radius) var(--v3-card-radius) 0 0;
+  box-shadow: var(--v2-shadow-lg);
   bottom: 0;
   display: grid;
   grid-template-columns: 39% 61%;
@@ -1035,9 +906,9 @@
 }
 
 .metric b {
-  font-family: var(--font-serif), Georgia, serif;
-  font-size: 64px;
-  font-weight: 400;
+  font-size: 56px;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
   line-height: 0.9;
 }
 
@@ -1083,12 +954,12 @@
 }
 
 .weekRhythm .today {
-  color: var(--red);
+  color: var(--v2-primary);
 }
 
 .weekRhythm .today i {
-  background: var(--red);
-  border-color: var(--red);
+  background: var(--v2-primary);
+  border-color: var(--v2-primary);
 }
 
 @media (max-width: 1200px) {
@@ -1108,28 +979,7 @@
 
   .mainColumn {
     padding-right: 34px;
-  }
-
-  .reasoningCard {
-    padding-left: 17px;
-    padding-right: 17px;
-  }
-
-  .reasoningCardActive {
-    padding-left: 16px;
-    padding-right: 16px;
-  }
-
-  .flowArrow {
-    flex-basis: 30px;
-    margin: 0 2px;
-  }
-
-  .reasoningCard strong {
-    font-size: 18px;
-  }
-
-  .metric {
+  }  .metric {
     padding: 0 15px;
   }
 }
@@ -1148,7 +998,7 @@
 
   .navigation {
     background: var(--paper);
-    border-bottom: 1px solid var(--ink);
+    border-bottom: 1px solid var(--v2-border);
     gap: 31px;
     height: 49px;
     left: 0;
@@ -1209,15 +1059,6 @@
     border-left: 0;
     border-top: 1px solid var(--line);
   }
-
-  .caseSection {
-    max-width: none;
-  }
-
-  .caseCard {
-    padding: 21px 24px;
-  }
-
   .progressColumn {
     margin-top: 36px;
     min-height: 0;
@@ -1269,24 +1110,7 @@
 
   .flowItem {
     display: block;
-  }
-
-  .reasoningCard {
-    height: auto;
-    min-height: 156px;
-    width: 100%;
-  }
-
-  .flowArrow {
-    display: none;
-  }
-
-  .primaryAction {
-    padding-left: 25px;
-    width: 100%;
-  }
-
-  .dualLensCard {
+  }  .dualLensCard {
     grid-template-columns: 1fr;
   }
 
@@ -1376,69 +1200,12 @@
   opacity: 1;
 }
 
-@media (prefers-reduced-motion: reduce) {
-  .navigation :is(button, a)::after,
-  .reasoningCard,
-  .primaryAction,
-  .planDrawer {
-    animation: none;
-    scroll-behavior: auto;
-    transition: none;
-  }
-}
+@media (prefers-reduced-motion: reduce) {}
 
 /* v3: quieter cards, one reasoning card, no decorative wordmark. */
 .ghostWordmark {
   display: none;
-}
-
-.stepRail {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-  margin-top: 12px;
-}
-
-.stepRail button {
-  background: transparent;
-  border: 1px solid transparent;
-  border-radius: var(--v3-card-radius);
-  color: var(--ink);
-  cursor: pointer;
-  font: 500 14px/1.5 var(--v2-font-sans);
-  min-height: 44px;
-  padding: 0 14px;
-}
-
-.stepRail button[aria-selected="true"] {
-  box-shadow: inset 0 0 0 1px var(--v3-cinnabar);
-  color: var(--v3-cinnabar);
-}
-
-.peerCard,
-.caseCard,
-.reasoningCard,
-.dualLensCard,
-.progressItem {
-  background: var(--paper-bright);
-  border: 1px solid var(--v3-card-border);
-  border-radius: var(--v3-card-radius);
-  box-shadow: var(--v3-card-shadow);
-}
-
-.reasoningCard {
-  cursor: default;
-  height: auto;
-  margin-top: 12px;
-  min-height: 0;
-}
-
-.caseCard {
-  font-size: 16px;
-  line-height: 1.5;
-}
-
-.dualLens h2,
+}.dualLens h2,
 .progressColumn h2 {
   font-family: var(--v2-font-display);
   font-size: var(--v3-title-size);
@@ -1471,14 +1238,6 @@
 }
 
 @media (max-width: 480px) {
-  .accountButton,
-  .primaryAction,
-  .planToggle,
-  .stepRail button,
-  .navigation :is(a, button) {
-    min-height: 44px;
-  }
-
   .dashboard {
     padding-left: 16px;
     padding-right: 16px;
@@ -1490,7 +1249,6 @@
 .unifiedFeed {
   margin-top: 33px;
 }
-
 .unifiedFeed h2 {
   font-family: var(--v2-font-display);
   font-size: var(--v3-title-size);

@@ -206,8 +206,8 @@ export async function extractClewChapterKnowledgePoints(
       modelDroppedCount = output.droppedCount;
       modelDroppedPrerequisiteCount = output.droppedPrerequisiteCount;
       notes.push(docx
-        ? `来源：模型萃取（${provider.id} · ${provider.model}，${drafts.length} 个知识点，出处待确认）。`
-        : `来源：模型萃取（${provider.id} · ${provider.model}，${drafts.length} 个知识点，页码可溯源）。`);
+        ? `来源：模型萃取 · ${provider.model}，${drafts.length} 个知识点，出处待确认。`
+        : `来源：模型萃取 · ${provider.model}，${drafts.length} 个知识点，页码可溯源。`);
       if (modelDroppedCount > 0) {
         notes.push(`丢弃了 ${modelDroppedCount} 条未通过校验的模型条目（页码越界/字段缺失等）。`);
       }

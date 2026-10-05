@@ -15,7 +15,7 @@
   border: 1px solid transparent;
   border-radius: 12px 12px 0 0;
   bottom: 0;
-  box-shadow: var(--v3-card-shadow);
+  box-shadow: var(--v2-shadow-lg);
   color: var(--v2-popover-foreground);
   left: 0;
   max-height: 70dvh;

@@ -1,5 +1,5 @@
 /**
- * Design system v3 peer-card presentation.
+ * Design system peer-card presentation.
  * The learn home and Clew shelf render from these caps so desktop and 390px
  * counts stay measurable without a second copy of the card list.
  *
@@ -8,6 +8,10 @@
  *   cards + dual-lens card + 3 progress rows = 12.
  * - Clew shelf with 5 active textbooks: quota panel + upload panel + 5
  *   textbook cards = 7.
+ *
+ * 2026-10-05（「我的学习」定位收紧）：case / reasoning 演示卡退役（假数据教学演示
+ * 不再属于本页）；dual-lens 槽位由「官方更新」卡（official-updates）复用——仍是
+ * 双栏信息卡，密度语义不变。
  */
 
 export const LEARN_PEER_CARDS_BEFORE = 12;
@@ -16,16 +20,14 @@ export const CLEW_SHELF_COMPARISON_ACTIVE_BOOKS = 5;
 export const CLEW_SHELF_PEER_CARDS_BEFORE = 2 + CLEW_SHELF_COMPARISON_ACTIVE_BOOKS;
 
 export const LEARN_PEER_CARD_IDS = [
-  "case",
-  "reasoning",
-  "dual-lens",
+  "official-updates",
   "progress-week",
   "progress-review",
 ] as const;
 
 export type LearnPeerCardId = (typeof LEARN_PEER_CARD_IDS)[number];
 
-const COMPACT_HIDDEN = new Set<LearnPeerCardId>(["dual-lens", "progress-week"]);
+const COMPACT_HIDDEN = new Set<LearnPeerCardId>(["official-updates", "progress-week"]);
 
 /** 390px hides these learn-home cards; desktop renders the full v3 set. */
 export function learnPeerCompactHide(id: LearnPeerCardId): boolean {

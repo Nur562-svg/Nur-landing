@@ -4,8 +4,8 @@
   --ink: var(--text-900);
   --paper: var(--bg-200);
   --muted: var(--text-500);
-  --line: color-mix(in srgb, var(--text-900) 38%, transparent);
-  --soft-line: color-mix(in srgb, var(--text-900) 16%, transparent);
+  --line: color-mix(in srgb, var(--text-900) 12%, transparent);
+  --soft-line: color-mix(in srgb, var(--text-900) 6%, transparent);
   --red: var(--error-600);
   --blue: var(--v2-ring);
   background: var(--paper);
@@ -74,6 +74,7 @@
 
 .searchInput {
   border: 1px solid var(--line);
+  border-radius: var(--v2-radius-sm);
   background: var(--paper);
   color: var(--ink);
   font-size: 14px;
@@ -95,6 +96,7 @@
 
 .kindTag {
   border: 1px solid var(--line);
+  border-radius: var(--v2-radius-sm);
   background: transparent;
   color: var(--ink);
   cursor: pointer;
@@ -104,13 +106,14 @@
 }
 
 .kindTagActive {
-  background: var(--ink);
-  color: var(--paper);
-  border-color: var(--ink);
+  background: var(--v3-selected-bg);
+  color: var(--v3-selected-fg);
+  border-color: color-mix(in srgb, var(--v2-primary) 45%, transparent);
+  font-weight: 600;
 }
 
 .statsBar {
-  border-top: 1px solid var(--ink);
+  border-top: 1px solid var(--v2-border);
   border-bottom: 1px solid var(--soft-line);
   display: flex;
   gap: 40px;
@@ -136,6 +139,8 @@
 
 .chapterCard {
   border: 1px solid var(--line);
+  border-radius: var(--v3-card-radius);
+  background: var(--paper-bright);
   padding: 24px;
   cursor: pointer;
   transition: border-color 0.15s;
@@ -174,7 +179,8 @@
 
 .progressTrack {
   appearance: none;
-  border: 1px solid var(--line);
+  border: none;
+  border-radius: 3px;
   height: 6px;
   margin-bottom: 10px;
   width: 100%;
@@ -185,11 +191,11 @@
 }
 
 .progressTrack::-webkit-progress-value {
-  background: var(--red);
+  background: var(--v2-primary);
 }
 
 .progressTrack::-moz-progress-bar {
-  background: var(--red);
+  background: var(--v2-primary);
 }
 
 .chapterCardBottom {
@@ -200,7 +206,8 @@
 
 .chapterAction {
   align-items: center;
-  border: 1px solid var(--ink);
+  border: 1px solid var(--v2-border);
+  border-radius: var(--v2-radius-sm);
   background: transparent;
   color: var(--ink);
   cursor: pointer;
@@ -211,12 +218,13 @@
 }
 
 .chapterAction:hover {
-  background: var(--ink);
-  color: var(--paper);
+  border-color: var(--v2-primary);
+  color: var(--v2-primary);
 }
 
 .emptyState {
-  border: 1px solid var(--line);
+  border: 1px dashed var(--line);
+  border-radius: var(--v3-card-radius);
   padding: 48px 24px;
   text-align: center;
 }

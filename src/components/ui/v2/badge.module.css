@@ -12,19 +12,10 @@
   white-space: nowrap;
 }
 
-.badge:hover {
-  transform: translateY(-1px);
-}
-
 .filled {
   background: var(--v2-primary);
   border: 1px solid transparent;
-  box-shadow: var(--v2-shadow-xs);
   color: var(--v2-primary-foreground);
-}
-
-.filled:hover {
-  box-shadow: var(--v2-shadow-sm);
 }
 
 .muted {

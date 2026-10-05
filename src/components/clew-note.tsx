@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { CircleAlert, Download, Loader2, NotebookPen, RefreshCw, Sparkles } from "lucide-react";
+import { ChevronUp, CircleAlert, Download, Loader2, NotebookPen, RefreshCw, Sparkles } from "lucide-react";
 import type { ClewChapterView, ClewNoteEvent, ClewNoteView } from "@/types/clew";
 import { consumeClewSse, readClewFailure } from "@/lib/clew/client-api";
 import { describeClewLessonGenerator } from "@/lib/clew/lesson-heuristic";
@@ -14,7 +14,13 @@ import styles from "./clew.module.css";
  * Clew 学霸笔记区块（客户端，章级）：
  * 聚合本章讲义 + 讲解追问 + 划重点/批注，流式生成一份可复习、可下载的 markdown 笔记。
  * 下载走前端 Blob（不落服务器文件存储）；重新生成覆盖旧版本前需确认。
+ * 交互批（2026-10-05）：长笔记默认摘要折叠（章级汇总非逐字学习面），展开/收起纯条件渲染（无划重点层，安全）。
  */
+
+/** 笔记摘要折叠阈值（字数；不足此长度不折叠）。 */
+const NOTE_FOLD_THRESHOLD = 240;
+/** 摘要截断长度（字数）。 */
+const NOTE_SUMMARY_CHARS = 120;
 
 type ClewNotePanelProps = {
   textbookId: string;
@@ -40,6 +46,8 @@ export function ClewNotePanel({
   const [error, setError] = useState<string | null>(null);
   const [generating, setGenerating] = useState(false);
   const [confirmingRegenerate, setConfirmingRegenerate] = useState(false);
+  /** 长笔记默认摘要折叠；新生成完成后保持折叠（摘要 + 字数），手动展开。 */
+  const [noteFolded, setNoteFolded] = useState(true);
 
   async function onGenerateNote() {
     if (generating) {
@@ -205,13 +213,50 @@ export function ClewNotePanel({
           <ClewMarkdown markdown={draft} />
         </div>
       ) : note ? (
-        <div className={styles.lessonBody}>
-          <ClewMarkdown markdown={note.contentMd} />
-          <p className={styles.noteDownloadHint}>
-            下载的是当前这份笔记（文件名：{buildClewNoteFileName(textbookTitle, chapter.title)}
-            ）；重新生成后需重新下载。
-          </p>
-        </div>
+        (() => {
+          // 交互批：长笔记默认摘要折叠（章级汇总面，无划重点层，条件渲染安全）。
+          // 摘要取第一条实质内容行（跳过标题/引用块/列表符等 markdown 修饰行）。
+          const firstLine = note.contentMd
+            .split("\n")
+            .map((line) => line.trim())
+            .find((line) => line.length > 0 && !/^[#>*\-|`]/.test(line));
+          const summary = (firstLine ?? note.contentMd).slice(0, NOTE_SUMMARY_CHARS).trimEnd();
+          const folded = noteFolded && note.contentMd.length > NOTE_FOLD_THRESHOLD;
+          return (
+            <div className={styles.lessonBody}>
+              {folded ? (
+                <>
+                  <p className={styles.noteSummary}>{summary}{summary.length >= NOTE_SUMMARY_CHARS ? "…" : ""}</p>
+                  <button
+                    type="button"
+                    className={styles.lessonFoldToggle}
+                    onClick={() => setNoteFolded(false)}
+                  >
+                    展开学霸笔记 · 共 {note.contentMd.length} 字
+                  </button>
+                </>
+              ) : (
+                <>
+                  <ClewMarkdown markdown={note.contentMd} />
+                  {note.contentMd.length > NOTE_FOLD_THRESHOLD ? (
+                    <button
+                      type="button"
+                      className={styles.lessonFoldToggle}
+                      onClick={() => setNoteFolded(true)}
+                    >
+                      <ChevronUp aria-hidden="true" size={13} strokeWidth={1.6} />
+                      收起学霸笔记
+                    </button>
+                  ) : null}
+                  <p className={styles.noteDownloadHint}>
+                    下载的是当前这份笔记（文件名：{buildClewNoteFileName(textbookTitle, chapter.title)}
+                    ）；重新生成后需重新下载。
+                  </p>
+                </>
+              )}
+            </div>
+          );
+        })()
       ) : (
         <p className={styles.emptyState}>
           还没有学霸笔记。点「生成学霸笔记」：已接入模型时会把本章讲义、追问与划重点汇总成一份复习笔记；

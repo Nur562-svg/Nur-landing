@@ -5,7 +5,6 @@
   background: transparent;
   border: 1px solid transparent;
   border-radius: var(--v2-radius);
-  box-shadow: var(--v2-shadow-sm);
   color: var(--v2-foreground);
   cursor: pointer;
   display: inline-flex;
@@ -14,11 +13,6 @@
   min-height: 44px;
   padding: 0 18px;
   white-space: nowrap;
-}
-
-.btn:hover,
-.btn:focus-visible {
-  box-shadow: var(--v2-shadow-md);
 }
 
 .btn:focus-visible {

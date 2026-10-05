@@ -20,6 +20,14 @@ export const CLEW_LESSON_STYLE_LABELS: Record<ClewLessonStyle, string> = {
   "en-primary": "英文为主 · 术语中英对照",
 };
 
+/** composer chip 排用的风格短标签（完整标签见 CLEW_LESSON_STYLE_LABELS）。 */
+export const CLEW_LESSON_STYLE_SHORT_LABELS: Record<ClewLessonStyle, string> = {
+  "zh-primary": "中文为主",
+  "exam-cram": "考点速记",
+  socratic: "引导追问",
+  "en-primary": "英文为主",
+};
+
 /** 校验任意输入是否为已注册的讲解风格（生成请求的参数校验用）。 */
 export function isClewLessonStyle(value: unknown): value is ClewLessonStyle {
   return typeof value === "string" && (CLEW_LESSON_STYLES as readonly string[]).includes(value);
@@ -49,8 +57,9 @@ export function parseClewLessonGenerator(value: unknown): ClewLessonGenerator {
 }
 
 export function describeClewLessonGenerator(generator: ClewLessonGenerator): string {
+  // 对用户只呈现模型名；provider（dashscope 等）属基础设施细节，不入界面文案。
   return generator.kind === "model"
-    ? `模型生成（${generator.provider} · ${generator.model}）`
+    ? `模型生成 · ${generator.model}`
     : "启发式整理 · 未接入模型";
 }
 

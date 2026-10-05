@@ -131,30 +131,7 @@ function peerCardProps(id: LearnPeerCardId) {
   };
 }
 
-const reasoningSteps = [
-  {
-    index: "01",
-    title: "四诊证据",
-    description: "先标记最关键的三条信息",
-  },
-  {
-    index: "02",
-    title: "病机判断",
-    description: "归纳病机，明确关键病位与病性",
-  },
-  {
-    index: "03",
-    title: "证型选择",
-    description: "筛选最可能的证型并说明依据",
-  },
-  {
-    index: "04",
-    title: "鉴别排除",
-    description: "排除相似证型，巩固诊断依据",
-  },
-];
-
-type JumpTarget = "workspace" | "dual-lens" | "reasoning" | "review";
+type JumpTarget = "workspace" | "dual-lens" | "review";
 
 type LearningDashboardProps = {
   courses?: readonly CourseDefinition[];
@@ -179,10 +156,13 @@ function formatFeedRelativeTime(iso: string, nowMs: number = Date.now()): string
   return `${days} 天前`;
 }
 
-export function LearningDashboard({ courses, unifiedFeed, continueTarget }: LearningDashboardProps) {
+export function LearningDashboard({
+  courses,
+  unifiedFeed,
+  continueTarget,
+}: LearningDashboardProps) {
   const { user, loading: sessionLoading, logout } = useSession();
   useNurAgentDockProps(PLATFORM_DOCK_PROPS);
-  const [activeStep, setActiveStep] = useState(0);
   const [planOpen, setPlanOpen] = useState(false);
   const [accountOpen, setAccountOpen] = useState(false);
   const [exportNotice, setExportNotice] = useState<string | null>(null);
@@ -210,7 +190,6 @@ export function LearningDashboard({ courses, unifiedFeed, continueTarget }: Lear
     ? `${todayInfo.day} ${todayInfo.date.replace("/", "月")}日`
     : "";
   const firstCourseSlug = courses?.[0]?.slug ?? "tcm-diagnostics";
-  const [caseCompleted, setCaseCompleted] = useState(false);
   const memoryState = useLearningMemory();
   const wrongQuestionData = useWrongQuestionCenter(courses ?? []);
 
@@ -363,28 +342,6 @@ export function LearningDashboard({ courses, unifiedFeed, continueTarget }: Lear
     reader.readAsDataURL(file);
   }
 
-  function continueReasoning() {
-    if (caseCompleted) {
-      setCaseCompleted(false);
-      setActiveStep(0);
-      return;
-    }
-
-    if (activeStep < reasoningSteps.length - 1) {
-      setActiveStep((current) => current + 1);
-      return;
-    }
-
-    setCaseCompleted(true);
-  }
-
-  const nextStep = reasoningSteps[activeStep + 1];
-  const primaryActionLabel = caseCompleted
-    ? "再练一个辨证案例"
-    : nextStep
-      ? `继续：${nextStep.title}`
-      : "完成本次辨证";
-
 
   const handleExportLearnerData = useCallback(() => {
     try {
@@ -485,7 +442,7 @@ export function LearningDashboard({ courses, unifiedFeed, continueTarget }: Lear
                     </span>
                     {/* M3 配额展示 */}
             {quotas && (
-              <div style={{fontSize: "11px", marginTop: 4, color: "#666", lineHeight: 1.4}}>
+              <div style={{fontSize: "11px", marginTop: 4, color: "var(--v2-muted-foreground)", lineHeight: 1.4}}>
                         {Object.entries(quotas.quotas).slice(0, 3).map(([k, q]) => (
                           <div key={k}>
                             {k === "privateMaterials" ? "私人材料" : k === "mockExams" ? "模考" : "构建"}: {q.used} / {q.limit === "unlimited" ? "∞" : q.limit}
@@ -497,14 +454,14 @@ export function LearningDashboard({ courses, unifiedFeed, continueTarget }: Lear
                     {user.membershipTier !== "max" && (
                       <a
                         href="/account/billing"
-                        style={{fontSize: "11px", marginTop: 6, padding: "2px 8px", border: "1px solid #c9a36b", borderRadius: 2, background: "#fffaf0", display: "inline-block", textDecoration: "none", color: "#10100f"}}
+                        style={{fontSize: "11px", marginTop: 6, padding: "2px 8px", border: "1px solid color-mix(in srgb, var(--v2-primary) 45%, transparent)", borderRadius: 6, background: "var(--v3-selected-bg)", display: "inline-block", textDecoration: "none", color: "var(--v3-selected-fg)"}}
                       >
                         升级会员
                       </a>
                     )}
                     <a
                       href="/account/billing"
-                      style={{fontSize: "12px", marginTop: 6, display: "block", textDecoration: "none", color: "#17659a"}}
+                      style={{fontSize: "12px", marginTop: 6, display: "block", textDecoration: "none", color: "var(--v3-slate-blue)"}}
                     >
                       会员中心 · {getMembershipTierLabel(user.membershipTier)}
                     </a>
@@ -616,7 +573,7 @@ export function LearningDashboard({ courses, unifiedFeed, continueTarget }: Lear
                         清除所有同意
                       </button>
                     </div>
-                    <div style={{fontSize: "11px", marginTop: 6, color: "#666"}}>
+                    <div style={{fontSize: "11px", marginTop: 6, color: "var(--v2-muted-foreground)"}}>
                       私人材料同步同意 ({Object.keys(consents).length} 条已启用)
                       <div style={{maxHeight: 90, overflow: "auto", marginTop: 4, fontSize: "10px"}}>
                         {Object.keys(consents).length === 0 ? (
@@ -711,74 +668,11 @@ export function LearningDashboard({ courses, unifiedFeed, continueTarget }: Lear
 
         <section className={styles.mainColumn} aria-labelledby="page-title">
           <p className={styles.eyebrow}>本周学习&nbsp; · &nbsp;{todayLabel}</p>
-          <h1 id="page-title">从证据开始辨证</h1>
+          <h1 id="page-title">我的学习</h1>
+          <p className={styles.headSub}>
+            你的学习状态与官方更新都在这里；学习本身在官方课程、Clew 与题库进行。
+          </p>
 
-          <div className={styles.caseSection}>
-            <p className={styles.sectionLabel}>当前案例</p>
-            <blockquote className={`${styles.caseCard} ${styles.peerCard}`} {...peerCardProps("case")}>
-              女，22岁。近一周食欲不振，脘腹胀满，便溏，神疲乏力。
-            </blockquote>
-          </div>
-
-          <div className={styles.reasoningSection} id="reasoning">
-            <div className={styles.reasoningHeading}>
-              <p className={styles.sectionLabel}>辨证推理流程</p>
-              <span aria-live="polite">
-                {caseCompleted ? "已完成一条完整推理链" : `第 ${activeStep + 1} / 4 步`}
-              </span>
-            </div>
-
-            <div className={styles.stepRail} role="tablist" aria-label="推理步骤">
-              {reasoningSteps.map((step, index) => (
-                <button
-                  key={step.index}
-                  type="button"
-                  role="tab"
-                  aria-selected={index === activeStep}
-                  onClick={() => {
-                    setCaseCompleted(false);
-                    setActiveStep(index);
-                  }}
-                >
-                  {step.index} {step.title}
-                </button>
-              ))}
-            </div>
-            <article
-              className={`${styles.reasoningCard} ${styles.peerCard}`}
-              {...peerCardProps("reasoning")}
-            >
-              <span className={styles.stepIndex}>{reasoningSteps[activeStep].index}</span>
-              <strong>{reasoningSteps[activeStep].title}</strong>
-              <span className={styles.cardRule} aria-hidden="true" />
-              <small>{reasoningSteps[activeStep].description}</small>
-            </article>
-
-            <button className={styles.primaryAction} type="button" onClick={continueReasoning}>
-              <span>{primaryActionLabel}</span>
-              <ArrowRight aria-hidden="true" size={28} strokeWidth={1.45} />
-            </button>
-          </div>
-
-          <section className={styles.dualLens} id="dual-lens" aria-labelledby="dual-lens-title">
-            <h2 id="dual-lens-title">双视角理解线索</h2>
-            <div className={`${styles.dualLensCard} ${styles.peerCard}`} {...peerCardProps("dual-lens")}>
-              <article>
-                <span className={`${styles.lensMark} ${styles.tcmMark}`}>中</span>
-                <div>
-                  <h3>中医视角</h3>
-                  <p>脾失健运，清阳不升，湿浊内停。</p>
-                </div>
-              </article>
-              <article>
-                <span className={`${styles.lensMark} ${styles.westernMark}`}>西</span>
-                <div>
-                  <h3>现代医学视角</h3>
-                  <p>胃肠功能减弱、消化吸收障碍，可能与肠道菌群紊乱相关。</p>
-                </div>
-              </article>
-            </div>
-          </section>
 
           {unifiedFeed ? (
             <section className={styles.unifiedFeed} id="unified-feed" aria-labelledby="unified-feed-title">
@@ -822,6 +716,26 @@ export function LearningDashboard({ courses, unifiedFeed, continueTarget }: Lear
               )}
             </section>
           ) : null}
+
+          <section className={styles.dualLens} id="official-updates" aria-labelledby="official-updates-title">
+            <h2 id="official-updates-title">官方更新</h2>
+            <div className={`${styles.dualLensCard} ${styles.peerCard}`} {...peerCardProps("official-updates")}>
+              <article>
+                <span className={`${styles.lensMark} ${styles.tcmMark}`}>课</span>
+                <div>
+                  <h3>试点课程</h3>
+                  <p>中医诊断学、生理学对所有人免费开放；新知识点持续收录中。</p>
+                </div>
+              </article>
+              <article>
+                <span className={`${styles.lensMark} ${styles.westernMark}`}>器</span>
+                <div>
+                  <h3>平台能力</h3>
+                  <p>Clew 支持上传自己的教材学习；题库与错题中心随时可用。</p>
+                </div>
+              </article>
+            </div>
+          </section>
         </section>
 
         <aside className={styles.progressColumn} aria-labelledby="progress-title">
@@ -857,7 +771,9 @@ export function LearningDashboard({ courses, unifiedFeed, continueTarget }: Lear
 
           <p className={styles.progressNote}>
             <PenLine aria-hidden="true" size={16} strokeWidth={1.6} />
-            下一组：名词解释默写。完成当前案例后开始。
+            {pendingReviewCount > 0
+              ? `有 ${pendingReviewCount} 项复习计划待回流，完成后会自动汇入这里。`
+              : "复习计划生成后，回流项会汇总到这里。"}
           </p>
 
           {normalizeMembershipTier(user?.membershipTier) === "max" ? (

@@ -270,7 +270,7 @@ export async function generateClewChapterNote(input: ClewNoteRequest): Promise<C
         }),
         body,
       ].join("\n");
-      notes.push(`来源：模型生成（${provider.id} · ${provider.model}），结构校验通过。`);
+      notes.push(`来源：模型生成 · ${provider.model}，结构校验通过。`);
     } catch (error) {
       modelOutcome = "failed";
       const message = error instanceof Error ? error.message : "未知错误";

@@ -5,7 +5,6 @@
 .bottomNav {
   border: 1px solid transparent;
   border-radius: var(--v3-card-radius);
-  box-shadow: var(--v3-card-shadow);
 }
 
 .tabs {
@@ -55,12 +54,7 @@
 .navItem.active {
   background: var(--v2-popover);
   border-color: var(--v2-border);
-  box-shadow: var(--v2-shadow-xs);
   color: var(--v2-foreground);
-}
-
-.tab.active {
-  box-shadow: var(--v2-shadow-sm);
 }
 
 .tab:disabled,
@@ -104,7 +98,6 @@
 .item.active {
   background: var(--v2-popover);
   border-color: var(--v2-sidebar-border);
-  box-shadow: var(--v2-shadow-xs);
   color: var(--v2-foreground);
 }
 

@@ -60,10 +60,14 @@ describe("Clew lesson rules", async () => {
     assert.deepEqual(parseClewLessonGenerator("heuristic"), { kind: "heuristic" });
     assert.deepEqual(parseClewLessonGenerator(null), { kind: "heuristic" });
     assert.match(describeClewLessonGenerator({ kind: "heuristic" }), /未接入模型/);
-    assert.match(
-      describeClewLessonGenerator({ kind: "model", provider: "dashscope", model: "qwen3.7-plus" }),
-      /qwen3\.7-plus/,
-    );
+    const described = describeClewLessonGenerator({
+      kind: "model",
+      provider: "dashscope",
+      model: "qwen3.7-plus",
+    });
+    // 批 3：对用户只呈现模型名，provider 不入界面文案
+    assert.match(described, /模型生成 · qwen3\.7-plus/);
+    assert.equal(described.includes("dashscope"), false);
   });
 
   it("原文摘录只取含标题/术语的真实句子，且不含页标记", () => {
@@ -158,7 +162,8 @@ describe("Clew lesson rules", async () => {
       notice: "AI 生成内容。",
     });
     assert.match(header, /^# 总体与样本/);
-    assert.match(header, /模型生成（dashscope · qwen3\.7-plus）/);
+    assert.match(header, /模型生成 · qwen3\.7-plus/);
+    assert.equal(header.includes("dashscope"), false);
     assert.match(header, /中文为主 · 术语首次标注原文/);
     assert.match(header, /依据第 3 页/);
   });
@@ -319,6 +324,62 @@ describe("Clew chat prompt", async () => {
     assert.equal(messages[1].content, "上一问");
     assert.equal(messages[2].content, "上一答");
     assert.deepEqual(messages[3], { role: "user", content: "本轮问题" });
+  });
+
+  it("依据范围缺省与 lesson+source 逐字一致（批 3 向后兼容锁定）", () => {
+    const implicit = buildClewChatSystemPrompt(context);
+    const explicit = buildClewChatSystemPrompt({ ...context, scope: "lesson+source" });
+    assert.equal(implicit, explicit);
+    assert.match(implicit, /回答必须回源：优先依据下方教材原文片段与讲义/);
+    assert.match(implicit, /【PDF 第 3 页】/);
+  });
+
+  it("lesson-only：不给原文片段，回源规则改为仅讲义", () => {
+    const prompt = buildClewChatSystemPrompt({ ...context, scope: "lesson-only" });
+    assert.match(prompt, /仅依据讲义/);
+    assert.match(prompt, /本轮不提供教材原文片段/);
+    assert.equal(prompt.includes("【PDF 第 3 页】"), false);
+    assert.match(prompt, /讲义未覆盖这一点/);
+  });
+
+  it("extended：保留原文，允许拓展但要求标注", () => {
+    const prompt = buildClewChatSystemPrompt({ ...context, scope: "extended" });
+    assert.match(prompt, /【PDF 第 3 页】/);
+    assert.match(prompt, /允许结合背景拓展/);
+    assert.match(prompt, /非本教材内容/);
+  });
+
+  it("chat-scope 常量与校验（client-safe）", async () => {
+    const { CLEW_CHAT_SCOPES, CLEW_CHAT_SCOPE_LABELS, isClewChatScope, resolveClewChatScope } =
+      await import("../src/lib/clew/chat-scope");
+    assert.deepEqual([...CLEW_CHAT_SCOPES], ["lesson-only", "lesson+source", "extended"]);
+    assert.equal(isClewChatScope("lesson-only"), true);
+    assert.equal(isClewChatScope("yolo"), false);
+    assert.equal(resolveClewChatScope(undefined), "lesson+source");
+    assert.equal(resolveClewChatScope("bogus"), "lesson+source");
+    assert.equal(resolveClewChatScope("extended"), "extended");
+    for (const scope of CLEW_CHAT_SCOPES) {
+      assert.ok(CLEW_CHAT_SCOPE_LABELS[scope].length > 0);
+    }
+  });
+
+  it("用户可见「来源：」notes 文案不出现 provider（补遗 2 锁定）", async () => {
+    // 四处服务端 notes 模板（lesson/note/extraction/toc-recognition）已按
+    // describeClewLessonGenerator 同口径清理；此测试防回退——源码级扫描（无 provider 时模型输出不可桩）。
+    const { readFileSync } = await import("node:fs");
+    const files = [
+      "src/lib/clew/lesson.ts",
+      "src/lib/clew/note.ts",
+      "src/lib/clew/extraction.ts",
+      "src/lib/clew/toc-recognition.ts",
+    ];
+    for (const file of files) {
+      const source = readFileSync(file, "utf8");
+      const offending = source
+        .split("\n")
+        .filter((line) => line.includes("来源：") && line.includes("${provider.id}"));
+      assert.deepEqual(offending, [], `${file} 的「来源：」notes 不应再引用 provider.id`);
+    }
   });
 });
 

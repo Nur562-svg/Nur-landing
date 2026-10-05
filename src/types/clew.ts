@@ -193,11 +193,20 @@ export type ClewLessonEvent =
   | { type: "result"; lesson: ClewLessonView; notes: string[] }
   | { type: "error"; code: ClewErrorCode; error: string };
 
-/** 讲解对话 SSE 事件（增量文本 → 结果含落库后的完整消息列表）。 */
+/** 讲解对话 SSE 事件（状态里程碑 → 增量文本 → 结果含落库后的完整消息列表）。 */
 export type ClewChatEvent =
   | { type: "delta"; text: string }
+  | { type: "status"; phase: "source" | "compose"; message: string }
   | { type: "result"; conversation: ClewConversationView; notes: string[] }
   | { type: "error"; code: ClewErrorCode; error: string };
+
+/**
+ * 讲解「依据范围」（批 3，DESIGN_V4 §五 P0-3）：
+ * - lesson-only 仅依据讲义；
+ * - lesson+source 讲义 + 教材原文（缺省，与 M1–M4 现状逐字一致）；
+ * - extended 允许结合背景拓展（教材外内容须显式标注）。
+ */
+export type ClewChatScope = "lesson-only" | "lesson+source" | "extended";
 
 /** 学习页左侧知识点列表项：萃取结果 + 讲义状态。 */
 export type ClewKnowledgePointStudySummary = ClewKnowledgePointView & {

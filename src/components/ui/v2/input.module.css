@@ -4,7 +4,6 @@
   background: var(--v2-background);
   border: 1px solid var(--v2-border);
   border-radius: var(--v2-radius);
-  box-shadow: var(--v2-shadow-sm);
   color: var(--v2-foreground);
   font: inherit;
   height: 40px;
@@ -18,7 +17,6 @@
 
 .field:focus {
   border-color: var(--v2-ring);
-  box-shadow: var(--v2-shadow-sm);
   outline: none;
 }
 
@@ -33,7 +31,6 @@
   background: var(--v2-card);
   border: 1px solid transparent;
   border-radius: var(--v2-radius);
-  box-shadow: var(--v2-shadow-sm);
   display: flex;
   gap: 8px;
   height: 40px;
@@ -42,7 +39,6 @@
 
 .bar:focus-within {
   border-color: var(--v2-ring);
-  box-shadow: var(--v2-shadow-sm);
   outline: none;
 }
 

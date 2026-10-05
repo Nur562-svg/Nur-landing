@@ -466,3 +466,72 @@
   gap: calc(var(--v2-spacing) * 1);
   min-width: 0;
 }
+
+/* ---------- 交互批：桌面图标轨（56px；≥901px 生效，≤900px 抽屉态不受影响） ---------- */
+.railToggle {
+  align-items: center;
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: var(--v2-radius-md);
+  color: var(--v2-muted-foreground);
+  cursor: pointer;
+  display: none;
+  height: 40px;
+  justify-content: center;
+  width: 40px;
+}
+
+.railToggle:hover {
+  background: var(--v2-muted);
+  color: var(--v2-foreground);
+}
+
+.railToggle:focus-visible {
+  outline: 2px solid var(--v2-ring);
+  outline-offset: 2px;
+}
+
+@media (min-width: 901px) {
+  .railToggle {
+    display: inline-flex;
+  }
+
+  .appRail {
+    grid-template-columns: 56px minmax(0, 1fr);
+  }
+
+  .sidebarRail {
+    align-items: center;
+    min-width: 56px;
+    padding: calc(var(--v2-spacing) * 4) calc(var(--v2-spacing) * 1.5);
+    width: 56px;
+  }
+
+  .sidebarRail .brand {
+    justify-content: center;
+    min-height: 44px;
+    width: 100%;
+  }
+
+  .sidebarRail .brandText,
+  .sidebarRail .navLabel,
+  .sidebarRail .navLinkText,
+  .sidebarRail .navLinkMeta,
+  .sidebarRail .sidebarEmpty,
+  .sidebarRail .sidebarFoot,
+  .sidebarRail .quotaChip,
+  .sidebarRail .sidebarContext {
+    display: none;
+  }
+
+  .sidebarRail .navGroup {
+    width: 100%;
+  }
+
+  .sidebarRail .navLink {
+    justify-content: center;
+    min-height: 40px;
+    padding: calc(var(--v2-spacing) * 2) 0;
+    width: 100%;
+  }
+}

@@ -5,8 +5,8 @@
   --ink: var(--text-900);
   --paper: var(--bg-200);
   --muted: var(--text-500);
-  --line: color-mix(in srgb, var(--text-900) 38%, transparent);
-  --soft-line: color-mix(in srgb, var(--text-900) 16%, transparent);
+  --line: color-mix(in srgb, var(--text-900) 12%, transparent);
+  --soft-line: color-mix(in srgb, var(--text-900) 6%, transparent);
   --red: var(--error-600);
   --blue: var(--v2-ring);
   background: var(--paper);
@@ -34,7 +34,7 @@
 }
 
 .backLink:hover {
-  color: var(--red);
+  color: var(--muted);
 }
 
 .kicker {
@@ -97,11 +97,11 @@
 }
 
 .cardMain:hover {
-  color: var(--red);
+  color: var(--v2-primary);
 }
 
 .card:hover {
-  border-color: var(--red);
+  border-color: var(--muted);
 }
 
 .cardKicker {
@@ -132,7 +132,6 @@
 }
 
 .cardTitle {
-  font-family: var(--font-serif), "Times New Roman", serif;
   font-size: 18px;
   font-weight: 600;
   margin: 0;
@@ -168,7 +167,7 @@
 }
 
 .cardLinks a:hover {
-  color: var(--red);
+  color: var(--v2-primary);
 }
 
 @media (max-width: 640px) {

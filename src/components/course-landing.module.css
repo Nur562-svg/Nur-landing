@@ -4,8 +4,8 @@
   --ink: var(--text-900);
   --paper: var(--bg-200);
   --muted: var(--text-500);
-  --line: color-mix(in srgb, var(--text-900) 38%, transparent);
-  --soft-line: color-mix(in srgb, var(--text-900) 16%, transparent);
+  --line: color-mix(in srgb, var(--text-900) 12%, transparent);
+  --soft-line: color-mix(in srgb, var(--text-900) 6%, transparent);
   --red: var(--error-600);
   --blue: var(--v2-ring);
   background: var(--paper);
@@ -32,7 +32,7 @@
 }
 
 .backLink:hover {
-  color: var(--red);
+  color: var(--muted);
 }
 
 .kicker {
@@ -102,7 +102,7 @@
 
 .primaryAction {
   align-items: center;
-  background: var(--ink);
+  background: var(--v2-primary);
   color: var(--paper);
   display: inline-flex;
   font-size: 14px;
@@ -130,7 +130,7 @@
 }
 
 .learningRow:hover {
-  color: var(--red);
+  color: var(--v2-primary);
 }
 
 .learningName {
@@ -160,8 +160,8 @@
 }
 
 .chapterCard:hover {
-  border-color: var(--red);
-  color: var(--red);
+  border-color: var(--muted);
+  color: var(--v2-primary);
 }
 
 .chapterIndex {
@@ -171,7 +171,6 @@
 }
 
 .chapterName {
-  font-family: var(--font-serif), "Times New Roman", serif;
   font-size: 17px;
   font-weight: 600;
   margin: 0;
