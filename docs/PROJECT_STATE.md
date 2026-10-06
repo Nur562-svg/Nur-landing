@@ -1832,5 +1832,16 @@ R4 = R4-1（`feat(design): R4 command palette content search`）+ R4-2（`feat(d
 
 - **Hermes 预验收复核通过（2026-10-04）**：独立复跑 `npm run test` 490/490、`npm run check` exit 0、`prisma migrate status` 与基线一致；独立重跑暗色 WCAG 审计（r2 五面 + r3 十五路由）均 0 低对比；独立浏览器复走（m2qa，复核脚本不进仓库）——默认工作台 + 旧 focus 偏好尊重、壳侧栏 264 + KP rail portal（含 390 抽屉）、安静进度线（6/8 · 75% · 下一步链接）、视图 tabs 零请求、复制剪贴板、重新生成端到端（4 → 6 行追加不覆盖、reload 持久、EventLog 计次）、10 格明暗×双模式×断点矩阵与 9 路由 × 三档回归全过、console error 0；首轮 dev 热更竞态在干净重启后不可复现（环境现象）。详见 `design-qa.md`「预验收复核（Hermes，2026-10-04）」。
 
-**下一主线**：DESIGN_V4 批 2（其余面按 v4 token 归一）与批 3（「依据范围」）；ZCODE-M5（候选）「练/复」功能面与部署上线准备（ICP + 商户号 + 生产密钥）并行推进。
+## 设计系统 v4「Quiet」批 2 — 其余面按 v4 语言归一（2026-10-04 完成，Hermes 预验收复核通过，未提交）
 
+任务书 `docs/DESIGN_V4.md` §八第二批完成（工作台壳、/learn、官方课、题库、计费、营销首页 `/` 归一 + ⌘K/抽屉回归）；走查与截图证据见 `design-qa.md`「DESIGN_V4 批 2」节。信息结构不动、教学语义不动、证据分级标签原样保留，只动皮肤。
+
+- **Token 层收口**：`--v3-card-shadow` 归零（阴影仅浮层），浮层（⌘K 面板/抽屉/弹层）单独用 `--v2-shadow-lg`；`::selection` 朱砂淡染。v2 基元六件套扁平化（去非浮层阴影/hover 位移）。
+- **基础层宋体收缩（token 级）**：globals `@layer base` h1/h2/.font-heading 保留宋体、**h3–h6 改 sans**——修复「局部删 font-family 后 h3 被基础层打回宋体」的系统性问题；官方课 7 文件宋体越权约 90 处收缩。
+- **红/蓝纪律**：hover 红 → 中性或朱砂；进度红 → 朱砂；「正确」状态 error 红 → success 橄榄绿；选中/激活态全量统一 `--v3-selected-*` token；主行动 CTA（官方课/题库/错题/计费/首页）墨底或红底 → 朱砂圆角；双镜成对色修正撞色（现代医学 → 石板蓝，中医 → 朱砂）；评分视角 tcm/modern/boundary 与诚实提示条保留警示语义。
+- **硬边 → 圆角细线**：官方课/题库/错题/计费/模考面板、输入、tag、选项、列表全量 `1px solid var(--ink)` → 细边框 + 8/12px 圆角；错题中心弱项卡修复明暗写反（深底深字 → 浅卡）。
+- **营销首页 `/`**：概念不动；裸色全 token 化并首次接入全局 .dark 双主题；朱砂印章「知径」logo；装饰动效删除（hero 3D 倾斜/crosshair/反色 hover/浮钮位移/420ms 面板形变/stagger/focus 位移），账户面板简化为透明度+缩放状态过渡；`contact-cta` 补缺失样式；reveal 反转层（clip-path 跟随指针）作为概念交互保留。
+- **装饰动效清理**：noticeFade 自动播完动画、entryCard/builderEntry 箭头位移、badge hover 位移、浮钮 hover 位移等删除；动效白名单（流式光标/spinner/状态过渡）之外清零。
+- **验证**：`npm run test` **490/490**、`npm run check` exit 0（lint 0 error）；暗色 WCAG 审计 r2（5 面）+ r3（15 路由）均 0 标红；`design-v3-check.mjs` 布局断言全过；14 路由 × 明暗 × 1440/1200/980/390 矩阵横向溢出 0、console 0 错误、关键断言实测通过；截图 14 张 `docs/design-references/v4b2-*.png`。dev 竞态注记：矩阵突发访问偶发随机路由的 `Invalid or unexpected token` pageerror（联合路由顺序复检 6 轮全净；生产认证矩阵本地不可行——`database-url.ts` 守卫构建期内联 NODE_ENV，系设计行为），判定为 dev chunk 服务竞态非产品缺陷。
+- **边界**：零 Prisma/migration/服务端逻辑改动；改动面 = 19 个 css module + globals.css + learning-dashboard.tsx 内联样式 token 化 + page.tsx 印章 markup。**证据分级标签（data-relationship）零触碰。**
+- **Hermes 预验收复核（2026-10-04）**：独立复跑 test 490/490、check exit 0；13 路由 × 明（1440/1200/980/390）+ 暗（1440 全路由、390 抽 3）共 68 载，横向溢出 0 / console 0 / pageerror 0；r2+r3 暗色审计重跑 0 标红（r3 首跑 design-system 段一次脚本竞态，重跑全过）；首页印章与明暗底、⌘K 底部面板、390 抽屉、知识点页「对照」stage 证据标签（data-relationship=3）实测通过——**批 2 预验收通过**。遗留 4 处小项（/learn 主按钮墨底、/question-bank addBtn 墨边、swr/cr `em` 墨边、avatar 同色冗余边）与范围外残面（/login、/register、my-materials、course-builder）清单见 `design-qa.md`「预验收复核（Hermes，2026-10-04）· DESIGN_V4 批 2」节。

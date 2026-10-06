@@ -1146,3 +1146,70 @@ playwright-core + 系统 Chrome（headless、无扩展），视口 **1440×900 /
   - 回归面 9 路由 × 1440/1200/980 = 27 次加载全 200、无溢出、0 错误；`/design-system` V4 节可见。
 - **环境注（不影响结论）**：首轮走查时 dev server 一次热更竞态（worker 重启）造成首个加载未水合（`SyntaxError: Invalid or unexpected token`）、一次导航 ERR_ABORTED、一次路由超时；按既有协议「重启 dev + 清 `.next` + 预热」后全部不可复现，生产构建与全部门槛无此现象。复核脚手架自身一处问题（对 SSE 端点的 route 拦截会挂起客户端）修正后复跑，非产品缺陷。
 - **结论**：**批 1 验收成立，未发现需返工项**；等待终审。
+
+## DESIGN_V4 批 2 — 其余面按 v4 语言归一（2026-10-04，Zcode 执行）
+
+任务书 `docs/DESIGN_V4.md` §八第二批：工作台壳、/learn、官方课、题库、计费、营销首页 `/` 按 v4 token 归一（信息结构不动、语义不动、只动皮肤）+ ⌘K/抽屉沿既有断点回归。批 3（「依据范围」）仍待开工。
+
+### 落地内容
+
+- **Token 层收口（阴影仅浮层）**：`--v3-card-shadow` 归零（原 0 1px 3px rgba）——全站卡片即无阴影；浮层单独补：⌘K 命令面板 `--v3-card-shadow` → `--v2-shadow-lg`。`::selection` 黑底 → 朱砂淡染（唯一强调贯彻到选区）。
+- **v2 基元扁平化**（ui/v2 六件套）：button/badge/input/chat-bubble/navigation 全部去非浮层阴影与 hover 位移/阴影升级（状态由 bg/border 表达）；card eyebrow 宋体 → sans。
+- **/learn 学习主页**：桥接线细一档（38%→12%）；header/移动导航硬边 → 细线；账户弹层 8px 硬偏移阴影 → v2-shadow-lg + 圆角；入口格 ink 外框 → 圆角细线；推演流激活态红 → 朱砂；周节奏「今天」红 → 朱砂；周计划抽屉（浮层）→ 顶部圆角 + v2-shadow-lg；宋体越权 8 处收缩（账户标题/入口标题/病案卡/推演卡/大数字等，数字改 tabular-nums）；entryCard/builderEntry hover 箭头位移（装饰）删除；tsx 内联裸 hex 4 处 → token（#666/#fffaf0/#c9a36b/#17659a）。
+- **错题中心**：tab 选中墨底 → 统一选中 token；弱项卡修复明暗写反（text-900 35% 深底深字 → bg-100 浅卡）；错题/薄弱列表圆角化、hover 降为 4% 中性；统计数字宋体 → sans tabular、accent 数字降噪为 ink；空状态虚线圆角 + 朱砂主按钮；`--cinnabar` 局部别名改指 error-600（该页朱砂仅用于「错误/薄弱」语义）。
+- **题库四组件**：搜索框/题型 tag/章节卡/题目行/选项/结果区/主观作答全面圆角化 + ink 硬边 → 细边框；进度条红 → 朱砂；「正确」状态 error 红 → success 橄榄绿（语义修正，答错保留红）；filter 激活下划线红 → 朱砂；开始/练习主按钮 → 朱砂圆角（筛选模式变体为描边）；noticeFade 2.2s 自动播完装饰动效删除；课程行 hover 位移装饰删除。
+- **计费页**：三档徽章三色编码 → 灰度分层（当前套餐由朱砂描边表达）；月/季/年分段控件 → 圆角 + 统一选中 token；档位卡/支付面板/订单标题圆角化；档位名/价格数字宋体 → sans（价格 tabular-nums）；alipay 支付钮墨底 → 朱砂圆角。
+- **模考室**：计时器/题区/答题卡/交卷 modal（浮层补 v2-shadow-lg）/蓝图/诚信/续考/成绩卡圆角化；宋体越权 6 处收缩（题干/模态标题/蓝图计数/诚信/续考/分数，分数改 tabular）；行状态徽章 Partial 墨边 → muted；backLink hover 红 → 中性。
+- **官方课 7 文件**（course-workspace / knowledge-point-lesson / subjective-writing-room / case-reasoning-room / course-catalog / course-landing / mock-exam-room）：桥接线细一档 + `1px solid var(--ink)` 全量 → 细边框 + 机械补圆角（大面板 12px / 小控件 8px）；宋体越权约 90 处收缩（白名单保留 .brand/h1/h1 span/h2/.title/.sectionTitle）；红纪律——hover 红 → 中性或朱砂、进度红 → 朱砂、图标标注红 → 朱砂、章节/单元/四段步骤/证据/rubric 选中 → 统一选中 token、主行动 CTA（直接进入学习/写作室入口/病案进入/确认提交/页脚按钮/readyLink/drawerAction/sessionCard）墨底或红底 → 朱砂圆角；诚实提示条（「这不是学校原题…」）墨底反白 → 浅警示卡（红 5% 底 + 30% 边）；双镜成对色修正撞色（现代医学侧原 --blue=--v2-ring 与朱砂同色 → 石板蓝信息色；中医侧 → 朱砂）；评分视角标签 tcm/modern 成对同步。**证据分级标签（可关联/帮助理解/不可直接等同，`data-relationship`）按裁决原样保留未动。**评分提示条（scoringNotice/rubricNotice）与「不可直接等同」boundary 红、readyUnavailable/examDraftIssues/warning/pending 红保留 error/warning 语义。
+- **宋体基础层收缩（v4 规则的 token 级落实）**：globals `@layer base` 把 `h1–h6, .font-heading` 统一宋体改为 **h1/h2/.font-heading 宋体、h3–h6 sans**——否则局部删 font-family 的 h3 会被基础层打回宋体（本轮实测发现并修复）。
+- **营销首页 `/`**：概念与信息结构不动。全部裸色 token 化（#000/#030303/#f7f4ef/#faf7f2/#fff → v2 foreground/background/card 派生，rgb 灰度 → color-mix）——**首页首次接入全局 .dark 双主题**；黑色十字 brand-mark（死代码）退役，brand-lockup 前加朱砂方章 + 楷体「知径」（与工作台壳同语言）；装饰动效删除：hero 3D 倾斜 + crosshair 光标、feature-visual hover 反色、row-arrow hover 位移、账户浮钮 hover 位移、账户面板 420ms 宽高形变 + 子级 stagger（简化为透明度/缩放状态过渡）、输入 focus 位移（focus 改朱砂边框）；账户浮钮黑底 → 朱砂主行动；`contact-cta` 补上缺失样式（朱砂主按钮，原为无样式裸链接）；hero「反转层」（clip-path 跟随指针）保留——属概念交互。
+- **遗留死代码顺手清理**：SWR/CW 内历史悬空选择器片段（`.deskFooter >` 等空规则，HEAD 既有）删除。
+
+### 验证记录
+
+- [x] `npm run test` **490/490**（`design-v3-density` 的 `--v3-card-shadow` 断言同步为 none）
+- [x] `npm run check` exit 0（lint 0 error，warning 均为既有）
+- [x] 暗色 WCAG 审计：`design-r2-dark-audit.mjs`（5 面）与 `design-r3-dark-audit.mjs`（15 路由）暗色低对比文本元素均 **0 个**
+- [x] `design-v3-check.mjs` 布局断言（264px 侧栏/⌘K 底部面板/画布占比/390 无溢出）全过；三次连跑中两次命中一次 dev chunk 竞态（见下），无布局性 FAIL
+- [x] 浏览器走查矩阵：14 条路由（/、/learn、/courses、官方课工作区、知识点、写作室、推理室、课程题库、章节题库、模考、全局题库、错题中心、计费、design-system）× 明/暗 × 1440/1200/980/390，横向溢出 0；关键断言实测通过（learn 卡片阴影=none、billing 档位卡阴影=none、qb-global 搜索框圆角、home 印章渲染）；截图 14 张入 `docs/design-references/v4b2-*.png`
+- [x] dev 竞态说明：矩阵爆发式访问下偶发 `SyntaxError: Invalid or unexpected token` pageerror（每轮报错路由随机、逐步路由 6 轮复检全净、单路由顺序访问恒 CLEAN）——dev server chunk 服务在多 context 突发下的已知竞态（批 1 曾以生产构建两次连跑排除；本批生产认证矩阵本地不可行：`database-url.ts` 守卫在构建期内联 NODE_ENV=production，sqlite 必炸，系设计行为）。console error 0；不涉及任何布局/样式断言。
+- [x] 文档更新：本节 + `docs/PROJECT_STATE.md` + `docs/DESIGN_V4.md` 状态行
+
+### 截图索引（docs/design-references/，v4b2- 前缀 14 张）
+
+- `v4b2-home-light/dark-1440.png` 营销首页明暗（印章 logo/平涂/双主题）
+- `v4b2-learn-light-1440.png` /learn；`v4b2-course-ws-light-1440.png` 官方课工作区
+- `v4b2-kp-light/dark-1440.png` 知识点页（朱砂四段 tab）；`v4b2-swr-light-1440.png` 写作室
+- `v4b2-qb-home/chapter/global-light-1440.png` 题库三面；`v4b2-mock-light-1440.png` 模考
+- `v4b2-wrong-light-1440.png` 错题中心；`v4b2-billing-light/dark-1440.png` 计费明暗
+
+### 走查环境注
+
+- 走查前重启 dev 并清 `.next`；矩阵两轮 + 联合路由顺序复检 6 轮（2 主题 × 3 轮）。
+- 结束时 dev server 保持运行（localhost:3000）。
+
+### 最终门槛
+
+- [x] lint 0 error + tsc 通过 + check exit 0
+- [x] test 全绿 490/490
+- [x] 零 migration、零 Prisma 变更、零服务端逻辑改动（本轮仅 1 个 tsx 内联样式 token 化 + 1 个 page.tsx 印章 markup + 其余全为 css）
+- [x] 明暗双主题全矩阵通过、console 0 错误、暗色审计 0 标红
+- [x] 官方课证据分级标签与教学语义零改动（grep 确认 `data-relationship` 样式区未触碰）
+
+### 预验收复核（Hermes，2026-10-04）· DESIGN_V4 批 2
+
+独立复核（自有脚本，非 Zcode 走查脚本；QA 账号 m2qa；走查前重启 dev + 清 `.next` + 路由预热）：
+
+- **门槛**：`npm run test` **490/490**（115 套、0 失败）、`npm run check` exit 0（含生产构建完成）；无 prisma/migration 变更（与基线一致）。
+- **矩阵**：13 路由 × 亮色 {1440,1200,980,390}（52 载）+ 暗色 1440 全路由（13 载）+ 暗色 390 抽 3 面——共 **68 载：状态异常 0、横向溢出 0、console error 0、pageerror 0**（唯一 console 条目为复核脚本自身登录水合竞态致 1 次 POST 401，dev 日志佐证仅此一条，非产品缺陷）。
+- **专项实测**：首页印章渲染且为朱砂（rgb(201,100,66)）；首页亮底 #FAF9F5 / 暗底 #201e19（`.dark` 生效）；⌘K 面板 1440 全宽贴底；390 抽屉开合正常（264px）；计费页可见阴影 0；/learn 可见阴影仅 1 处内嵌选中 ring（非浮层投影）；全局题库输入框圆角 24px；**证据分级标签**：diet-and-taste 页「对照」stage 实测 `data-relationship=3` 且 可关联/帮助理解/不可直接等同 文案在位（首测在默认「取证」stage 为 0，经四段采样澄清——标签随对照 stage 渲染，语义未动）。
+- **暗色审计复跑**：`design-r2-dark-audit`（5 面）0 标红；`design-r3-dark-audit`（15 路由）首跑 design-system 段遇一次脚本级竞态报错（createTreeWalker），**重跑全过 0 标红**。
+- **复核侧口径修正（记录）**：首跑两处初判失败均系脚本法问题——首页暗色检查被 `addInitScript` 主题覆写、kp 标签未切换 stage；修正后均通过。
+- **遗留清单（非阻塞；建议批 3 顺手或另立小单）**：
+  1. `/learn` `primaryAction`（「继续：…」主按钮）仍墨黑实底 + 全墨边——批 2 已把题库/计费/官方课主按钮改朱砂，此处漏网；
+  2. `/question-bank` `addBtn` 全墨 1px 边；
+  3. `subjective-writing` / `case-reasoning` 各 1 处 `em` 元素全墨 1px 边；
+  4. `/learn` `avatarLarge` 墨底 + 同色墨边（视觉无害，规则残留）；
+  5.（备注）`learning-dashboard` 的 `.reasoningCard` / `.dualLensCard` 规则仍含 `1px solid var(--ink)`，默认态未命中渲染，实际使用面待确认。
+- **范围外残面（批 2 命名范围不含，现状记录）**：`/login`、`/register`（auth-form：v1 硬编码浅色皮，明暗两主题实测均 rgb(247,244,238)，不随 `.dark` 翻转）；`/learn/my-materials`（private-practice-room，R3 桥接、旧语言）；`/learn/course-builder`（page.module.css 同 v1 硬编码）；`material-admission-review`（当前全仓无引用＝死代码候选，module.css 仍含 13 处全墨边）。
+- **结论**：批 2 核心声明（命名面归一、⌘K/抽屉回归、双主题、证据标签零动、教学语义零动）**全部复核成立 → 预验收通过**；上列遗留小项与残面不阻断本批，交终审决定是否并入批 3。
