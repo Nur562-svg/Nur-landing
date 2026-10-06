@@ -116,8 +116,22 @@ describe("Clew 多模型任务级配置解析", async () => {
       })));
   });
 
-  it("未实现 provider（deepseek/kimi/zhipu）明确报错且消息含 openai-compatible 指引；dashscope 非 aliyuncs 主机拒绝", () => {
-    for (const provider of ["deepseek", "kimi", "zhipu"]) {
+  it("deepseek 已实现为一级 provider（ZCODE-M6：默认 base + DEEPSEEK_API_KEY）；未实现的 kimi/zhipu 明确报错；dashscope 非 aliyuncs 主机拒绝", () => {
+    // deepseek：任务级 provider 可解析（显式任务 key 优先，缺省回落 DEEPSEEK_API_KEY）
+    const resolved = resolveClewTaskModelFrom("lesson", envFor({
+      CLEW_LESSON_PROVIDER: "deepseek",
+      CLEW_LESSON_API_KEY: STUB_KEY,
+    }));
+    assert.equal(resolved.provider, "deepseek");
+    assert.equal(resolved.baseURL, "https://api.deepseek.com/v1");
+    assert.equal(resolved.apiKey, STUB_KEY);
+    // deepseek 缺 key → 解析成功但 key 为空（isClewTaskConfiguredFrom 判 false 由既有测试覆盖）
+    const resolvedNoKey = resolveClewTaskModelFrom("lesson", envFor({
+      CLEW_LESSON_PROVIDER: "deepseek",
+    }));
+    assert.equal(resolvedNoKey.apiKey, "");
+    // 未实现 provider 仍明确报错
+    for (const provider of ["kimi", "zhipu"]) {
       try {
         resolveClewTaskModelFrom("lesson", envFor({
           CLEW_LESSON_PROVIDER: provider,

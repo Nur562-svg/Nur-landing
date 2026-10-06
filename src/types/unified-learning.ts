@@ -1,8 +1,9 @@
 /**
  * 统一学习事件契约（ZCODE-M3 Phase 1）。
  * 真相源：docs/RESTRUCTURE_PLAN.md §三、docs/loop-profile-contract-draft.md §统一学习者状态层。
- * 只声明真正写入的子集；契约草案中 fsrs-rated 等成员留给 M4+，不要声明不写的成员。
+ * 只声明真正写入的子集；不要声明不写的成员。
  * （wrong-question-added 自 2026-10-02 体验补丁起写入：Clew 自测标记「还需看」的题目。）
+ * （review-scheduled / review-completed 自 ZCODE-M5 起写入：Clew FSRS 复习调度。）
  */
 
 import type { LoopStage } from "./loop-profile";
@@ -16,7 +17,9 @@ export type LearningEventType =
   | "stage-completed"
   | "session-completed"
   | "attempt-confirmed"
-  | "wrong-question-added";
+  | "wrong-question-added"
+  | "review-scheduled"
+  | "review-completed";
 
 export type UnifiedEventPayload =
   | { kind: "session" }
@@ -36,6 +39,22 @@ export type UnifiedEventPayload =
       kind: "wrong-question";
       questionId: string;
       source: "clew";
+    }
+  | {
+      /** ZCODE-M5：Clew FSRS 复习调度（scheduled=首次排期；completed=一次打分回流）。 */
+      kind: "review";
+      reviewItemId: string;
+      kpId: string;
+      rating?: "again" | "hard" | "good";
+      dueAt?: string;
+    }
+  | {
+      /** ZCODE-M6：Clew 练习作答（A1 判分 / fill 自评；错答经 practice-wrong 进 FSRS）。 */
+      kind: "practice-attempt";
+      questionId: string;
+      practiceKind: "a1" | "fill";
+      isCorrect: boolean;
+      attemptedAt: string;
     };
 
 /** 写入输入（builder 产出 / 同步服务构造）。 */

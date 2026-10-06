@@ -1,5 +1,6 @@
 import { clewFailure, clewUnauthorized } from "@/lib/clew/api-response";
 import { sendClewKnowledgePointMessage } from "@/lib/clew/chat";
+import { computeClewKpSuggestions } from "@/lib/clew/kp-suggestions";
 import { getClewSessionUser } from "@/lib/clew/session-user";
 import type { ClewChatEvent } from "@/types/clew";
 
@@ -36,6 +37,7 @@ export async function POST(
   let message: string;
   let style: string | undefined;
   let scope: string | undefined;
+  let intensity: string | undefined;
   try {
     const text = await request.text();
     if (new TextEncoder().encode(text).length > maxRequestBytes) {
@@ -65,6 +67,14 @@ export async function POST(
       }
       scope = scopeCandidate;
     }
+    // ZCODE-M6 可选字段：思考强度（standard/deep；校验在服务编排层）
+    const intensityCandidate = (parsed as { intensity?: unknown }).intensity;
+    if (intensityCandidate !== undefined) {
+      if (typeof intensityCandidate !== "string") {
+        return clewFailure(400, "invalid-request", "请求格式无效。");
+      }
+      intensity = intensityCandidate;
+    }
   } catch {
     return clewFailure(400, "invalid-request", "请求格式无效。");
   }
@@ -91,6 +101,7 @@ export async function POST(
           message,
           style,
           scope,
+          intensity,
           onDelta: (text: string) => send({ type: "delta", text }),
           onStatus: (phase, statusMessage) => send({ type: "status", phase, message: statusMessage }),
         });
@@ -99,7 +110,14 @@ export async function POST(
           send({ type: "error", code: result.code, error: result.message });
           return;
         }
+        const finalMessages = result.conversation.messages;
+        const lastAnswer = [...finalMessages].reverse().find((m) => m.role === "assistant");
         send({ type: "result", conversation: result.conversation, notes: result.notes });
+        // D10 跨 KP 跳转建议：确定性匹配本书其他知识点；命中才发，绝不硬凑
+        const suggestions = await computeClewKpSuggestions(user.id, id, lastAnswer?.content ?? "");
+        if (suggestions.length > 0) {
+          send({ type: "suggestions", items: suggestions });
+        }
       } catch (error) {
         console.error("[clew] 讲解对话失败", error);
         send({ type: "error", code: "server-error", error: "讲解对话失败，请稍后重试。" });

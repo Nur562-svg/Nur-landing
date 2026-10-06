@@ -22,7 +22,10 @@ export type ClewModelProviderId =
   | "zhipu"
   | "openai-compatible";
 
-export type ClewProviderTask = "toc" | "extraction" | "lesson" | "chat" | "note";
+export type ClewProviderTask = "toc" | "extraction" | "lesson" | "chat" | "note" | "practice";
+
+/** ZCODE-M6：练习生成思考强度（D8 定案：模型路由——standard=qwen 非思考 / deep=deepseek-flash 默认思考）。 */
+export type ClewPracticeIntensity = "standard" | "deep";
 
 export type ResolvedClewModelConfig = {
   provider: string;
@@ -39,10 +42,13 @@ export class ClewProviderConfigError extends Error {
   }
 }
 
-const IMPLEMENTED_PROVIDERS: readonly string[] = ["dashscope", "openai-compatible"];
+const IMPLEMENTED_PROVIDERS: readonly string[] = ["dashscope", "deepseek", "openai-compatible"];
 
 const DASHSCOPE_DEFAULT_BASE_URL = "https://dashscope.aliyuncs.com/compatible-mode/v1";
+const DEEPSEEK_DEFAULT_BASE_URL = "https://api.deepseek.com/v1";
 const DEFAULT_MODEL = "qwen3.7-plus";
+/** DeepSeek V4.1 Flash 的 API 模型 id（营销名 deepseek-v4.1-flash 会被 API 400 拒绝；M6-0 探针实测）。 */
+export const DEEPSEEK_FLASH_MODEL = "deepseek-flash";
 
 /** 已核实的 OpenAI 兼容端点示例（2026-10-02，来源：各家官方文档），用于报错指引。 */
 const PROVIDER_GUIDANCE =
@@ -58,6 +64,7 @@ const TASK_ENV_PREFIX: Record<ClewProviderTask, string> = {
   lesson: "CLEW_LESSON",
   chat: "CLEW_CHAT",
   note: "CLEW_NOTE",
+  practice: "CLEW_PRACTICE",
 };
 
 function taskEnvName(task: ClewProviderTask, suffix: "PROVIDER" | "MODEL" | "BASE_URL" | "API_KEY"): string {
@@ -100,6 +107,9 @@ function resolveBaseURL(task: ClewProviderTask, provider: string, env: ClewEnvSo
   if (provider === "dashscope") {
     return readEnv(env, "DASHSCOPE_BASE_URL") ?? DASHSCOPE_DEFAULT_BASE_URL;
   }
+  if (provider === "deepseek") {
+    return DEEPSEEK_DEFAULT_BASE_URL;
+  }
   throw new ClewProviderConfigError(
     `openai-compatible provider 必须提供 baseURL：设置 ${taskEnvName(task, "BASE_URL")} 或 CLEW_MODEL_BASE_URL（如 https://api.deepseek.com）。`,
   );
@@ -112,6 +122,9 @@ function resolveApiKey(task: ClewProviderTask, provider: string, env: ClewEnvSou
   }
   if (provider === "dashscope") {
     return env["DASHSCOPE_API_KEY"]?.trim() ?? "";
+  }
+  if (provider === "deepseek") {
+    return env["DEEPSEEK_API_KEY"]?.trim() ?? "";
   }
   if (provider === "openai-compatible") {
     return env["CLEW_MODEL_API_KEY"]?.trim() ?? "";
@@ -199,4 +212,49 @@ export function describeClewTaskModelFrom(task: ClewProviderTask, env: ClewEnvSo
 
 export function describeClewTaskModel(task: ClewProviderTask): string {
   return describeClewTaskModelFrom(task, process.env as ClewEnvSource);
+}
+
+/* ---------------- ZCODE-M6：练习生成思考强度（D8：模型路由） ---------------- */
+
+const PRACTICE_DEEP_MODEL_ENV = "CLEW_PRACTICE_DEEP_MODEL";
+const PRACTICE_DEEP_BASE_URL_ENV = "CLEW_PRACTICE_DEEP_BASE_URL";
+const PRACTICE_DEEP_API_KEY_ENV = "CLEW_PRACTICE_DEEP_API_KEY";
+
+/**
+ * 练习生成目标解析（纯函数，供测试直接传 env）：
+ * - standard：任务级配置（CLEW_PRACTICE_* → 缺省 dashscope qwen3.7-plus；transport 对 dashscope 注入 enable_thinking:false）；
+ * - deep：deepseek-flash（默认思考，探针实测 enable_thinking 对其 no-op）；
+ *   未配置 DEEPSEEK_API_KEY（或显式覆盖 key）→ 抛 ClewProviderConfigError，**不静默回落 standard**。
+ */
+export function resolveClewPracticeTargetFrom(
+  intensity: ClewPracticeIntensity,
+  env: ClewEnvSource,
+): ResolvedClewModelConfig {
+  if (intensity === "standard") {
+    return resolveClewTaskModelFrom("practice", env);
+  }
+  const apiKey = readEnv(env, PRACTICE_DEEP_API_KEY_ENV) ?? readEnv(env, "DEEPSEEK_API_KEY");
+  if (!apiKey) {
+    throw new ClewProviderConfigError(
+      "深度档未配置：请在服务端环境设置 DEEPSEEK_API_KEY（或 CLEW_PRACTICE_DEEP_API_KEY）后使用深度模式；本次生成已停止，不降级到标准档。",
+    );
+  }
+  const baseURL = readEnv(env, PRACTICE_DEEP_BASE_URL_ENV) ?? DEEPSEEK_DEFAULT_BASE_URL;
+  assertProviderBaseUrl("deepseek", baseURL);
+  return {
+    provider: "deepseek",
+    model: readEnv(env, PRACTICE_DEEP_MODEL_ENV) ?? DEEPSEEK_FLASH_MODEL,
+    apiKey,
+    baseURL,
+    task: "practice",
+  };
+}
+
+export function resolveClewPracticeTarget(intensity: ClewPracticeIntensity): ResolvedClewModelConfig {
+  return resolveClewPracticeTargetFrom(intensity, process.env as ClewEnvSource);
+}
+
+/** 校验任意字符串为合法强度（API 输入用）；非法返回 null。 */
+export function coerceClewPracticeIntensity(value: unknown): ClewPracticeIntensity | null {
+  return value === "standard" || value === "deep" ? value : null;
 }

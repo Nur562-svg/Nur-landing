@@ -15,6 +15,7 @@ import {
   type ClewNoteContext,
   type ClewNoteHighlightEntry,
   type ClewNotePoint,
+  type ClewNoteReviewPressureEntry,
 } from "./note-heuristic";
 import { createClewNoteProviderFromEnv } from "./note-provider";
 import { ClewProviderConfigError } from "./providers/model-config";
@@ -29,6 +30,44 @@ import { normalizeLessonMarkdown, parseClewLessonGenerator } from "./lesson-heur
 
 /** 每个知识点进入笔记的追问条数上限（超出取最近若干条并如实说明）。 */
 export const CLEW_NOTE_QUESTIONS_PER_KP = 10;
+
+/* ---------------- ZCODE-M6-D：复习压力聚合（M5/M6 数据消费面；有则增强、无则缺省） ---------------- */
+
+/** 「即将到期」窗口（与「我的学习 · 今日复习」选择器同口径：7 天）。 */
+const NOTE_REVIEW_UPCOMING_MS = 7 * 24 * 60 * 60 * 1000;
+/** 进入笔记的复习压力条目上限（超出截断并如实说明）。 */
+const NOTE_REVIEW_PRESSURE_MAX = 10;
+
+const PRESSURE_RANK: Record<ClewNoteReviewPressureEntry["state"], number> = {
+  due: 0,
+  upcoming: 1,
+  scheduled: 2,
+};
+
+/** 本章 KP 的复习调度压力：同 KP 多源条目（自测/练习）取压力最高状态，lapses 取最大。 */
+async function loadReviewPressure(userId: string, chapterId: string): Promise<{ entries: ClewNoteReviewPressureEntry[]; truncated: boolean }> {
+  const rows = await prisma.clewReviewItem.findMany({
+    where: { userId, suspended: false, kp: { chapterId } },
+    select: { kpId: true, dueAt: true, lapses: true, kp: { select: { title: true } } },
+  });
+  const now = Date.now();
+  const byKp = new Map<string, ClewNoteReviewPressureEntry>();
+  for (const row of rows) {
+    const dueMs = row.dueAt.getTime() - now;
+    const state: ClewNoteReviewPressureEntry["state"] =
+      dueMs <= 0 ? "due" : dueMs <= NOTE_REVIEW_UPCOMING_MS ? "upcoming" : "scheduled";
+    const existing = byKp.get(row.kpId);
+    const lapses = Math.max(row.lapses, existing?.lapses ?? 0);
+    if (!existing || PRESSURE_RANK[state] < PRESSURE_RANK[existing.state]) {
+      byKp.set(row.kpId, { kpTitle: row.kp.title, state, lapses });
+    } else {
+      byKp.set(row.kpId, { ...existing, lapses });
+    }
+  }
+  const entries = [...byKp.values()]
+    .sort((a, b) => PRESSURE_RANK[a.state] - PRESSURE_RANK[b.state] || b.lapses - a.lapses);
+  return { entries: entries.slice(0, NOTE_REVIEW_PRESSURE_MAX), truncated: entries.length > NOTE_REVIEW_PRESSURE_MAX };
+}
 
 export type ClewNoteProgressEvent = {
   stage: "collect" | "generating" | "save";
@@ -196,6 +235,12 @@ export async function generateClewChapterNote(input: ClewNoteRequest): Promise<C
     fileName: textbook.fileName,
     points,
   };
+  // ZCODE-M6-D：复习压力聚合（有则增强；无调度数据时字段缺省，笔记与改造前一致）
+  const reviewPressure = await loadReviewPressure(input.userId, chapter.id);
+  context.reviewPressure = reviewPressure.entries;
+  if (reviewPressure.truncated) {
+    notes.push(`复习压力条目较多，笔记只取压力最高的 ${NOTE_REVIEW_PRESSURE_MAX} 个知识点。`);
+  }
 
   const lessonCount = points.filter((point) => point.lessonMarkdown !== null).length;
   notes.push(

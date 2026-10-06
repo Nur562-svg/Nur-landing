@@ -1,0 +1,108 @@
+{
+  "config": "ds-standard",
+  "provider": "deepseek",
+  "model": "deepseek-flash",
+  "thinking": false,
+  "elapsedMs": 138,
+  "usage": {
+    "prompt_tokens": 1475,
+    "completion_tokens": 3032,
+    "total_tokens": 4507,
+    "prompt_tokens_details": {
+      "cached_tokens": 0
+    },
+    "completion_tokens_details": {
+      "reasoning_tokens": 2579
+    },
+    "prompt_cache_hit_tokens": 0,
+    "prompt_cache_miss_tokens": 1475
+  },
+  "kpId": "v4qa-kp-02",
+  "kpTitle": "个体变异",
+  "excerptChars": 1851,
+  "mechanical": {
+    "parseOk": true,
+    "parseError": null,
+    "questionCount": 6,
+    "a1Count": 4,
+    "fillCount": 2,
+    "missingFields": [],
+    "pageCitationsInRange": true,
+    "citedPages": [
+      1
+    ],
+    "excerptPages": [
+      1,
+      2
+    ]
+  },
+  "questions": [
+    {
+      "kind": "a1",
+      "stem": "同质个体之间的变异称为",
+      "choices": [
+        "个体变异",
+        "抽样误差",
+        "总体均数",
+        "总体患病率"
+      ],
+      "answerIndex": 0,
+      "explanation": "原文是非题第2题：同质个体之间的变异称为个体变异。答：对。",
+      "sourcePage": 1
+    },
+    {
+      "kind": "a1",
+      "stem": "关于总体中的个体，下列描述中不正确的是",
+      "choices": [
+        "总体中的个体具有同质性",
+        "总体中的个体大同小异",
+        "总体中的个体在同质的基础上有变异",
+        "如果个体间有变异那它们肯定不是来自同一总体"
+      ],
+      "answerIndex": 3,
+      "explanation": "原文选择题第4题中，A、B、C均为正确描述，D为不正确的描述，故答案选D。",
+      "sourcePage": 1
+    },
+    {
+      "kind": "a1",
+      "stem": "某高校欲了解大学新生心理健康状况，随机选取了1000例大学新生调查，这1000例大学新生调查问卷是",
+      "choices": [
+        "一份随机样本",
+        "研究总体",
+        "目标总体",
+        "个体"
+      ],
+      "answerIndex": 0,
+      "explanation": "原文选择题第2题答案：这1000例大学新生调查问卷是一份随机样本。",
+      "sourcePage": 1
+    },
+    {
+      "kind": "a1",
+      "stem": "某研究用X表示儿童在一年中患感冒的次数，共收集了1000人，儿童在一年中患感冒次数的资料属于",
+      "choices": [
+        "连续型资料",
+        "有序分类资料",
+        "不具有分类的离散型资料",
+        "以上均不对"
+      ],
+      "answerIndex": 2,
+      "explanation": "原文选择题第3题答案：儿童在一年中患感冒次数的资料属于不具有分类的离散型资料。",
+      "sourcePage": 1
+    },
+    {
+      "kind": "fill",
+      "stem": "同质个体之间的变异称为________。",
+      "answerText": "个体变异",
+      "explanation": "原文是非题第2题：同质个体之间的变异称为个体变异。答：对。",
+      "sourcePage": 1
+    },
+    {
+      "kind": "fill",
+      "stem": "人群的患病率称为________。",
+      "answerText": "总体患病率",
+      "explanation": "原文是非题第5题解析：人群的患病率称为总体患病率。",
+      "sourcePage": 1
+    }
+  ],
+  "rawContent": "{\"questions\":[{\"kind\":\"a1\",\"stem\":\"同质个体之间的变异称为\",\"choices\":[\"个体变异\",\"抽样误差\",\"总体均数\",\"总体患病率\"],\"answerIndex\":0,\"explanation\":\"原文是非题第2题：同质个体之间的变异称为个体变异。答：对。\",\"sourcePage\":1},{\"kind\":\"a1\",\"stem\":\"关于总体中的个体，下列描述中不正确的是\",\"choices\":[\"总体中的个体具有同质性\",\"总体中的个体大同小异\",\"总体中的个体在同质的基础上有变异\",\"如果个体间有变异那它们肯定不是来自同一总体\"],\"answerIndex\":3,\"explanation\":\"原文选择题第4题中，A、B、C均为正确描述，D为不正确的描述，故答案选D。\",\"sourcePage\":1},{\"kind\":\"a1\",\"stem\":\"某高校欲了解大学新生心理健康状况，随机选取了1000例大学新生调查，这1000例大学新生调查问卷是\",\"choices\":[\"一份随机样本\",\"研究总体\",\"目标总体\",\"个体\"],\"answerIndex\":0,\"explanation\":\"原文选择题第2题答案：这1000例大学新生调查问卷是一份随机样本。\",\"sourcePage\":1},{\"kind\":\"a1\",\"stem\":\"某研究用X表示儿童在一年中患感冒的次数，共收集了1000人，儿童在一年中患感冒次数的资料属于\",\"choices\":[\"连续型资料\",\"有序分类资料\",\"不具有分类的离散型资料\",\"以上均不对\"],\"answerIndex\":2,\"explanation\":\"原文选择题第3题答案：儿童在一年中患感冒次数的资料属于不具有分类的离散型资料。\",\"sourcePage\":1},{\"kind\":\"fill\",\"stem\":\"同质个体之间的变异称为________。\",\"answerText\":\"个体变异\",\"explanation\":\"原文是非题第2题：同质个体之间的变异称为个体变异。答：对。\",\"sourcePage\":1},{\"kind\":\"fill\",\"stem\":\"人群的患病率称为________。\",\"answerText\":\"总体患病率\",\"explanation\":\"原文是非题第5题解析：人群的患病率称为总体患病率。\",\"sourcePage\":1}]}"
+}

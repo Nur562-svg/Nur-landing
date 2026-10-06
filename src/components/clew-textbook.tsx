@@ -29,7 +29,7 @@ import type {
   ClewTextbookDetail,
   ClewTocEvent,
 } from "@/types/clew";
-import { isClewDocx, formatClewExtent, formatClewPageRange, formatClewSourcePage } from "@/lib/clew/source-label";
+import { isClewDocx, formatClewExtent, formatClewPageRange, formatClewKpPageLabel } from "@/lib/clew/source-label";
 import { resolveClewGuide } from "@/lib/clew/step-guide";
 import { V2Button } from "@/components/ui/v2/button";
 import { ClewPathGuide } from "./clew-path-guide";
@@ -860,7 +860,7 @@ export function ClewTextbookDetailView({ initialDetail }: ClewTextbookDetailProp
                             >
                               {String(knowledgePoint.order).padStart(2, "0")} · {knowledgePoint.title}
                             </Link>
-                            <span className={styles.kpPage}>{formatClewSourcePage(textbook.fileName, knowledgePoint.sourcePage)}</span>
+                            <span className={styles.kpPage}>{formatClewKpPageLabel(textbook.fileName, knowledgePoint.sourcePage, knowledgePoint.sourcePageAnnotated === true)}</span>
                           </p>
                           <p className={styles.kpDescription}>{knowledgePoint.description}</p>
                           {knowledgePoint.keyTerms.length > 0 ? (

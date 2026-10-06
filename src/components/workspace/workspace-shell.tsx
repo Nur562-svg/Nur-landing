@@ -279,6 +279,8 @@ export function WorkspaceShell({
   return (
     <div
       className={[styles.app, railCollapsed ? styles.appRail : ""].filter(Boolean).join(" ")}
+      // 折叠状态暴露给页面 CSS：学习页等按此放宽内容上限（ZCODE-M6 UI 热修①）
+      data-shell-rail={railCollapsed ? "collapsed" : "expanded"}
     >
       <aside
         ref={drawerRef}

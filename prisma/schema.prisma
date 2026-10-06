@@ -58,6 +58,8 @@ model User {
   clewStudySessions            ClewStudySession[]
   // ZCODE-M5: Clew FSRS 复习调度条目（自测「还需看」进入调度；私有挂 userId）
   clewReviewItems              ClewReviewItem[]
+  // ZCODE-M6: Clew 练习作答（服务端判分/自评；私有挂 userId）
+  clewPracticeAttempts         ClewPracticeAttempt[]
 }
 
 /// M4: 会员订单（支付抽象层持久化）。provider 切换不影响已存订单。
@@ -143,7 +145,10 @@ model ClewKnowledgePoint {
   keyTerms    Json // string[]
   prerequisites Json // string[]（章节内先修知识点标题）
   // 该知识点在 PDF 中的页序（1 起，与章节页码同源）
+  // ZCODE-M6 补遗：DOCX 无文字层页码——学生可在学习页人工标注（sourcePageAnnotated=true），
+  // 标注页是「学生声明的出处」（显示「你标注的」），不做文本级核验
   sourcePage  Int
+  sourcePageAnnotated Boolean @default(false)
   // ZCODE-M2: 学习闭环 profile（萃取时规则引擎建议，用户可改；六种预定义见 src/types/loop-profile.ts）
   loopProfileId         String @default("concept-mastery")
   // "ai-suggested" | "user-selected" | "default"（诚实标注分配来源）
@@ -158,6 +163,8 @@ model ClewKnowledgePoint {
   evidenceLinks ClewKnowledgePointEvidence[]
   // ZCODE-M5: 该知识点的 FSRS 复习调度条目（自测「还需看」）
   reviewItems ClewReviewItem[]
+  // ZCODE-M6: 该知识点的练习题（每 KP 一组，重新生成整体替换）
+  practiceQuestions ClewPracticeQuestion[]
 
   @@index([chapterId, order])
   // Table name kept as pre-migration HiDocKnowledgePoint to avoid DB drift
@@ -413,6 +420,51 @@ model ClewReviewItem {
 
   @@unique([userId, kpId, sourceKind])
   @@index([userId, dueAt])
+}
+
+/// ZCODE-M6: Clew 练习题（每 KP 一组，重新生成整体替换；随 KP 级联删除）。
+/// 生成方式如实入库（generator = "model:{provider}:{model}"）；无启发式兜底——模型失败明确报错不生成。
+/// answer 语义：a1 = 正确项 index（JSON number）；fill = 参考答案文本（JSON string）。
+model ClewPracticeQuestion {
+  id     String @id @default(cuid())
+  kpId   String
+  kp     ClewKnowledgePoint @relation(fields: [kpId], references: [id], onDelete: Cascade)
+
+  order      Int
+  // "a1" | "fill"（TS 类型约束保证可移植性）
+  kind       String
+  stem       String
+  // A1 选项（string[4]；fill 为 null）
+  choices    Json?
+  answer     Json
+  explanation String
+  // 教材页序（1 起，与 KP sourcePage 同源；出题依据溯源）
+  // ZCODE-M6 补遗：PDF = 文字层页码；DOCX = 学生人工标注（kp.sourcePageAnnotated），0 = 无页码
+  sourcePage  Int
+  generator   String
+  createdAt   DateTime @default(now())
+
+  attempts ClewPracticeAttempt[]
+
+  @@index([kpId, order])
+}
+
+/// ZCODE-M6: Clew 练习作答（服务端；A1 确定性判分，fill 学员自评）。
+/// 每次作答一行（不幂等合并）；错答经 reviews.ts 进入 FSRS 调度（sourceKind="practice-wrong"）。
+model ClewPracticeAttempt {
+  id     String @id @default(cuid())
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  questionId String
+  question   ClewPracticeQuestion @relation(fields: [questionId], references: [id], onDelete: Cascade)
+
+  // A1：{ selectedIndex }；fill：{ selfRating: "correct" | "wrong" }
+  response   Json
+  isCorrect  Boolean
+  attemptedAt DateTime @default(now())
+
+  @@index([userId, questionId])
 }
 
 /// ZCODE-M2 Phase 2/4: 教材编译缓存（book-to-skill 预编译模式）。

@@ -374,8 +374,8 @@ describe("Clew M5 quota", async () => {
   const { TIER_QUOTAS, canUseResource, computeItem, getQuotaLabel } = await import("../src/lib/quotas");
 
   it("学霸笔记额度：free 3 / basic 10 / pro 与 max 无限", () => {
-    assert.equal(TIER_QUOTAS.free.clewNotes, 3);
-    assert.equal(TIER_QUOTAS.basic.clewNotes, 10);
+    assert.equal(TIER_QUOTAS.free.clewNotes, 2); // M6-D：D6 全套成本对价下调（原 3）
+    assert.equal(TIER_QUOTAS.basic.clewNotes, 7); // M6-D 下调（原 10）
     assert.equal(TIER_QUOTAS.pro.clewNotes, "unlimited");
     assert.equal(TIER_QUOTAS.max.clewNotes, "unlimited");
   });
@@ -385,5 +385,143 @@ describe("Clew M5 quota", async () => {
     assert.equal(canUseResource(computeItem(3, 3)), false);
     assert.equal(canUseResource(computeItem(999, "unlimited")), true);
     assert.match(getQuotaLabel("clewNotes"), /学霸笔记/);
+  });
+});
+describe("Clew M6-D note depth（笔记深度改造）", async () => {
+  const noteHeuristic = await import("../src/lib/clew/note-heuristic");
+  const { buildClewNoteModelInput, selectComparablePairs, validateGeneratedNote } = noteHeuristic;
+  const buildClewNotePrompt = (await import("../src/lib/clew/providers/dashscope-note")).buildClewNotePrompt;
+  type ClewNoteContext = import("../src/lib/clew/note-heuristic").ClewNoteContext;
+
+  const points = [
+    { order: 1, title: "总体与样本", keyTerms: ["总体", "样本", "抽样"] },
+    { order: 2, title: "抽样误差", keyTerms: ["抽样", "误差"] },
+    { order: 3, title: "患病率", keyTerms: ["患病率"] },
+    { order: 4, title: "样本率", keyTerms: ["样本", "样本率"] },
+  ];
+
+  it("selectComparablePairs：交集非空成对、原序稳定、上限 3、不硬凑", () => {
+    const pairs = selectComparablePairs(points);
+    assert.equal(pairs.length, 2); // 仅 (1,2) 抽样 与 (1,4) 样本 交集非空
+    assert.deepEqual(pairs[0], { aTitle: "总体与样本", bTitle: "抽样误差", sharedTerms: ["抽样"] });
+    assert.ok(pairs.every((pair) => pair.sharedTerms.length > 0));
+    // 无交集 → 空数组（不硬凑）
+    const lonely = selectComparablePairs([
+      { order: 1, title: "甲", keyTerms: ["a"] },
+      { order: 2, title: "乙", keyTerms: ["b"] },
+    ]);
+    assert.deepEqual(lonely, []);
+  });
+
+  it("模型输入：易混候选与复习压力有则透传并产生如实 notes，无则字段缺省", () => {
+    const baseContext = {
+      textbookTitle: "卫生统计学",
+      chapterOrder: 2,
+      chapterTotal: 9,
+      chapterTitle: "第二章",
+      pageStart: 3,
+      pageEnd: 5,
+      points: [],
+    } as unknown as ClewNoteContext;
+
+    const withData = buildClewNoteModelInput({
+      ...baseContext,
+      points: points.map((point) => ({
+        id: `kp-${point.order}`,
+        order: point.order,
+        title: point.title,
+        description: "d",
+        keyTerms: [...point.keyTerms],
+        sourcePage: 3,
+        lessonMarkdown: null,
+        questions: [],
+        highlights: [],
+      })),
+      reviewPressure: [
+        { kpTitle: "总体与样本", state: "due", lapses: 2 },
+        { kpTitle: "抽样误差", state: "upcoming", lapses: 0 },
+      ],
+    });
+    assert.equal(withData.input.comparablePairs?.length, 2);
+    assert.deepEqual(withData.input.reviewPressure, [
+      { kpTitle: "总体与样本", state: "due", lapses: 2 },
+      { kpTitle: "抽样误差", state: "upcoming", lapses: 0 },
+    ]);
+    assert.ok(withData.notes.some((note) => note.includes("易混候选")));
+    assert.ok(withData.notes.some((note) => note.includes("复习压力")));
+
+    const empty = buildClewNoteModelInput({
+      ...baseContext,
+      points: [
+        {
+          id: "kp-x",
+          order: 1,
+          title: "孤立知识点",
+          description: "d",
+          keyTerms: ["独有"],
+          sourcePage: 3,
+          lessonMarkdown: null,
+          questions: [],
+          highlights: [],
+        },
+      ],
+    });
+    assert.equal(empty.input.comparablePairs, undefined);
+    assert.equal(empty.input.reviewPressure, undefined);
+  });
+
+  it("prompt：候选数据驱动条件节；缺省时条件节与指令行均不出现", () => {
+    const baseInput = {
+      textbookTitle: "卫生统计学",
+      chapterTitle: "第二章",
+      chapterPosition: "第 2/9 章",
+      pageRange: "第 3–5 页",
+      points: [],
+      hasAnyLesson: true,
+      hasAnyConversation: false,
+      hasAnyHighlight: false,
+    };
+    const enhanced = buildClewNotePrompt({
+      ...baseInput,
+      comparablePairs: [{ aTitle: "总体与样本", bTitle: "抽样误差", sharedTerms: ["抽样"] }],
+      reviewPressure: [{ kpTitle: "总体与样本", state: "due", lapses: 2 }],
+    });
+    assert.match(enhanced, /## 易混概念对比/);
+    assert.match(enhanced, /## 复习提醒/);
+    assert.match(enhanced, /只允许改组给定信息/);
+    assert.match(enhanced, /不得编造原文没有的口诀/);
+    assert.match(enhanced, /我的学习 · 今日复习/);
+    assert.match(enhanced, /「——\{知识点标题\}」标注来源|标注来源/);
+
+    const plain = buildClewNotePrompt(baseInput);
+    assert.equal(plain.includes("## 易混概念对比"), false);
+    assert.equal(plain.includes("## 复习提醒"), false);
+    // 原三节必备不变
+    assert.match(plain, /## 章首导读/);
+    assert.match(plain, /## 知识点笔记/);
+    assert.match(plain, /## 自测题汇总/);
+  });
+
+  it("结构校验：新增节按可选——出现时不影响合格判定", () => {
+    const markdown = [
+      "## 章首导读",
+      "导读。",
+      "## 知识点笔记",
+      "### 01. 甲",
+      "内容。",
+      "## 易混概念对比",
+      "| 概念 | 关键区别 |",
+      "| --- | --- |",
+      "| 甲 | 区别 |",
+      "## 易错清单",
+      "- 易错一——甲",
+      "## 记忆钩",
+      "- 钩一",
+      "## 复习提醒",
+      "- 甲已到期，去「我的学习 · 今日复习」完成打分。",
+      "## 自测题汇总",
+      "- 题目。",
+    ].join("\n");
+    assert.equal(validateGeneratedNote(markdown).ok, true);
   });
 });

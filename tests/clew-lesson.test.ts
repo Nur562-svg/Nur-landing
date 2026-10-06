@@ -90,9 +90,9 @@ describe("Clew lesson rules", async () => {
       generatedAtLabel: "2026/09/17 20:30",
     });
     const structure = inspectLessonMarkdown(markdown);
-    assert.deepEqual(structure.missing, []);
+    // 启发式讲义只含四节；机制机理/易混辨析是模型 rubric（M6-D）新增，启发式不校验
+    assert.deepEqual(structure.missing, ["机制机理", "易混辨析"]);
     assert.equal(structure.selfTestCount, CLEW_LESSON_SELF_TEST_COUNT);
-    assert.equal(validateGeneratedLesson(markdown).ok, true);
     assert.match(markdown, /未接入模型/);
     assert.match(markdown, /启发式整理/);
     assert.match(markdown, /第 3 页/);
@@ -109,16 +109,21 @@ describe("Clew lesson rules", async () => {
       style: "zh-primary",
       generatedAtLabel: "2026/09/17 20:30",
     });
-    assert.equal(validateGeneratedLesson(markdown).ok, true);
+    const structure = inspectLessonMarkdown(markdown);
+    assert.deepEqual(structure.missing, ["机制机理", "易混辨析"]);
     assert.match(markdown, /未标注关键术语/);
     assert.match(markdown, /未标注先修关系/);
     assert.match(markdown, /未在该页原文中检索到/);
   });
 
-  it("模型讲义结构校验：缺小节或自测题不足即判不合格", () => {
+  it("模型讲义结构校验（M6-D rubric）：六节缺一即不合格，易混辨析可诚实写「本页未涉及」", () => {
     const valid = [
       "## 定义",
       "总体是同质个体某指标值的集合。",
+      "## 机制机理",
+      "因为个体之间存在差异，才需要用集合与抽样的语言刻画。",
+      "## 易混辨析",
+      "总体 vs 样本：总体是全体，样本是被抽取的一部分。",
       "## 要点",
       "- 样本需具备代表性。",
       "## 易错点",
@@ -133,10 +138,26 @@ describe("Clew lesson rules", async () => {
     ].join("\n");
     assert.equal(validateGeneratedLesson(valid).ok, true);
 
+    const honestMixup = valid.replace(
+      "总体 vs 样本：总体是全体，样本是被抽取的一部分。",
+      "本页未涉及",
+    );
+    assert.equal(validateGeneratedLesson(honestMixup).ok, true);
+
     const missingDefinition = valid.replace("## 定义", "## 概述");
     const definitionCheck = validateGeneratedLesson(missingDefinition);
     assert.equal(definitionCheck.ok, false);
     assert.match(definitionCheck.reason ?? "", /定义/);
+
+    const missingMechanism = valid.replace("## 机制机理", "## 机制");
+    const mechanismCheck = validateGeneratedLesson(missingMechanism);
+    assert.equal(mechanismCheck.ok, false);
+    assert.match(mechanismCheck.reason ?? "", /机制机理/);
+
+    const missingMixup = valid.replace("## 易混辨析\n总体 vs 样本：总体是全体，样本是被抽取的一部分。\n", "");
+    const mixupCheck = validateGeneratedLesson(missingMixup);
+    assert.equal(mixupCheck.ok, false);
+    assert.match(mixupCheck.reason ?? "", /易混辨析/);
 
     const twoQuestions = valid.replace("3. 抽样要注意什么？\n   参考答案：代表性。", "");
     const questionCheck = validateGeneratedLesson(twoQuestions);
@@ -386,9 +407,9 @@ describe("Clew chat prompt", async () => {
 describe("Clew M4 quota", async () => {
   const { TIER_QUOTAS, canUseResource, computeItem, getQuotaLabel } = await import("../src/lib/quotas");
 
-  it("讲义生成额度：free 5 / basic 20 / pro 与 max 无限", () => {
-    assert.equal(TIER_QUOTAS.free.clewLessons, 5);
-    assert.equal(TIER_QUOTAS.basic.clewLessons, 20);
+  it("讲义生成额度：free 3 / basic 13 / pro 与 max 无限（M6-D 下调后）", () => {
+    assert.equal(TIER_QUOTAS.free.clewLessons, 3); // M6-D：D6 全套成本对价下调（原 5）
+    assert.equal(TIER_QUOTAS.basic.clewLessons, 13); // M6-D 下调（原 20）
     assert.equal(TIER_QUOTAS.pro.clewLessons, "unlimited");
     assert.equal(TIER_QUOTAS.max.clewLessons, "unlimited");
   });
@@ -405,5 +426,166 @@ describe("Clew M4 quota", async () => {
     assert.equal(canUseResource(computeItem(5, 5)), false);
     assert.match(getQuotaLabel("clewLessons"), /讲义生成/);
     assert.match(getQuotaLabel("clewChats"), /讲解对话/);
+  });
+});
+describe("Clew M6-D lesson depth（讲义深度改造）", async () => {
+  const { extractLessonEssence } = await import("../src/lib/clew/lesson-heuristic");
+  const { deriveClewLessonVariant } = await import("../src/lib/clew/lesson-variants");
+  const { buildClewLessonPrompt } = await import("../src/lib/clew/providers/dashscope-lesson");
+
+  const lessonMd = [
+    "## 定义",
+    "总体是同质个体某指标值的集合。",
+    "",
+    "## 要点",
+    "- 样本需具备代表性。",
+    "- 抽样误差不可避免。",
+    "## 易错点",
+    "- 混淆总体与样本。",
+  ].join("\n");
+
+  it("extractLessonEssence：提取定义与要点；超限裁剪；缺节为空", () => {
+    const essence = extractLessonEssence(lessonMd, 800);
+    assert.equal(essence.definition, "总体是同质个体某指标值的集合。");
+    assert.deepEqual(essence.keyPoints, ["样本需具备代表性。", "抽样误差不可避免。"]);
+
+    const clipped = extractLessonEssence(lessonMd, 20);
+    assert.ok(clipped.definition.length + clipped.keyPoints.join("").length <= 20 + 2);
+
+    const empty = extractLessonEssence("无小节文本", 800);
+    assert.deepEqual(empty, { definition: "", keyPoints: [] });
+  });
+
+  it("prompt 缺省形态：六节骨架 + 自测可答性约束，无增强块", () => {
+    const prompt = buildClewLessonPrompt({
+      textbookTitle: "卫生统计学",
+      chapterTitle: "第二章",
+      knowledgePoint: {
+        title: "总体与样本",
+        description: "总体是同质个体某指标值的集合。",
+        keyTerms: ["总体"],
+        prerequisites: [],
+        sourcePage: 3,
+      },
+      sourceExcerpt: "【PDF 第 3 页】\n总体是同质个体某指标值的集合。",
+      style: "zh-primary",
+    });
+    for (const section of ["## 定义", "## 机制机理", "## 易混辨析", "## 要点", "## 易错点", "## 自测题"]) {
+      assert.ok(prompt.includes(section), `缺 ${section}`);
+    }
+    assert.match(prompt, /答案必须能从本讲义正文推出/);
+    assert.match(prompt, /本页未涉及/);
+    assert.equal(prompt.includes("先修知识点讲义摘要"), false);
+    assert.equal(prompt.includes("本章证据原子"), false);
+    assert.equal(prompt.includes("上一次输出未通过校验"), false);
+  });
+
+  it("prompt 增强形态：先修摘要在知识点信息前，证据原子在原文片段后，均带「仅作背景」", () => {
+    const prompt = buildClewLessonPrompt({
+      textbookTitle: "卫生统计学",
+      chapterTitle: "第二章",
+      knowledgePoint: {
+        title: "望闻问切互相印证",
+        description: "四诊互相支持补充。",
+        keyTerms: ["互相印证"],
+        prerequisites: ["四诊合参原则"],
+        sourcePage: 4,
+      },
+      sourceExcerpt: "【PDF 第 4 页】\n望闻问切互相印证。",
+      style: "zh-primary",
+      prerequisiteSummaries: [
+        { title: "四诊合参原则", definition: "四诊合参是核心原则。", keyPoints: ["不得孤立使用单一诊法。"] },
+      ],
+      evidenceAtoms: [{ page: 5, text: "望诊的组成包括神色形态。" }],
+    });
+    const prereqIndex = prompt.indexOf("先修知识点讲义摘要");
+    const kpIndex = prompt.indexOf("知识点信息：");
+    const excerptIndex = prompt.indexOf("教材原文片段（引用页码以此为准）：");
+    const atomIndex = prompt.indexOf("本章证据原子");
+    assert.ok(prereqIndex >= 0 && kpIndex >= 0 && excerptIndex >= 0 && atomIndex >= 0);
+    assert.ok(prereqIndex < kpIndex, "先修摘要应在知识点信息之前");
+    assert.ok(excerptIndex < atomIndex, "证据原子应在原文片段之后");
+    assert.match(prompt, /仅作背景帮助理解，不得直接引用为出处/);
+    assert.match(prompt, /四诊合参原则/);
+    assert.match(prompt, /【第 5 页】望诊的组成包括神色形态。/);
+  });
+
+  it("prompt 重试形态：回灌校验失败清单", () => {
+    const prompt = buildClewLessonPrompt({
+      textbookTitle: "卫生统计学",
+      chapterTitle: "第二章",
+      knowledgePoint: {
+        title: "总体与样本",
+        description: "d",
+        keyTerms: [],
+        prerequisites: [],
+        sourcePage: 3,
+      },
+      sourceExcerpt: "【PDF 第 3 页】\n总体。",
+      style: "zh-primary",
+      retryFeedback: "缺少「机制机理」小节",
+    });
+    assert.match(prompt, /注意：上一次输出未通过校验（缺少「机制机理」小节）/);
+    assert.match(prompt, /六个小节缺一不可/);
+  });
+
+  it("三视图派生：新小节原样保留（备考视图仅删自测题）", () => {
+    const markdown = [
+      "## 定义",
+      "总体是集合。",
+      "## 机制机理",
+      "个体差异导致抽样误差。",
+      "## 易混辨析",
+      "总体 vs 样本。",
+      "## 要点",
+      "- 代表性。",
+      "## 易错点",
+      "- 混淆。",
+      "## 自测题",
+      "1. 什么是总体？",
+      "   参考答案：集合。",
+      "2. 什么是样本？",
+      "   参考答案：一部分。",
+      "3. 抽样注意？",
+      "   参考答案：代表性。",
+    ].join("\n");
+    const exam = deriveClewLessonVariant(markdown, "exam");
+    assert.match(exam.contentMd, /## 机制机理/);
+    assert.match(exam.contentMd, /## 易混辨析/);
+    assert.equal(exam.contentMd.includes("## 自测题"), false);
+    const review = deriveClewLessonVariant(markdown, "review");
+    assert.match(review.contentMd, /## 机制机理/);
+    assert.equal(review.contentMd.includes("参考答案"), false);
+  });
+});
+
+describe("Clew M6 补遗：讲义页首 KP 页码标签", async () => {
+  const { buildLessonHeader } = await import("../src/lib/clew/lesson-heuristic");
+
+  const base = {
+    title: "胸骨角",
+    generator: { kind: "model" as const, provider: "dashscope", model: "qwen3.7-plus" },
+    style: "zh-primary" as const,
+    generatedAtLabel: "2026/10/06 12:00",
+    textbookTitle: "解剖名词解释",
+    chapterTitle: "第一章",
+    notice: "AI 生成内容。",
+  };
+
+  it("DOCX 未标注：页首保持「页码待确认」（行为不变）", () => {
+    const header = buildLessonHeader({ ...base, sourcePage: 1, fileName: "解剖.docx" });
+    assert.match(header, /依据页码待确认/);
+    assert.equal(header.includes("你标注的"), false);
+  });
+
+  it("DOCX 人工标注：页首「第 N 页 · 你标注的」（限定词锁定）", () => {
+    const header = buildLessonHeader({ ...base, sourcePage: 12, sourcePageAnnotated: true, fileName: "解剖.docx" });
+    assert.match(header, /依据第 12 页 · 你标注的/);
+  });
+
+  it("PDF：不受旗标影响，保持文字层页码", () => {
+    const header = buildLessonHeader({ ...base, sourcePage: 3, sourcePageAnnotated: true, fileName: "book.pdf" });
+    assert.match(header, /依据第 3 页$/m);
+    assert.equal(header.includes("你标注的"), false);
   });
 });

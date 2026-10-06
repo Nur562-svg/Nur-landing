@@ -16,6 +16,7 @@ import {
 import { loadClewLesson } from "./lesson";
 import { getClewActiveMonth } from "./limits";
 import { loadClewChapterNote } from "./note";
+import { loadClewPracticeSet } from "./practice";
 import { getClewKpReviewStudyItem } from "./reviews";
 import { toClewTextbookView } from "./textbook-view";
 
@@ -102,6 +103,7 @@ export async function getClewKnowledgePointStudy(
   const messages = await loadClewConversationMessages(userId, kpId);
   const highlights = await listClewHighlights(userId, kpId);
   const reviewItem = await getClewKpReviewStudyItem(userId, kpId);
+  const practice = await loadClewPracticeSet(userId, kpId);
   return {
     ok: true,
     data: {
@@ -111,6 +113,7 @@ export async function getClewKnowledgePointStudy(
       messages,
       highlights,
       reviewItem,
+      practice: practice.ok ? practice.data : { kpId, generator: "", generatedAt: new Date(0).toISOString(), questions: [], summary: { total: 0, answered: 0, correct: 0, wrong: 0 } },
     },
   };
 }

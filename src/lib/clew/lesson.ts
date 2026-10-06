@@ -10,13 +10,21 @@ import {
   CLEW_MODEL_LESSON_NOTICE,
   buildHeuristicLesson,
   buildLessonHeader,
+  extractLessonEssence,
   isClewLessonStyle,
   normalizeLessonMarkdown,
   parseClewLessonGenerator,
   resolveClewLessonStyle,
   validateGeneratedLesson,
 } from "./lesson-heuristic";
-import { createClewLessonProviderFromEnv } from "./lesson-provider";
+import {
+  createClewLessonProviderFromEnv,
+  type ClewLessonEvidenceAtom,
+  type ClewLessonModelInput,
+  type ClewLessonPrerequisiteSummary,
+} from "./lesson-provider";
+import { loadClewKpEvidenceContext } from "./evidence-context";
+import { normalizeText, splitExcerptPages, verifyCitations, type ClewCitationIssue } from "./citation-verify";
 import { ClewProviderConfigError } from "./providers/model-config";
 import { isClewDocx } from "./source-label";
 import { readClewKnowledgePointExcerpt } from "./source-excerpt";
@@ -112,6 +120,69 @@ export async function loadClewAccountLessonStyle(userId: string): Promise<Return
   return resolveClewLessonStyle(await loadAccountLessonStyle(userId));
 }
 
+/* ---------------- ZCODE-M6-D：上下文加宽（先修摘要 + 证据原子；有则增强、无则省略） ---------------- */
+
+/** 结构校验/引用核验不过的整篇重试次数（复用 M6-A 练习题的整组拒收重试模式）。 */
+const LESSON_MAX_ATTEMPTS = 2;
+/** 先修讲义摘要纳入上限（≤3 个先修 × 800 字，任务书 §七 D-2.1）。 */
+const LESSON_PREREQ_SUMMARY_MAX = 3;
+const LESSON_PREREQ_SUMMARY_CHARS = 800;
+
+async function loadPrerequisiteSummaries(
+  chapterId: string,
+  prerequisites: readonly string[],
+): Promise<{ summaries: ClewLessonPrerequisiteSummary[]; skippedTitles: string[] }> {
+  const titles = prerequisites.map((title) => title.trim()).filter((title) => title.length > 0);
+  if (titles.length === 0) {
+    return { summaries: [], skippedTitles: [] };
+  }
+  const rows = await prisma.clewKnowledgePoint.findMany({
+    where: { chapterId, title: { in: titles.slice(0, LESSON_PREREQ_SUMMARY_MAX) } },
+    select: { id: true, title: true },
+  });
+  const idByTitle = new Map(rows.map((row) => [row.title, row.id]));
+  const summaries: ClewLessonPrerequisiteSummary[] = [];
+  const skippedTitles: string[] = [];
+  for (const title of titles.slice(0, LESSON_PREREQ_SUMMARY_MAX)) {
+    const prereqKpId = idByTitle.get(title);
+    const lesson = prereqKpId ? await loadClewLesson(prereqKpId) : null;
+    if (!lesson) {
+      skippedTitles.push(title);
+      continue;
+    }
+    const essence = extractLessonEssence(lesson.view.contentMd, LESSON_PREREQ_SUMMARY_CHARS);
+    if (essence.definition.length === 0 && essence.keyPoints.length === 0) {
+      skippedTitles.push(title);
+      continue;
+    }
+    summaries.push({ title, definition: essence.definition, keyPoints: essence.keyPoints });
+  }
+  return { summaries, skippedTitles };
+}
+
+async function loadEvidenceAtomsForPrompt(
+  kpId: string,
+  excerpt: string,
+): Promise<{ atoms: ClewLessonEvidenceAtom[]; duplicates: number }> {
+  const loaded = await loadClewKpEvidenceContext(kpId);
+  if (!loaded || loaded.length === 0) {
+    return { atoms: [], duplicates: 0 };
+  }
+  const excerptNormalized = normalizeText(excerpt);
+  const atoms: ClewLessonEvidenceAtom[] = [];
+  let duplicates = 0;
+  for (const atom of loaded) {
+    // 证据原子可能带截断尾缀「…」（evidence-context 预算裁剪），去尾缀后再比对，避免长原子假性「不重复」
+    const atomNormalized = normalizeText(atom.text.replace(/…$/, ""));
+    if (atomNormalized.length === 0 || excerptNormalized.includes(atomNormalized)) {
+      duplicates += 1;
+      continue;
+    }
+    atoms.push({ page: atom.page, text: atom.text });
+  }
+  return { atoms, duplicates };
+}
+
 export async function generateClewKnowledgePointLesson(
   input: ClewLessonRequest,
 ): Promise<ClewLessonResult> {
@@ -189,6 +260,7 @@ export async function generateClewKnowledgePointLesson(
       style,
       generatedAtLabel,
       fileName: textbook.fileName,
+      sourcePageAnnotated: knowledgePoint.sourcePageAnnotated,
     });
   } else {
     if (!excerpt) {
@@ -211,34 +283,100 @@ export async function generateClewKnowledgePointLesson(
       };
     }
 
+    // ZCODE-M6-D：上下文加宽（先修摘要 + 证据原子；有则增强、无则与既有路径一致）
+    const prereq = await loadPrerequisiteSummaries(chapter.id, knowledgePoint.prerequisites);
+    if (prereq.summaries.length > 0) {
+      notes.push(`上下文加宽：纳入 ${prereq.summaries.length} 个先修知识点的讲义摘要（仅作背景）。`);
+    }
+    for (const skippedTitle of prereq.skippedTitles) {
+      notes.push(`先修「${skippedTitle}」尚未生成讲义或反查不到，未纳入上下文（不编造）。`);
+    }
+    const evidence = await loadEvidenceAtomsForPrompt(input.kpId, excerpt);
+    if (evidence.atoms.length > 0) {
+      notes.push(`上下文加宽：纳入 ${evidence.atoms.length} 条证据原子（页码溯源，仅作背景）。`);
+    }
+
+    // 页码核验对照集 = 原文片段按页切分；证据原子文本并入对应页（同为该页抽取文本）
+    const citationPageMap = splitExcerptPages(excerpt);
+    for (const atom of evidence.atoms) {
+      const existing = citationPageMap.get(atom.page);
+      citationPageMap.set(atom.page, existing ? `${existing}\n${atom.text}` : atom.text);
+    }
+
+    const promptInput: ClewLessonModelInput = {
+      textbookTitle: textbook.title,
+      chapterTitle: chapter.title,
+      knowledgePoint,
+      sourceExcerpt: excerpt,
+      fileName: textbook.fileName,
+      style,
+      prerequisiteSummaries: prereq.summaries,
+      evidenceAtoms: evidence.atoms,
+    };
+
     let modelOutcome: "success" | "failed" = "success";
     let answerChars = 0;
+    let acceptedBody: string | null = null;
+    let lastStructureReason: string | null = null;
+    let citationIssues: ClewCitationIssue[] = [];
+    // 结构合格但引用失配被送去重试的正文——若重试输出结构不合格，按 D-2.3 回落到它（引用失配不是拒收理由）
+    let fallbackBody: string | null = null;
+    let fallbackCitationIssues: ClewCitationIssue[] = [];
     try {
-      input.onProgress({
-        stage: "generating",
-        message: `调用模型撰写讲义（${provider.model}）…`,
-      });
-      const raw = await provider.generateLesson(
-        {
-          textbookTitle: textbook.title,
-          chapterTitle: chapter.title,
-          knowledgePoint,
-          sourceExcerpt: excerpt,
-          fileName: textbook.fileName,
-          style,
-        },
-        input.onDelta,
-      );
-      answerChars = raw.length;
-      const body = normalizeLessonMarkdown(raw);
-      const validation = validateGeneratedLesson(body);
-      if (!validation.ok) {
+      for (let attemptNo = 1; attemptNo <= LESSON_MAX_ATTEMPTS && acceptedBody === null; attemptNo += 1) {
+        input.onProgress({
+          stage: "generating",
+          message: attemptNo === 1
+            ? `调用模型撰写讲义（${provider.model}）…`
+            : `第 ${attemptNo - 1} 次输出未通过校验，正在重试…`,
+        });
+        const raw = await provider.generateLesson(
+          attemptNo === 1
+            ? promptInput
+            : {
+                ...promptInput,
+                retryFeedback: lastStructureReason
+                  ? `${lastStructureReason}`
+                  : `${citationIssues.length} 处页码引用与原文不匹配：${citationIssues
+                      .map((issue) => `「${issue.sentence.slice(0, 60)}」（第 ${issue.page} 页）`)
+                      .join("；")}`,
+              },
+          input.onDelta,
+        );
+        answerChars = raw.length;
+        const body = normalizeLessonMarkdown(raw);
+        const validation = validateGeneratedLesson(body);
+        if (!validation.ok) {
+          lastStructureReason = validation.reason;
+          continue;
+        }
+        // 引用核验（PDF 片段才有页集；DOCX 片段无页码标记 → 空页集自动跳过）：
+        // 失配 → 回灌失配清单重试一次；仍失配 → 保留结果 + notes 如实标注（不改写正文、不拒收）
+        if (citationPageMap.size > 0) {
+          const verification = verifyCitations(body, citationPageMap);
+          citationIssues = verification.issues;
+          if (citationIssues.length > 0 && attemptNo < LESSON_MAX_ATTEMPTS) {
+            fallbackBody = body;
+            fallbackCitationIssues = verification.issues;
+            continue;
+          }
+        }
+        acceptedBody = body;
+      }
+      if (acceptedBody === null && fallbackBody !== null) {
+        // 引用失配重试后的输出反而结构不合格：回落到上一份结构合格正文，按引用失配如实标注保留
+        acceptedBody = fallbackBody;
+        citationIssues = fallbackCitationIssues;
+        lastStructureReason = null;
+      }
+      if (acceptedBody === null) {
         modelOutcome = "failed";
+        const reason = lastStructureReason ?? "输出为空";
         return {
           ok: false,
           status: 422,
           code: "lesson-failed",
-          message: `模型返回的讲义结构不完整（${validation.reason}），本次生成已停止，旧讲义未被覆盖；可重试。`,
+          message: `模型返回的讲义结构不完整（${reason}），已重试仍失败，本次生成已停止，旧讲义未被覆盖；可重试。`,
         };
       }
       generator = { kind: "model", provider: provider.id, model: provider.model };
@@ -251,12 +389,21 @@ export async function generateClewKnowledgePointLesson(
           textbookTitle: textbook.title,
           chapterTitle: chapter.title,
           sourcePage: knowledgePoint.sourcePage,
+          sourcePageAnnotated: knowledgePoint.sourcePageAnnotated,
           fileName: textbook.fileName,
           notice: CLEW_MODEL_LESSON_NOTICE,
         }),
-        body,
+        acceptedBody,
       ].join("\n");
       notes.push(`来源：模型生成 · ${provider.model}，结构校验通过。`);
+      if (citationIssues.length > 0) {
+        const issueList = citationIssues
+          .map((issue) => `「${issue.sentence}」（第 ${issue.page} 页）`)
+          .join("；");
+        notes.push(
+          `提示：${citationIssues.length} 处页码引用与原文不匹配（重试后仍存在），已原样保留，请对照教材原文核对：${issueList}`,
+        );
+      }
     } catch (error) {
       modelOutcome = "failed";
       const message = error instanceof Error ? error.message : "未知错误";

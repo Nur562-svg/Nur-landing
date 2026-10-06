@@ -9,6 +9,17 @@ import { isClewTaskConfigured, resolveClewTaskModel } from "./providers/model-co
  * 不写库、不改状态；结构合法性由确定性代码（lesson-heuristic）校验。
  */
 
+export type ClewLessonPrerequisiteSummary = {
+  title: string;
+  definition: string;
+  keyPoints: readonly string[];
+};
+
+export type ClewLessonEvidenceAtom = {
+  page: number;
+  text: string;
+};
+
 export type ClewLessonModelInput = {
   textbookTitle: string;
   chapterTitle: string;
@@ -23,6 +34,12 @@ export type ClewLessonModelInput = {
   sourceExcerpt: string;
   fileName?: string;
   style: ClewLessonStyle;
+  /** ZCODE-M6-D（有则增强）：先修知识点讲义摘要（仅作背景，不得直接引用为出处）。 */
+  prerequisiteSummaries?: readonly ClewLessonPrerequisiteSummary[];
+  /** ZCODE-M6-D（有则增强）：本章证据原子（页码溯源；仅作背景，与原文片段去重后注入）。 */
+  evidenceAtoms?: readonly ClewLessonEvidenceAtom[];
+  /** 整组重试回灌（结构缺节/引用失配清单；仅重试那次注入）。 */
+  retryFeedback?: string;
 };
 
 export type ClewLessonProvider = {

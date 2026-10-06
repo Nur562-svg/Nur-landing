@@ -1,0 +1,90 @@
+{
+  "phase": "post",
+  "startedAt": "2026-10-05T20:03:34.679Z",
+  "samples": [
+    "v4qa-kp-01",
+    "v4qa-kp-02",
+    "cmuprmns8000m5epxbr12r1gq",
+    "cmuprmns7000l5epxg7dmdx95",
+    "cmuprmns8000n5epx1br2dnro"
+  ],
+  "eventsBefore": {
+    "lesson": 19,
+    "chat": 61,
+    "note": 8
+  },
+  "lessonRuns": [
+    {
+      "kpId": "v4qa-kp-01",
+      "ok": true,
+      "latencyMs": 15171,
+      "calls": 1
+    },
+    {
+      "kpId": "v4qa-kp-02",
+      "ok": true,
+      "latencyMs": 12069,
+      "calls": 1
+    },
+    {
+      "kpId": "cmuprmns8000m5epxbr12r1gq",
+      "ok": true,
+      "latencyMs": 14254,
+      "calls": 2
+    },
+    {
+      "kpId": "cmuprmns7000l5epxg7dmdx95",
+      "ok": true,
+      "latencyMs": 13003,
+      "calls": 2
+    },
+    {
+      "kpId": "cmuprmns8000n5epx1br2dnro",
+      "ok": true,
+      "latencyMs": 14731,
+      "calls": 2
+    }
+  ],
+  "chatRuns": [
+    {
+      "kpId": "v4qa-kp-01",
+      "rounds": 3
+    },
+    {
+      "kpId": "v4qa-kp-02",
+      "rounds": 3
+    },
+    {
+      "kpId": "cmuprmns8000m5epxbr12r1gq",
+      "rounds": 3
+    },
+    {
+      "kpId": "cmuprmns7000l5epxg7dmdx95",
+      "rounds": 3
+    },
+    {
+      "kpId": "cmuprmns8000n5epx1br2dnro",
+      "rounds": 3
+    }
+  ],
+  "noteRuns": [
+    {
+      "label": "v4qa 第一章",
+      "ok": true,
+      "latencyMs": 33850,
+      "calls": 1
+    },
+    {
+      "label": "m2qa 第一章",
+      "ok": true,
+      "latencyMs": 24396,
+      "calls": 1
+    }
+  ],
+  "finishedAt": "2026-10-05T20:08:11.578Z",
+  "eventsAfter": {
+    "lesson": 24,
+    "chat": 76,
+    "note": 10
+  }
+}

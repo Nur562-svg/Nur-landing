@@ -751,6 +751,14 @@
   padding: 24px 0 80px;
 }
 
+/* ZCODE-M6 UI 热修①：壳侧栏折叠（264→56px）后，主画布扩出的宽度应给到学习页内容，
+   而不是变成居中留白——折叠态放宽上限，自适应窗口（≥901px 桌面态）。 */
+@media (min-width: 901px) {
+  [data-shell-rail="collapsed"] .studyContent {
+    max-width: none;
+  }
+}
+
 .studyLayout {
   align-items: start;
   display: grid;
@@ -2698,6 +2706,58 @@ li.structureRowActive .structureTitle {
   margin: 12px 0 0;
 }
 
+/* ZCODE-M5：复习打分三键（自测面板底部；仅该知识点有到期复习条目时出现） */
+.reviewRateRow {
+  border-top: 1px dashed var(--line-soft);
+  margin-top: 16px;
+  padding-top: 12px;
+}
+
+.reviewRateHint {
+  color: var(--muted);
+  font-size: 12px;
+  margin: 0 0 8px;
+}
+
+.reviewRateButtons {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.reviewRateButtons button {
+  background: none;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  color: var(--muted);
+  cursor: pointer;
+  font-size: 12.5px;
+  min-height: 30px;
+  padding: 0 14px;
+}
+
+.reviewRateButtons button:hover:not(:disabled) {
+  border-color: var(--v2-primary);
+  color: var(--v3-selected-fg);
+}
+
+.reviewRateButtons button:disabled {
+  cursor: default;
+  opacity: 0.55;
+}
+
+.reviewRateDone {
+  color: var(--v3-selected-fg);
+  font-size: 12px;
+  margin: 0;
+}
+
+.reviewRateNext {
+  color: var(--muted);
+  font-size: 12px;
+  margin: 0;
+}
+
 /* 讲解风格同步显示（批 3：选择器已迁右栏 composer chip 排，此处只读展示） */
 .lessonStyleBadge {
   color: var(--muted);
@@ -2883,4 +2943,155 @@ li.structureRowActive .structureTitle {
   .stageSpineTag {
     margin-top: 0;
   }
+}
+
+/* ---------------- ZCODE-M6：练习面板 + 跨 KP 跳转建议 ---------------- */
+
+/* A1 选项按钮：安静细线，选中/对错三态（对=selected 青玉系？保持 v4：对=墨底白字、错=朱砂描边） */
+.practiceChoices {
+  display: grid;
+  gap: 6px;
+  margin-top: 10px;
+}
+
+.practiceChoice {
+  align-items: center;
+  background: none;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  color: var(--text-900);
+  cursor: pointer;
+  display: flex;
+  font-size: 13px;
+  gap: 10px;
+  line-height: 1.6;
+  min-height: 36px;
+  padding: 6px 12px;
+  text-align: left;
+}
+
+.practiceChoice:hover:not(:disabled) {
+  border-color: var(--v2-primary);
+}
+
+.practiceChoice:disabled {
+  cursor: default;
+  opacity: 0.75;
+}
+
+.practiceChoice[aria-pressed="true"] {
+  border-color: var(--v2-primary);
+  font-weight: 600;
+}
+
+.practiceChoiceCorrect {
+  border-color: var(--v2-primary);
+  background: var(--v3-selected-bg);
+}
+
+.practiceChoiceWrong {
+  border-color: var(--red);
+  background: color-mix(in srgb, var(--red) 6%, transparent);
+}
+
+.practiceChoiceIndex {
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  flex: none;
+  font-size: 11px;
+  font-variant-numeric: tabular-nums;
+  line-height: 1;
+  min-width: 20px;
+  padding: 3px 0;
+  text-align: center;
+}
+
+/* D10：相关知识点跳转 chip */
+.chatSuggestRow {
+  align-items: center;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 8px;
+  margin-top: 10px;
+}
+
+.chatSuggestLabel {
+  color: var(--muted);
+  font-size: 11.5px;
+}
+
+.chatSuggestChip {
+  border: 1px solid color-mix(in srgb, var(--v3-slate-blue) 45%, transparent);
+  border-radius: 999px;
+  color: var(--v3-slate-blue);
+  font-size: 12px;
+  line-height: 1.4;
+  padding: 2px 10px;
+  text-decoration: none;
+}
+
+.chatSuggestChip:hover {
+  text-decoration: underline;
+}
+
+/* ZCODE-M6-C：键盘流提示（安静元信息行） */
+.kbdHintRow {
+  color: var(--muted);
+  font-size: 11px;
+  letter-spacing: 0.02em;
+  margin: 8px 0 0;
+}
+
+.kbdHintActive {
+  color: var(--v3-cinnabar);
+  font-size: 11.5px;
+  margin: 4px 0 0;
+}
+
+/* ZCODE-M6 补遗：DOCX 人工页码标注（KP 级；安静内联形态） */
+.pageAnnotateToggle {
+  background: none;
+  border: none;
+  padding: 0 0 0 8px;
+  font-size: 12px;
+  color: var(--accent-700, var(--ink-2, var(--muted)));
+  cursor: pointer;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+.pageAnnotateToggle:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+.pageAnnotateForm {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 6px 0 0;
+  font-size: 12px;
+  color: var(--muted);
+}
+.pageAnnotateLabel {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+.pageAnnotateInput {
+  width: 72px;
+  padding: 4px 8px;
+  font-size: 12px;
+  color: var(--ink);
+  background: var(--paper-bright);
+  border: 1px solid var(--line-soft);
+  border-radius: 6px;
+}
+.pageAnnotateError {
+  color: var(--error-600);
+}
+.pageAnnotateNote {
+  margin: 6px 0 0;
+  font-size: 12px;
+  line-height: 1.6;
+  color: var(--muted);
 }

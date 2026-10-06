@@ -40,6 +40,8 @@ export type ClewKnowledgePointView = {
   keyTerms: string[];
   prerequisites: string[];
   sourcePage: number;
+  /** ZCODE-M6 补遗：DOCX 学生人工标注页（溯源 = 学生声明，显示「你标注的」，不做文本核验）。 */
+  sourcePageAnnotated: boolean;
   /** 学习闭环 profile（六种预定义之一；萃取时规则引擎建议，用户可改）。 */
   loopProfileId: LoopProfileId;
 };
@@ -141,6 +143,7 @@ export type ClewErrorCode =
   | "not-found"
   | "storage-unavailable"
   | "spine-not-confirmed"
+  | "practice-failed"
   | "server-error";
 
 /** API 失败响应（成功响应由各路由按载荷定义）。 */
@@ -198,6 +201,11 @@ export type ClewChatEvent =
   | { type: "delta"; text: string }
   | { type: "status"; phase: "source" | "compose"; message: string }
   | { type: "result"; conversation: ClewConversationView; notes: string[] }
+  | {
+      /** ZCODE-M6（D10）：跨 KP 跳转建议——回答完成后确定性匹配本书其他知识点（不模型自报）。 */
+      type: "suggestions";
+      items: { kpId: string; title: string; href: string }[];
+    }
   | { type: "error"; code: ClewErrorCode; error: string };
 
 /**
@@ -235,6 +243,108 @@ export type ClewKnowledgePointStudyView = {
   highlights: ClewHighlightView[];
   /** ZCODE-M5：该知识点的 FSRS 复习调度条目（自测「还需看」产生；无则 null）。 */
   reviewItem: ClewReviewItemStudyView | null;
+  /** ZCODE-M6：练习题组（无题组 → questions 空数组）。 */
+  practice: ClewPracticeSetView;
+};
+
+/* ---------------- ZCODE-M5：FSRS 复习调度 ---------------- */
+
+/** 复习条目 API 视图（GET /api/clew/reviews 与 PATCH 打分结果共用；全部字段可序列化）。 */
+export type ClewReviewItemView = {
+  id: string;
+  kpId: string;
+  kpTitle: string;
+  textbookId: string;
+  textbookTitle: string;
+  chapterOrder: number;
+  /** 学习页深链（服务端拼好，客户端直接用）。 */
+  href: string;
+  sourceKind: string;
+  stability: number;
+  difficulty: number;
+  lastReviewedAt: string;
+  /** 下次到期（ISO）。 */
+  dueAt: string;
+  reviewCount: number;
+  lapses: number;
+  suspended: boolean;
+};
+
+/** 学习页内嵌的轻量复习状态（打分三键据此渲染）。 */
+export type ClewReviewItemStudyView = {
+  id: string;
+  dueAt: string;
+  /** 服务端计算的「已到期」标记（避免客户端时钟/SSR 漂移）。 */
+  due: boolean;
+  reviewCount: number;
+  lapses: number;
+};
+
+/** 「我的学习 · 今日复习」行（status 服务端定死：due=已到期 / upcoming=7 天内即将到期）。 */
+export type ClewTodayReviewItem = ClewReviewItemView & {
+  status: "due" | "upcoming";
+};
+
+/* ---------------- ZCODE-M6：自教材练习 ---------------- */
+
+/** 练习题型（首版两型；D1 定案 A1×4 + 填空×2）。 */
+export type ClewPracticeKind = "a1" | "fill";
+
+/** 单题练习视图。A1 不提前泄漏正确项；fill 需先见参考答案再自评（D2）。 */
+export type ClewPracticeQuestionView = {
+  id: string;
+  order: number;
+  kind: ClewPracticeKind;
+  stem: string;
+  /** A1 四选项；fill 为 null。 */
+  choices: string[] | null;
+  /** fill 参考答案（自评流程先展示）；A1 为 null（作答后经 myAttempt 揭示）。 */
+  answerText: string | null;
+  /** fill 的解析随参考答案展示；A1 的解析在作答后经 myAttempt 揭示。 */
+  explanation: string | null;
+  sourcePage: number;
+  /** 本人最近一次作答（无则 null）。 */
+  myAttempt: {
+    isCorrect: boolean;
+    /** A1 所选 index。 */
+    selectedIndex: number | null;
+    /** fill 自评。 */
+    selfRating: "correct" | "wrong" | null;
+    /** A1 正确项 index（作答后揭示）。 */
+    correctIndex: number | null;
+    /** A1 解析（作答后揭示）。 */
+    explanation: string | null;
+    attemptedAt: string;
+  } | null;
+};
+
+/** 练习题组视图（每 KP 一组）。 */
+export type ClewPracticeSetView = {
+  kpId: string;
+  generator: string;
+  generatedAt: string;
+  questions: ClewPracticeQuestionView[];
+  summary: { total: number; answered: number; correct: number; wrong: number };
+};
+
+/** 练习生成 SSE 事件（无增量正文——结构化产出，progress → result/error）。 */
+export type ClewPracticeEvent =
+  | { type: "progress"; stage: "read" | "generating" | "save"; message: string }
+  | { type: "result"; set: ClewPracticeSetView; notes: string[] }
+  | { type: "error"; code: ClewErrorCode; error: string };
+
+/** 作答结果（POST /api/clew/practice/[qid]/attempt 成功响应）。 */
+export type ClewPracticeAttemptResult = {
+  questionId: string;
+  kind: ClewPracticeKind;
+  isCorrect: boolean;
+  /** A1 正确项（作答后揭示）。 */
+  correctIndex: number | null;
+  /** fill 参考答案。 */
+  answerText: string | null;
+  explanation: string;
+  /** FSRS 回流结果（skipped-profile = 当前闭环不进调度；none = 正确且无在调度条目）。 */
+  review: "created" | "advanced" | "none" | "skipped-profile";
 };
 
 /* ---------------- M5：划重点/批注 + 学霸笔记 ---------------- */
@@ -414,42 +524,3 @@ export type ClewCompileEvent =
       notes: string[];
     }
   | { type: "error"; code: ClewErrorCode; error: string };
-
-/* ---------------- ZCODE-M5：FSRS 复习调度 ---------------- */
-
-/** 复习条目 API 视图（GET /api/clew/reviews 与 PATCH 打分结果共用；全部字段可序列化）。 */
-export type ClewReviewItemView = {
-  id: string;
-  kpId: string;
-  kpTitle: string;
-  textbookId: string;
-  textbookTitle: string;
-  chapterOrder: number;
-  /** 学习页深链（服务端拼好，客户端直接用）。 */
-  href: string;
-  sourceKind: string;
-  stability: number;
-  difficulty: number;
-  lastReviewedAt: string;
-  /** 下次到期（ISO）。 */
-  dueAt: string;
-  reviewCount: number;
-  lapses: number;
-  suspended: boolean;
-};
-
-/** 学习页内嵌的轻量复习状态（打分三键据此渲染）。 */
-export type ClewReviewItemStudyView = {
-  id: string;
-  dueAt: string;
-  /** 服务端计算的「已到期」标记（避免客户端时钟/SSR 漂移）。 */
-  due: boolean;
-  reviewCount: number;
-  lapses: number;
-};
-
-/** 「我的学习 · 今日复习」行（status 服务端定死：due=已到期 / upcoming=7 天内即将到期）。 */
-export type ClewTodayReviewItem = ClewReviewItemView & {
-  status: "due" | "upcoming";
-};
-

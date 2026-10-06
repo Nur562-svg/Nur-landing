@@ -20,11 +20,13 @@ export async function recordServerUsage(
     | "clewLessons"
     | "clewChats"
     | "clewNotes"
-    | "clewWorkshopChats",
+    | "clewWorkshopChats"
+    | "clewPracticeSets",
+  count = 1,
 ): Promise<void> {
   const user = await prisma.user.findUnique({ where: { id: userId }, select: { usage: true } });
   const current: UserUsageRecord = ((user?.usage as UserUsageRecord) ?? {}) as UserUsageRecord;
-  current[resource] = (current[resource] || 0) + 1;
+  current[resource] = (current[resource] || 0) + count;
   await prisma.user.update({
     where: { id: userId },
     data: { usage: current },
@@ -65,6 +67,7 @@ export async function computeUserQuotas(userId: string): Promise<UserQuotas> {
   const serverClewChats = serverUsage.clewChats || 0;
   const serverClewNotes = serverUsage.clewNotes || 0;
   const serverClewWorkshopChats = serverUsage.clewWorkshopChats || 0;
+  const serverClewPracticeSets = serverUsage.clewPracticeSets || 0;
 
   const clientBuilds = getClientBump("courseBuilds");
   const clientAgent = getClientBump("agentCalls");
@@ -83,6 +86,7 @@ export async function computeUserQuotas(userId: string): Promise<UserQuotas> {
     clewChats: computeItem(serverClewChats, limits.clewChats),
     clewNotes: computeItem(serverClewNotes, limits.clewNotes),
     clewWorkshopChats: computeItem(serverClewWorkshopChats, limits.clewWorkshopChats),
+    clewPracticeSets: computeItem(serverClewPracticeSets, limits.clewPracticeSets),
   };
 
   const periodNote = tier === "pro"

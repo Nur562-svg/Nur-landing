@@ -17,7 +17,8 @@ export type QuotaResource =
   | "clewLessons"       // Clew 知识点讲义生成（按知识点模型调用，M4 起）
   | "clewChats"         // Clew 讲解对话（按轮模型调用，M4 起）
   | "clewNotes"         // Clew 学霸笔记生成（按章模型调用，M5 起）
-  | "clewWorkshopChats"; // Clew 课题工作坊答疑（按轮模型调用，M6 起；检索零命中不计）
+  | "clewWorkshopChats" // Clew 课题工作坊答疑（按轮模型调用，M6 起；检索零命中不计）
+  | "clewPracticeSets"; // Clew 练习题生成（按 KP 模型调用，ZCODE-M6 起；深度档计 2 次）
 
 export type QuotaItem = {
   used: number;
@@ -43,10 +44,11 @@ export const TIER_QUOTAS: Record<MembershipTier, Record<QuotaResource, number | 
     agentCalls: 50,
     clewParses: 3,
     clewExtracts: 5,
-    clewLessons: 5,
+    clewLessons: 3,
     clewChats: 50,
-    clewNotes: 3,
+    clewNotes: 2,
     clewWorkshopChats: 30,
+    clewPracticeSets: 5,
   },
   basic: {
     privateMaterials: 20,
@@ -55,10 +57,11 @@ export const TIER_QUOTAS: Record<MembershipTier, Record<QuotaResource, number | 
     agentCalls: 200,
     clewParses: 10,
     clewExtracts: 20,
-    clewLessons: 20,
+    clewLessons: 13,
     clewChats: 200,
-    clewNotes: 10,
+    clewNotes: 7,
     clewWorkshopChats: 200,
+    clewPracticeSets: 15,
   },
   pro: {
     privateMaterials: "unlimited",
@@ -71,6 +74,7 @@ export const TIER_QUOTAS: Record<MembershipTier, Record<QuotaResource, number | 
     clewChats: "unlimited",
     clewNotes: "unlimited",
     clewWorkshopChats: "unlimited",
+    clewPracticeSets: "unlimited",
   },
   max: {
     privateMaterials: "unlimited",
@@ -83,6 +87,7 @@ export const TIER_QUOTAS: Record<MembershipTier, Record<QuotaResource, number | 
     clewChats: "unlimited",
     clewNotes: "unlimited",
     clewWorkshopChats: "unlimited",
+    clewPracticeSets: "unlimited",
   },
 };
 
@@ -148,6 +153,7 @@ export function getQuotaLabel(resource: QuotaResource): string {
     case "clewChats": return "Clew 讲解对话（模型）";
     case "clewNotes": return "Clew 学霸笔记（模型）";
     case "clewWorkshopChats": return "Clew 课题工作坊答疑（模型）";
+    case "clewPracticeSets": return "Clew 练习题生成（模型）";
   }
 }
 

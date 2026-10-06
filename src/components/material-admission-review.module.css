@@ -1,5 +1,5 @@
 .admission {
-  border-bottom: 1px solid var(--ink);
+  border-bottom: 1px solid var(--v2-border);
   margin: 0 auto;
   max-width: 1600px;
   padding: 38px 54px 48px;
@@ -7,7 +7,7 @@
 
 .sectionHeader {
   align-items: start;
-  border-bottom: 1px solid var(--ink);
+  border-bottom: 1px solid var(--v2-border);
   display: grid;
   gap: 15px;
   grid-template-columns: 34px minmax(0, 1fr) auto;
@@ -85,7 +85,7 @@
 .overlaySelect select {
   appearance: none;
   background: var(--paper-light);
-  border: 1px solid var(--ink);
+  border: 1px solid var(--v2-border);
   color: var(--ink);
   grid-column: 1 / -1;
   grid-row: 1;
@@ -103,13 +103,13 @@
 }
 
 .candidateReview {
-  border: 1px solid var(--ink);
+  border: 1px solid var(--v2-border);
   margin-top: 24px;
 }
 
 .candidateHeading {
   align-items: start;
-  border-bottom: 1px solid var(--ink);
+  border-bottom: 1px solid var(--v2-border);
   display: flex;
   gap: 24px;
   justify-content: space-between;
@@ -144,7 +144,7 @@
 }
 
 .identityGrid {
-  border-bottom: 1px solid var(--ink);
+  border-bottom: 1px solid var(--v2-border);
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));
 }
@@ -196,7 +196,7 @@
 }
 
 .excerptLedger {
-  border-bottom: 1px solid var(--ink);
+  border-bottom: 1px solid var(--v2-border);
 }
 
 .excerptLedger summary {
@@ -273,14 +273,14 @@
 }
 
 .reviewGrid {
-  border-bottom: 1px solid var(--ink);
+  border-bottom: 1px solid var(--v2-border);
   display: grid;
   grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
 }
 
 .conflictFieldset {
   border: 0;
-  border-right: 1px solid var(--ink);
+  border-right: 1px solid var(--v2-border);
   display: grid;
   gap: 12px;
   margin: 0;
@@ -309,7 +309,7 @@
 
 .conflictFieldset textarea {
   background: var(--paper-light);
-  border: 1px solid var(--ink);
+  border: 1px solid var(--v2-border);
   color: var(--ink);
   min-width: 0;
   padding: 10px;
@@ -424,7 +424,7 @@
 .restoredRecords a {
   align-items: center;
   background: var(--ink);
-  border: 1px solid var(--ink);
+  border: 1px solid var(--v2-border);
   color: var(--paper-light);
   cursor: pointer;
   display: inline-flex;
@@ -477,7 +477,7 @@
 }
 
 .restoredRecords {
-  border-top: 1px solid var(--ink);
+  border-top: 1px solid var(--v2-border);
   margin-top: 28px;
 }
 
@@ -583,7 +583,7 @@
   }
 
   .conflictFieldset {
-    border-bottom: 1px solid var(--ink);
+    border-bottom: 1px solid var(--v2-border);
     border-right: 0;
   }
 

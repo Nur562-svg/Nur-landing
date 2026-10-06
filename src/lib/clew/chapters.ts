@@ -66,6 +66,7 @@ export function toKnowledgePointView(row: {
   keyTerms: unknown;
   prerequisites: unknown;
   sourcePage: number;
+  sourcePageAnnotated?: boolean | null;
   loopProfileId?: string | null;
 }): ClewKnowledgePointView {
   const keyTerms = Array.isArray(row.keyTerms)
@@ -82,6 +83,7 @@ export function toKnowledgePointView(row: {
     keyTerms,
     prerequisites,
     sourcePage: row.sourcePage,
+    sourcePageAnnotated: row.sourcePageAnnotated === true,
     loopProfileId: isLoopProfileId(row.loopProfileId ?? "") ? (row.loopProfileId as LoopProfileId) : "full-loop",
   };
 }

@@ -29,6 +29,8 @@ export type ClewChatContext = {
   style: ClewLessonStyle;
   /** 依据范围；缺省 lesson+source（讲义 + 教材原文）。 */
   scope?: ClewChatScope;
+  /** ZCODE-M6-D（有则增强）：本章证据原子（页码溯源，服务端已与原文片段去重）；缺省不出现该段（逐字节不变）。 */
+  evidenceAtoms?: readonly { page: number; text: string }[];
 };
 
 export type ClewChatModelMessage = {
@@ -77,7 +79,7 @@ export function buildClewChatSystemPrompt(context: ClewChatContext): string {
     docx
       ? `- 讲解风格：${CLEW_LESSON_STYLE_LABELS[context.style]}；这份教材没有印刷页码，引用时写「页码待确认」，不得写成「第 N 页」。`
       : `- 讲解风格：${CLEW_LESSON_STYLE_LABELS[context.style]}；引用教材时写清页码（如「${locator}」）。`,
-    "- 回答使用中文：可以说人话、用短比喻帮助学生记住，但禁止空泛鸡汤；可用小标题与短列表，不要表格或代码块。",
+    "- 回答使用中文：可以说人话、用短比喻帮助学生记住，但禁止空泛鸡汤；可用小标题与短列表，不要 markdown 表格或代码块（对比内容用短列表逐条写）。引用页码时把该页支撑的内容写在同一句里（如「第 3 页指出：……」或「……（第 3 页）」），不要输出只装页码的表格列或裸编号。页码只标注原文片段或讲义里可对照核验的表述；由常识或知识点说明引申、而原文片段里没有对应用词的内容不要挂页码——宁可不引用，不得给无法对照核验的表述标页码。",
     "- 不得声称教师强调过某内容，也不得编造教材页码。",
     "",
     `教材：《${context.textbookTitle}》`,
@@ -94,6 +96,13 @@ export function buildClewChatSystemPrompt(context: ClewChatContext): string {
       ? "本知识点教材原文片段（页码待确认，不要编造页码）："
       : "本知识点教材原文片段（带【PDF 第 X 页】标记，引用时以这里的页码为准）：",
     excerpt,
+    ...(context.evidenceAtoms && context.evidenceAtoms.length > 0
+      ? [
+          "",
+          "本章证据原子（页码溯源的原文摘录；仅作背景帮助理解，不得直接引用为出处，引用页码仍以上方原文片段为准）：",
+          ...context.evidenceAtoms.map((atom) => `【第 ${atom.page} 页】${atom.text}`),
+        ]
+      : []),
     "",
     "本知识点讲义（如已生成）：",
     lesson,

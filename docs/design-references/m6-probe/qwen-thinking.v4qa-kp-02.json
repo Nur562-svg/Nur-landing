@@ -1,0 +1,108 @@
+{
+  "config": "qwen-thinking",
+  "provider": "dashscope",
+  "model": "qwen3.7-plus",
+  "thinking": true,
+  "elapsedMs": 45808,
+  "usage": {
+    "prompt_tokens": 1488,
+    "total_tokens": 4127,
+    "completion_tokens": 2639,
+    "prompt_tokens_details": {
+      "cached_tokens": 1152,
+      "text_tokens": 1488
+    },
+    "completion_tokens_details": {
+      "reasoning_tokens": 1885,
+      "text_tokens": 2639
+    }
+  },
+  "kpId": "v4qa-kp-02",
+  "kpTitle": "个体变异",
+  "excerptChars": 1851,
+  "mechanical": {
+    "parseOk": true,
+    "parseError": null,
+    "questionCount": 6,
+    "a1Count": 4,
+    "fillCount": 2,
+    "missingFields": [],
+    "pageCitationsInRange": true,
+    "citedPages": [
+      1
+    ],
+    "excerptPages": [
+      1,
+      2
+    ]
+  },
+  "questions": [
+    {
+      "kind": "a1",
+      "stem": "关于同质个体之间的变异，下列说法正确的是？",
+      "choices": [
+        "称为个体变异",
+        "称为抽样误差",
+        "称为系统误差",
+        "称为随机误差"
+      ],
+      "answerIndex": 0,
+      "explanation": "根据原文【PDF 第 1 页】一、是非题第2题，同质个体之间的变异称为个体变异。",
+      "sourcePage": 1
+    },
+    {
+      "kind": "a1",
+      "stem": "关于总体中个体的特征，下列描述不正确的是？",
+      "choices": [
+        "总体中的个体具有同质性",
+        "总体中的个体大同小异",
+        "总体中的个体在同质的基础上有变异",
+        "如果个体间有变异那它们肯定不是来自同一总体"
+      ],
+      "answerIndex": 3,
+      "explanation": "根据原文【PDF 第 1 页】二、选择题第4题，选项D‘如果个体间有变异那它们肯定不是来自同一总体’是不正确的描述。",
+      "sourcePage": 1
+    },
+    {
+      "kind": "a1",
+      "stem": "在研究总体时，关于个体变异的描述，下列哪项是正确的？",
+      "choices": [
+        "个体间不存在任何差异",
+        "个体间的变异说明它们不来自同一总体",
+        "个体在同质的基础上存在大同小异的差别",
+        "个体变异不属于统计学研究的内容"
+      ],
+      "answerIndex": 2,
+      "explanation": "根据原文【PDF 第 1 页】二、选择题第4题的选项B和C可知，总体中的个体大同小异，且在同质的基础上有变异，故C项正确。",
+      "sourcePage": 1
+    },
+    {
+      "kind": "a1",
+      "stem": "同质性是总体的基本特征，但在同质基础上的个体间仍存在的差别称为？",
+      "choices": [
+        "抽样误差",
+        "个体变异",
+        "测量误差",
+        "系统误差"
+      ],
+      "answerIndex": 1,
+      "explanation": "根据原文【PDF 第 1 页】一、是非题第2题及知识点说明，同质个体之间的变异称为个体变异，是统计学研究的基础。",
+      "sourcePage": 1
+    },
+    {
+      "kind": "fill",
+      "stem": "同质个体之间的变异称为______。",
+      "answerText": "个体变异",
+      "explanation": "根据原文【PDF 第 1 页】一、是非题第2题，同质个体之间的变异称为个体变异。",
+      "sourcePage": 1
+    },
+    {
+      "kind": "fill",
+      "stem": "总体中的个体具有______，但在同质的基础上有变异。",
+      "answerText": "同质性",
+      "explanation": "根据原文【PDF 第 1 页】二、选择题第4题，总体中的个体具有同质性，且在同质的基础上有变异。",
+      "sourcePage": 1
+    }
+  ],
+  "rawContent": "{\n  \"questions\": [\n    {\n      \"kind\": \"a1\",\n      \"stem\": \"关于同质个体之间的变异，下列说法正确的是？\",\n      \"choices\": [\n        \"称为个体变异\",\n        \"称为抽样误差\",\n        \"称为系统误差\",\n        \"称为随机误差\"\n      ],\n      \"answerIndex\": 0,\n      \"explanation\": \"根据原文【PDF 第 1 页】一、是非题第2题，同质个体之间的变异称为个体变异。\",\n      \"sourcePage\": 1\n    },\n    {\n      \"kind\": \"a1\",\n      \"stem\": \"关于总体中个体的特征，下列描述不正确的是？\",\n      \"choices\": [\n        \"总体中的个体具有同质性\",\n        \"总体中的个体大同小异\",\n        \"总体中的个体在同质的基础上有变异\",\n        \"如果个体间有变异那它们肯定不是来自同一总体\"\n      ],\n      \"answerIndex\": 3,\n      \"explanation\": \"根据原文【PDF 第 1 页】二、选择题第4题，选项D‘如果个体间有变异那它们肯定不是来自同一总体’是不正确的描述。\",\n      \"sourcePage\": 1\n    },\n    {\n      \"kind\": \"a1\",\n      \"stem\": \"在研究总体时，关于个体变异的描述，下列哪项是正确的？\",\n      \"choices\": [\n        \"个体间不存在任何差异\",\n        \"个体间的变异说明它们不来自同一总体\",\n        \"个体在同质的基础上存在大同小异的差别\",\n        \"个体变异不属于统计学研究的内容\"\n      ],\n      \"answerIndex\": 2,\n      \"explanation\": \"根据原文【PDF 第 1 页】二、选择题第4题的选项B和C可知，总体中的个体大同小异，且在同质的基础上有变异，故C项正确。\",\n      \"sourcePage\": 1\n    },\n    {\n      \"kind\": \"a1\",\n      \"stem\": \"同质性是总体的基本特征，但在同质基础上的个体间仍存在的差别称为？\",\n      \"choices\": [\n        \"抽样误差\",\n        \"个体变异\",\n        \"测量误差\",\n        \"系统误差\"\n      ],\n      \"answerIndex\": 1,\n      \"explanation\": \"根据原文【PDF 第 1 页】一、是非题第2题及知识点说明，同质个体之间的变异称为个体变异，是统计学研究的基础。\",\n      \"sourcePage\": 1\n    },\n    {\n      \"kind\": \"fill\",\n      \"stem\": \"同质个体之间的变异称为______。\",\n      \"answerText\": \"个体变异\",\n      \"explanation\": \"根据原文【PDF 第 1 页】一、是非题第2题，同质个体之间的变异称为个体变异。\",\n      \"sourcePage\": 1\n    },\n    {\n      \"kind\": \"fill\",\n      \"stem\": \"总体中的个体具有______，但在同质的基础上有变异。\",\n      \"answerText\": \"同质性\",\n      \"explanation\": \"根据原文【PDF 第 1 页】二、选择题第4题，总体中的个体具有同质性，且在同质的基础上有变异。\",\n      \"sourcePage\": 1\n    }\n  ]\n}"
+}

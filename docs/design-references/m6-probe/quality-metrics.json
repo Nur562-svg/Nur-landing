@@ -1,0 +1,673 @@
+{
+  "generatedAt": "2026-10-05T20:18:56.488Z",
+  "phases": {
+    "baseline": {
+      "phase": "baseline",
+      "lessons": [
+        {
+          "kpId": "cmuprmns7000l5epxg7dmdx95",
+          "kpTitle": "中医诊断学的基本任务（定义型）",
+          "ok": true,
+          "rubric": [
+            "定义",
+            "要点",
+            "易错点",
+            "自测题"
+          ],
+          "sectionsPresent": [
+            "定义",
+            "要点",
+            "易错点",
+            "自测题"
+          ],
+          "sectionsComplete": "4/4",
+          "selfTestCount": 3,
+          "citationChecked": 10,
+          "citationIssues": 1,
+          "citationIssueSentences": [
+            "（第 3 页）-为深入理解四诊方法奠定理论基础("
+          ],
+          "latencyMs": 6116,
+          "retryOrCitationNotes": []
+        },
+        {
+          "kpId": "cmuprmns8000m5epxbr12r1gq",
+          "kpTitle": "四诊合参原则（定义型，先修源）",
+          "ok": true,
+          "rubric": [
+            "定义",
+            "要点",
+            "易错点",
+            "自测题"
+          ],
+          "sectionsPresent": [
+            "定义",
+            "要点",
+            "易错点",
+            "自测题"
+          ],
+          "sectionsComplete": "4/4",
+          "selfTestCount": 3,
+          "citationChecked": 3,
+          "citationIssues": 0,
+          "citationIssueSentences": [],
+          "latencyMs": 6074,
+          "retryOrCitationNotes": []
+        },
+        {
+          "kpId": "cmuprmns8000n5epx1br2dnro",
+          "kpTitle": "望闻问切互相印证（定义型，有先修）",
+          "ok": true,
+          "rubric": [
+            "定义",
+            "要点",
+            "易错点",
+            "自测题"
+          ],
+          "sectionsPresent": [
+            "定义",
+            "要点",
+            "易错点",
+            "自测题"
+          ],
+          "sectionsComplete": "4/4",
+          "selfTestCount": 3,
+          "citationChecked": 4,
+          "citationIssues": 0,
+          "citationIssueSentences": [],
+          "latencyMs": 5343,
+          "retryOrCitationNotes": []
+        },
+        {
+          "kpId": "v4qa-kp-01",
+          "kpTitle": "离散型定量变量（习题富页）",
+          "ok": true,
+          "rubric": [
+            "定义",
+            "要点",
+            "易错点",
+            "自测题"
+          ],
+          "sectionsPresent": [
+            "定义",
+            "要点",
+            "易错点",
+            "自测题"
+          ],
+          "sectionsComplete": "4/4",
+          "selfTestCount": 3,
+          "citationChecked": 13,
+          "citationIssues": 0,
+          "citationIssueSentences": [],
+          "latencyMs": 13804,
+          "retryOrCitationNotes": []
+        },
+        {
+          "kpId": "v4qa-kp-02",
+          "kpTitle": "个体变异（习题富页）",
+          "ok": true,
+          "rubric": [
+            "定义",
+            "要点",
+            "易错点",
+            "自测题"
+          ],
+          "sectionsPresent": [
+            "定义",
+            "要点",
+            "易错点",
+            "自测题"
+          ],
+          "sectionsComplete": "4/4",
+          "selfTestCount": 3,
+          "citationChecked": 13,
+          "citationIssues": 0,
+          "citationIssueSentences": [],
+          "latencyMs": 12304,
+          "retryOrCitationNotes": []
+        }
+      ],
+      "notes": [
+        {
+          "file": "note.f650452b-eadd-4504-8102-a98da36f728b.c1.json",
+          "label": "m2qa 第一章",
+          "ok": true,
+          "noteStructureValid": true,
+          "sections": {
+            "overview": true,
+            "points": true,
+            "comparison": false,
+            "pitfallList": false,
+            "memoryHooks": false,
+            "reviewReminder": false,
+            "selfTest": true
+          },
+          "latencyMs": 22045
+        },
+        {
+          "file": "note.v4qa-textbook-1.c1.json",
+          "label": "v4qa 第一章",
+          "ok": true,
+          "noteStructureValid": true,
+          "sections": {
+            "overview": true,
+            "points": true,
+            "comparison": false,
+            "pitfallList": false,
+            "memoryHooks": false,
+            "reviewReminder": false,
+            "selfTest": true
+          },
+          "latencyMs": 42071
+        }
+      ],
+      "chats": [
+        {
+          "kpId": "cmuprmns7000l5epxg7dmdx95",
+          "rounds": [
+            {
+              "question": "中医诊断学的基本任务有哪些？",
+              "ok": true,
+              "answerChars": 872,
+              "latencyMs": 9596,
+              "notes": [
+                "上下文：讲义 + 第 3 页附近原文 + 本章 3 个知识点。"
+              ]
+            },
+            {
+              "question": "这些任务之间是什么关系？",
+              "ok": true,
+              "answerChars": 742,
+              "latencyMs": 8570,
+              "notes": [
+                "上下文：讲义 + 第 3 页附近原文 + 本章 3 个知识点。"
+              ]
+            },
+            {
+              "question": "为什么说基本任务是学习中医诊断学的起点？",
+              "ok": true,
+              "answerChars": 1219,
+              "latencyMs": 13010,
+              "notes": [
+                "上下文：讲义 + 第 3 页附近原文 + 本章 3 个知识点。"
+              ]
+            }
+          ]
+        },
+        {
+          "kpId": "cmuprmns8000m5epxbr12r1gq",
+          "rounds": [
+            {
+              "question": "四诊合参为什么不能只靠一种诊法？",
+              "ok": true,
+              "answerChars": 866,
+              "latencyMs": 10797,
+              "notes": [
+                "上下文：讲义 + 第 3 页附近原文 + 本章 3 个知识点。"
+              ]
+            },
+            {
+              "question": "四诊合参和望闻问切互相印证是什么关系？",
+              "ok": true,
+              "answerChars": 1171,
+              "latencyMs": 13007,
+              "notes": [
+                "上下文：讲义 + 第 3 页附近原文 + 本章 3 个知识点。"
+              ]
+            },
+            {
+              "question": "违背四诊合参会带来什么问题？",
+              "ok": true,
+              "answerChars": 1200,
+              "latencyMs": 13999,
+              "notes": [
+                "上下文：讲义 + 第 3 页附近原文 + 本章 3 个知识点。"
+              ]
+            }
+          ]
+        },
+        {
+          "kpId": "cmuprmns8000n5epx1br2dnro",
+          "rounds": [
+            {
+              "question": "望闻问切为什么要互相印证？",
+              "ok": true,
+              "answerChars": 466,
+              "latencyMs": 7157,
+              "notes": [
+                "上下文：讲义 + 第 4 页附近原文 + 本章 3 个知识点。"
+              ]
+            },
+            {
+              "question": "能不能只凭切脉就下诊断？",
+              "ok": true,
+              "answerChars": 574,
+              "latencyMs": 7326,
+              "notes": [
+                "上下文：讲义 + 第 4 页附近原文 + 本章 3 个知识点。"
+              ]
+            },
+            {
+              "question": "互相印证和四诊合参是什么关系？",
+              "ok": true,
+              "answerChars": 554,
+              "latencyMs": 6567,
+              "notes": [
+                "上下文：讲义 + 第 4 页附近原文 + 本章 3 个知识点。"
+              ]
+            }
+          ]
+        },
+        {
+          "kpId": "v4qa-kp-01",
+          "rounds": [
+            {
+              "question": "离散型定量变量和连续型定量变量怎么区分？",
+              "ok": true,
+              "answerChars": 1579,
+              "latencyMs": 16667,
+              "notes": [
+                "上下文：讲义 + 第 1 页附近原文 + 本章 13 个知识点。"
+              ]
+            },
+            {
+              "question": "为什么说家庭中子女数是离散型定量变量？",
+              "ok": true,
+              "answerChars": 1086,
+              "latencyMs": 11467,
+              "notes": [
+                "上下文：讲义 + 第 1 页附近原文 + 本章 13 个知识点。"
+              ]
+            },
+            {
+              "question": "用这个概念说说「个体变异」是什么意思？",
+              "ok": true,
+              "answerChars": 1052,
+              "latencyMs": 11917,
+              "notes": [
+                "上下文：讲义 + 第 1 页附近原文 + 本章 13 个知识点。"
+              ]
+            }
+          ]
+        },
+        {
+          "kpId": "v4qa-kp-02",
+          "rounds": [
+            {
+              "question": "个体变异指的是什么？",
+              "ok": true,
+              "answerChars": 800,
+              "latencyMs": 8416,
+              "notes": [
+                "上下文：讲义 + 第 1 页附近原文 + 本章 13 个知识点。"
+              ]
+            },
+            {
+              "question": "个体变异和同质之间是什么关系？",
+              "ok": true,
+              "answerChars": 973,
+              "latencyMs": 10814,
+              "notes": [
+                "上下文：讲义 + 第 1 页附近原文 + 本章 13 个知识点。"
+              ]
+            },
+            {
+              "question": "为什么研究个体变异对统计学重要？",
+              "ok": true,
+              "answerChars": 1289,
+              "latencyMs": 13474,
+              "notes": [
+                "上下文：讲义 + 第 1 页附近原文 + 本章 13 个知识点。"
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    "post": {
+      "phase": "post",
+      "lessons": [
+        {
+          "kpId": "cmuprmns7000l5epxg7dmdx95",
+          "kpTitle": "中医诊断学的基本任务（定义型）",
+          "ok": true,
+          "rubric": [
+            "定义",
+            "机制机理",
+            "易混辨析",
+            "要点",
+            "易错点",
+            "自测题"
+          ],
+          "sectionsPresent": [
+            "定义",
+            "机制机理",
+            "易混辨析",
+            "要点",
+            "易错点",
+            "自测题"
+          ],
+          "sectionsComplete": "6/6",
+          "selfTestCount": 4,
+          "citationChecked": 8,
+          "citationIssues": 0,
+          "citationIssueSentences": [],
+          "latencyMs": 16521,
+          "retryOrCitationNotes": []
+        },
+        {
+          "kpId": "cmuprmns8000m5epxbr12r1gq",
+          "kpTitle": "四诊合参原则（定义型，先修源）",
+          "ok": true,
+          "rubric": [
+            "定义",
+            "机制机理",
+            "易混辨析",
+            "要点",
+            "易错点",
+            "自测题"
+          ],
+          "sectionsPresent": [
+            "定义",
+            "机制机理",
+            "易混辨析",
+            "要点",
+            "易错点",
+            "自测题"
+          ],
+          "sectionsComplete": "6/6",
+          "selfTestCount": 3,
+          "citationChecked": 6,
+          "citationIssues": 0,
+          "citationIssueSentences": [],
+          "latencyMs": 15649,
+          "retryOrCitationNotes": []
+        },
+        {
+          "kpId": "cmuprmns8000n5epx1br2dnro",
+          "kpTitle": "望闻问切互相印证（定义型，有先修）",
+          "ok": true,
+          "rubric": [
+            "定义",
+            "机制机理",
+            "易混辨析",
+            "要点",
+            "易错点",
+            "自测题"
+          ],
+          "sectionsPresent": [
+            "定义",
+            "机制机理",
+            "易混辨析",
+            "要点",
+            "易错点",
+            "自测题"
+          ],
+          "sectionsComplete": "6/6",
+          "selfTestCount": 3,
+          "citationChecked": 5,
+          "citationIssues": 0,
+          "citationIssueSentences": [],
+          "latencyMs": 6457,
+          "retryOrCitationNotes": []
+        },
+        {
+          "kpId": "v4qa-kp-01",
+          "kpTitle": "离散型定量变量（习题富页）",
+          "ok": true,
+          "rubric": [
+            "定义",
+            "机制机理",
+            "易混辨析",
+            "要点",
+            "易错点",
+            "自测题"
+          ],
+          "sectionsPresent": [
+            "定义",
+            "机制机理",
+            "易混辨析",
+            "要点",
+            "易错点",
+            "自测题"
+          ],
+          "sectionsComplete": "6/6",
+          "selfTestCount": 3,
+          "citationChecked": 16,
+          "citationIssues": 0,
+          "citationIssueSentences": [],
+          "latencyMs": 14410,
+          "retryOrCitationNotes": []
+        },
+        {
+          "kpId": "v4qa-kp-02",
+          "kpTitle": "个体变异（习题富页）",
+          "ok": true,
+          "rubric": [
+            "定义",
+            "机制机理",
+            "易混辨析",
+            "要点",
+            "易错点",
+            "自测题"
+          ],
+          "sectionsPresent": [
+            "定义",
+            "机制机理",
+            "易混辨析",
+            "要点",
+            "易错点",
+            "自测题"
+          ],
+          "sectionsComplete": "6/6",
+          "selfTestCount": 3,
+          "citationChecked": 18,
+          "citationIssues": 0,
+          "citationIssueSentences": [],
+          "latencyMs": 14094,
+          "retryOrCitationNotes": []
+        }
+      ],
+      "notes": [
+        {
+          "file": "note.f650452b-eadd-4504-8102-a98da36f728b.c1.json",
+          "label": "m2qa 第一章",
+          "ok": true,
+          "noteStructureValid": true,
+          "sections": {
+            "overview": true,
+            "points": true,
+            "comparison": false,
+            "pitfallList": true,
+            "memoryHooks": true,
+            "reviewReminder": true,
+            "selfTest": true
+          },
+          "latencyMs": 26357
+        },
+        {
+          "file": "note.v4qa-textbook-1.c1.json",
+          "label": "v4qa 第一章",
+          "ok": true,
+          "noteStructureValid": true,
+          "sections": {
+            "overview": true,
+            "points": true,
+            "comparison": true,
+            "pitfallList": true,
+            "memoryHooks": true,
+            "reviewReminder": true,
+            "selfTest": true
+          },
+          "latencyMs": 44454
+        }
+      ],
+      "chats": [
+        {
+          "kpId": "cmuprmns7000l5epxg7dmdx95",
+          "rounds": [
+            {
+              "question": "中医诊断学的基本任务有哪些？",
+              "ok": true,
+              "answerChars": 828,
+              "latencyMs": 9833,
+              "notes": [
+                "上下文：讲义 + 第 3 页附近原文 + 本章 3 个知识点。",
+                "本段 2 处页码引用与原文不完全一致，请对照原文核对：第 3 页：「」,如果期待我列出一二三四条具体的临床操作(比如“辨别寒热”、“判断虚实”),那这份教材的」；第 4 页：「的原文中详细罗列。」"
+              ]
+            },
+            {
+              "question": "这些任务之间是什么关系？",
+              "ok": true,
+              "answerChars": 514,
+              "latencyMs": 6744,
+              "notes": [
+                "上下文：讲义 + 第 3 页附近原文 + 本章 3 个知识点。",
+                "本段 3 处页码引用与原文不完全一致，请对照原文核对：第 3 页：「的原文片段:」；第 3 页：「1.教材本页未展开:」；第 4 页：「的给定片段中,没有列出多条基本任务,因此不存在“任务之间的关系”这一说法。」"
+              ]
+            },
+            {
+              "question": "为什么说基本任务是学习中医诊断学的起点？",
+              "ok": true,
+              "answerChars": 602,
+              "latencyMs": 7338,
+              "notes": [
+                "上下文：讲义 + 第 3 页附近原文 + 本章 3 个知识点。",
+                "本段 2 处页码引用与原文不完全一致，请对照原文核对：第 3 页：「」,这个逻辑推导其实藏在知识点说明里,而不是」；第 3 页：「###1.原文钉死(」"
+              ]
+            }
+          ]
+        },
+        {
+          "kpId": "cmuprmns8000m5epxbr12r1gq",
+          "rounds": [
+            {
+              "question": "四诊合参为什么不能只靠一种诊法？",
+              "ok": true,
+              "answerChars": 571,
+              "latencyMs": 7193,
+              "notes": [
+                "上下文：讲义 + 第 3 页附近原文 + 本章 3 个知识点。"
+              ]
+            },
+            {
+              "question": "四诊合参和望闻问切互相印证是什么关系？",
+              "ok": true,
+              "answerChars": 525,
+              "latencyMs": 6811,
+              "notes": [
+                "上下文：讲义 + 第 3 页附近原文 + 本章 3 个知识点。",
+                "本段 1 处页码引用与原文不完全一致，请对照原文核对：第 4 页：「专门强调了这一点。」"
+              ]
+            },
+            {
+              "question": "违背四诊合参会带来什么问题？",
+              "ok": true,
+              "answerChars": 533,
+              "latencyMs": 6895,
+              "notes": [
+                "上下文：讲义 + 第 3 页附近原文 + 本章 3 个知识点。"
+              ]
+            }
+          ]
+        },
+        {
+          "kpId": "cmuprmns8000n5epx1br2dnro",
+          "rounds": [
+            {
+              "question": "望闻问切为什么要互相印证？",
+              "ok": true,
+              "answerChars": 633,
+              "latencyMs": 7572,
+              "notes": [
+                "上下文：讲义 + 第 4 页附近原文 + 本章 3 个知识点。"
+              ]
+            },
+            {
+              "question": "能不能只凭切脉就下诊断？",
+              "ok": true,
+              "answerChars": 561,
+              "latencyMs": 7073,
+              "notes": [
+                "上下文：讲义 + 第 4 页附近原文 + 本章 3 个知识点。"
+              ]
+            },
+            {
+              "question": "互相印证和四诊合参是什么关系？",
+              "ok": true,
+              "answerChars": 781,
+              "latencyMs": 9165,
+              "notes": [
+                "上下文：讲义 + 第 4 页附近原文 + 本章 3 个知识点。"
+              ]
+            }
+          ]
+        },
+        {
+          "kpId": "v4qa-kp-01",
+          "rounds": [
+            {
+              "question": "离散型定量变量和连续型定量变量怎么区分？",
+              "ok": true,
+              "answerChars": 1622,
+              "latencyMs": 16937,
+              "notes": [
+                "上下文：讲义 + 第 1 页附近原文 + 本章 13 个知识点。"
+              ]
+            },
+            {
+              "question": "为什么说家庭中子女数是离散型定量变量？",
+              "ok": true,
+              "answerChars": 794,
+              "latencyMs": 9395,
+              "notes": [
+                "上下文：讲义 + 第 1 页附近原文 + 本章 13 个知识点。"
+              ]
+            },
+            {
+              "question": "用这个概念说说「个体变异」是什么意思？",
+              "ok": true,
+              "answerChars": 804,
+              "latencyMs": 8994,
+              "notes": [
+                "上下文：讲义 + 第 1 页附近原文 + 本章 13 个知识点。"
+              ]
+            }
+          ]
+        },
+        {
+          "kpId": "v4qa-kp-02",
+          "rounds": [
+            {
+              "question": "个体变异指的是什么？",
+              "ok": true,
+              "answerChars": 742,
+              "latencyMs": 8288,
+              "notes": [
+                "上下文：讲义 + 第 1 页附近原文 + 本章 13 个知识点。"
+              ]
+            },
+            {
+              "question": "个体变异和同质之间是什么关系？",
+              "ok": true,
+              "answerChars": 743,
+              "latencyMs": 8758,
+              "notes": [
+                "上下文：讲义 + 第 1 页附近原文 + 本章 13 个知识点。"
+              ]
+            },
+            {
+              "question": "为什么研究个体变异对统计学重要？",
+              "ok": true,
+              "answerChars": 866,
+              "latencyMs": 9298,
+              "notes": [
+                "上下文：讲义 + 第 1 页附近原文 + 本章 13 个知识点。"
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  }
+}

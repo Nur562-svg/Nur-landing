@@ -1,6 +1,6 @@
 # NUR LEARN — Canonical Project State
 
-Last updated: 2026-10-04 (Asia/Shanghai) — 设计系统 v4「Quiet」批 1 落地（token 层 + Clew 学习页换装 + 壳侧栏合并；Hermes 预验收复核通过 2026-10-04，未提交待终审）；ZCODE-M1–M4 与体验补丁为既有未提交基线，设计语言真相源 `docs/DESIGN_V4.md`。
+Last updated: 2026-10-06 (Asia/Shanghai) — ZCODE-M5 完成并通过 Hermes 预验收（未提交待审阅）；ZCODE-M6 进行中：UI 热修 ×2 + M6-0 质量探针（四配置 48 题零事实错误）+ M6-A 练习服务端 + M6-B/C 练习消费面与键盘流 + **M6-D 生成质量三面完成**（讲义六节 rubric + 先修摘要/证据原子上下文加宽 + 引用核验管线零失配 + 笔记四新节 + chat 原子接线与引用自检；配额 clewLessons 5→3/20→13、clewNotes 3→2/10→7；test 557/557 + check exit 0 + 盲评引用可核查性 +1.2）；证据均见 `design-qa.md`；设计系统 v4 批 1 已提交（origin=9c4e7b8）、批 2/3 系列落地未提交；ZCODE-M1–M4 已提交并 push（基线 b00ff5b），设计语言真相源 `docs/DESIGN_V4.md`。
 
 This file is the durable source of truth for continuing NUR LEARN when conversation history is unavailable. Update it after material product decisions, completed milestones, verification changes, or priority changes.
 
@@ -1902,3 +1902,33 @@ Nur 裁决：导航与 /learn h1 「学习主环」→「我的学习」；页�
 - **Hermes 预验收复核（2026-10-05，独立脚本 + m2qa + 真实 DB/模型）**：门槛 501/501 / check exit 0 / migrate 干净；代码面（级联/唯一键、new 态重建、create=dueAt:now、scheduled 一次、advance 由新 shaky 判定、fsrsEnabled 跳过、属主 404、dueCount 不受截断、status 服务端定死、错题中心第五参零破坏、`fsrs.ts` 零改动）全对；真实链路：自测→条目+双事件→脊柱「复」跳 `/learn#today-reviews`→今日复习在主列学习动态之上（y 378<521）→重学→「记住了」行内确认+顺延→/learn「即将到期 · 复习 1 次」+计数清零→错题中心第五 tab→**created 与 unchanged 两态活体实测**；**FSRS 纯函数独立复算与 DB 逐位一致**（good S 2.3274/dueAt 10-07、hard S 0.8765/dueAt 10-06）；幂等（同版本重复提交状态与事件零变化）；边界 404/400/401 与未登录不渲染；明暗 1440/390 与审计 r2+r3 全过；「我的学习」定位收紧随手复核通过——**M5 预验收通过**。边界（未独立覆盖）：advanced/exploration 活体路径（隔离测试覆盖）。证据见 `design-qa.md`「预验收复核（Hermes，2026-10-05）· ZCODE-M5」节。
 
 **下一主线**：待 Nur 审阅合并本批与 v4 批 2/3 未提交工作区；此后 M6+（官方课 KP FSRS、跨设备同步官方课记忆、官方更新动态数据源）与部署上线准备（ICP + 商户号 + 生产密钥）并行推进。
+
+## ZCODE-M6 热修 + M6-0 探针 + M6-A 服务端（2026-10-06 完成，未提交）
+
+任务书 `docs/ZCODE-M6-clew-practice.md`（Nur 2026-10-06 拍板「热修+探针先行」，随后确认执行）。已完成三块：
+
+- **UI 热修 ×2**（Nur 实测报告，Free Change Zone）：① 侧栏折叠后学习页主列不变宽——壳 `data-shell-rail` 状态标记 + `.studyContent` 折叠态放宽 max-width（实测主列 1176→1384）；② 问 Clew 流式双气泡——流式期间消息循环剔除末条 assistant（streaming 块唯一渲染）。check exit 0，截图与走查见 design-qa。
+- **M6-0 质量探针**（可复跑脚本 `scripts/m6-probe-question-quality.mjs`，产物 `docs/design-references/m6-probe/`）：qwen3.7-plus 标准态/思考态 × deepseek-flash 标准态/思考态，8 组 48 题——**事实错误率 0%，反转条件未触发，练习功能可行**。关键发现：`deepseek-flash`（= V4.1 Flash 的 API id）默认即思考、`enable_thinking` 对其 no-op → **思考强度落地为模型路由**（standard=qwen 非思考 / deep=deepseek-flash）；ds-thinking 产出全矩阵最佳单题；DeepSeek 延迟报告值 0.1–0.2s 待生产复核。
+- **M6-A 自教材练习服务端**：`ClewPracticeQuestion`/`ClewPracticeAttempt` 两表（migration `zcode_m6_clew_practice`）；DeepSeek 实装为一级 provider（`DEEPSEEK_API_KEY`，缺 DEEPSEEK_API_KEY 深度档明确 503 不降档）；生成 = 讲义原文出题（无讲义 503 不编造）+ 六件套结构校验（页码须在原文页集内）+ 整组拒收重试一次 + max_tokens 8000（首版 4000 截断 deepseek 思考致非法 JSON——真实走查抓到并修复）；配额 `clewPracticeSets`（free 5/basic 15/pro·max ∞，深度档计 2 单位，成败均记账）；作答 = A1 服务端判分（正确项不提前下发）/ fill 自评；错答经 `practice-wrong` 进 FSRS（错→again/建条目，**对→good 巩固**），统一事件 practice-attempt + 回流事件；错题中心 Clew 线行加来源标注（练习错题/自测标记）。
+- **验证**：test **517/517**（新增 clew-practice 16 项；model-config 测试同步 deepseek 实装）、check exit 0、migrate status 干净；真实链路（v4qa + deepseek-flash + qwen）：401 → 生成（结构+页码溯源）→ **配额门禁活体拦截**（失败记账 4/5，二次 deep 503「深度档计 2 次」）→ standard 生成 6 题 → 答错 → 判分+揭示+practice-wrong 条目+双事件 → 错题中心两来源行 → /learn「1 项 Clew 到期」→ console 0。证据见 design-qa M6-A 节。
+
+- **M6-B（练习消费面）**：学习页练习面板（空态生成入口深度/标准双档；A1 即选即判揭示正确项与原文解析；fill 参考答案对照自评；只练错题过滤；重新生成覆盖确认）；脊柱「练」节点点亮（profile 决定环节——concept-mastery 本不含练）；`practice-wrong` 重学链接带 `#practice` 锚点直达练习面板；跨 KP 跳转建议（D10：`kp-suggestions.ts` 确定性匹配全书 KP 标题/术语，chat result 后 SSE suggestions 事件，「相关知识点」chip，不命中不渲染）；问 Clew 深度思考（设置面板第三 radiogroup，standard/deep 模型路由，free/basic 403 明确门禁，pro 实测 deepseek-flash 流式 + 2× 记账）。
+- **M6-C（体验修缮）**：键盘流 J/K（切 KP）/E（生成/重生成讲义）/N（划重点区+无选区提示，输入框守卫）；5 个残面文件 39 处 ink 硬边归一 `var(--v2-border)`（均为活代码非死代码）；390 专项溢出 0。
+- **M6-B/C 验证**：test **523/523**（新增 kp-suggestions 6 项）、check exit 0；真实链路走查（v4qa + 真实模型）：脊柱→面板→判分→揭示→过滤→覆盖确认→锚点直达→深度 403→pro 深度对话 72 deltas→chip 命中 kp-02/kp-03→键盘全项→390/暗色截图、console 0。证据见 design-qa M6-B/C 节。
+
+**下一主线**：M6 全段交 Hermes 预验收；M5 + v4 批 2/3 + M6 未提交工作区待 Nur 审阅合并；ICP 备案与部署准备并行推进。
+
+## ZCODE-M6-D 生成质量三面（2026-10-06 完成，未提交）
+
+任务书 §七（D6 全套档）。讲义/学霸笔记/问 Clew 三面深度改造完成：
+
+- **D-1 引用核验管线**：`citation-verify.ts`（纯函数，逐引用分段匹配 + 虚词切块 ∪ 3 字滑窗并集 + markdown 装饰规范化）+ `evidence-context.ts`（证据原子上下文，isPrimary 优先 + 预算裁剪）。标定：M6-A 人工验过题组 0 失配、基线讲义 43 查 1 失配（真实转述差）。
+- **D-2 讲义六节 rubric**：定义/机制机理/易混辨析/要点/易错点/自测题，缺节 422 + 整篇重试一次（回灌清单）；先修讲义摘要（≤3×800 字，`extractLessonEssence`）与证据原子有则增强、无则 prompt 逐字不变；引用失配 → 重试 → 仍失配保留 + notes 标注（不拒收不静默，含「重试后结构反而不合格回落上一份合格正文」边界）。
+- **D-3 笔记四新节（条件式）**：易混概念对比（keyTerms 交集对驱动）/易错清单（压力排序 + 来源标注）/记忆钩（只许改组给定信息）/复习提醒（M5/M6 调度数据消费）；maxOutputTokens 6000；配额下调 clewLessons 5→3/20→13、clewNotes 3→2/10→7。
+- **D-4 chat**：证据原子接线（无原子 prompt 与金样逐字节一致——金样锁定测试）+ 回答引用自检（notes 如实标注不阻断）+ 定向提示（self-check-shaky 到期一行）。
+- **D-5 对照**：5 样本前后各一轮真实生成（采样器直接驱动服务编排层 + fetch 捕获 prompt 全文 + 会话隔离）；最终轮讲义 6/6×5、引用 53 查 0 失配；笔记新节齐备（无数据诚实略去）；prompt 迭代 2 轮（引用纪律→页码只挂可核内容，v4qa 失配 10→0→0）；盲评（3 评委×10 打乱样本）引用可核查性 3.27→4.47、总体 4.33→4.07（<0.5 按规则如实停）。
+- **验证**：test 557/557、check exit 0、migrate 干净（零 schema）；对抗式审查工作流（41 agent）5 条确认发现全修 + 主线核验限流未验项再修 3 条；真实链路走查 15 项全过（含 m2qa 先修摘要增强 note、明暗×1440/390、console 0）；v4qa2 走查后档位与用量计数器复原。证据见 design-qa M6-D 节。
+
+## ZCODE-M6 补遗 — DOCX 练习无页码降级 + KP 级人工页码标注（2026-10-06，未提交）
+
+Nur 实测 DOCX 生成练习被「缺少页码标记」硬门禁拦下，指示「有页码用页码，没有的人工标」，两层落地：① **pageless**（DOCX 练习不再 503——模型接触不到 sourcePage 字段，解析引用「本章原文」，服务端记 0）；② **annotated**（KP 级人工标注 PATCH `/api/clew/kp/[id]/source-page`，仅 DOCX，PDF 400 拒绝；标注页是学生声明出处——所有显示面带「第 N 页 · 你标注的」限定词，练习题服务端盖章，不做文本核验）。顺带修复问答 chip 对 DOCX 渲染占位值「第 1 页」的既有 bug。test **571/571**、check exit 0、migration `zcode_m6_kp_page_annotation`；真实链路（解剖名词解释 DOCX + 真实模型）：无标注生成 6 题 → 标注第 12 页 → 重新生成 6 题盖章 → 判分解析诚实引用 → UI 三面标签正确、console 0。证据见 design-qa 补遗节。

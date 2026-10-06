@@ -51,6 +51,22 @@ export type ClewNoteContext = {
   /** 有文件名且为 DOCX 时，页码范围与知识点出处都写「页码待确认」。 */
   fileName?: string;
   points: ClewNotePoint[];
+  /** ZCODE-M6-D（有则增强）：本章 KP 的复习调度压力（服务端从 ClewReviewItem 聚合）。 */
+  reviewPressure?: ClewNoteReviewPressureEntry[];
+};
+
+/** 单个 KP 的复习压力（M5/M6 数据消费面；exploration 不产生，自然缺省）。 */
+export type ClewNoteReviewPressureEntry = {
+  kpTitle: string;
+  state: "due" | "upcoming" | "scheduled";
+  lapses: number;
+};
+
+/** 易混概念候选对（同章 KP 两两 keyTerms 交集非空）。 */
+export type ClewNoteComparablePair = {
+  aTitle: string;
+  bTitle: string;
+  sharedTerms: string[];
 };
 
 /** 送入模型的单知识点输入（讲义已压缩为要点/易错点/自测题片段）。 */
@@ -75,7 +91,43 @@ export type ClewNoteModelInput = {
   hasAnyLesson: boolean;
   hasAnyConversation: boolean;
   hasAnyHighlight: boolean;
+  /** ZCODE-M6-D（有则增强）：复习调度压力（驱动「复习提醒」节；空则该节略去）。 */
+  reviewPressure?: ClewNoteReviewPressureEntry[];
+  /** ZCODE-M6-D（有则增强）：易混概念候选对（驱动「易混概念对比」节；空则该节略去）。 */
+  comparablePairs?: ClewNoteComparablePair[];
 };
+
+/* ---------------- ZCODE-M6-D：易混候选对（纯函数） ---------------- */
+
+/** 易混候选对上限（克制，防刷屏）。 */
+export const CLEW_NOTE_COMPARABLE_PAIRS_MAX = 3;
+
+/**
+ * 同章 KP 两两 keyTerms 交集非空的对（按 points 原序稳定；上限 3 对）。
+ * 只改组给定信息：sharedTerms 即交集原词，不造新术语。
+ */
+export function selectComparablePairs(
+  points: readonly { order: number; title: string; keyTerms: readonly string[] }[],
+  cap: number = CLEW_NOTE_COMPARABLE_PAIRS_MAX,
+): ClewNoteComparablePair[] {
+  const pairs: ClewNoteComparablePair[] = [];
+  const ordered = [...points].sort((a, b) => a.order - b.order);
+  for (let i = 0; i < ordered.length && pairs.length < cap; i += 1) {
+    for (let j = i + 1; j < ordered.length && pairs.length < cap; j += 1) {
+      const termsA = ordered[i].keyTerms.map((term) => term.trim()).filter((term) => term.length > 0);
+      const shared = ordered[j].keyTerms.filter((term) => termsA.includes(term.trim()));
+      if (shared.length === 0) {
+        continue;
+      }
+      pairs.push({
+        aTitle: ordered[i].title,
+        bTitle: ordered[j].title,
+        sharedTerms: [...new Set(shared.map((term) => term.trim()))],
+      });
+    }
+  }
+  return pairs;
+}
 
 /* ---------------- 讲义小节提取（确定性，复用讲义 markdown 解析） ---------------- */
 
@@ -180,6 +232,16 @@ export function buildClewNoteModelInput(context: ClewNoteContext): {
   if (missingLessons > 0) {
     notes.push(`本章有 ${missingLessons}/${context.points.length} 个知识点尚未生成讲义，笔记中如实略去对应要点。`);
   }
+  // ZCODE-M6-D（有则增强）：复习压力与易混候选对由服务端聚合后透传；空则字段缺省（prompt 对应节略去）
+  const comparablePairs = selectComparablePairs(context.points);
+  if (comparablePairs.length > 0) {
+    notes.push(`易混候选：检测到 ${comparablePairs.length} 组共享术语的知识点对（仅作对比提示）。`);
+  }
+  const pressure = context.reviewPressure ?? [];
+  if (pressure.length > 0) {
+    const dueCount = pressure.filter((entry) => entry.state === "due").length;
+    notes.push(`复习压力：本章 ${pressure.length} 个知识点在复习调度中（${dueCount} 个已到期）。`);
+  }
   return {
     input: {
       textbookTitle: context.textbookTitle,
@@ -190,6 +252,8 @@ export function buildClewNoteModelInput(context: ClewNoteContext): {
       hasAnyLesson: context.points.some((point) => point.lessonMarkdown !== null),
       hasAnyConversation: context.points.some((point) => point.questions.length > 0),
       hasAnyHighlight: context.points.some((point) => point.highlights.length > 0),
+      reviewPressure: pressure.length > 0 ? pressure : undefined,
+      comparablePairs: comparablePairs.length > 0 ? comparablePairs : undefined,
     },
     notes,
   };

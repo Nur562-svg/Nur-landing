@@ -1,0 +1,108 @@
+{
+  "config": "ds-thinking",
+  "provider": "deepseek",
+  "model": "deepseek-flash",
+  "thinking": true,
+  "elapsedMs": 124,
+  "usage": {
+    "prompt_tokens": 1476,
+    "completion_tokens": 3397,
+    "total_tokens": 4873,
+    "prompt_tokens_details": {
+      "cached_tokens": 1280
+    },
+    "completion_tokens_details": {
+      "reasoning_tokens": 2968
+    },
+    "prompt_cache_hit_tokens": 1280,
+    "prompt_cache_miss_tokens": 196
+  },
+  "kpId": "v4qa-kp-01",
+  "kpTitle": "离散型定量变量",
+  "excerptChars": 1851,
+  "mechanical": {
+    "parseOk": true,
+    "parseError": null,
+    "questionCount": 6,
+    "a1Count": 4,
+    "fillCount": 2,
+    "missingFields": [],
+    "pageCitationsInRange": true,
+    "citedPages": [
+      1
+    ],
+    "excerptPages": [
+      1,
+      2
+    ]
+  },
+  "questions": [
+    {
+      "kind": "a1",
+      "stem": "家庭中子女数是（ ）。",
+      "choices": [
+        "连续型定量变量",
+        "离散型定量变量",
+        "有序分类变量",
+        "无序分类变量"
+      ],
+      "answerIndex": 1,
+      "explanation": "原文是非题1：“家庭中子女数是离散型的定量变量。答：对。”",
+      "sourcePage": 1
+    },
+    {
+      "kind": "a1",
+      "stem": "儿童在一年中患感冒次数的资料属于（ ）。",
+      "choices": [
+        "连续型资料",
+        "有序分类资料",
+        "不具有分类的离散型资料",
+        "以上均不对"
+      ],
+      "answerIndex": 2,
+      "explanation": "原文选择题3：“儿童在一年中患感冒次数的资料属于 C。A 连续型资料 B 有序分类资料 C 不具有分类的离散型资料 D 以上均不对。”",
+      "sourcePage": 1
+    },
+    {
+      "kind": "a1",
+      "stem": "同质个体之间的变异称为（ ）。",
+      "choices": [
+        "个体变异",
+        "抽样误差",
+        "系统误差",
+        "总体变异"
+      ],
+      "answerIndex": 0,
+      "explanation": "原文是非题2：“同质个体之间的变异称为个体变异。答：对。”",
+      "sourcePage": 1
+    },
+    {
+      "kind": "a1",
+      "stem": "下列属于连续型变量的是（ ）。",
+      "choices": [
+        "血压",
+        "职业",
+        "性别",
+        "民族"
+      ],
+      "answerIndex": 0,
+      "explanation": "原文选择题1：“下列属于连续型变量的是 A。A 血压 B 职业 C 性别 D 民族。”",
+      "sourcePage": 1
+    },
+    {
+      "kind": "fill",
+      "stem": "家庭中子女数是______的定量变量。",
+      "answerText": "离散型",
+      "explanation": "原文是非题1：“家庭中子女数是离散型的定量变量。答：对。”",
+      "sourcePage": 1
+    },
+    {
+      "kind": "fill",
+      "stem": "儿童在一年中患感冒次数的资料属于不具有分类的______资料。",
+      "answerText": "离散型",
+      "explanation": "原文选择题3：“儿童在一年中患感冒次数的资料属于 C。A 连续型资料 B 有序分类资料 C 不具有分类的离散型资料 D 以上均不对。”",
+      "sourcePage": 1
+    }
+  ],
+  "rawContent": "{\"questions\":[{\"kind\":\"a1\",\"stem\":\"家庭中子女数是（ ）。\",\"choices\":[\"连续型定量变量\",\"离散型定量变量\",\"有序分类变量\",\"无序分类变量\"],\"answerIndex\":1,\"explanation\":\"原文是非题1：“家庭中子女数是离散型的定量变量。答：对。”\",\"sourcePage\":1},{\"kind\":\"a1\",\"stem\":\"儿童在一年中患感冒次数的资料属于（ ）。\",\"choices\":[\"连续型资料\",\"有序分类资料\",\"不具有分类的离散型资料\",\"以上均不对\"],\"answerIndex\":2,\"explanation\":\"原文选择题3：“儿童在一年中患感冒次数的资料属于 C。A 连续型资料 B 有序分类资料 C 不具有分类的离散型资料 D 以上均不对。”\",\"sourcePage\":1},{\"kind\":\"a1\",\"stem\":\"同质个体之间的变异称为（ ）。\",\"choices\":[\"个体变异\",\"抽样误差\",\"系统误差\",\"总体变异\"],\"answerIndex\":0,\"explanation\":\"原文是非题2：“同质个体之间的变异称为个体变异。答：对。”\",\"sourcePage\":1},{\"kind\":\"a1\",\"stem\":\"下列属于连续型变量的是（ ）。\",\"choices\":[\"血压\",\"职业\",\"性别\",\"民族\"],\"answerIndex\":0,\"explanation\":\"原文选择题1：“下列属于连续型变量的是 A。A 血压 B 职业 C 性别 D 民族。”\",\"sourcePage\":1},{\"kind\":\"fill\",\"stem\":\"家庭中子女数是______的定量变量。\",\"answerText\":\"离散型\",\"explanation\":\"原文是非题1：“家庭中子女数是离散型的定量变量。答：对。”\",\"sourcePage\":1},{\"kind\":\"fill\",\"stem\":\"儿童在一年中患感冒次数的资料属于不具有分类的______资料。\",\"answerText\":\"离散型\",\"explanation\":\"原文选择题3：“儿童在一年中患感冒次数的资料属于 C。A 连续型资料 B 有序分类资料 C 不具有分类的离散型资料 D 以上均不对。”\",\"sourcePage\":1}]}"
+}

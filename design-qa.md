@@ -1426,3 +1426,171 @@ Nur 两条裁决：① 导航「学习主环」→「我的学习」（「学习
 **边界（未独立覆盖）**：advanced 活体路径（需讲义换版本，隔离 SQLite 测试覆盖）；exploration 活体（m2qa 无该 profile 数据，隔离测试覆盖）；官方课 KP 的 FSRS 按任务书 §3.5 不在本批。
 
 **结论**：ZCODE-M5 M5-A/B —— **预验收通过（2026-10-05）**；未提交待提交审阅。
+
+## ZCODE-M6 热修 + M6-0 探针 qwen 腿（2026-10-06，Zcode 执行；任务书 `docs/ZCODE-M6-clew-practice.md`，Nur 确认「热修+探针先行」）
+
+### UI 热修 ×2（Nur 2026-10-06 实测报告，根因已核）
+
+- **侧栏折叠后学习页主列不变宽**：根因 = 壳网格自适应正确（`.appRail` 264→56px）但学习页 `.studyContent` 被 `max-width: 1240px; margin: 0 auto` 锁死，折叠腾出的 208px 变成居中留白。修法：`workspace-shell.tsx` 根节点暴露 `data-shell-rail="collapsed|expanded"`，`clew.module.css` 增 `@media(min-width:901px){ [data-shell-rail="collapsed"] .studyContent { max-width: none; } }`。实测（playwright，1440）：侧栏 264→56，主列 **1176→1384**，折叠/展开往返正确，`data-shell-rail` 属性随动。截图 `zcode-m6-rail-collapsed-adaptive.png`。
+- **问 Clew 流式期间双气泡**：根因 = 流式时末条 assistant 消息在 `messages.map` 与底部 streaming 块各渲染一次，流结束才恢复。修法：streaming 且末条为 assistant 时消息循环渲染 `messages.slice(0, -1)`，streaming 块为其唯一渲染处。实测：真实模型问答一轮，流式期间采样 4 次，assistant markdown 气泡数恒为基线+1（修复前为基线+2），终态条数正确。截图 `zcode-m6-chat-single-bubble.png`。
+- 收口：`npm run check` exit 0（lint 0 error）、`npm run test` **501/501**；改动仅 Free Change Zone（workspace-shell.tsx / clew.module.css / clew-study.tsx）。
+
+### M6-0 质量探针 — 四配置矩阵完成（2026-10-06）
+
+脚本 `scripts/m6-probe-question-quality.mjs`（可复跑；四配置 × KP 参数化；产物落 `docs/design-references/m6-probe/`，8 份 JSON）。同一 KP / 同一结构化出题 prompt（A1×4+填空×2，严格 JSON，页码溯源强制）/ 同一评分口径。评分 = 机械检查（脚本）+ 逐题对照 excerpt 原文（Zcode 初判，抽验依据行均实存）。
+
+全矩阵（2 KP × 4 配置 = 8 组 48 题）：
+
+| 配置 | 模型 | 延迟 | completion tokens（思考占比） | 结构六件套 | 页码引用 | 事实成立 |
+|---|---|---|---|---|---|---|
+| qwen-standard | qwen3.7-plus | 15–17s | 814–907（—） | 4/4 | 4/4 | **24/24** |
+| qwen-thinking | qwen3.7-plus | 39–46s | 2213–2639（思考 ~2/3） | 4/4 | 4/4 | **24/24** |
+| ds-standard | deepseek-flash | ~0.15s* | 3032–3447（思考 ~2600–2900） | 4/4 | 4/4 | **24/24** |
+| ds-thinking | deepseek-flash | ~0.1–0.2s* | 3397–5667（思考 ~3000–5100） | 4/4 | 4/4 | **24/24** |
+
+- **反转条件未触发**：48 题事实错误率 0%（任务书门禁线 >10%）。练习功能可行，M6-A 可开工。
+- **关键发现 ①**：`deepseek-flash`（V4.1 Flash 的 API 模型 id；传 `deepseek-v4.1-flash` 被 API 400 拒绝）**默认即思考**——标准态也产出 ~2600–2900 reasoning tokens，`enable_thinking` 对其为 no-op。**推论：思考强度落地为「模型路由」而非参数开关**——标准档 = qwen3.7-plus（非思考、便宜）、深度档 = deepseek-flash（默认思考）。任务书 D8 据此修订。
+- **关键发现 ②**：ds-thinking 产出全矩阵最佳单题（A/B 班平均成绩题——精确区分「这次考试的平均成绩 = 研究总体无抽样误差」vs「数学平均水平 = 样本推断有抽样误差」，与 excerpt 简答 2b 逐字对应）；qwen-thinking 出现全矩阵唯一瑕疵（填空题干泄露答案 1 例）。思考档质量优势在单题层面可见但 n 小。
+- **关键发现 ③**：DeepSeek 延迟为 API 报告值 0.1–0.2s（单次完成 3000–5600 tokens，快得反常；观测到其服务端 prompt 缓存命中 1280 tokens）——**量级待生产复核，本表如实记录报告值**。
+- 局限（如实）：v4qa 教材仅 2 个 KP 有讲义且共享同一习题+答案富页（第 1–2 页）——grounding 偏容易，有效样本 = 1 文本 × 4 配置；定义型页面的出题质量验证顺延至 M6-A 实施走查（真实用户教材）。成本折算需 DeepSeek 与 DashScope 两张价目表（D9 配额校准输入）。
+- **M6-A 默认配置建议**：练习题生成默认 `deepseek-flash`；讲义/问答标准档 qwen3.7-plus 非思考、深度档路由 deepseek-flash；配额倍率按「深度 = DeepSeek 调用」语义拍板（D9）。
+
+## ZCODE-M6-A — 自教材练习生成与判分服务端（2026-10-06 完成，未提交；任务书 `docs/ZCODE-M6-clew-practice.md` §五 M6-A）
+
+### 落地内容
+
+- **Prisma 两张表**（migration `zcode_m6_clew_practice`）：`ClewPracticeQuestion`（每 KP 一组，重新生成整体替换〔D4〕，随 KP 级联删除；answer 语义 a1=index / fill=文本；页码溯源 sourcePage）+ `ClewPracticeAttempt`（每次作答一行；A1 服务端确定性判分 / fill 自评〔D2〕）。
+- **DeepSeek 一级 provider**（D8/Nur 指定）：`model-config.ts` 实装 `deepseek`（缺省 base `https://api.deepseek.com/v1`、key `DEEPSEEK_API_KEY`，任务级 `CLEW_*_PROVIDER=deepseek` 亦可用）；`deepseek-flash`（= V4.1 Flash 的 API id，传营销名 `deepseek-v4.1-flash` 被 API 400 拒绝——M6-0 探针实测）。
+- **思考强度 = 模型路由**（D8 修订）：`resolveClewPracticeTarget(intensity)`——standard = `CLEW_PRACTICE_*` 任务级配置（缺省 dashscope qwen3.7-plus，transport 注入 enable_thinking:false）；deep = `deepseek-flash`（默认思考；`CLEW_PRACTICE_DEEP_*` 可覆盖）；**缺 DEEPSEEK_API_KEY → 明确 503 不静默降档**。新任务类型 `practice`（`CLEW_PRACTICE_PROVIDER/MODEL/BASE_URL/API_KEY`）。
+- **生成服务** `src/lib/clew/practice.ts`：依据 = 该 KP 讲义聚合的教材原文（无讲义 503「先生成讲义」不编造题）；strict JSON + 六件套结构校验（`practice-validation.ts` 纯函数：题型分布/选项数/答案/解析/**页码必须在原文页集内**）+ **整组拒收重试一次**（任务书 §三.2）；**max_tokens 8000**（首版 4000 曾把 deepseek 思考+正文截断产生非法 JSON——真实走查抓到并修复）；覆盖保存（事务：删旧建新，旧作答级联清空）。
+- **配额 `clewPracticeSets`**（D3 修订：按 house 惯例 free 5 / basic 15 / pro·max unlimited——与全表一致，D3 建议的 40/80 撤销；深度档计 2 单位〔D9〕，额度按 used+units≤limit 预检）；`recordServerUsage` 支持 count；成败均记账 + `EventLog(clew_kp_practice)` 带 provider/model/intensity/outcome。
+- **作答与 FSRS 回流**：`reviews.ts` 新增 `recordClewPracticeReviewOutcome`（sourceKind=`practice-wrong`，per-KP）——条目缺失且答错 → 建条目（dueAt=now 即今日到期）+ review-scheduled；条目已存在：答错 → again 前移、**答对 → good 前移**（练习即打分，从今日到期消失）；exploration 作答照记不进调度。统一事件 `attempt-confirmed`（stage=practice，payload kind=`practice-attempt`）+ 回流事件。
+- **API**：`GET/POST /api/clew/kp/[id]/practice`（GET 题组+作答态；POST SSE 生成）+ `POST /api/clew/practice/[qid]/attempt`。**防泄漏**：A1 正确项/解析不提前下发（作答后揭示）；fill 参考答案按自评流程先展示（D2）。跨用户 questionId → 404。错题中心 Clew 线行加来源标注（「练习错题 · / 自测标记 ·」）。
+
+### 验证记录
+
+- [x] `npm run test` **517/517**（新增 `clew-practice.test.ts` 16 项：校验拒收×5 / 判分与 FSRS 回流×8 / 配额 503 / 无讲义 503 / 视图防泄漏；`clew-model-config.test.ts` 同步——deepseek 由「未实现」改断言为一级 provider 实装）
+- [x] `npm run check` exit 0（lint 0 error）；`prisma migrate status` 干净（17 migrations）
+- [x] **真实链路走查**（v4qa + dev.db，curl/playwright）：未登录 401 → deep 生成（deepseek-flash，首次因 max_tokens 截断失败——修复后上限 8000+重试）→ **配额门禁真实拦截**（失败已记账 4/5，二次 deep 被 503 拦下，提示「深度档计 2 次」）→ standard 生成成功（6 题，notes「结构校验通过（6 题，页码溯源）」）→ GET 视图 A1 零泄漏 → 答错 → 判分+揭示正确项+解析（引用原文）→ practice-wrong 条目 dueAt=now + 双事件（attempt-confirmed/review-scheduled）→ 回读 summary answered=1/wrong=1 → 用量=5（2+2+1 成败均记账）→ `/wrong-questions` Clew tab 两行（练习错题·已到期待复习 / 自测标记·即将到期）+ `/learn`「1 项 Clew 到期」行内来源可区分；console 0。截图 `zcode-m6-wrong-center-sources.png`
+- [x] dev.db 留存走查证据：kp-01 双源复习条目（practice-wrong dueAt=now / self-check-shaky dueAt 10-07）、3 条 EventLog、作答 1 条
+- [x] 文档：本节 + 任务书 M6-A 状态 + PROJECT_STATE
+
+### M6-A 遗留（按段推进）
+
+- M6-B：练习面板 UI + 脊柱「练」点亮 + 只练错题 + 跨 KP 跳转 chip + 问 Clew 深度思考开关。
+- 定义型页面出题质量（当前 excerpt 均为习题富页）顺延 M6-B 走查（真实用户教材）。
+
+## ZCODE-M6-B + M6-C — 练习消费面 + 键盘流（2026-10-06 完成，未提交；任务书 §五 M6-B/C）
+
+### M6-B 落地内容
+
+- **练习面板**（学习页自测面板之后，`id="practice"`）：空态 = 诚实说明 + 「生成练习题（深度·计 2 次额度）」主按钮 + 「标准档生成（省额度）」；有题组 = 题列表（A1 即选即判：选中后服务端判分、揭示正确项 ✓/✗ 与解析引用原文；fill：显示参考答案 → 我答对了/我答错了自评）+「只练错题」过滤 + 汇总行（N 题 · 已作答 · 对/错）+ 重新生成（覆盖确认语义：清空题组与作答记录）；回流提示行内化（created=已记入复习调度 / advanced=巩固或前移）。生成 SSE 与讲义同模式（progress → result/error），配额不足 503 明确透出。
+- **脊柱「练」节点点亮**：unavailable → 真实动作（有题组显示「打开练习（N 题，错 M）」、无题组提示生成，点击滚动到面板）。注：脊柱环节由 Loop Profile 决定——`concept-mastery` 等不含 practice 环节的 profile 本就不显示「练」（设计如此，走查时切完整闭环验证）。
+- **重学直达**：`practice-wrong` 复习条目的 href 带 `#practice` 锚点——「我的学习 · 今日复习」与错题中心的重学链接落练习面板（比 M5 的滚讲义检索强度更高）。
+- **跨 KP 跳转建议**（D10）：`kp-suggestions.ts` 纯匹配（标题命中优先/术语次之/单字门槛/排除当前 KP/上限 2）+ 服务端全书候选计算；chat 路由在 result 后发 `suggestions` SSE 事件；UI 在对话说明下渲染「相关知识点」chip（黛蓝描边，点击深链）。**不命中不渲染**（反幻觉，无模型自报链接）。
+- **问 Clew 深度思考**（D8/D9）：讲解设置面板新增「思考强度」radiogroup（标准/深度思考·较慢·Pro/Max·计 2 次额度，localStorage 持久化 `nur-learn:clew-chat-intensity`，设置按钮短标签同步）；chat.ts 深度档 = 模型路由 deepseek-flash（streamChatCompletion 直连，思考不注入关闭参数）+ **档位门禁（free/basic 403 明确报错）** + 2 单位额度预检与记账 + 状态里程碑「深度思考中…（较慢）」+ notes 诚实标注；遥测 EventLog 记 intensity。
+
+### M6-C 落地内容
+
+- **键盘流**（RESTRUCTURE §1.1 兑现）：`J/K` 本章上下切换知识点（输入框聚焦时不触发）、`E` 生成讲义（无讲义直接生成；有讲义弹覆盖确认并滚动）、`N` 滚到划重点区（无选区时短暂提示「先选中讲义文字」）；脊柱下安静元信息行标注快捷键。
+- **残面顺手项**：5 个范围外残面文件（auth-form / material-admission-review / docx-parsing-review / material-intake-review / private-practice-room——均为活代码非死代码）共 39 处 `1px solid var(--ink)` → `var(--v2-border)` 归一（批 3 补遗同口径）。
+- **390 专项**：练习面板/自测/三键/composer 在 390 溢出 0（走查断言 + 截图）。
+
+### 验证记录
+
+- [x] `npm run test` **523/523**（新增 `clew-kp-suggestions.test.ts` 6 项：标题优先/排除自身/术语命中/单字门槛/上限与优先序/不硬凑）
+- [x] `npm run check` exit 0（lint 0 error，191 warnings = 基线）；migrate status 干净
+- [x] **真实链路走查**（v4qa + dev.db + 真实模型）：脊柱「练」点亮（切完整闭环后「打开练习（6 题，错 1）」）→ 面板 A1 答错 → 揭示「正确答案：A」+ 原文解析 + 汇总更新 → 只练错题过滤 = 1 → 重新生成覆盖确认 → 今日复习 practice-wrong 行点击 → **`#practice` 锚点落练习面板视口内**；深度档（free）→ 行内 403「深度思考模式为 Pro / Max 会员权益」；临时升 pro 实测深度对话真实流式（deepseek-flash，72 deltas、状态「深度思考中…（较慢）」、notes「计 2 次讲解额度」、EventLog intensity=deep、clewChats +2），测后档位复原；标准档提问「个体变异…」→ **suggestions 事件命中 kp-02 个体变异 + kp-03 随机抽样**，chip 渲染 2 枚；键盘 J/K/E/N + 输入框守卫全过；390/暗色截图 `zcode-m6-practice-{390,dark-1440}.png`、`zcode-m6-suggest-chip-light-1440.png`、`zcode-m6-practice-panel-light-1440.png`；console 0
+- [x] 走查注记（如实）：建议匹配对「跨 KP 术语」按确定性包含匹配——2 字通用词可能命中（如「上述」），靠排除自身 + 上限 2 兜底，纯函数测试已锁定该边界；M6-A 生成首版 max_tokens=4000 截断 deepseek 思考致 JSON 非法——已修（8000 + 整组重试一次）并复测通过
+
+### 最终门槛
+
+- [x] lint 0 error + tsc + check exit 0；test 523/523
+- [x] 真实链路（生成/判分/回流/深度对话/跳转建议）+ 明暗 × 1440/390 + console 0
+
+## ZCODE-M6-D — 生成质量三面工作流（2026-10-06 完成，未提交；任务书 `docs/ZCODE-M6-clew-practice.md` §七，D6 全套档）
+
+### D-0 基线与样本冻结
+
+- **样本集（5 KP）**：v4qa-kp-01/02（真实练习册·习题+答案富页）+ m2qa 教材 3 个定义型 KP。如实记录：m2qa 原只有 2 份讲义（中医诊断学的基本任务、望闻问切互相印证），**「四诊合参原则」的讲义由 D-0 采样器按当时代码（改造前 prompt）真实生成补位**（它是「望闻问切互相印证」的先修，补位后先修摘要增强路径可走真实数据）——任务书 D-0.1 的「v4qa-kp-03 补位」备选未启用。
+- **采样器** `scripts/m6d-quality-sample.mjs`→`.ts`（可复跑）：直接驱动真实服务编排层（lesson.ts/note.ts/chat.ts）+ 真实模型 + dev.db，monkey-patch fetch 捕获每次模型请求的 **prompt 全文**（零复制漂移）；**会话隔离**（样本 KP 对话采样前备份/采样后恢复，dev.db 无对话残留）。产物 `docs/design-references/m6-probe/quality-{baseline,post}/`（lesson/chat/note JSON + _summary，含 EventLog 计数差值）。
+- **数据现状核验**：ClewEvidenceAtom 全库 4 条（m2qa 教材 p3–p6），v4qa 0 原子——全部接线按「有则增强、无则逐字不变」实施。
+
+### D-1 引用核验管线（验收点 ①：校验器标定）
+
+- `src/lib/clew/citation-verify.ts`（纯函数）：`splitExcerptPages`（【PDF 第 N 页】切分）+ `verifyCitations`（**逐引用核验**：同句多引用各自匹配其「前/后文本段」，一真一假只标假的那条；关键词 = 虚词切块 ∪ 标点段 3 字滑窗的并集；全半角/空白/markdown 装饰符规范化；页码越界按失配；孤立标记行无实词不计数）。`normalizeText` 导出供去重复用。
+- `src/lib/clew/evidence-context.ts`（server）：`loadClewKpEvidenceContext`（isPrimary 优先 → relevanceScore 降序 → createdAt 稳定序；总字符预算 2000 默认、单原子裁剪带「…」尾缀）。
+- **标定结果**：M6-A 已人工验过的练习题组（v4qa-kp-01，6 题）= checked 6 / **issues 0**；D-0 基线讲义 5 篇 = checked 43 / issues 1（人工核对该句「为深入理解四诊方法奠定理论基础（第 3 页）」措辞确实不在第 3 页原文——真实转述差，标注正确）。测试 `clew-citation-verify.test.ts` 20 项（含一真一假同句、虚词 2 字块、加粗页码、checked 口径）。
+- **审查驱动的关键修正**（对抗式审查工作流确认后修复）：① P1 同句一真一假引用被静默放过 → 改逐引用分段匹配；② checked 把跳过句计入（高估核验量）→ 只计实际匹配；③ 规范化剥 `**` 等 markdown 装饰（「**第 3 页**」不再产生星号残段）；④ 前/后文本段双向匹配（兼容「第 X 页指出：…」前置形态）。
+
+### D-2 讲义深度
+
+- **rubric 六节**：定义/机制机理（2–4 句为什么）/易混辨析（≥1 组对比，本页无则整节「本页未涉及」——节必须存在）/要点/易错点/自测题；`validateGeneratedLesson` 缺节即 422；`CLEW_LESSON_SECTIONS` 扩展后三视图派生对 4 份既有消费面零破坏（复习折叠答案/备考删自测对新节原样透传，测试锁定）。
+- **上下文加宽**：先修 KP 讲义精华（`extractLessonEssence`，定义+要点，≤3 个 × 800 字，反查不到跳过 + notes 如实）；证据原子（≤5、与原文片段规范化去重、截断尾缀「…」先剥再比对）；均带「仅作背景，不得直接引用为出处」prompt 约束，缺省时 prompt 与改前一致。
+- **引用核验接入**：结构校验过 → verifyCitations → 失配回灌清单整篇重试一次（复用 M6-A 整组拒收重试模式）→ 仍失配 → **保留结果 + notes 如实标注**（不改写不拒收）；审查发现的边界已修——重试后反而结构不合格时回落上一份结构合格正文（引用失配不是拒收理由）。
+- 自测可答性 = prompt 约束（答案必须能从讲义正文推出），无确定性校验（如实）。
+
+### D-3 学霸笔记深度
+
+- **输入扩展**：`reviewPressure`（本章 KP 的 ClewReviewItem 聚合：due<upcoming<scheduled 取最紧迫、lapses 取最大、上限 10 条带截断如实注记、**userId 过滤**）+ `comparablePairs`（`selectComparablePairs` 纯函数：同章 KP keyTerms 交集非空成对、原序稳定、上限 3）。
+- **输出新节（全部条件式，有数据才出现）**：`## 易混概念对比`（候选对驱动对比表）/ `## 易错清单`（聚合 + 压力高排前 + 「——{知识点}」标注来源）/ `## 记忆钩`（3–5 条，prompt 明令**只允许改组给定信息、不得编造口诀**）/ `## 复习提醒`（到期/即将到期 + 「我的学习 · 今日复习」动作）。原三节必备校验不变，新节按可选（诚实略去）。
+- `maxOutputTokens` 4000→6000；**配额下调（D6 成本对价）**：`clewLessons` free 5→3 / basic 20→13；`clewNotes` free 3→2 / basic 10→7（pro·max 不变）；测试断言同步 + billing 面板数字为 TIER_QUOTAS 动态读取无需改。
+
+### D-4 问 Clew 深度
+
+- **证据原子接线（D7）**：scope ≠ lesson-only 时注入（与片段去重），chat-prompt 在原文片段之后增「本章证据原子（页码溯源）」段；**无原子时 prompt 与金样逐字节一致**（金样锁定测试 = M6-D 迭代第 2 轮后冻结的 804 字节串，`clew-chat-depth.test.ts`）。
+- **回答引用自检**：对照页集 = 原文片段页 ∪ 证据原子文本（**喂过页码就要核验**——片段缺失但有原子时仍核验，审查修复）；失配 → notes 如实标注（不阻断、不改写，对话流式已完成）。
+- **定向提示**：`self-check-shaky` 到期条目 → notes 一行「你在自测中标记过本知识点『还需看』…」（消费 M5 数据，一行成本）。
+- 增强路径活体验证：临时绑定 m2qa 望诊原子（p5/p6，不在该 KP 片段页集）→ notes「纳入 2 条证据原子」+ 引用自检对转述差如实标注 → **验后清理**（绑定已删，库内恢复 10 条绑定原状）。
+
+### D-5 质量对照（验收点 ③）
+
+**三指标对照表**（基线 = 改造前 prompt 真实生成；post = 改造后两轮 prompt 迭代内最终轮；同一校验器、同一 5 样本）：
+
+| 指标 | baseline | post（最终轮） | 说明 |
+|---|---|---|---|
+| 讲义结构齐备率 | 4/4（旧 rubric）×5 | **6/6（新 rubric）×5** | 机制机理/易混辨析全落地 |
+| 讲义引用核验 | checked 43 / 失配 1 | checked **53 / 失配 0** | 同一校验器；基线 1 失配为真实转述差 |
+| 笔记新节 | 无 | 易错清单+记忆钩+复习提醒 两章全出；易混概念对比 v4qa 出（m2qa 无共享术语对→诚实略去） | 条件式语义生效 |
+| 问答引用标注轮 | 0/15 | 4/15 | post 模型被要求写页码 + 自检诚实标注；v4qa（真实厚页）0 误报 |
+
+**prompt 迭代（上限 2 轮，已用满）**：第 1 轮 = 引用纪律（页码必须与支撑表述同句、禁止裸编号）——v4qa 两 KP 讲义失配 10→0；第 2 轮 = 页码只挂可核内容（知识点说明引申的概括不挂页码）——全样本失配 15→0。**盲评（3 评委 × 10 打乱样本，标签剥离）**：引用可核查性 **3.27→4.47（+1.20）**、结构 4.20→4.33、易混辨析 4.13→4.27、自测 4.67→4.60、机制机理 4.53→4.00、总体 4.33→4.07。**按任务书规则（总体提升 <0.5）如实记录并停**：本段核心目标（引用可核查）显著提升，总体在噪声带内；机制机理维度在合成薄页样本（1 行/页）上被六节 rubric 摊薄，如实记录不再调参。盲评包 `quality-blind-packet.md` + 映射键 `quality-blind-key.json`（供 Hermes/Nur 双盲复核）。
+
+### 验证记录
+
+- [x] `npm run test` **557/557**（新增：citation-verify 20 项、chat-depth 5 项、note depth 4 项、lesson depth 5 项；配额断言同步）
+- [x] `npm run check` exit 0（lint 0 error）；`migrate status` 干净（**本段零 schema 变更**）
+- [x] **对抗式审查工作流**（5 维度并行审查 + 每条发现 2 名反驳者验证，41 agent）：确认 5 条（1×P1 + 4×P2）全部修复；另 13 条验证因 API 限流未完成，由主线逐条核验，确认并修复 3 条真问题（原子截断尾缀破坏去重 / loadReviewPressure 缺 userId / 指标脚本类型错误）+ 1 条空转断言修复
+- [x] **真实链路走查**（`scripts/m6d-walkthrough.mjs`，playwright + 系统 Chrome，真实模型）：15 项断言全过——讲义六节渲染（机制机理/易混辨析）、三视图复习折叠对新节透传、重新生成（真实模型）notes「结构校验通过」、笔记展开后易错清单/记忆钩/复习提醒渲染、问 Clew 真实一轮无表格 + 气泡正常、**m2qa 先修摘要 note「纳入 1 个先修知识点的讲义摘要（仅作背景）」**、明暗 × 1440 + 390 溢出 0、**console 0**。截图 `zcode-m6d-lesson-{light,dark}-1440.png`、`zcode-m6d-lesson-notes-light-1440.png`、`zcode-m6d-note-{light,dark}-1440.png`、`zcode-m6d-note-390.png`、`zcode-m6d-lesson-390.png`、`zcode-m6d-chat-light-1440.png`、`zcode-m6d-lesson-prereq-note-light-1440.png`
+- [x] 走查注记（如实）：① 走查账号 v4qa2 临时升 pro（基线/改造后共 10 次讲义生成越过 free 配额），**测后档位与用量计数器均复原**（用量复原至 M6-D 前基线值，与档位复原同口径的夹具保养）；② m2qa 走查账号密码以 bcrypt 预置为走查专用值（QA 夹具，既往走查同口径）；③ 合成薄页教材（m2qa，1 行/页）上引用标注率天然高于真实厚页教材——标注语义是「请核对」（句面确实不在该页），按设计诚实工作而非缺陷；真实教材（v4qa）最终轮 0 失配 0 误报；④ prompt 迭代共 2 轮已达上限，总体盲评分未显著提升即停（任务书规则），未做无法验证的「更深度」承诺
+- [x] 文档：本节 + 任务书 M6-D 状态 + PROJECT_STATE；AGENTS 边界表述无变化（Clew 生成物不挂官方课分级、Tier 3 模式均未动）
+
+### 最终门槛
+
+- [x] lint 0 error + tsc + check exit 0；test 557/557；migrate status 干净（零 schema）
+- [x] D-1 标定（M6-A 题组 0 失配）+ D-5 三指标对照落 design-qa + 盲评包供双盲复核
+- [x] 真实链路（六节讲义/先修摘要增强/笔记新节/引用自检/定向提示）+ 明暗 × 1440/390 + console 0
+
+## ZCODE-M6 补遗 — DOCX 练习无页码降级 + KP 级人工页码标注（2026-10-06，Nur 实测反馈「教材原文片段缺少页码标记」后指示两层修复）
+
+### 背景与裁决
+
+Nur 实测 DOCX 教材生成练习题被 M6-A 的硬门禁拦下（「教材原文片段缺少页码标记，无法建立页码溯源」——练习是 M6 唯一硬性要求页码溯源的面，DOCX 无文字层页码）。Nur 指示「有页码就用页码，没有的人工标注」，落地为两层：
+
+- **第一层（pageless）**：DOCX（或无标记片段）练习不再 503——模型 prompt 不给 sourcePage 字段（接触不到页码，结构性不可能编造），解析引用写「本章原文」，服务端记 `sourcePage=0`（无页码哨兵）。
+- **第二层（annotated）**：KP 级人工页码标注——学习页元信息行「标注页码」入口（仅 DOCX 教材渲染），PATCH `/api/clew/kp/[id]/source-page`（page=null 清除）。标注页是**学生声明的出处**：所有显示面带「第 N 页 · 你标注的」限定词，练习题服务端盖章 `sourcePage=N`，**不做文本级核验**（notes 与解析如实注明「人工标注」）。PDF 教材明确 400 拒绝标注（文字层页码自动溯源，人工猜测只会降低可信度——报错文案给出可行动解释）。
+
+### 落地内容
+
+- `practice.ts` 三种 pageMode（paged 原路径逐字不变 / annotated / pageless）+ `practice-validation.ts`（`excerptPages=null` 语义：跳过页码校验、记 0）；标注页码经 `ClewKnowledgePoint.sourcePageAnnotated`（migration `zcode_m6_kp_page_annotation`，默认 false）。
+- `annotateClewKpSourcePage`（knowledge-points.ts，归属校验 + DOCX 门禁 + 1–5000 整数校验）+ thin adapter 路由。
+- `formatClewKpPageLabel`（source-label.ts）：PDF「第 N 页」/DOCX「页码待确认」/DOCX 标注「第 N 页 · 你标注的」——讲义页首（`buildLessonHeader`，模型与启发式共用）、学习页元信息行、侧栏 KP 行、问答上下文 chip 四面统一。**顺带修复既有 bug**：问答 chip 此前对 DOCX 直接渲染占位值「第 1 页」，违反「DOCX 页码不得当印刷页渲染」规则。
+- 标注 UI：内联小表单（保存/取消/清除标注，切 KP 自动收起，PATCH 后 `router.refresh()`），v4 安静形态（`clew.module.css` 4 个类）。
+
+### 验证记录
+
+- [x] `npm run test` **571/571**（新增 `clew-kp-page.test.ts` 11 项：标签三态/标注与清除/PDF 400/非法页码/跨用户 404/无页码校验三态 + paged 回归；`clew-lesson.test.ts` 页首标签 3 项）
+- [x] `npm run check` exit 0；`migrate status` 干净（18 迁移）
+- [x] **真实链路走查**（解剖名词解释 DOCX + 真实模型，curl + playwright）：① 无标注生成（原 503 点）→ **成功 6 题**，`sourcePage=0`、解析「本章原文指出：…」、notes「本教材无页码，解析引用『本章原文』」；② 标注第 12 页 → PATCH ok；③ 重新生成 → 6 题 `sourcePage=12`、notes「依据你标注的第 12 页——人工标注不做文本核验，请对照原文」、进度行「使用你标注的页码」；④ 作答 → 判分正确、解析「根据本章原文（学生标注的第 12 页）…」；⑤ UI：元信息行「第 12 页 · 你标注的 + 修改标注」、问答 chip「胸骨角 · 第 12 页 · 你标注的」、明色截图 `zcode-m6-docx-page-annotate-light-1440.png`、console 0
+- [x] 走查注记（如实）：走查账号（解剖名词解释属主）密码以 bcrypt 预置走查专用值（QA 夹具口径）；标注数据（第 12 页）与练习题组留存 dev.db 作为功能演示夹具；PDF paged 路径 prompt 逐字未动（回归测试锁定越界拒收不变）
+- [x] **对抗式审查工作流**（3 维度 + 逐条反驳，19 agent）：确认 4 条全部修复——① **P1 过期闭包**：「清除标注」先 setState 再同步读旧值，输入框非空时会把旧值重新写库而非清除 → 改 `submitPageAnnotation(pageOverride)` 显式传参（清除 = null），并活体复现验证（填 57 → 清除 → 真清除）；② **P1 陈旧声明**：清除/改标注后，已生成讲义页首与练习解析里的旧标注是烙进 contentMd 的静态文本 → 成功后持久提示行「已生成的讲义与练习仍按旧标注记录，重新生成后更新」（不改写生成物，披露 + 重新生成出口）；③ **P2** 教材详情页 KP 列表不感知标注 → 切 `formatClewKpPageLabel`；④ **P2** `parseInt` 静默截断（"12a"→12）→ 改 `Number` 严格校验。另 4 条验证因限流未完成，主线核验：2 条可接受（错误标签名前端不消费 / PDF 缺标记假想分支落 pageless 诚实不编造）、1 条由 ② 覆盖、1 条重复

@@ -1,6 +1,6 @@
 .parser,
 .emptyState {
-  border-top: 1px solid var(--ink);
+  border-top: 1px solid var(--v2-border);
   margin-top: 38px;
   padding-top: 30px;
 }
@@ -71,8 +71,8 @@
 }
 
 .gateGrid {
-  border-bottom: 1px solid var(--ink);
-  border-top: 1px solid var(--ink);
+  border-bottom: 1px solid var(--v2-border);
+  border-top: 1px solid var(--v2-border);
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
   margin-top: 22px;
@@ -85,7 +85,7 @@
 }
 
 .fileGate {
-  border-right: 1px solid var(--ink);
+  border-right: 1px solid var(--v2-border);
 }
 
 .fileGate > label,
@@ -189,7 +189,7 @@
 .authorizationGate button {
   align-items: center;
   background: transparent;
-  border: 1px solid var(--ink);
+  border: 1px solid var(--v2-border);
   color: var(--ink);
   cursor: pointer;
   display: inline-flex;
@@ -226,7 +226,7 @@
 
 .authorizationGate button {
   background: var(--paper);
-  border: 1px solid var(--ink);
+  border: 1px solid var(--v2-border);
   color: var(--ink);
   min-height: 44px;
   width: 100%;
@@ -334,8 +334,8 @@
 
 .reviewToolbar {
   align-items: stretch;
-  border-bottom: 1px solid var(--ink);
-  border-top: 1px solid var(--ink);
+  border-bottom: 1px solid var(--v2-border);
+  border-top: 1px solid var(--v2-border);
   display: flex;
   flex-wrap: wrap;
 }
@@ -393,7 +393,7 @@
 }
 
 .sectionCard {
-  border-bottom: 1px solid var(--ink);
+  border-bottom: 1px solid var(--v2-border);
 }
 
 .sectionCard summary {
@@ -545,7 +545,7 @@
 }
 
 .deltaSection {
-  border-top: 1px solid var(--ink);
+  border-top: 1px solid var(--v2-border);
   margin-top: 34px;
 }
 
@@ -586,7 +586,7 @@
 }
 
 .overlayApproval {
-  border: 1px solid var(--ink);
+  border: 1px solid var(--v2-border);
   border-top: 0;
   display: grid;
   gap: 13px;
@@ -610,7 +610,7 @@
 .approveOverlayButton {
   align-items: center;
   background: var(--paper);
-  border: 1px solid var(--ink);
+  border: 1px solid var(--v2-border);
   color: var(--ink);
   cursor: pointer;
   display: inline-flex;
@@ -694,7 +694,7 @@
   }
 
   .fileGate {
-    border-bottom: 1px solid var(--ink);
+    border-bottom: 1px solid var(--v2-border);
     border-right: 0;
   }
 

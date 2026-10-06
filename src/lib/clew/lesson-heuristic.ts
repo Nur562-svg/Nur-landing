@@ -1,5 +1,5 @@
 import type { ClewLessonGenerator, ClewLessonStyle } from "@/types/clew";
-import { formatClewSourcePage, isClewDocx } from "./source-label";
+import { formatClewKpPageLabel, formatClewSourcePage, isClewDocx } from "./source-label";
 
 /**
  * Clew 讲义规则层（纯函数，可测试）：风格/生成方式解析、结构校验、无模型时的启发式讲义。
@@ -63,7 +63,7 @@ export function describeClewLessonGenerator(generator: ClewLessonGenerator): str
     : "启发式整理 · 未接入模型";
 }
 
-export const CLEW_LESSON_SECTIONS = ["定义", "要点", "易错点", "自测题"] as const;
+export const CLEW_LESSON_SECTIONS = ["定义", "机制机理", "易混辨析", "要点", "易错点", "自测题"] as const;
 
 export type ClewLessonSection = (typeof CLEW_LESSON_SECTIONS)[number];
 
@@ -215,12 +215,20 @@ export type ClewLessonValidation = {
 };
 
 /**
- * 模型讲义结构校验：定义与要点必须存在，自测题不少于 3 道；不合格即如实报错，不静默兜底。
+ * 模型讲义结构校验（ZCODE-M6-D rubric 升级）：定义/机制机理/易混辨析/要点必须存在
+ * （易混辨析可诚实写「本页未涉及」，但节必须存在），自测题不少于 3 道；
+ * 不合格即如实报错，不静默兜底。
  */
 export function validateGeneratedLesson(markdown: string): ClewLessonValidation {
   const structure = inspectLessonMarkdown(markdown);
   if (structure.missing.includes("定义")) {
     return { ok: false, structure, reason: "缺少「定义」小节" };
+  }
+  if (structure.missing.includes("机制机理")) {
+    return { ok: false, structure, reason: "缺少「机制机理」小节" };
+  }
+  if (structure.missing.includes("易混辨析")) {
+    return { ok: false, structure, reason: "缺少「易混辨析」小节（本页无易混概念也应保留该节并写「本页未涉及」）" };
   }
   if (structure.missing.includes("要点")) {
     return { ok: false, structure, reason: "缺少「要点」小节" };
@@ -233,6 +241,45 @@ export function validateGeneratedLesson(markdown: string): ClewLessonValidation 
     };
   }
   return { ok: true, structure, reason: null };
+}
+
+/* ---------------- ZCODE-M6-D：讲义精华提取（先修摘要用） ---------------- */
+
+export type ClewLessonEssence = {
+  /** 「定义」节正文（段落合并；缺失为空串）。 */
+  definition: string;
+  /** 「要点」节列表项（去列表标记；缺失为空数组）。 */
+  keyPoints: string[];
+};
+
+/**
+ * 讲义 → 精华（定义 + 要点），供先修知识点上下文加宽（任务书 §七 D-2.1）。
+ * 预算按字符计：定义超限即截断；要点逐条纳入，预算耗尽时后续整条丢弃、
+ * 当前条截断到剩余预算（背景摘要用途，允许半句截断）。
+ */
+export function extractLessonEssence(markdown: string, maxChars = 800): ClewLessonEssence {
+  const sectionBodies = collectLessonSectionBodies(markdown.replace(/\r\n/g, "\n").split("\n"));
+  const definition = (sectionBodies.get("定义") ?? [])
+    .map((line) => line.trim())
+    .filter((line) => line.length > 0 && !line.startsWith("-") && !line.startsWith("*"))
+    .join(" ");
+  const rawKeyPoints = (sectionBodies.get("要点") ?? [])
+    .map((line) => line.trim().replace(/^[-*]\s*/, ""))
+    .filter((line) => line.length > 0);
+
+  let budget = Math.max(maxChars, 0);
+  const clippedDefinition = definition.length > budget ? definition.slice(0, budget) : definition;
+  budget -= clippedDefinition.length;
+  const keyPoints: string[] = [];
+  for (const point of rawKeyPoints) {
+    if (budget <= 0) {
+      break;
+    }
+    const clipped = point.length > budget ? point.slice(0, budget) : point;
+    keyPoints.push(clipped);
+    budget -= clipped.length;
+  }
+  return { definition: clippedDefinition, keyPoints };
 }
 
 /** 去掉模型常见的代码围栏包装并统一换行。 */
@@ -253,6 +300,8 @@ export type ClewLessonHeaderInput = {
   textbookTitle: string;
   chapterTitle: string;
   sourcePage: number;
+  /** DOCX 学生人工标注页 → 页首显示「第 N 页 · 你标注的」（ZCODE-M6 补遗；缺省 undefined = 未标注）。 */
+  sourcePageAnnotated?: boolean;
   /** DOCX 时页首写「页码待确认」，不把占位页码写成印刷页。 */
   fileName?: string;
   /** 生成方式声明（未接入模型 / AI 生成内容）。 */
@@ -266,7 +315,7 @@ export function buildLessonHeader(input: ClewLessonHeaderInput): string {
     "",
     `> 生成方式：${describeClewLessonGenerator(input.generator)}`,
     `> 风格：${CLEW_LESSON_STYLE_LABELS[input.style]} · 生成时间：${input.generatedAtLabel}`,
-    `> 教材：《${input.textbookTitle}》· ${input.chapterTitle} · 依据${formatClewSourcePage(input.fileName ?? "", input.sourcePage)}`,
+    `> 教材：《${input.textbookTitle}》· ${input.chapterTitle} · 依据${formatClewKpPageLabel(input.fileName ?? "", input.sourcePage, input.sourcePageAnnotated === true)}`,
     `> ${input.notice}`,
     "",
   ].join("\n");
@@ -285,6 +334,7 @@ export type ClewHeuristicLessonInput = {
     keyTerms: readonly string[];
     prerequisites: readonly string[];
     sourcePage: number;
+    sourcePageAnnotated?: boolean;
   };
   textbookTitle: string;
   fileName?: string;
@@ -292,6 +342,8 @@ export type ClewHeuristicLessonInput = {
   /** 教材原文片段（带【PDF 第 X 页】标记）；未读到则为 null。 */
   sourceExcerpt: string | null;
   style: ClewLessonStyle;
+  /** DOCX 学生人工标注页 → 页首「第 N 页 · 你标注的」（ZCODE-M6 补遗）。 */
+  sourcePageAnnotated?: boolean;
   /** 由调用方格式化好的时间标签（纯函数不做时区假设）。 */
   generatedAtLabel: string;
 };
@@ -336,7 +388,7 @@ export function selectExcerptLines(
  * 内容只来自萃取结果与教材原文片段，并在页首明示「未接入模型」。
  */
 export function buildHeuristicLesson(input: ClewHeuristicLessonInput): string {
-  const { knowledgePoint, textbookTitle, chapterTitle, sourceExcerpt, style, generatedAtLabel, fileName } = input;
+  const { knowledgePoint, textbookTitle, chapterTitle, sourceExcerpt, style, generatedAtLabel, fileName, sourcePageAnnotated } = input;
   const docx = isClewDocx(fileName ?? "");
   const locator = formatClewSourcePage(fileName ?? "", knowledgePoint.sourcePage);
   const excerptLines = selectExcerptLines(sourceExcerpt, knowledgePoint);
@@ -358,6 +410,7 @@ export function buildHeuristicLesson(input: ClewHeuristicLessonInput): string {
       textbookTitle,
       chapterTitle,
       sourcePage: knowledgePoint.sourcePage,
+      sourcePageAnnotated: sourcePageAnnotated ?? knowledgePoint.sourcePageAnnotated,
       fileName,
       notice: CLEW_HEURISTIC_LESSON_NOTICE,
     }),

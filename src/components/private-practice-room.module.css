@@ -213,7 +213,7 @@
 
 .askAgent {
   background: var(--paper);
-  border: 1px solid var(--ink);
+  border: 1px solid var(--v2-border);
   color: var(--ink);
   margin-top: 8px;
   min-height: 44px;

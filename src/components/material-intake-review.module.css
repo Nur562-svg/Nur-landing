@@ -3,7 +3,7 @@
      在此子树改引 v2 --bg-100（浅色下等价，暗色下翻深，随全局暗色成套）。其余 --ink/--muted
      等已由宿主 private-materials-studio 桥接。 */
   --paper-light: var(--bg-100);
-  border-bottom: 1px solid var(--ink);
+  border-bottom: 1px solid var(--v2-border);
   margin: 0 auto;
   max-width: 1600px;
   padding: 34px 54px 46px;
@@ -11,7 +11,7 @@
 
 .sectionHeader {
   align-items: start;
-  border-bottom: 1px solid var(--ink);
+  border-bottom: 1px solid var(--v2-border);
   display: grid;
   gap: 15px;
   grid-template-columns: 34px minmax(0, 1fr) auto;
@@ -70,7 +70,7 @@
 }
 
 .workflowSteps {
-  border-bottom: 1px solid var(--ink);
+  border-bottom: 1px solid var(--v2-border);
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));
   list-style: none;
@@ -147,7 +147,7 @@
 }
 
 .fileColumn {
-  border-right: 1px solid var(--ink);
+  border-right: 1px solid var(--v2-border);
   padding-right: 30px;
 }
 
@@ -157,7 +157,7 @@
 
 .dropArea {
   background: var(--paper-light);
-  border: 1px solid var(--ink);
+  border: 1px solid var(--v2-border);
   min-height: 148px;
   position: relative;
 }
@@ -263,8 +263,8 @@
 
 .batchSummary {
   align-items: center;
-  border-bottom: 1px solid var(--ink);
-  border-top: 1px solid var(--ink);
+  border-bottom: 1px solid var(--v2-border);
+  border-top: 1px solid var(--v2-border);
   display: flex;
   justify-content: space-between;
   margin-top: 20px;
@@ -521,7 +521,7 @@
 }
 
 .reviewChecks {
-  border-top: 1px solid var(--ink);
+  border-top: 1px solid var(--v2-border);
   display: grid;
   gap: 11px;
   margin-top: 22px;
@@ -551,7 +551,7 @@
 .confirmButton {
   align-items: center;
   background: var(--ink);
-  border: 1px solid var(--ink);
+  border: 1px solid var(--v2-border);
   border-radius: 0;
   color: var(--paper-light);
   cursor: pointer;
@@ -707,7 +707,7 @@
   }
 
   .fileColumn {
-    border-bottom: 1px solid var(--ink);
+    border-bottom: 1px solid var(--v2-border);
     border-right: 0;
     padding-bottom: 28px;
     padding-right: 0;

@@ -1,0 +1,108 @@
+{
+  "config": "qwen-thinking",
+  "provider": "dashscope",
+  "model": "qwen3.7-plus",
+  "thinking": true,
+  "elapsedMs": 39510,
+  "usage": {
+    "prompt_tokens": 1490,
+    "total_tokens": 3770,
+    "completion_tokens": 2280,
+    "prompt_tokens_details": {
+      "cached_tokens": 1152,
+      "text_tokens": 1490
+    },
+    "completion_tokens_details": {
+      "reasoning_tokens": 1546,
+      "text_tokens": 2280
+    }
+  },
+  "kpId": "v4qa-kp-01",
+  "kpTitle": "离散型定量变量",
+  "excerptChars": 1851,
+  "mechanical": {
+    "parseOk": true,
+    "parseError": null,
+    "questionCount": 6,
+    "a1Count": 4,
+    "fillCount": 2,
+    "missingFields": [],
+    "pageCitationsInRange": true,
+    "citedPages": [
+      1
+    ],
+    "excerptPages": [
+      1,
+      2
+    ]
+  },
+  "questions": [
+    {
+      "kind": "a1",
+      "stem": "下列属于离散型定量变量的是",
+      "choices": [
+        "血压",
+        "家庭中子女数",
+        "职业",
+        "性别"
+      ],
+      "answerIndex": 1,
+      "explanation": "根据原文第一章是非题1，'家庭中子女数是离散型的定量变量'。而根据选择题1，血压属于连续型变量，职业和性别不属于定量变量。",
+      "sourcePage": 1
+    },
+    {
+      "kind": "a1",
+      "stem": "某研究用X表示儿童在一年中患感冒的次数，儿童在一年中患感冒次数的资料属于",
+      "choices": [
+        "连续型资料",
+        "有序分类资料",
+        "不具有分类的离散型资料",
+        "以上均不对"
+      ],
+      "answerIndex": 2,
+      "explanation": "根据原文第一章选择题3，'儿童在一年中患感冒次数的资料属于不具有分类的离散型资料'。",
+      "sourcePage": 1
+    },
+    {
+      "kind": "a1",
+      "stem": "下列变量中，属于连续型变量而非离散型定量变量的是",
+      "choices": [
+        "家庭中子女数",
+        "儿童在一年中患感冒的次数",
+        "血压",
+        "某药治疗的有效人数"
+      ],
+      "answerIndex": 2,
+      "explanation": "根据原文第一章选择题1，'下列属于连续型变量的是血压'，因此血压属于连续型变量，而非离散型定量变量。",
+      "sourcePage": 1
+    },
+    {
+      "kind": "a1",
+      "stem": "关于离散型定量变量，根据原文描述正确的是",
+      "choices": [
+        "其取值通常是连续的数值",
+        "其取值是离散的数值，通常由计数产生",
+        "血压属于典型的离散型定量变量",
+        "职业和性别属于离散型定量变量"
+      ],
+      "answerIndex": 1,
+      "explanation": "根据原文知识点说明及第一章是非题1，离散型定量变量指变量取值是离散的数值，通常由计数产生，如家庭中子女数。血压为连续型变量，职业和性别非定量变量。",
+      "sourcePage": 1
+    },
+    {
+      "kind": "fill",
+      "stem": "家庭中子女数是______的定量变量。",
+      "answerText": "离散型",
+      "explanation": "根据原文第一章是非题1，'家庭中子女数是离散型的定量变量'。",
+      "sourcePage": 1
+    },
+    {
+      "kind": "fill",
+      "stem": "某研究用X表示儿童在一年中患感冒的次数，儿童在一年中患感冒次数的资料属于不具有分类的______资料。",
+      "answerText": "离散型",
+      "explanation": "根据原文第一章选择题3，'儿童在一年中患感冒次数的资料属于不具有分类的离散型资料'。",
+      "sourcePage": 1
+    }
+  ],
+  "rawContent": "{\n  \"questions\": [\n    {\n      \"kind\": \"a1\",\n      \"stem\": \"下列属于离散型定量变量的是\",\n      \"choices\": [\n        \"血压\",\n        \"家庭中子女数\",\n        \"职业\",\n        \"性别\"\n      ],\n      \"answerIndex\": 1,\n      \"explanation\": \"根据原文第一章是非题1，'家庭中子女数是离散型的定量变量'。而根据选择题1，血压属于连续型变量，职业和性别不属于定量变量。\",\n      \"sourcePage\": 1\n    },\n    {\n      \"kind\": \"a1\",\n      \"stem\": \"某研究用X表示儿童在一年中患感冒的次数，儿童在一年中患感冒次数的资料属于\",\n      \"choices\": [\n        \"连续型资料\",\n        \"有序分类资料\",\n        \"不具有分类的离散型资料\",\n        \"以上均不对\"\n      ],\n      \"answerIndex\": 2,\n      \"explanation\": \"根据原文第一章选择题3，'儿童在一年中患感冒次数的资料属于不具有分类的离散型资料'。\",\n      \"sourcePage\": 1\n    },\n    {\n      \"kind\": \"a1\",\n      \"stem\": \"下列变量中，属于连续型变量而非离散型定量变量的是\",\n      \"choices\": [\n        \"家庭中子女数\",\n        \"儿童在一年中患感冒的次数\",\n        \"血压\",\n        \"某药治疗的有效人数\"\n      ],\n      \"answerIndex\": 2,\n      \"explanation\": \"根据原文第一章选择题1，'下列属于连续型变量的是血压'，因此血压属于连续型变量，而非离散型定量变量。\",\n      \"sourcePage\": 1\n    },\n    {\n      \"kind\": \"a1\",\n      \"stem\": \"关于离散型定量变量，根据原文描述正确的是\",\n      \"choices\": [\n        \"其取值通常是连续的数值\",\n        \"其取值是离散的数值，通常由计数产生\",\n        \"血压属于典型的离散型定量变量\",\n        \"职业和性别属于离散型定量变量\"\n      ],\n      \"answerIndex\": 1,\n      \"explanation\": \"根据原文知识点说明及第一章是非题1，离散型定量变量指变量取值是离散的数值，通常由计数产生，如家庭中子女数。血压为连续型变量，职业和性别非定量变量。\",\n      \"sourcePage\": 1\n    },\n    {\n      \"kind\": \"fill\",\n      \"stem\": \"家庭中子女数是______的定量变量。\",\n      \"answerText\": \"离散型\",\n      \"explanation\": \"根据原文第一章是非题1，'家庭中子女数是离散型的定量变量'。\",\n      \"sourcePage\": 1\n    },\n    {\n      \"kind\": \"fill\",\n      \"stem\": \"某研究用X表示儿童在一年中患感冒的次数，儿童在一年中患感冒次数的资料属于不具有分类的______资料。\",\n      \"answerText\": \"离散型\",\n      \"explanation\": \"根据原文第一章选择题3，'儿童在一年中患感冒次数的资料属于不具有分类的离散型资料'。\",\n      \"sourcePage\": 1\n    }\n  ]\n}"
+}

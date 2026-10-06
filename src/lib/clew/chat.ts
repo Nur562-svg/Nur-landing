@@ -8,7 +8,8 @@ import type { ClewChatMessage, ClewChatScope, ClewConversationView, ClewErrorCod
 import { buildClewChatModelMessages, type ClewChatContext } from "./chat-prompt";
 import { isClewChatScope } from "./chat-scope";
 import { createClewChatProviderFromEnv } from "./chat-provider";
-import { ClewProviderConfigError } from "./providers/model-config";
+import { ClewProviderConfigError, coerceClewPracticeIntensity, resolveClewPracticeTarget } from "./providers/model-config";
+import { streamChatCompletion } from "./providers/chat-transport";
 import {
   CLEW_CHAT_MESSAGE_MAX_CHARS,
   appendClewChatMessage,
@@ -19,6 +20,9 @@ import {
   listChapterKnowledgePointTitles,
   saveClewConversationMessages,
 } from "./knowledge-points";
+import { loadClewKpEvidenceContext } from "./evidence-context";
+import { normalizeText, splitExcerptPages, verifyCitations } from "./citation-verify";
+import { getClewKpReviewStudyItem } from "./reviews";
 import { loadClewAccountLessonStyle, loadClewLesson } from "./lesson";
 import { CLEW_LESSON_STYLE_LABELS, isClewLessonStyle } from "./lesson-heuristic";
 import { isClewDocx } from "./source-label";
@@ -59,6 +63,8 @@ export type ClewChatRequest = {
   style?: string;
   /** 依据范围；缺省 lesson+source。 */
   scope?: string;
+  /** ZCODE-M6（D8）：思考强度——standard（缺省，qwen 非思考）/ deep（deepseek-flash，Pro/Max）。 */
+  intensity?: string;
   /** 状态里程碑回调（SSE status 事件；缺省不发生）。 */
   onStatus?: (phase: "source" | "compose", message: string) => void;
 };
@@ -106,6 +112,20 @@ export async function sendClewKnowledgePointMessage(
     }
     scope = input.scope;
   }
+  // ZCODE-M6（D8）：思考强度（非法值 400；缺省 standard）
+  let intensity: "standard" | "deep" = "standard";
+  if (input.intensity !== undefined) {
+    const coerced = coerceClewPracticeIntensity(input.intensity);
+    if (!coerced) {
+      return {
+        ok: false,
+        status: 400,
+        code: "invalid-request",
+        message: `未知的思考强度「${input.intensity.slice(0, 24)}」，请刷新页面后重试。`,
+      };
+    }
+    intensity = coerced;
+  }
 
   const context = await loadClewKnowledgePointContext(input.userId, input.kpId);
   if (!context.ok) {
@@ -134,12 +154,24 @@ export async function sendClewKnowledgePointMessage(
 
   const quotas = await computeUserQuotas(input.userId);
   const quotaItem = quotas.quotas.clewChats;
-  if (!canUseResource(quotaItem)) {
+  // D9：深度问答按 2 单位预检，且挂 pro/max（free/basic 仅标准档，明确报错不静默降档）
+  const deepUnits = intensity === "deep" ? 2 : 1;
+  if (intensity === "deep" && quotas.tier !== "pro" && quotas.tier !== "max") {
+    return {
+      ok: false,
+      status: 403,
+      code: "chat-failed",
+      message: "深度思考模式为 Pro / Max 会员权益，当前档位请使用标准讲解。",
+    };
+  }
+  const chatQuotaOk =
+    quotaItem.limit === "unlimited" ? true : quotaItem.used + deepUnits <= quotaItem.limit;
+  if (!canUseResource(quotaItem) || !chatQuotaOk) {
     return {
       ok: false,
       status: 503,
       code: "quota-exceeded",
-      message: `${getQuotaLabel("clewChats")} 已用完（${quotaItem.used}/${quotaItem.limit}），本轮提问已停止。可升级会员档位，或等待额度重置后重试。`,
+      message: `${getQuotaLabel("clewChats")} 额度不足（已用 ${quotaItem.used}/${quotaItem.limit === "unlimited" ? "∞" : quotaItem.limit}${intensity === "deep" ? "，深度档计 2 次" : ""}），本轮提问已停止。可升级会员档位，或等待额度重置后重试。`,
     };
   }
 
@@ -194,6 +226,30 @@ export async function sendClewKnowledgePointMessage(
     );
   }
 
+  // ZCODE-M6-D（D7 证据原子接线，有则增强、无则与改造前一致）：scope ≠ lesson-only 时按绑定取证据原子，
+  // 与原文片段去重后注入 prompt；无绑定/全重复时字段缺省（chat-prompt 逐字节不变）。
+  let evidenceAtoms: { page: number; text: string }[] = [];
+  if (scope !== "lesson-only") {
+    const loaded = await loadClewKpEvidenceContext(input.kpId);
+    if (loaded && loaded.length > 0) {
+      const excerptNormalized = sourceExcerpt ? normalizeText(sourceExcerpt) : null;
+      evidenceAtoms = loaded.filter((atom) => {
+        // 带截断尾缀「…」的原子先去尾缀再比对（长原子假性「不重复」防护）
+        const atomNormalized = normalizeText(atom.text.replace(/…$/, ""));
+        return atomNormalized.length > 0 && !(excerptNormalized && excerptNormalized.includes(atomNormalized));
+      });
+      if (evidenceAtoms.length > 0) {
+        notes.push(`上下文加宽：纳入 ${evidenceAtoms.length} 条证据原子（页码溯源，仅作背景）。`);
+      }
+    }
+  }
+
+  // ZCODE-M6-D 定向提示（消费 M5 数据）：自测「还需看」且已到期的知识点，回答前如实提示一行
+  const shakyReview = await getClewKpReviewStudyItem(input.userId, input.kpId);
+  if (shakyReview?.due) {
+    notes.push("你在自测中标记过本知识点「还需看」，且已到复习期——可到「我的学习 · 今日复习」完成打分。");
+  }
+
   // 提问先落库：即使模型失败，学生的问题也不会丢
   const withQuestion = appendClewChatMessage(history, {
     role: "user",
@@ -226,21 +282,39 @@ export async function sendClewKnowledgePointMessage(
     fileName: textbook.fileName,
     style: explicitStyle ?? accountStyle,
     scope,
+    evidenceAtoms: evidenceAtoms.length > 0 ? evidenceAtoms : undefined,
   };
 
-  // 状态里程碑 ②：上下文就绪，模型即将开始流式输出
-  input.onStatus?.("compose", "正在组织讲解…");
+  // 状态里程碑 ②：上下文就绪，模型即将开始流式输出（deep 档诚实提示更慢）
+  input.onStatus?.("compose", intensity === "deep" ? "深度思考中…（较慢）" : "正在组织讲解…");
 
   let modelOutcome: "success" | "failed" = "success";
   let answer = "";
+  let usedProviderId = provider.id;
+  let usedModel = provider.model;
   try {
-    answer = await provider.streamReply(
-      {
+    if (intensity === "deep") {
+      // D8 模型路由：deep = deepseek-flash（默认思考；enable_thinking 不注入即保持）
+      const deepTarget = resolveClewPracticeTarget("deep");
+      usedProviderId = deepTarget.provider;
+      usedModel = deepTarget.model;
+      answer = await streamChatCompletion({
+        config: deepTarget,
         messages: buildClewChatModelMessages(chatContext, history, question),
-        question,
-      },
-      input.onDelta,
-    );
+        temperature: 0.4,
+        maxOutputTokens: 8000,
+        timeoutMs: 180_000,
+        onDelta: input.onDelta,
+      });
+    } else {
+      answer = await provider.streamReply(
+        {
+          messages: buildClewChatModelMessages(chatContext, history, question),
+          question,
+        },
+        input.onDelta,
+      );
+    }
   } catch (error) {
     modelOutcome = "failed";
     const message = error instanceof Error ? error.message : "未知错误";
@@ -253,16 +327,17 @@ export async function sendClewKnowledgePointMessage(
     };
   } finally {
     try {
-      await recordServerUsage(input.userId, "clewChats");
+      await recordServerUsage(input.userId, "clewChats", deepUnits);
       const eventProps: { [key: string]: Prisma.InputJsonValue } = {
         kpId: input.kpId,
         chapterOrder: chapter.order,
-        provider: provider.id,
-        model: provider.model,
+        provider: usedProviderId,
+        model: usedModel,
         outcome: modelOutcome,
         questionChars: question.length,
         answerChars: answer.length,
         scope,
+        intensity,
       };
       if (explicitStyle) {
         eventProps.styleExplicit = explicitStyle;
@@ -277,6 +352,32 @@ export async function sendClewKnowledgePointMessage(
     } catch (error) {
       console.error("[clew] 讲解对话用量记录失败", error);
       notes.push("提示：本轮对话的配额计数写入失败，已记录服务端日志。");
+    }
+  }
+
+  if (intensity === "deep" && modelOutcome === "success") {
+    notes.push(`深度模式：本轮讲解由 ${usedModel} 深度思考生成，计 2 次讲解额度。`);
+  }
+
+  // ZCODE-M6-D 回答引用自检（不阻断、不改写——对话流式已完成）：
+  // 对照页集 = 原文片段按页切分 ∪ 证据原子文本（片段缺失但有原子时仍核验——喂过页码就要核验，不静默）；
+  // 页集为空（无片段无原子）才整体跳过。失配只在 notes 如实标注。
+  if (modelOutcome === "success") {
+    const citationPageMap = splitExcerptPages(sourceExcerpt ?? "");
+    for (const atom of evidenceAtoms) {
+      const existing = citationPageMap.get(atom.page);
+      citationPageMap.set(atom.page, existing ? `${existing}\n${atom.text}` : atom.text);
+    }
+    if (citationPageMap.size > 0) {
+      const verification = verifyCitations(answer, citationPageMap);
+      if (verification.issues.length > 0) {
+        const issueList = verification.issues
+          .map((issue) => `第 ${issue.page} 页：「${issue.sentence.slice(0, 60)}」`)
+          .join("；");
+        notes.push(
+          `本段 ${verification.issues.length} 处页码引用与原文不完全一致，请对照原文核对：${issueList}`,
+        );
+      }
     }
   }
 

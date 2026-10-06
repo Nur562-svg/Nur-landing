@@ -11,28 +11,36 @@ import {
   CornerDownLeft,
   Loader2,
   RefreshCw,
+  SlidersHorizontal,
   Sparkles,
 } from "lucide-react";
 import type {
   ClewChapterStudyView,
   ClewChatEvent,
   ClewChatMessage,
+  ClewChatScope,
   ClewKnowledgePointStudySummary,
   ClewKnowledgePointStudyView,
   ClewLessonEvent,
   ClewLessonStyle,
   ClewLessonView,
+  ClewPracticeEvent,
+  ClewPracticeQuestionView,
+  ClewPracticeSetView,
+  ClewReviewItemStudyView,
 } from "@/types/clew";
 import { LOOP_PROFILES, type LoopProfileId, type LoopStage } from "@/types/loop-profile";
 import { consumeClewSse, readClewFailure } from "@/lib/clew/client-api";
+import { CLEW_CHAT_SCOPES, CLEW_CHAT_SCOPE_LABELS, isClewChatScope } from "@/lib/clew/chat-scope";
 import {
   CLEW_LESSON_STYLES,
   CLEW_LESSON_STYLE_LABELS,
+  CLEW_LESSON_STYLE_SHORT_LABELS,
   describeClewLessonGenerator,
   isClewLessonStyle,
   parseClewLessonSelfTest,
 } from "@/lib/clew/lesson-heuristic";
-import { formatClewPageRange, formatClewSourcePage } from "@/lib/clew/source-label";
+import { formatClewKpPageLabel, formatClewPageRange, isClewDocx } from "@/lib/clew/source-label";
 import { resolveClewGuide } from "@/lib/clew/step-guide";
 import {
   CLEW_LESSON_VARIANT_LABELS,
@@ -61,6 +69,9 @@ import styles from "./clew.module.css";
  * 讲义正文 → 自测 → 划重点/笔记/图谱）+ 右栏「问 Clew」；本章知识点列表经 portal 并入壳侧栏
  * （docs/DESIGN_V4.md §四/P1-6）。所有生成都走服务端 API；这里只负责展示、确认覆盖与事件解析。
  * 体验补丁（2026-10-02）：环节脊柱 = 真实动作入口（能点的都真的做事，未建的不装）；「讲解追问」品牌化为「问 Clew」。
+ * ZCODE-M5（2026-10-05）：自测「还需看」进入 FSRS 复习调度——自测面板底部出现轻量三键打分
+ * （再来一次/有点难/记住了 → again/hard/good，PATCH /api/clew/reviews/[id]），成功后行内确认并从
+ * 「我的学习 · 今日复习」到期列表消失；脊柱「复」节点点亮为跳转「我的学习」聚合面。
  * v4（2026-10-04）：AI 回答下方复制/重新生成小图标行——重新生成 = 对同一条提问重新请求一次，
  * 计入一次问答配额，结果追加为新回答，不静默覆盖历史（§五 P2 语义）。
  */
@@ -81,12 +92,18 @@ const statusLabels: Record<ClewChapterStudyView["chapter"]["status"], string> = 
 /** 学习页显示模式（ZCODE-M3 Phase 4）：focus = 单任务（追问下置）；workspace = 工作台三栏。 */
 type ClewStudyMode = "focus" | "workspace";
 const STUDY_MODE_STORAGE_KEY = "nur-learn:clew-study-mode";
-/** 讲解风格偏好（浏览器本地；生成时显式发送，并由服务端更新账户默认）。 */
+/** 讲解风格偏好（浏览器本地；讲解与生成共用同一偏好，并由服务端更新账户默认）。 */
 const LESSON_STYLE_STORAGE_KEY = "nur-learn:clew-lesson-style";
+/** 讲解「依据范围」偏好（批 3；浏览器本地；每轮提问显式发送，缺省 = 讲义+教材原文）。 */
+const CHAT_SCOPE_STORAGE_KEY = "nur-learn:clew-chat-scope";
 /** 讲义视图偏好（初学/复习/备考；仅影响正文显示文本，同一份讲义确定性派生）。 */
 const LESSON_VARIANT_STORAGE_KEY = "nur-learn:clew-lesson-view";
 /** 自测标记存储键前缀（按知识点隔离；换讲义版本自动重置）。 */
 const SELF_CHECK_STORAGE_PREFIX = "nur-learn:clew-selfcheck:";
+/** 问 Clew 思考强度偏好（浏览器本地；深度档服务端校验会员档位）。 */
+const CHAT_INTENSITY_STORAGE_KEY = "nur-learn:clew-chat-intensity";
+/** 讲义折叠高度帽（交互批；px。长文默认收进帽内，展开/收起不卸载 DOM，划重点层零影响）。 */
+const LESSON_FOLD_MAX_HEIGHT = 560;
 
 type SelfCheckMark = "ok" | "shaky";
 type SelfCheckStored = {
@@ -116,6 +133,19 @@ export function ClewStudyRoom({ textbookId, chapter, selected }: ClewStudyRoomPr
   const [chatNotes, setChatNotes] = useState<string[]>([]);
   const [streaming, setStreaming] = useState(false);
   const [chatChipOpen, setChatChipOpen] = useState(false);
+  /** 讲解「依据范围」（批 3；首渲染缺省避免 hydration mismatch，挂载后读本机偏好）。 */
+  const [chatScope, setChatScope] = useState<ClewChatScope>("lesson+source");
+  /** 流式前的真实阶段文案（SSE status 里程碑；首个 delta 到达即让位给正文）。 */
+  const [chatStatus, setChatStatus] = useState<string | null>(null);
+  /** ZCODE-M6（D8）：问 Clew 思考强度（standard 缺省 / deep=Pro·Max，服务端校验）。 */
+  const [chatIntensity, setChatIntensity] = useState<"standard" | "deep">("standard");
+  /** ZCODE-M6（D10）：跨 KP 跳转建议（回答结束后服务端确定性匹配；发送新问题时清空）。 */
+  const [chatSuggestions, setChatSuggestions] = useState<{ kpId: string; title: string; href: string }[]>([]);
+  /** 讲解设置弹出面板（风格 + 依据范围的单入口）。 */
+  const [chatSettingsOpen, setChatSettingsOpen] = useState(false);
+  /** 讲义长文折叠（交互批）：默认收进高度帽；DOM 常驻（划重点层零风险），仅 CSS 裁剪。 */
+  const [lessonFolded, setLessonFolded] = useState(true);
+  const [lessonTooShort, setLessonTooShort] = useState(false);
   const chatListRef = useRef<HTMLDivElement>(null);
   const lessonBodyRef = useRef<HTMLDivElement>(null);
   const lessonPanelRef = useRef<HTMLElement>(null);
@@ -143,6 +173,34 @@ export function ClewStudyRoom({ textbookId, chapter, selected }: ClewStudyRoomPr
   const [selfCheckSubmitting, setSelfCheckSubmitting] = useState(false);
   const [selfCheckNote, setSelfCheckNote] = useState<string | null>(null);
 
+  // ZCODE-M5：FSRS 复习调度（服务端注入该知识点的复习条目；自测提交/打分后本地刷新）
+  const [reviewItem, setReviewItem] = useState<ClewReviewItemStudyView | null>(selected.reviewItem);
+  const [reviewRating, setReviewRating] = useState(false);
+  const [reviewRateNote, setReviewRateNote] = useState<string | null>(null);
+
+  // ZCODE-M6：自教材练习（题组服务端注入；生成/作答后本地更新）
+  const [practiceSet, setPracticeSet] = useState<ClewPracticeSetView>(selected.practice);
+  const [practiceGenerating, setPracticeGenerating] = useState(false);
+  const [practiceConfirmRegenerate, setPracticeConfirmRegenerate] = useState(false);
+  const [practiceLog, setPracticeLog] = useState<string[]>([]);
+  const [practiceNotes, setPracticeNotes] = useState<string[]>([]);
+  const [practiceError, setPracticeError] = useState<string | null>(null);
+  const [practiceWrongOnly, setPracticeWrongOnly] = useState(false);
+  const [practiceRevealed, setPracticeRevealed] = useState<Record<string, boolean>>({});
+  const [practiceAttemptBusy, setPracticeAttemptBusy] = useState<string | null>(null);
+  const [practiceNote, setPracticeNote] = useState<string | null>(null);
+  const practicePanelRef = useRef<HTMLElement>(null);
+  /** 键盘流提示（N 无选区时短暂显示）。 */
+  const [kbdHint, setKbdHint] = useState<string | null>(null);
+
+  // ZCODE-M6 补遗：DOCX 人工页码标注（KP 级；「有页码用页码，没有的人工标」）。
+  // 标注页 = 学生声明的出处（显示「你标注的」，不做文本核验）；PDF 教材不出此入口。
+  const [pageAnnotateOpen, setPageAnnotateOpen] = useState(false);
+  const [pageAnnotateValue, setPageAnnotateValue] = useState("");
+  const [pageAnnotateBusy, setPageAnnotateBusy] = useState(false);
+  const [pageAnnotateError, setPageAnnotateError] = useState<string | null>(null);
+  const [pageAnnotateNote, setPageAnnotateNote] = useState<string | null>(null);
+
   // ZCODE-M3 Phase 4：显示模式（localStorage 持久；v4 P0-4 裁决：默认改为工作台（三栏），
   // 已保存 focus 偏好的用户尊重其选择、键沿用不删；首渲染用默认值避免 hydration mismatch）
   const [studyMode, setStudyMode] = useState<ClewStudyMode>("workspace");
@@ -165,6 +223,55 @@ export function ClewStudyRoom({ textbookId, chapter, selected }: ClewStudyRoomPr
   useEffect(() => {
     setRailSlot(document.querySelector<HTMLElement>("[data-sidebar-context-slot]"));
   }, []);
+
+  // 页码标注：切换知识点时收起表单并清错误/提示
+  useEffect(() => {
+    setPageAnnotateOpen(false);
+    setPageAnnotateValue("");
+    setPageAnnotateError(null);
+    setPageAnnotateNote(null);
+  }, [knowledgePoint.id]);
+
+  /**
+   * DOCX 人工页码标注提交。pageOverride 显式传参（清除 = null）——不读刚 setState 的输入值
+   * （React 过期闭包：清除按钮若走输入框旧值，会把旧值重新写库而非清除——审查确认后修正）。
+   * 成功后提示：已生成的讲义/练习按旧标注烙定，不随标注自动改写，需重新生成（诚实披露）。
+   */
+  const submitPageAnnotation = async (pageOverride?: number | null): Promise<void> => {
+    const explicit = pageOverride !== undefined;
+    const trimmed = explicit ? null : pageAnnotateValue.trim();
+    const parsed = explicit ? (pageOverride ?? null) : trimmed && trimmed.length > 0 ? Number(trimmed) : null;
+    if (!explicit && trimmed && (!Number.isInteger(parsed) || (parsed ?? 0) < 1)) {
+      setPageAnnotateError("页码需要是正整数；留空保存 = 清除标注。");
+      return;
+    }
+    setPageAnnotateBusy(true);
+    setPageAnnotateError(null);
+    try {
+      const res = await fetch(`/api/clew/kp/${knowledgePoint.id}/source-page`, {
+        method: "PATCH",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ page: parsed }),
+      });
+      const payload = (await res.json().catch(() => null)) as { message?: string } | null;
+      if (!res.ok) {
+        setPageAnnotateError(payload?.message ?? "标注失败，请稍后重试。");
+        return;
+      }
+      setPageAnnotateOpen(false);
+      setPageAnnotateValue("");
+      setPageAnnotateNote(
+        knowledgePoint.sourcePageAnnotated || explicit
+          ? "页码标注已更新。已生成的讲义与练习仍按旧标注记录，重新生成后更新。"
+          : "页码标注已保存。已生成的讲义与练习仍按旧状态记录，重新生成后更新。",
+      );
+      router.refresh();
+    } catch {
+      setPageAnnotateError("网络异常，请稍后重试。");
+    } finally {
+      setPageAnnotateBusy(false);
+    }
+  };
 
   // 讲解风格偏好：本机记住上次选择；没有记录时跟随当前讲义（都没有则 zh-primary）
   useEffect(() => {
@@ -191,6 +298,72 @@ export function ClewStudyRoom({ textbookId, chapter, selected }: ClewStudyRoomPr
       // localStorage 不可用时保持默认 full
     }
   }, []);
+
+  // 依据范围偏好：本机记住上次选择（非法值回落缺省讲义+原文；localStorage 不可用时保持缺省）
+  useEffect(() => {
+    try {
+      const stored = window.localStorage.getItem(CHAT_SCOPE_STORAGE_KEY);
+      if (isClewChatScope(stored)) {
+        setChatScope(stored);
+      }
+    } catch {
+      // localStorage 不可用时保持默认 lesson+source
+    }
+  }, []);
+
+  // 思考强度偏好：本机记住上次选择（非法值回落标准档）
+  useEffect(() => {
+    try {
+      const stored = window.localStorage.getItem(CHAT_INTENSITY_STORAGE_KEY);
+      if (stored === "standard" || stored === "deep") {
+        setChatIntensity(stored);
+      }
+    } catch {
+      // localStorage 不可用时保持标准档
+    }
+  }, []);
+
+  // 讲解设置面板：Escape 关闭 + 点外部关闭
+  useEffect(() => {
+    if (!chatSettingsOpen) {
+      return;
+    }
+    const onKey = (event: KeyboardEvent) => {
+      if (event.key === "Escape") {
+        setChatSettingsOpen(false);
+      }
+    };
+    const onPointerDown = (event: PointerEvent) => {
+      const target = event.target as Element | null;
+      if (!target?.closest(`.${styles.chatSettingsWrap}`)) {
+        setChatSettingsOpen(false);
+      }
+    };
+    window.addEventListener("keydown", onKey);
+    window.addEventListener("pointerdown", onPointerDown);
+    return () => {
+      window.removeEventListener("keydown", onKey);
+      window.removeEventListener("pointerdown", onPointerDown);
+    };
+  }, [chatSettingsOpen]);
+
+  function onSwitchChatScope(scope: ClewChatScope): void {
+    setChatScope(scope);
+    try {
+      window.localStorage.setItem(CHAT_SCOPE_STORAGE_KEY, scope);
+    } catch {
+      // 持久化失败不影响本次切换
+    }
+  }
+
+  function onSwitchChatIntensity(intensity: "standard" | "deep"): void {
+    setChatIntensity(intensity);
+    try {
+      window.localStorage.setItem(CHAT_INTENSITY_STORAGE_KEY, intensity);
+    } catch {
+      // 持久化失败不影响本次切换
+    }
+  }
 
   function onSwitchLessonVariant(variant: ClewLessonVariant): void {
     setLessonVariant(variant);
@@ -431,6 +604,8 @@ export function ClewStudyRoom({ textbookId, chapter, selected }: ClewStudyRoomPr
     setStreaming(true);
     setChatError(null);
     setChatNotes([]);
+    setChatStatus(null);
+    setChatSuggestions([]);
     setMessages((current) => [
       ...current,
       { role: "user", content: question, createdAt: new Date().toISOString() },
@@ -441,7 +616,7 @@ export function ClewStudyRoom({ textbookId, chapter, selected }: ClewStudyRoomPr
       const response = await fetch(`/api/clew/kp/${knowledgePoint.id}/chat`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ message: question }),
+        body: JSON.stringify({ message: question, style: lessonStyle, scope: chatScope, intensity: chatIntensity }),
       });
       if (!response.ok || !response.body) {
         let message = "讲解失败：服务暂时不可用，请稍后重试。";
@@ -455,7 +630,10 @@ export function ClewStudyRoom({ textbookId, chapter, selected }: ClewStudyRoomPr
       }
       await consumeClewSse(response, (raw) => {
         const event = raw as ClewChatEvent;
-        if (event.type === "delta") {
+        if (event.type === "status") {
+          setChatStatus(event.message);
+        } else if (event.type === "delta") {
+          setChatStatus(null);
           answer += event.text;
           setMessages((current) => {
             const last = current[current.length - 1];
@@ -464,9 +642,13 @@ export function ClewStudyRoom({ textbookId, chapter, selected }: ClewStudyRoomPr
               : [...current, { role: "assistant", content: answer, createdAt: new Date().toISOString() }];
           });
         } else if (event.type === "result") {
+          setChatStatus(null);
           setMessages(event.conversation.messages);
           setChatNotes(event.notes);
+        } else if (event.type === "suggestions") {
+          setChatSuggestions(event.items);
         } else {
+          setChatStatus(null);
           setChatError(event.error);
         }
       });
@@ -476,6 +658,7 @@ export function ClewStudyRoom({ textbookId, chapter, selected }: ClewStudyRoomPr
     } catch {
       setChatError("讲解失败：网络或服务暂时不可用，请稍后重试。");
     } finally {
+      setChatStatus(null);
       setStreaming(false);
       if (chatListRef.current) {
         chatListRef.current.scrollTop = chatListRef.current.scrollHeight;
@@ -533,6 +716,21 @@ export function ClewStudyRoom({ textbookId, chapter, selected }: ClewStudyRoomPr
     [lesson, lessonVariant],
   );
   const lessonVariantNote = derivedLesson?.note ?? "";
+
+  // 讲义折叠测量：内容不足一帽时不显示折叠控件（渲染后实测 scrollHeight，不猜字数）
+  useEffect(() => {
+    const raf = requestAnimationFrame(() => {
+      const body = lessonBodyRef.current;
+      if (!body) {
+        setLessonTooShort(true);
+        return;
+      }
+      setLessonTooShort(body.scrollHeight <= LESSON_FOLD_MAX_HEIGHT + 24);
+    });
+    return () => cancelAnimationFrame(raf);
+  }, [lesson, lessonVariant, lessonFolded]);
+  const lessonCharCount = derivedLesson?.contentMd.length ?? 0;
+
   const shakyCount = selfTestItems.filter(
     (item) => selfCheckMarks[String(item.index)] === "shaky",
   ).length;
@@ -560,7 +758,7 @@ export function ClewStudyRoom({ textbookId, chapter, selected }: ClewStudyRoomPr
     }
   }
 
-  /** 全部标记完成后提交：把「还需看」写入统一学习事件流（幂等），并完成「评」环节。 */
+  /** 全部标记完成后提交：「还需看」写入统一学习事件流（幂等）+ FSRS 复习调度，并完成「评」环节。 */
   async function submitSelfCheck(marks: Record<string, SelfCheckMark>): Promise<void> {
     if (!lesson || selfCheckSubmitting) {
       return;
@@ -582,19 +780,113 @@ export function ClewStudyRoom({ textbookId, chapter, selected }: ClewStudyRoomPr
         setSelfCheckNote("自测记录暂时未能提交（网络或服务问题），本地标记已保留，可稍后改动任意标记重试。");
         return;
       }
+      const payload = (await response.json()) as {
+        ok?: boolean;
+        review?: "created" | "advanced" | "unchanged" | "skipped-profile" | "skipped-no-shaky";
+      };
       setCompletedStages((current) => (current.includes("assess") ? current : [...current, "assess"]));
       markSessionStage("assess", { status: "completed", completedAt: new Date().toISOString() });
       setActiveStage("assess");
       const shaky = selfTestItems.filter((item) => marks[String(item.index)] === "shaky").length;
-      setSelfCheckNote(
-        shaky > 0
-          ? `已把 ${shaky} 道「还需看」记入学习动态（统一事件流），后续版本据此生成复查清单。`
-          : "全部标记「会了」——「评」环节完成。",
-      );
+      switch (payload.review) {
+        case "created":
+          setSelfCheckNote(
+            `已把 ${shaky} 道「还需看」记入学习动态，并安排复习（今日到期，可在下方「复习打分」回流）。`,
+          );
+          break;
+        case "advanced":
+          setSelfCheckNote("已重新计为「还需看」，复习安排按遗忘曲线前移。");
+          break;
+        case "unchanged":
+          setSelfCheckNote("已记录；本次提交没有改变复习安排。");
+          break;
+        case "skipped-profile":
+          setSelfCheckNote(
+            `已把 ${shaky} 道「还需看」记入学习动态；当前闭环（${activeProfile.name}）不进复习调度。`,
+          );
+          break;
+        default:
+          setSelfCheckNote("全部标记「会了」——「评」环节完成。");
+      }
+      if (payload.review === "created" || payload.review === "advanced") {
+        await refreshReviewItem();
+      }
     } catch {
       setSelfCheckNote("自测记录暂时未能提交（网络问题），本地标记已保留。");
     } finally {
       setSelfCheckSubmitting(false);
+    }
+  }
+
+  /** 自测提交后刷新本知识点的复习条目（服务端按 FSRS 状态返回最新排期）。 */
+  async function refreshReviewItem(): Promise<void> {
+    try {
+      const response = await fetch(`/api/clew/reviews?kp=${knowledgePoint.id}`, {
+        credentials: "include",
+      });
+      if (!response.ok) {
+        return;
+      }
+      const payload = (await response.json()) as {
+        ok?: boolean;
+        items?: Array<{ id: string; dueAt: string; reviewCount: number; lapses: number; suspended: boolean }>;
+      };
+      const item = payload.items?.find((entry) => !entry.suspended) ?? null;
+      if (!item) {
+        return;
+      }
+      setReviewItem({
+        id: item.id,
+        dueAt: item.dueAt,
+        due: Date.parse(item.dueAt) <= Date.now(),
+        reviewCount: item.reviewCount,
+        lapses: item.lapses,
+      });
+    } catch {
+      // 刷新失败不打断自测流程（下次进页面由服务端注入最新状态）
+    }
+  }
+
+  /** ZCODE-M5：复习打分三键（再来一次/有点难/记住了 → again/hard/good）→ FSRS 前移 + 到期重排。 */
+  async function onRateReview(rating: "again" | "hard" | "good"): Promise<void> {
+    if (!reviewItem || reviewRating) {
+      return;
+    }
+    setReviewRating(true);
+    setReviewRateNote(null);
+    try {
+      const response = await fetch(`/api/clew/reviews/${reviewItem.id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ rating }),
+      });
+      if (!response.ok) {
+        setReviewRateNote("打分暂时未能记录（网络或服务问题），可稍后重试。");
+        return;
+      }
+      const payload = (await response.json()) as {
+        ok?: boolean;
+        item?: { id: string; dueAt: string; reviewCount: number; lapses: number };
+      };
+      if (!payload.item) {
+        return;
+      }
+      const dueLabel = new Date(payload.item.dueAt).toLocaleString("zh-CN", {
+        hour12: false,
+        timeZone: "Asia/Shanghai",
+      });
+      setReviewItem({
+        id: payload.item.id,
+        dueAt: payload.item.dueAt,
+        due: false,
+        reviewCount: payload.item.reviewCount,
+        lapses: payload.item.lapses,
+      });
+      setReviewRateNote(`已记录：下次复习 ${dueLabel}（「我的学习 · 今日复习」同步更新）。`);
+    } catch {
+      setReviewRateNote("打分暂时未能记录（网络问题），可稍后重试。");
+    } finally {
+      setReviewRating(false);
     }
   }
 
@@ -612,6 +904,247 @@ export function ClewStudyRoom({ textbookId, chapter, selected }: ClewStudyRoomPr
       [String(index)]: !current[String(index)],
     }));
   }
+
+  /* ---------------- ZCODE-M6：自教材练习 ---------------- */
+
+  const practiceWrongCount = practiceSet.summary.wrong;
+  const visiblePracticeItems = practiceWrongOnly
+    ? practiceSet.questions.filter((q) => q.myAttempt !== null && !q.myAttempt.isCorrect)
+    : practiceSet.questions;
+
+  /** 生成练习题组（SSE；缺省 deep=deepseek-flash 深度思考计 2 次额度）。 */
+  async function onGeneratePractice(intensity: "standard" | "deep"): Promise<void> {
+    if (practiceGenerating) {
+      return;
+    }
+    setPracticeConfirmRegenerate(false);
+    setPracticeGenerating(true);
+    setPracticeError(null);
+    setPracticeNotes([]);
+    setPracticeNote(null);
+    setPracticeLog([
+      `开始为「${knowledgePoint.title}」生成练习题（${intensity === "deep" ? "深度思考 · 计 2 次额度" : "标准档 · 计 1 次额度"}）…`,
+    ]);
+
+    try {
+      const response = await fetch(`/api/clew/kp/${knowledgePoint.id}/practice`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ intensity }),
+      });
+      if (!response.ok || !response.body) {
+        let message = "练习生成失败：服务暂时不可用，请稍后重试。";
+        try {
+          message = readClewFailure(await response.json());
+        } catch {
+          // 保持默认提示
+        }
+        setPracticeError(message);
+        return;
+      }
+      await consumeClewSse(response, (raw) => {
+        const event = raw as ClewPracticeEvent;
+        if (event.type === "progress") {
+          setPracticeLog((log) => [...log, event.message]);
+        } else if (event.type === "result") {
+          setPracticeSet(event.set);
+          setPracticeNotes(event.notes);
+          setPracticeLog([]);
+          setPracticeWrongOnly(false);
+        } else {
+          setPracticeError(event.error);
+        }
+      });
+    } catch {
+      setPracticeError("练习生成失败：网络或服务暂时不可用，请稍后重试。");
+    } finally {
+      setPracticeGenerating(false);
+    }
+  }
+
+  /** 生成/重新生成控制区（覆盖语义：重新生成清空当前题组与作答记录）。 */
+  function practiceRegenerateControls() {
+    if (practiceGenerating) {
+      return (
+        <span className={styles.confirmNote}>
+          <Loader2 className={styles.spin} aria-hidden="true" size={14} strokeWidth={1.8} /> 生成中…
+        </span>
+      );
+    }
+    if (practiceSet.questions.length === 0) {
+      return (
+        <>
+          <V2Button className={styles.v2Button} onClick={() => void onGeneratePractice("deep")}>
+            <Sparkles aria-hidden="true" size={16} strokeWidth={1.6} />
+            生成练习题（深度）
+          </V2Button>
+          <button type="button" className={styles.ghostButton} onClick={() => void onGeneratePractice("standard")}>
+            标准档生成（省额度）
+          </button>
+        </>
+      );
+    }
+    if (practiceConfirmRegenerate) {
+      return (
+        <>
+          <span className={styles.confirmNote}>重新生成将覆盖当前题组并清空作答记录，确认继续？</span>
+          <V2Button className={styles.v2Button} onClick={() => void onGeneratePractice("deep")}>
+            确认重新生成（深度）
+          </V2Button>
+          <button type="button" className={styles.ghostButton} onClick={() => setPracticeConfirmRegenerate(false)}>
+            取消
+          </button>
+        </>
+      );
+    }
+    return (
+      <>
+        <button type="button" className={styles.ghostButton} onClick={() => setPracticeConfirmRegenerate(true)}>
+          <RefreshCw aria-hidden="true" size={15} strokeWidth={1.6} />
+          重新生成
+        </button>
+        <button type="button" className={styles.ghostButton} onClick={() => void onGeneratePractice("standard")}>
+          标准档重生成
+        </button>
+      </>
+    );
+  }
+
+  /** 作答提交：本地更新该题 myAttempt 与 summary（服务端判分/自评 + FSRS 回流）。 */
+  async function onPracticeAttempt(
+    question: ClewPracticeQuestionView,
+    payload: { selectedIndex: number } | { selfRating: "correct" | "wrong" },
+  ): Promise<void> {
+    if (practiceAttemptBusy) {
+      return;
+    }
+    setPracticeAttemptBusy(question.id);
+    setPracticeNote(null);
+    try {
+      const response = await fetch(`/api/clew/practice/${question.id}/attempt`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      });
+      const payloadJson = (await response.json()) as {
+        ok?: boolean;
+        attempt?: {
+          isCorrect: boolean;
+          correctIndex: number | null;
+          answerText: string | null;
+          explanation: string;
+          review: string;
+        };
+        error?: string;
+      };
+      if (!response.ok || !payloadJson.ok || !payloadJson.attempt) {
+        setPracticeNote(payloadJson.error ?? "作答暂时未能提交（网络或服务问题），请稍后重试。");
+        return;
+      }
+      const a = payloadJson.attempt;
+      const attemptedAt = new Date().toISOString();
+      setPracticeSet((current) => {
+        const questions = current.questions.map((q) =>
+          q.id === question.id
+            ? {
+                ...q,
+                myAttempt: {
+                  isCorrect: a.isCorrect,
+                  selectedIndex: "selectedIndex" in payload ? payload.selectedIndex : null,
+                  selfRating: "selfRating" in payload ? payload.selfRating : null,
+                  correctIndex: a.correctIndex,
+                  explanation: a.explanation,
+                  attemptedAt,
+                },
+              }
+            : q,
+        );
+        const answered = questions.filter((q) => q.myAttempt !== null);
+        return {
+          ...current,
+          questions,
+          summary: {
+            total: questions.length,
+            answered: answered.length,
+            correct: answered.filter((q) => q.myAttempt?.isCorrect).length,
+            wrong: answered.filter((q) => q.myAttempt && !q.myAttempt.isCorrect).length,
+          },
+        };
+      });
+      setPracticeNote(
+        a.review === "created"
+          ? "已记入复习调度（今日到期）——可在「我的学习 · 今日复习」回流。"
+          : a.review === "advanced"
+            ? a.isCorrect
+              ? "已按「记住了」巩固，复习安排顺延。"
+              : "已按「再来一次」前移遗忘曲线。"
+            : null,
+      );
+    } catch {
+      setPracticeNote("作答暂时未能提交（网络问题），请稍后重试。");
+    } finally {
+      setPracticeAttemptBusy(null);
+    }
+  }
+
+  /* ---------------- ZCODE-M6-C：键盘流（RESTRUCTURE §1.1 兑现：J/K 切 KP / E 生成讲义 / N 写批注） ---------------- */
+
+  useEffect(() => {
+    const onKey = (event: KeyboardEvent) => {
+      if (event.metaKey || event.ctrlKey || event.altKey) {
+        return;
+      }
+      const target = event.target as HTMLElement | null;
+      if (
+        target
+        && (target.tagName === "INPUT"
+          || target.tagName === "TEXTAREA"
+          || target.isContentEditable
+          || target.tagName === "SELECT")
+      ) {
+        return;
+      }
+      const key = event.key.toLowerCase();
+      if (key === "j" || key === "k") {
+        const list = chapter.knowledgePoints;
+        const index = list.findIndex((point) => point.id === knowledgePoint.id);
+        if (index === -1) {
+          return;
+        }
+        const nextIndex = key === "j" ? index + 1 : index - 1;
+        const next = list[nextIndex];
+        if (!next) {
+          return;
+        }
+        event.preventDefault();
+        router.push(`/learn/clew/t/${textbookId}/c/${chapter.chapter.order}?kp=${next.id}`);
+      } else if (key === "e") {
+        if (generating) {
+          return;
+        }
+        event.preventDefault();
+        if (!lesson) {
+          void onGenerateLesson();
+        } else {
+          setConfirmingRegenerate(true);
+          lessonPanelRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+        }
+      } else if (key === "n") {
+        // 写批注：有选区时划重点层自身会弹出；N 负责滚到划重点区并提示先选中
+        const selection = window.getSelection?.();
+        const hasSelection = Boolean(selection && selection.toString().trim().length > 0);
+        if (!hasSelection) {
+          setKbdHint("先选中讲义文字，松开后即可划重点并写批注。");
+          window.setTimeout(() => setKbdHint(null), 2600);
+        }
+        document.getElementById("highlights")?.scrollIntoView({ behavior: "smooth", block: "start" });
+      }
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+    // handlers 闭包依赖当前渲染态；onGenerateLesson 为组件内函数（随渲染重建），重建订阅即等效最新闭包
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- 订阅按 kpId/章节/讲义态重建，onGenerateLesson 每次渲染都是最新闭包
+  }, [chapter.knowledgePoints, chapter.chapter.order, knowledgePoint.id, textbookId, generating, lesson, router]);
 
   /* ---------------- 闭环脊柱（体验补丁：环节 = 真实动作入口） ---------------- */
 
@@ -680,16 +1213,31 @@ export function ClewStudyRoom({ textbookId, chapter, selected }: ClewStudyRoomPr
             onSelect: () => onSpineStageSelect(stage, () => router.push("/learn/clew/w")),
           };
         case "practice":
+          // ZCODE-M6：练习已接入——按教材原文出题，作答即判分并回流复习调度
           return {
             stage,
-            state: "unavailable",
-            hint: "练习环节后续版本接入（当前可在题库刷题）",
+            state: baseState,
+            hint:
+              practiceSet.questions.length > 0
+                ? `打开练习（${practiceSet.summary.total} 题${practiceWrongCount > 0 ? `，错 ${practiceWrongCount}` : ""}）`
+                : "按教材原文生成一组练习题（A1×4 + 填空×2）",
+            onSelect: () =>
+              onSpineStageSelect(stage, () =>
+                practicePanelRef.current?.scrollIntoView({ behavior: "smooth", block: "start" }),
+              ),
           };
         case "review":
+          // ZCODE-M5：复习调度已接入——聚合面在「我的学习 · 今日复习」（含错题中心 Clew 线）
           return {
             stage,
-            state: "unavailable",
-            hint: "复习调度后续版本接入（标记的问题已先记入学习动态）",
+            state: baseState,
+            hint: reviewItem
+              ? reviewItem.due
+                ? "本知识点已到期待复习——下方自测面板可打分回流"
+                : `下次复习 ${new Date(reviewItem.dueAt).toLocaleDateString("zh-CN", { timeZone: "Asia/Shanghai" })}（去「我的学习」看全部排期）`
+              : "去「我的学习」看今日复习（到期知识点聚合）",
+            onSelect: () =>
+              onSpineStageSelect(stage, () => router.push("/learn#today-reviews")),
           };
         default:
           return { stage, state: baseState };
@@ -698,6 +1246,11 @@ export function ClewStudyRoom({ textbookId, chapter, selected }: ClewStudyRoomPr
   }
 
   const spineItems = computeSpineItems();
+
+  // ZCODE-M6 UI 热修②：流式期间末条 assistant 消息只由下方 streaming 块渲染（带光标），
+  // 消息循环里剔除，否则同一回答会同时出现两个气泡（流结束才恢复单条）。
+  const streamingLastAssistant = streaming && messages[messages.length - 1]?.role === "assistant";
+  const renderedMessages = streamingLastAssistant ? messages.slice(0, -1) : messages;
 
   const guide = resolveClewGuide({
     surface: "study",
@@ -740,7 +1293,7 @@ export function ClewStudyRoom({ textbookId, chapter, selected }: ClewStudyRoomPr
                     <span className={styles.kpNavMain}>
                       <span className={styles.kpNavTitle}>{point.title}</span>
                       <span className={styles.kpNavMeta}>
-                        {formatClewSourcePage(chapter.textbook.fileName, point.sourcePage)} · {point.hasLesson ? "已有讲义" : "未生成讲义"}
+                        {formatClewKpPageLabel(chapter.textbook.fileName, point.sourcePage, point.sourcePageAnnotated)} · {point.hasLesson ? "已有讲义" : "未生成讲义"}
                       </span>
                       <span className={styles.kpNavProfile}>
                         {LOOP_PROFILES[chipProfileId]?.name ?? "完整闭环"}
@@ -800,17 +1353,83 @@ export function ClewStudyRoom({ textbookId, chapter, selected }: ClewStudyRoomPr
           </div>
           <h1 className={styles.studyKpTitle}>{knowledgePoint.title}</h1>
           <p className={styles.studyKpMeta}>
-            {`知识点 ${String(knowledgePoint.order).padStart(2, "0")} · ${formatClewSourcePage(chapter.textbook.fileName, knowledgePoint.sourcePage)}`}
+            {`知识点 ${String(knowledgePoint.order).padStart(2, "0")} · ${formatClewKpPageLabel(chapter.textbook.fileName, knowledgePoint.sourcePage, knowledgePoint.sourcePageAnnotated)}`}
+            {isClewDocx(chapter.textbook.fileName) ? (
+              <button
+                type="button"
+                className={styles.pageAnnotateToggle}
+                onClick={() => setPageAnnotateOpen((open) => !open)}
+              >
+                {knowledgePoint.sourcePageAnnotated ? "修改标注" : "标注页码"}
+              </button>
+            ) : null}
             {knowledgePoint.keyTerms.length > 0 ? ` · 术语：${knowledgePoint.keyTerms.join("、")}` : ""}
             {knowledgePoint.prerequisites.length > 0
               ? ` · 先修：${knowledgePoint.prerequisites.join("、")}`
               : ""}
           </p>
+          {isClewDocx(chapter.textbook.fileName) && pageAnnotateOpen ? (
+            <form
+              className={styles.pageAnnotateForm}
+              onSubmit={(event) => {
+                event.preventDefault();
+                void submitPageAnnotation();
+              }}
+            >
+              <label className={styles.pageAnnotateLabel}>
+                本知识点在教材的第
+                <input
+                  className={styles.pageAnnotateInput}
+                  inputMode="numeric"
+                  value={pageAnnotateValue}
+                  placeholder={knowledgePoint.sourcePageAnnotated ? String(knowledgePoint.sourcePage) : "页码"}
+                  onChange={(event) => setPageAnnotateValue(event.target.value)}
+                  aria-label="知识点页码"
+                />
+                页
+              </label>
+              <button type="submit" className={styles.pageAnnotateToggle} disabled={pageAnnotateBusy}>
+                {pageAnnotateBusy ? "保存中…" : "保存"}
+              </button>
+              <button
+                type="button"
+                className={styles.pageAnnotateToggle}
+                disabled={pageAnnotateBusy}
+                onClick={() => setPageAnnotateOpen(false)}
+              >
+                取消
+              </button>
+              {knowledgePoint.sourcePageAnnotated ? (
+                <button
+                  type="button"
+                  className={styles.pageAnnotateToggle}
+                  disabled={pageAnnotateBusy}
+                  onClick={() => void submitPageAnnotation(null)}
+                >
+                  清除标注
+                </button>
+              ) : null}
+              {pageAnnotateError ? <span className={styles.pageAnnotateError}>{pageAnnotateError}</span> : null}
+            </form>
+          ) : null}
+          {pageAnnotateNote ? (
+            <p className={styles.pageAnnotateNote} role="status">
+              {pageAnnotateNote}
+            </p>
+          ) : null}
           <p className={styles.studyKpDescription}>{knowledgePoint.description}</p>
         </header>
 
         <div className={styles.studySpineRail}>
           <ClewStageSpine items={spineItems} />
+          <p className={styles.kbdHintRow} aria-hidden="true">
+            J / K 切换知识点 · E 生成讲义 · N 写批注（先选中讲义文字）
+          </p>
+          {kbdHint ? (
+            <p className={styles.kbdHintActive} role="status">
+              {kbdHint}
+            </p>
+          ) : null}
         </div>
 
         <div className={styles.studyContentCol}>
@@ -852,22 +1471,10 @@ export function ClewStudyRoom({ textbookId, chapter, selected }: ClewStudyRoomPr
             </div>
 
             <div className={styles.actionRow}>
-              <label className={styles.lessonStyleField}>
-                <span>讲解风格</span>
-                <select
-                  className={styles.lessonStyleSelect}
-                  value={lessonStyle}
-                  disabled={generating}
-                  title="生成讲义时发送；选择过的风格会记为账户默认"
-                  onChange={(event) => onSelectLessonStyle(event.target.value)}
-                >
-                  {CLEW_LESSON_STYLES.map((style) => (
-                    <option key={style} value={style}>
-                      {CLEW_LESSON_STYLE_LABELS[style]}
-                    </option>
-                  ))}
-                </select>
-              </label>
+              {/* 批 3：讲解风格选择迁至右栏「问 Clew」composer chip 排（与讲解共用同一偏好），此处只作同步显示 */}
+              <span className={styles.lessonStyleBadge}>
+                风格：{CLEW_LESSON_STYLE_LABELS[lessonStyle]}
+              </span>
               {!generating ? (
                 lesson ? (
                   confirmingRegenerate ? (
@@ -951,12 +1558,29 @@ export function ClewStudyRoom({ textbookId, chapter, selected }: ClewStudyRoomPr
                     <p className={styles.lessonVariantNote}>{lessonVariantNote}</p>
                   ) : null}
                 </div>
-                <div className={styles.lessonBody} ref={lessonBodyRef}>
+                <div
+                  className={[
+                    styles.lessonBody,
+                    lessonFolded && !lessonTooShort ? styles.lessonBodyClipped : "",
+                  ].filter(Boolean).join(" ")}
+                  ref={lessonBodyRef}
+                >
                   <ClewMarkdown
                     key={`${lesson.generatedAt}:${lessonVariant}`}
                     markdown={derivedLesson.contentMd}
                   />
                 </div>
+                {!lessonTooShort ? (
+                  <button
+                    type="button"
+                    className={styles.lessonFoldToggle}
+                    onClick={() => setLessonFolded((folded) => !folded)}
+                  >
+                    {lessonFolded
+                      ? `展开全篇 · 共 ${lessonCharCount} 字`
+                      : "收起讲义"}
+                  </button>
+                ) : null}
               </>
             ) : (
               <p className={styles.emptyState}>
@@ -1070,6 +1694,245 @@ export function ClewStudyRoom({ textbookId, chapter, selected }: ClewStudyRoomPr
                       <Loader2 className={styles.spin} aria-hidden="true" size={13} strokeWidth={1.8} /> 正在记录自测结果…
                     </p>
                   ) : null}
+
+                  {/* ZCODE-M5：复习打分三键（该知识点有复习条目时出现；到期才可打分，否则显示排期） */}
+                  {reviewItem ? (
+                    <div className={styles.reviewRateRow}>
+                      {reviewItem.due ? (
+                        <>
+                          <p className={styles.reviewRateHint}>
+                            复习打分：这次重学感觉如何？打分后按遗忘曲线排下次复习，并从「今日到期」消失。
+                          </p>
+                          <div className={styles.reviewRateButtons} role="group" aria-label="复习打分">
+                            <button type="button" disabled={reviewRating} onClick={() => void onRateReview("again")}>
+                              再来一次
+                            </button>
+                            <button type="button" disabled={reviewRating} onClick={() => void onRateReview("hard")}>
+                              有点难
+                            </button>
+                            <button type="button" disabled={reviewRating} onClick={() => void onRateReview("good")}>
+                              记住了
+                            </button>
+                          </div>
+                        </>
+                      ) : (
+                        <p className={styles.reviewRateNext}>
+                          复习排期中：下次{" "}
+                          {new Date(reviewItem.dueAt).toLocaleString("zh-CN", {
+                            hour12: false,
+                            timeZone: "Asia/Shanghai",
+                          })}
+                          （已复习 {reviewItem.reviewCount} 次
+                          {reviewItem.lapses > 0 ? ` · 遗忘 ${reviewItem.lapses} 次` : ""}）。
+                        </p>
+                      )}
+                      {reviewRateNote ? (
+                        <p className={reviewItem.due ? styles.reviewRateDone : styles.selfCheckNote} role="status">
+                          {reviewRateNote}
+                        </p>
+                      ) : null}
+                    </div>
+                  ) : null}
+                </>
+              )}
+            </section>
+          ) : null}
+
+          {lesson ? (
+            <section
+              ref={practicePanelRef}
+              id="practice"
+              className={styles.selfCheckPanel}
+              aria-labelledby="clew-practice-title"
+            >
+              <div className={styles.panelHead}>
+                <h2 id="clew-practice-title">练习</h2>
+                {practiceSet.questions.length > 0 ? (
+                  <p>
+                    {practiceSet.summary.total} 题 · 已作答 {practiceSet.summary.answered}
+                    {practiceSet.summary.correct + practiceSet.summary.wrong > 0
+                      ? ` · 对 ${practiceSet.summary.correct} 错 ${practiceSet.summary.wrong}`
+                      : ""}
+                  </p>
+                ) : (
+                  <p>尚未生成</p>
+                )}
+              </div>
+
+              {practiceError ? (
+                <p className={styles.errorBox} role="alert">
+                  <CircleAlert aria-hidden="true" size={16} strokeWidth={1.8} />
+                  <span>{practiceError}</span>
+                </p>
+              ) : null}
+
+              {practiceLog.length > 0 && practiceGenerating ? (
+                <ul className={styles.progressLog} aria-label="练习生成进度">
+                  {practiceLog.map((line, index) => (
+                    <li key={`${index}-${line}`}>{line}</li>
+                  ))}
+                </ul>
+              ) : null}
+
+              {practiceSet.questions.length === 0 ? (
+                <>
+                  <p className={styles.emptyState}>
+                    按该知识点聚合的教材原文生成一组练习：4 道单选（即选即判）+ 2 道填空（对照参考答案自评）；
+                    错题自动进入复习调度与错题中心。深度档由 deepseek-flash 深度思考出题（计 2 次额度），标准档计 1 次。
+                  </p>
+                  <div className={styles.actionRow}>{practiceRegenerateControls()}</div>
+                </>
+              ) : (
+                <>
+                  {practiceWrongCount > 0 ? (
+                    <div className={styles.selfCheckFilters} role="group" aria-label="练习筛选">
+                      <button
+                        type="button"
+                        aria-pressed={!practiceWrongOnly}
+                        onClick={() => setPracticeWrongOnly(false)}
+                      >
+                        全部
+                      </button>
+                      <button
+                        type="button"
+                        aria-pressed={practiceWrongOnly}
+                        onClick={() => setPracticeWrongOnly(true)}
+                      >
+                        只练错题（{practiceWrongCount}）
+                      </button>
+                    </div>
+                  ) : null}
+
+                  <ul className={styles.selfCheckList}>
+                    {visiblePracticeItems.map((question) => {
+                      const latest = question.myAttempt;
+                      if (question.kind === "a1") {
+                        const revealed = latest !== null;
+                        return (
+                          <li
+                            key={question.id}
+                            className={styles.selfCheckItem}
+                            data-mark={latest ? (latest.isCorrect ? "ok" : "shaky") : "idle"}
+                          >
+                            <p className={styles.selfCheckQuestion}>
+                              <span className={styles.selfCheckIndex}>
+                                {String(question.order).padStart(2, "0")}
+                              </span>
+                              {question.stem}
+                            </p>
+                            <div className={styles.practiceChoices} role="group" aria-label="选项">
+                              {(question.choices ?? []).map((choice, index) => {
+                                const chosen = latest?.selectedIndex === index;
+                                const isCorrectOne = revealed && latest?.correctIndex === index;
+                                const chosenWrong = chosen && revealed && !latest?.isCorrect;
+                                return (
+                                  <button
+                                    key={index}
+                                    type="button"
+                                    className={[
+                                      styles.practiceChoice,
+                                      isCorrectOne ? styles.practiceChoiceCorrect : "",
+                                      chosenWrong ? styles.practiceChoiceWrong : "",
+                                    ].filter(Boolean).join(" ")}
+                                    aria-pressed={chosen}
+                                    disabled={practiceAttemptBusy !== null}
+                                    onClick={() => void onPracticeAttempt(question, { selectedIndex: index })}
+                                  >
+                                    <span className={styles.practiceChoiceIndex}>
+                                      {String.fromCharCode(65 + index)}
+                                    </span>
+                                    <span>{choice}</span>
+                                    {isCorrectOne ? <span aria-hidden="true">✓</span> : null}
+                                    {chosenWrong ? <span aria-hidden="true">✗</span> : null}
+                                  </button>
+                                );
+                              })}
+                            </div>
+                            {revealed && latest ? (
+                              <p className={styles.selfCheckAnswer}>
+                                {latest.isCorrect
+                                  ? "回答正确。"
+                                  : `正确答案：${String.fromCharCode(65 + (latest.correctIndex ?? 0))}。`}
+                                {latest.explanation}
+                              </p>
+                            ) : null}
+                          </li>
+                        );
+                      }
+                      const revealed = Boolean(practiceRevealed[question.id]) || latest !== null;
+                      return (
+                        <li
+                          key={question.id}
+                          className={styles.selfCheckItem}
+                          data-mark={latest ? (latest.isCorrect ? "ok" : "shaky") : "idle"}
+                        >
+                          <p className={styles.selfCheckQuestion}>
+                            <span className={styles.selfCheckIndex}>
+                              {String(question.order).padStart(2, "0")}
+                            </span>
+                            {question.stem}
+                          </p>
+                          <div className={styles.selfCheckActions}>
+                            <button
+                              type="button"
+                              className={styles.ghostButton}
+                              onClick={() =>
+                                setPracticeRevealed((current) => ({
+                                  ...current,
+                                  [question.id]: !current[question.id],
+                                }))
+                              }
+                            >
+                              {revealed ? "收起参考答案" : "显示参考答案"}
+                            </button>
+                            <button
+                              type="button"
+                              className={styles.selfCheckMarkOk}
+                              aria-pressed={latest?.selfRating === "correct"}
+                              disabled={practiceAttemptBusy !== null}
+                              onClick={() => void onPracticeAttempt(question, { selfRating: "correct" })}
+                            >
+                              我答对了
+                            </button>
+                            <button
+                              type="button"
+                              className={styles.selfCheckMarkShaky}
+                              aria-pressed={latest?.selfRating === "wrong"}
+                              disabled={practiceAttemptBusy !== null}
+                              onClick={() => void onPracticeAttempt(question, { selfRating: "wrong" })}
+                            >
+                              我答错了
+                            </button>
+                          </div>
+                          {revealed ? (
+                            <p className={styles.selfCheckAnswer}>
+                              参考答案：{question.answerText}。{question.explanation}
+                            </p>
+                          ) : null}
+                        </li>
+                      );
+                    })}
+                  </ul>
+
+                  {practiceWrongOnly && visiblePracticeItems.length === 0 ? (
+                    <p className={styles.selfCheckNote}>错题已全部订正——切回「全部」巩固，或重新生成题组。</p>
+                  ) : null}
+
+                  {practiceNote ? (
+                    <p className={styles.selfCheckNote} role="status">
+                      {practiceNote}
+                    </p>
+                  ) : null}
+
+                  {practiceNotes.length > 0 ? (
+                    <ul className={styles.noteList} aria-label="练习说明">
+                      {practiceNotes.map((note, index) => (
+                        <li key={`${index}-${note}`}>{note}</li>
+                      ))}
+                    </ul>
+                  ) : null}
+
+                  <div className={styles.actionRow}>{practiceRegenerateControls()}</div>
                 </>
               )}
             </section>
@@ -1123,12 +1986,12 @@ export function ClewStudyRoom({ textbookId, chapter, selected }: ClewStudyRoomPr
           <p className={styles.chatHeadNote}>AI 讲解，可能出错；请对照教材原文与讲义核对</p>
 
           <div className={styles.chatList} ref={chatListRef} aria-live="polite">
-            {messages.length === 0 ? (
+            {renderedMessages.length === 0 ? (
               <p className={styles.chatEmpty}>
                 问 Clew：就这个知识点继续问，例如：「这一页的要点我记混了，怎么区分？」「为什么这里不能直接等同？」
               </p>
             ) : (
-              messages.map((message, index) => (
+              renderedMessages.map((message, index) => (
                 <div
                   key={`${index}-${message.createdAt}`}
                   className={message.role === "user" ? styles.chatRowUser : styles.chatRowAssistant}
@@ -1177,16 +2040,19 @@ export function ClewStudyRoom({ textbookId, chapter, selected }: ClewStudyRoomPr
             {streaming ? (
               <div className={styles.chatRowAssistant}>
                 <p className={styles.chatRole}>Clew 讲解</p>
-                <div className={styles.chatBubble}>
-                  {messages[messages.length - 1]?.role === "assistant" ? (
+                {messages[messages.length - 1]?.role === "assistant" ? (
+                  <div className={styles.chatBubble}>
                     <div className={styles.chatMarkdown}>
                       <ClewMarkdown markdown={messages[messages.length - 1].content} />
                     </div>
-                  ) : (
-                    "正在思考…"
-                  )}
-                  <span className={styles.streamCaret} aria-hidden="true" />
-                </div>
+                    <span className={styles.streamCaret} aria-hidden="true" />
+                  </div>
+                ) : (
+                  <p className={styles.chatStatusLine} role="status">
+                    <span className={styles.chatStatusBreath} aria-hidden="true" />
+                    {chatStatus ?? "正在思考…"}
+                  </p>
+                )}
               </div>
             ) : null}
           </div>
@@ -1206,6 +2072,109 @@ export function ClewStudyRoom({ textbookId, chapter, selected }: ClewStudyRoomPr
             </ul>
           ) : null}
 
+          {/* D10 跨 KP 跳转建议：确定性匹配本书其他知识点，命中才渲染 */}
+          {chatSuggestions.length > 0 && !streaming ? (
+            <div className={styles.chatSuggestRow} aria-label="相关知识点">
+              <span className={styles.chatSuggestLabel}>相关知识点</span>
+              {chatSuggestions.map((suggestion) => (
+                <Link key={suggestion.kpId} className={styles.chatSuggestChip} href={suggestion.href}>
+                  {suggestion.title} →
+                </Link>
+              ))}
+            </div>
+          ) : null}
+
+          {/* 讲解设置：单入口安静控制（对齐 ChatGPT/Claude composer 语言），选项收进弹出面板 */}
+          <div className={styles.chatSettingsWrap}>
+            {chatSettingsOpen ? (
+              <div className={styles.chatSettingsPanel} role="dialog" aria-label="讲解设置">
+                <p className={styles.chatSettingsHead}>讲解风格</p>
+                <div role="radiogroup" aria-label="讲解风格">
+                  {CLEW_LESSON_STYLES.map((style) => (
+                    <button
+                      key={style}
+                      type="button"
+                      role="radio"
+                      aria-checked={lessonStyle === style}
+                      className={lessonStyle === style ? styles.chatOptionActive : styles.chatOption}
+                      disabled={streaming}
+                      onClick={() => onSelectLessonStyle(style)}
+                    >
+                      <span className={styles.chatOptionName}>{CLEW_LESSON_STYLE_LABELS[style]}</span>
+                      {lessonStyle === style ? (
+                        <Check aria-hidden="true" size={14} strokeWidth={1.8} />
+                      ) : null}
+                    </button>
+                  ))}
+                </div>
+                <p className={styles.chatSettingsHead}>依据范围</p>
+                <div role="radiogroup" aria-label="依据范围">
+                  {CLEW_CHAT_SCOPES.map((scope) => (
+                    <button
+                      key={scope}
+                      type="button"
+                      role="radio"
+                      aria-checked={chatScope === scope}
+                      className={chatScope === scope ? styles.chatOptionActive : styles.chatOption}
+                      disabled={streaming}
+                      onClick={() => onSwitchChatScope(scope)}
+                    >
+                      <span className={styles.chatOptionName}>{CLEW_CHAT_SCOPE_LABELS[scope]}</span>
+                      {chatScope === scope ? (
+                        <Check aria-hidden="true" size={14} strokeWidth={1.8} />
+                      ) : null}
+                    </button>
+                  ))}
+                </div>
+                <p className={styles.chatSettingsHead}>思考强度</p>
+                <div role="radiogroup" aria-label="思考强度">
+                  <button
+                    type="button"
+                    role="radio"
+                    aria-checked={chatIntensity === "standard"}
+                    className={chatIntensity === "standard" ? styles.chatOptionActive : styles.chatOption}
+                    disabled={streaming}
+                    onClick={() => onSwitchChatIntensity("standard")}
+                  >
+                    <span className={styles.chatOptionName}>标准（快速回答）</span>
+                    {chatIntensity === "standard" ? (
+                      <Check aria-hidden="true" size={14} strokeWidth={1.8} />
+                    ) : null}
+                  </button>
+                  <button
+                    type="button"
+                    role="radio"
+                    aria-checked={chatIntensity === "deep"}
+                    className={chatIntensity === "deep" ? styles.chatOptionActive : styles.chatOption}
+                    disabled={streaming}
+                    onClick={() => onSwitchChatIntensity("deep")}
+                  >
+                    <span className={styles.chatOptionName}>深度思考（较慢 · Pro/Max · 计 2 次额度）</span>
+                    {chatIntensity === "deep" ? (
+                      <Check aria-hidden="true" size={14} strokeWidth={1.8} />
+                    ) : null}
+                  </button>
+                </div>
+                <p className={styles.chatSettingsHint}>
+                  风格、依据与思考强度对本轮之后的讲解生效；风格选择会记为账户默认。
+                </p>
+              </div>
+            ) : null}
+            <button
+              type="button"
+              className={styles.chatSettingsButton}
+              aria-haspopup="dialog"
+              aria-expanded={chatSettingsOpen}
+              onClick={() => setChatSettingsOpen((open) => !open)}
+            >
+              <SlidersHorizontal aria-hidden="true" size={13} strokeWidth={1.6} />
+              <span>
+                {CLEW_LESSON_STYLE_SHORT_LABELS[lessonStyle]} · {CLEW_CHAT_SCOPE_LABELS[chatScope]} ·{" "}
+                {chatIntensity === "deep" ? "深度" : "标准"}
+              </span>
+            </button>
+          </div>
+
           {/* Page Chat 固化：追问只对当前 KP 提问（服务端 chat-prompt 已注入该 KP 的标题/页码/说明），chip 负责显式标注 */}
           <button
             type="button"
@@ -1214,7 +2183,7 @@ export function ClewStudyRoom({ textbookId, chapter, selected }: ClewStudyRoomPr
             onClick={() => setChatChipOpen((open) => !open)}
             title={knowledgePoint.description}
           >
-            当前知识点：{knowledgePoint.title} · 第 {knowledgePoint.sourcePage} 页
+            当前知识点：{knowledgePoint.title} · {formatClewKpPageLabel(chapter.textbook.fileName, knowledgePoint.sourcePage, knowledgePoint.sourcePageAnnotated)}
           </button>
           {chatChipOpen ? (
             <p className={styles.chatContextDetail}>{knowledgePoint.description}</p>
