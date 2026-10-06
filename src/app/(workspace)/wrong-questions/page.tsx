@@ -1,6 +1,8 @@
 import type { Metadata } from "next";
 import { WrongQuestionCenter } from "@/components/wrong-question-center";
 import { publishedCourses } from "@/content/courses";
+import { listClewWrongItems } from "@/lib/clew/reviews";
+import { getClewSessionUser } from "@/lib/clew/session-user";
 
 export const metadata: Metadata = {
   title: "错题中心｜Ariadne",
@@ -9,6 +11,11 @@ export const metadata: Metadata = {
   robots: { index: false, follow: false },
 };
 
-export default function WrongQuestionsPage() {
-  return <WrongQuestionCenter courses={publishedCourses} />;
+/** ZCODE-M5：Clew 复习调度条目（自测「还需看」）服务端注入；未登录为空数组。 */
+export const dynamic = "force-dynamic";
+
+export default async function WrongQuestionsPage() {
+  const user = await getClewSessionUser();
+  const clewItems = user ? await listClewWrongItems(user.id) : [];
+  return <WrongQuestionCenter courses={publishedCourses} clewItems={clewItems} />;
 }

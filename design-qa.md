@@ -1362,3 +1362,67 @@ Nur 两条裁决：① 导航「学习主环」→「我的学习」（「学习
 - **官方更新节（最小诚实实现）**：复用 dualLens 双栏卡槽位为「官方更新」（试点课程/平台能力两条静态事实——均为真实状态陈述，无虚构）；动态数据源（更新日志/课程上新事件流）待 M5 或后续批次接真实数据。
 - **死代码清理**：reasoningSteps 常量、activeStep/caseCompleted state、continueReasoning/primaryActionLabel、36 块死 CSS（case/reasoning/stepRail/primaryAction/flowArrow 等）；右栏 progressNote 硬编码句「完成当前案例后开始」改挂真实 pendingReviewCount。`design-v3-density.ts` 契约同步：LEARN_PEER_CARD_IDS 从 5 项（case/reasoning/dual-lens/progress×2）收紧为 3 项（official-updates/progress×2，official-updates 复用 dual-lens 的 compact 隐藏位），密度断言语义不变（v3 测试原样通过）。
 - **验证**：`npm run test` **495/495**、`npm run check` exit 0（lint 0 error）；明暗 × 1440 + 390 走查——导航/h1 = 「我的学习」、无「当前案例/辨证推理流程/脾失健运」残留、官方更新节在位、peer 卡 3（390 compact 1）、溢出 0、console 0；截图 `v4ml-learn-light-1440.png`。全仓「学习主环」字样清零（代码面）。
+
+## ZCODE-M5 —「练/复」功能面：FSRS 复习调度 + Clew 线聚合 + 复习提醒（2026-10-05，Zcode 执行）
+
+任务书 `docs/ZCODE-M5-review-scheduling.md`（M5 范围内真相源）。M5-A（服务端与聚合）+ M5-B（消费面）两段全部完成；官方更新节动态数据源按任务书 §3.5 明确不做。
+
+### 落地内容（M5-A 服务端与聚合）
+
+- **Prisma `ClewReviewItem`**（migration `20261005043449_zcode_m5_clew_review_item`，一张表）：挂 userId、随 KP 级联删除；`@@unique([userId, kpId, sourceKind])` + `@@index([userId, dueAt])`；`sourceKind` M5 唯一取值 `self-check-shaky`。FSRS 状态映射：stability/difficulty=S/D、reviewCount=reps、state 由 reviewCount 推导（0=new）——`fsrs.ts`（Tier 2）**零改动**，只消费纯函数（测试用 `fsrsScheduleReview` 直算对照作 before/after 证据）。
+- **写入点**（`src/lib/clew/self-check.ts`）：自测「还需看」→ `upsertClewReviewFromSelfCheck`——首见建条目（new 态、`dueAt=now` 即「今日到期」）；再见（新讲义版本/新增 shaky 题）按 `again` 前移；**同版本重复提交不动 FSRS 状态**（advance 以「本次是否产生新 shaky 事件」判定，幂等）。**profile 过滤**：`LOOP_PROFILES[kp.loopProfileId].fsrsEnabled === false`（exploration）不建条目——`fsrsEnabled` 字段的首次真实消费。wrong-question-added 事件语义零变化（回归 4 项全过）。
+- **API**（thin adapter，服务在 `src/lib/clew/reviews.ts`）：`GET /api/clew/reviews`（`?due=1` 今日到期 / `?kp=ID` 单点状态）、`PATCH /api/clew/reviews/[id]`（`{rating: again|hard|good}` → `fsrsScheduleReview` 前移 + `dueAt` 重排）。鉴权沿用 `getClewSessionUser`；跨账号 404 不泄漏存在性。
+- **统一事件**：`review-scheduled`（建条目时一次，sourceKey `clew-review:{kpId}:{sourceKind}:scheduled`）与 `review-completed`（每轮打分，sourceKey 带轮次 `…:rated:{reps}`）入 `UnifiedLearningEvent`；学习动态文案「安排了一次复习 / 完成了一次复习打分」（`unified-state.ts`）。`LearningEventType`/`UnifiedEventPayload` 向后兼容扩展（Tier 4）。
+- **错题中心 Clew 线**（Tier 2 `wrong-questions.ts`）：`WrongQuestionCenterData` 增 `clewItems: ClewWrongItem[]`；`selectWrongQuestionCenter` 可选第五参注入（默认空数组，既有调用零破坏）；`useWrongQuestionCenter` 透传。UI 新增第五 tab「Clew 教材」（已到期在前、dueAt 升序），行 = KP 标题 + 到期信息（已到期/即将到期 7 天内/下次复习日期）+ 教材 · 复习/遗忘计数 · 最近自测 + 重学链接；`/wrong-questions` 页改 async 服务端注入（未登录空数组）。
+
+### 落地内容（M5-B 消费面）
+
+- **「我的学习 · 今日复习」**（Free Change Zone）：主列「学习动态」之上新 section（`id="today-reviews"`）；数据 = 服务端 `selectClewTodayReviews`（已到期 + 7 天内即将到期，`status` 服务端定死避免水合时钟漂移；`dueCount` 为全部到期数不受行数截断影响）；行 = 状态标签（已到期待复习=朱砂描边 / 即将到期）+ KP 标题 + 教材 · 复习/遗忘计数 + 重学链接；未登录不渲染、登录空数据诚实空态「今天没有到期复习」。右栏「错题待复习」计数并入：`totalWrong + pendingReviewCount + clewDueCount`，小字拆分来源（`· N 项 Clew 到期`）。
+- **复习打分三键**（Clew 学习页自测面板底部）：本 KP 有到期复习条目时出现「再来一次 / 有点难 / 记住了」→ PATCH；成功后行内确认（含下次复习时间）+ 三键收起为排期注（「复习排期中：下次 …」）；自测提交后按服务端 `review` 四态给出诚实提示（created/advanced/unchanged/skipped-profile——exploration 明说「当前闭环不进复习调度」），created/advanced 后自动刷新本 KP 条目。
+- **脊柱「复」节点点亮**：unavailable → 真实动作（跳 `/learn#today-reviews` 聚合面）；有复习条目时提示区分「已到期可打分回流 / 下次复习日期」。
+
+### 验证记录
+
+- [x] `npm run test` **501/501**（基线 495 + 新增 `tests/clew-reviews.test.ts` 6 项：建条目/幂等/前移与 fsrs.ts 直算一致/exploration 不建条目/打分前移+事件+到期消失/属主校验；既有 `clew-self-check.test.ts` 5 项同步收紧含 review-scheduled 计数）
+- [x] `npm run check` exit 0（lint 0 error）；`npx prisma migrate status` 干净（15 migrations，schema up to date）
+- [x] **真实链路走查**（v4qa 账号 + v4qa-textbook-1/v4qa-kp-01，playwright-core + 系统 Chrome）：自测标 1「还需看」+2「会了」→ 提示「已把 1 道『还需看』记入学习动态，并安排复习（今日到期…）」+ 三键出现 → 脊柱「复」跳 `/learn#today-reviews` → 今日复习 1 行「已到期待复习 · 离散型定量变量 · 《卫生统计学练习册（v4 QA）》 · 重学」+ 右栏「1 题 · 0 道错题 · 0 项复习计划 · 1 项 Clew 到期」+ 动态「安排了一次复习」→ 重学回 KP → 打「记住了」→ 行内确认「已记录：下次复习 2026/10/7…」三键收起 → /learn 复核行变「即将到期 · 复习 1 次」、Clew 到期清零、动态「完成了一次复习打分」→ 错题中心「Clew 教材」tab 行含到期信息/复习计数/重学入口（两次连测）
+- [x] 明暗 × 1440/390：learn 今日复习面、study 打分行/排期注 9 截图；横向溢出 0；**热态 console 0**（首轮 3 处失败均为已记录 dev 冷编译竞态〔design-qa R1 已知①：manifest 500/SyntaxError，仅 dev、重试即好〕，热 server 复测 5 载 0 console 0 pageerror 全过）
+- [x] 既有行为回归：wrong-question-added 幂等语义不变（测试锁定）；exploration KP 产生事件但不产生条目；未登录全部面不渲染复习区
+- [x] 截图 9 张：`zcode-m5-{rate-row,learn-today,rated,learn-after,wrong-clew}-light-1440`、`zcode-m5-{learn-today-dark,study-schedule-dark}-1440`、`zcode-m5-{learn-today,study}-light-390`
+- [x] 走查数据注：dev.db 留存 v4qa-kp-01 复习条目（reviewCount=1、dueAt 2026-10-07）与 3 条事件（wrong-question-added/review-scheduled/review-completed）作 QA 证据
+- [x] 文档更新：本节 + `docs/PROJECT_STATE.md` + `docs/ZCODE-M5-review-scheduling.md` 状态行 + `AGENTS.md` 进度注
+
+### 最终门槛
+
+- [x] lint 0 error + tsc + check exit 0；test 501/501
+- [x] 一张新表 migration 干净；`fsrs.ts` 零改动（打分/前移与纯函数直算一致由测试锁定）
+- [x] 真实链路（自测→今日复习→重学→打分→顺延）+ 错题中心 Clew 线 + 明暗 × 1440/390 热态 console 0
+
+## 预验收复核（Hermes，2026-10-05）· ZCODE-M5「练/复」+ 「我的学习」定位收紧
+
+独立复核（自有脚本 `/tmp/hermes-v4-qa/batch5-*.mjs`；QA 账号 m2qa + 真实 DB + 真实模型；走查前重启 dev + 预热；不改用 Zcode 走查脚本）。
+
+**门槛（独立复跑）**：`npm run test` **501/501**；`npm run check` exit 0；`prisma migrate status` 干净（15 migrations，新表 `20261005043449`）。
+
+**代码面核对**：`ClewReviewItem`（userId/KP 双级联、唯一键、dueAt 索引）✓；`reviews.ts`（new 态重建等价 reviewCount=0；create 即 S=D=0、dueAt=now；scheduledEvent 仅建条目时一次；advance 由「是否产生新 shaky 事件」判定；`fsrsEnabled=false` 跳过；属主 404；dueCount 独立 count 不受行数截断；status 服务端定死）✓；self-check 四态返回（created/advanced/unchanged/skipped-profile）✓；两条 thin adapter（鉴权、参数校验、limit 夹取）✓；`wrong-questions.ts` 第五参默认空数组零破坏 + 排序（到期在前→dueAt→轮数→最近）✓；统一事件类型/文案扩展 ✓；**`src/lib/fsrs.ts` Tier 2 零改动**（git diff 空）✓。
+
+**真实链路（m2qa，真实模型与 DB）**
+- KP-A：自测 1「还需看」+2「会了」→ 自动提交 → 提示「已把 1 道『还需看』记入学习动态，并安排复习（今日到期…）」；条目 dueAt=now、reviewCount=0；事件 review-scheduled ×1 + wrong-question-added ×1 ✓
+- 脊柱「复」节点 hint 变「已到期待复习」→ 点击跳 `/learn#today-reviews` ✓
+- `/learn`：今日复习区在主列「学习动态」之上（实测 y 378 < 521）；「1 项已到期」chip + 行（已到期待复习 / 望闻问切互相印证 / 教材 · 复习 0 次 / 重学）；重学链接带 `?kp=`；右栏「· 1 项 Clew 到期」✓
+- 重学回流 → 三键 → 「记住了」→ 行内「已记录：下次复习 2026/10/7 13:22:29…」+ 三键收起为「复习排期中：下次 …」；reviewCount=1、dueAt 顺延；`/learn` 行变「即将到期 · 复习 1 次」、chip 与右栏计数清零 ✓
+- 错题中心：第五 tab「Clew 教材」+「Clew 教材 · 待复习知识点」+ 行（KP / 复习 1 次 / 重学）✓
+- KP-B：自测 → **created 路径实测**（同款提示 + 新条目 dueAt=now）✓；「有点难」打分 → reviewCount=1、dueAt=+1 天 ✓
+- **幂等**：KP-A 同版本/同题全量重新提交 → 「已记录；本次提交没有改变复习安排。」+ reviewCount/dueAt 逐字节不变；事件表核对：同 sourceKey 无重复写入（该 KP 旧版本既有事件未被重写）✓
+- **FSRS 独立复算**：以 Tier 2 纯函数 `fsrsScheduleReview` 独立计算两次打分的期望值，与 DB 实测**逐位一致**——good：S 2.3274 / D 1 / reps 1 / dueAt `2026-10-07T05:22:29.531Z`；hard：S 0.8765 / D 1 / reps 1 / dueAt `2026-10-06T05:23:40.003Z` ✓
+- **边界**：PATCH 不存在条目 404、非法 rating 400、未登录 GET 401、未登录 `/learn` 不渲染复习区 ✓；wrong-question-added 既有幂等语义不变 ✓
+
+**「我的学习」定位收紧（同树上一批，随手复核）**：导航与 h1 =「我的学习」+ 副句；主列无「当前案例 / 辨证推理流程」残留；「官方更新」节在位；学习动态可见 M5 新事件文案（安排了一次复习等）；Quiet 无溢出（截图 `m5-learn-today-light.png`）✓
+
+**明暗/断点**：`/learn`、学习页、错题中心 × {1440 暗, 390 亮} 0 溢出 / 0 pageerror；console 仅我方负例自测产生的 404/400 各 1 条（已溯源为脚本自身请求）；暗色审计 r2 + r3 独立复跑 **0 低对比** ✓
+
+**复核侧修正记录（非产品问题）**：首轮脚本 1 次崩溃（`reload` 与客户端导航竞态）+ 3 处 ✗（幂等步骤未标记全部题、KP-B 三键断言时机、evaluate 作用域）——修正后全过。
+
+**边界（未独立覆盖）**：advanced 活体路径（需讲义换版本，隔离 SQLite 测试覆盖）；exploration 活体（m2qa 无该 profile 数据，隔离测试覆盖）；官方课 KP 的 FSRS 按任务书 §3.5 不在本批。
+
+**结论**：ZCODE-M5 M5-A/B —— **预验收通过（2026-10-05）**；未提交待提交审阅。

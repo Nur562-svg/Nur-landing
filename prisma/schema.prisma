@@ -56,6 +56,8 @@ model User {
   clewWorkshops                ClewWorkshop[]
   // ZCODE-M2: Clew 学习会话（Loop Profile 走环状态，跨页面/跨设备续存）
   clewStudySessions            ClewStudySession[]
+  // ZCODE-M5: Clew FSRS 复习调度条目（自测「还需看」进入调度；私有挂 userId）
+  clewReviewItems              ClewReviewItem[]
 }
 
 /// M4: 会员订单（支付抽象层持久化）。provider 切换不影响已存订单。
@@ -154,6 +156,8 @@ model ClewKnowledgePoint {
   highlights ClewHighlight[]
   // ZCODE-M2: 知识点-证据绑定（知纲模式）
   evidenceLinks ClewKnowledgePointEvidence[]
+  // ZCODE-M5: 该知识点的 FSRS 复习调度条目（自测「还需看」）
+  reviewItems ClewReviewItem[]
 
   @@index([chapterId, order])
   // Table name kept as pre-migration HiDocKnowledgePoint to avoid DB drift
@@ -379,6 +383,36 @@ model ClewStudySession {
   @@index([userId, status])
   @@index([userId, kpId, status])
   @@index([userId, textbookId])
+}
+
+/// ZCODE-M5: Clew FSRS 复习调度条目（私有挂 userId，随知识点级联删除）。
+/// 写入点 = 自测标记「还需看」（sourceKind 固定 "self-check-shaky"，后续可扩 "chat-flag"）；
+/// profile fsrsEnabled=false 的知识点不建条目（exploration 不进调度）。
+/// FSRS 状态映射：stability/difficulty 即 S/D；reviewCount=reps；state 由 reviewCount 推导（0=new）。
+model ClewReviewItem {
+  id     String @id @default(cuid())
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  kpId String
+  kp   ClewKnowledgePoint @relation(fields: [kpId], references: [id], onDelete: Cascade)
+
+  // 冗余存储便查询（回流入口拼 URL 用）
+  textbookId String
+  // "self-check-shaky"（M5 只接自测）
+  sourceKind  String
+  stability   Float
+  difficulty  Float
+  lastReviewedAt DateTime
+  dueAt       DateTime
+  reviewCount Int      @default(0)
+  lapses      Int      @default(0)
+  suspended   Boolean  @default(false)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@unique([userId, kpId, sourceKind])
+  @@index([userId, dueAt])
 }
 
 /// ZCODE-M2 Phase 2/4: 教材编译缓存（book-to-skill 预编译模式）。

@@ -1244,6 +1244,119 @@
   }
 }
 
+/* ---------------- ZCODE-M5：「今日复习」（Clew FSRS 到期聚合） ---------------- */
+
+.todayReviews {
+  margin-top: 33px;
+}
+
+.todayReviews h2 {
+  font-family: var(--v2-font-display);
+  font-size: var(--v3-title-size);
+  font-weight: 700;
+  margin: 0;
+}
+
+.todayReviewsHead {
+  align-items: baseline;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 16px;
+  justify-content: space-between;
+  margin-bottom: 12px;
+}
+
+.todayReviewsCount {
+  color: var(--v3-cinnabar);
+  font-family: var(--v2-font-sans);
+  font-size: 12px;
+}
+
+.todayReviewsList {
+  border-top: 1px solid var(--line);
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.todayReviewRow {
+  align-items: center;
+  border-bottom: 1px solid var(--line-soft);
+  color: var(--ink);
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 12px;
+  padding: 10px 2px;
+  text-decoration: none;
+  width: 100%;
+}
+
+a.todayReviewRow:hover .todayReviewTitle {
+  text-decoration: underline;
+}
+
+.todayReviewTag {
+  border: 1px solid var(--line);
+  color: var(--muted);
+  flex: none;
+  font-family: var(--v2-font-sans);
+  font-size: 11px;
+  letter-spacing: 0.04em;
+  line-height: 1.4;
+  padding: 1px 8px;
+}
+
+.todayReviewTag[data-status="due"] {
+  color: var(--v3-cinnabar);
+  border-color: color-mix(in srgb, var(--v3-cinnabar) 45%, transparent);
+}
+
+.todayReviewBody {
+  display: flex;
+  flex: 1 1 240px;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.todayReviewTitle {
+  font-family: var(--v2-font-sans);
+  font-size: 14px;
+  font-weight: 600;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.todayReviewMeta {
+  color: var(--muted);
+  font-family: var(--v2-font-sans);
+  font-size: 12px;
+  line-height: 1.5;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.todayReviewAction {
+  align-items: center;
+  color: var(--v3-cinnabar);
+  display: inline-flex;
+  flex: none;
+  font-family: var(--v2-font-sans);
+  font-size: 13px;
+  gap: 4px;
+}
+
+.todayReviewsEmpty {
+  color: var(--muted);
+  font-family: var(--v2-font-sans);
+  font-size: var(--v3-body-size);
+  line-height: var(--v3-body-leading);
+  margin: 0;
+  padding: 14px 0 4px;
+}
+
 /* ---------------- ZCODE-M3 Phase 2：学习动态（统一事件流） ---------------- */
 
 .unifiedFeed {

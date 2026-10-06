@@ -14,6 +14,7 @@ import {
   X,
 } from "lucide-react";
 import type { CourseDefinition, FsrsCriterionState, LearnerAttemptRecord } from "@/types/learning";
+import type { ClewTodayReviewItem } from "@/types/clew";
 import type { UnifiedContinueTarget, UnifiedFeedItem } from "@/types/unified-learning";
 import { useLearningMemory } from "@/hooks/use-learning-memory";
 import { useWrongQuestionCenter } from "@/hooks/use-wrong-questions";
@@ -138,6 +139,10 @@ type LearningDashboardProps = {
   /** ZCODE-M3：学习动态（服务端解析好的展示项；未登录为空数组，不渲染区块）。 */
   unifiedFeed?: readonly UnifiedFeedItem[];
   continueTarget?: UnifiedContinueTarget | null;
+  /** ZCODE-M5：「今日复习」行（Clew FSRS 到期聚合，服务端注入；未登录 undefined 不渲染，空数组渲染诚实空态）。 */
+  todayReviews?: readonly ClewTodayReviewItem[];
+  /** ZCODE-M5：Clew 今日到期数（右栏「错题待复习」计数并入；未登录 0）。 */
+  clewDueCount?: number;
 };
 
 /** 相对时间（刚刚 / N 分钟前 / N 小时前 / N 天前）。 */
@@ -160,6 +165,8 @@ export function LearningDashboard({
   courses,
   unifiedFeed,
   continueTarget,
+  todayReviews,
+  clewDueCount = 0,
 }: LearningDashboardProps) {
   const { user, loading: sessionLoading, logout } = useSession();
   useNurAgentDockProps(PLATFORM_DOCK_PROPS);
@@ -673,6 +680,48 @@ export function LearningDashboard({
             你的学习状态与官方更新都在这里；学习本身在官方课程、Clew 与题库进行。
           </p>
 
+          {todayReviews ? (
+            <section
+              className={styles.todayReviews}
+              id="today-reviews"
+              aria-labelledby="today-reviews-title"
+            >
+              <div className={styles.todayReviewsHead}>
+                <h2 id="today-reviews-title">今日复习</h2>
+                {clewDueCount > 0 ? (
+                  <span className={styles.todayReviewsCount}>{clewDueCount} 项已到期</span>
+                ) : null}
+              </div>
+              {todayReviews.length === 0 ? (
+                <p className={styles.todayReviewsEmpty}>
+                  今天没有到期复习——Clew 自测标记「还需看」的知识点会按遗忘曲线排到这里。
+                </p>
+              ) : (
+                <ul className={styles.todayReviewsList}>
+                  {todayReviews.map((item) => (
+                    <li key={item.id}>
+                      <Link className={styles.todayReviewRow} href={item.href}>
+                        <span className={styles.todayReviewTag} data-status={item.status}>
+                          {item.status === "due" ? "已到期待复习" : "即将到期"}
+                        </span>
+                        <span className={styles.todayReviewBody}>
+                          <span className={styles.todayReviewTitle}>{item.kpTitle}</span>
+                          <span className={styles.todayReviewMeta}>
+                            《{item.textbookTitle}》 · 复习 {item.reviewCount} 次
+                            {item.lapses > 0 ? ` · 遗忘 ${item.lapses} 次` : ""}
+                          </span>
+                        </span>
+                        <span className={styles.todayReviewAction}>
+                          重学
+                          <ArrowRight aria-hidden="true" size={15} strokeWidth={1.6} />
+                        </span>
+                      </Link>
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </section>
+          ) : null}
 
           {unifiedFeed ? (
             <section className={styles.unifiedFeed} id="unified-feed" aria-labelledby="unified-feed-title">
@@ -761,10 +810,11 @@ export function LearningDashboard({
             <div>
               <p>
                 <strong>错题待复习</strong>
-                <span><b>{wrongQuestionData.totalWrong + pendingReviewCount}</b> 题</span>
+                <span><b>{wrongQuestionData.totalWrong + pendingReviewCount + clewDueCount}</b> 题</span>
               </p>
               <small>
                 {wrongQuestionData.totalWrong} 道错题 · {pendingReviewCount} 项复习计划
+                {clewDueCount > 0 ? ` · ${clewDueCount} 项 Clew 到期` : ""}
               </small>
             </div>
           </Link>

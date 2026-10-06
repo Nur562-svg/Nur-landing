@@ -5,6 +5,7 @@ import type { CourseDefinition } from "@/types/learning";
 import type { QBAttemptRecord } from "@/types/question-bank";
 import {
   selectWrongQuestionCenter,
+  type ClewWrongItem,
   type WrongQuestionCenterData,
 } from "@/lib/wrong-questions";
 import { parseLearningMemoryJson } from "@/lib/learning-memory";
@@ -29,6 +30,7 @@ const EMPTY_DATA: WrongQuestionCenterData = {
   fsrsHighRisk: [],
   hasFsrsMemory: false,
   reviewProposals: [],
+  clewItems: [],
 };
 
 /** 订阅 localStorage 变化（qb-attempts + learning-memory + mock-exam + storage 事件） */
@@ -90,9 +92,11 @@ function parseAttemptsSnapshot(snapshot: string | null): Record<string, QBAttemp
 /**
  * 错题中心 hook：订阅 localStorage 变化并返回聚合数据。
  * 每次 localStorage 变化时重新计算客观错题、结构薄弱点与 FSRS 高危准则。
+ * clewItems（ZCODE-M5）为服务端注入的 Clew 复习调度条目，直接透传给聚合器。
  */
 export function useWrongQuestionCenter(
   courses: readonly CourseDefinition[],
+  clewItems: readonly ClewWrongItem[] = [],
 ): WrongQuestionCenterData {
   // mounted 检查：确保 SSR 和客户端 hydration 初始渲染返回相同空数据，
   // 避免 localStorage 差异导致的 hydration mismatch。
@@ -125,6 +129,6 @@ export function useWrongQuestionCenter(
     const attempts = parseAttemptsSnapshot(snapshot);
     const memoryState = parseLearningMemoryJson(memorySnapshot);
     const privateAttempts = parsePrivateObjectiveAttemptsJson(privateSnapshot);
-    return selectWrongQuestionCenter(courses, attempts, memoryState, privateAttempts);
-  }, [mounted, courses, snapshot, memorySnapshot, privateSnapshot]);
+    return selectWrongQuestionCenter(courses, attempts, memoryState, privateAttempts, clewItems);
+  }, [mounted, courses, snapshot, memorySnapshot, privateSnapshot, clewItems]);
 }

@@ -80,9 +80,13 @@ describe("Clew 自测提交（体验补丁）", async () => {
         { index: 3, shaky: true },
       ],
     });
-    assert.deepEqual(result, { ok: true, recorded: 2 });
+    // ZCODE-M5：skill-application（fsrsEnabled=true）首见同时建复习条目
+    assert.deepEqual(result, { ok: true, recorded: 2, review: "created" });
 
-    const rows = await prisma.unifiedLearningEvent.findMany({ orderBy: { sourceKey: "asc" } });
+    const rows = await prisma.unifiedLearningEvent.findMany({
+      where: { eventType: "wrong-question-added" },
+      orderBy: { sourceKey: "asc" },
+    });
     assert.equal(rows.length, 2);
     assert.equal(rows[0].eventType, "wrong-question-added");
     assert.equal(rows[0].contentType, "clew-kp");
@@ -107,7 +111,7 @@ describe("Clew 自测提交（体验补丁）", async () => {
         { index: 3, shaky: true },
       ],
     });
-    assert.equal(await prisma.unifiedLearningEvent.count(), 2);
+    assert.equal(await prisma.unifiedLearningEvent.count(), 3);
   });
 
   it("重新生成讲义（新版本）后重新计", async () => {
@@ -118,7 +122,7 @@ describe("Clew 自测提交（体验补丁）", async () => {
       items: [{ index: 1, shaky: true }],
     });
     assert.equal(result.ok, true);
-    assert.equal(await prisma.unifiedLearningEvent.count(), 3);
+    assert.equal(await prisma.unifiedLearningEvent.count(), 4);
   });
 
   it("属主校验：他人提交返回 not-found，且不写事件", async () => {

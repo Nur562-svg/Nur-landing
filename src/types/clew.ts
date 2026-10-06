@@ -233,6 +233,8 @@ export type ClewKnowledgePointStudyView = {
   lesson: ClewLessonView | null;
   messages: ClewChatMessage[];
   highlights: ClewHighlightView[];
+  /** ZCODE-M5：该知识点的 FSRS 复习调度条目（自测「还需看」产生；无则 null）。 */
+  reviewItem: ClewReviewItemStudyView | null;
 };
 
 /* ---------------- M5：划重点/批注 + 学霸笔记 ---------------- */
@@ -412,3 +414,42 @@ export type ClewCompileEvent =
       notes: string[];
     }
   | { type: "error"; code: ClewErrorCode; error: string };
+
+/* ---------------- ZCODE-M5：FSRS 复习调度 ---------------- */
+
+/** 复习条目 API 视图（GET /api/clew/reviews 与 PATCH 打分结果共用；全部字段可序列化）。 */
+export type ClewReviewItemView = {
+  id: string;
+  kpId: string;
+  kpTitle: string;
+  textbookId: string;
+  textbookTitle: string;
+  chapterOrder: number;
+  /** 学习页深链（服务端拼好，客户端直接用）。 */
+  href: string;
+  sourceKind: string;
+  stability: number;
+  difficulty: number;
+  lastReviewedAt: string;
+  /** 下次到期（ISO）。 */
+  dueAt: string;
+  reviewCount: number;
+  lapses: number;
+  suspended: boolean;
+};
+
+/** 学习页内嵌的轻量复习状态（打分三键据此渲染）。 */
+export type ClewReviewItemStudyView = {
+  id: string;
+  dueAt: string;
+  /** 服务端计算的「已到期」标记（避免客户端时钟/SSR 漂移）。 */
+  due: boolean;
+  reviewCount: number;
+  lapses: number;
+};
+
+/** 「我的学习 · 今日复习」行（status 服务端定死：due=已到期 / upcoming=7 天内即将到期）。 */
+export type ClewTodayReviewItem = ClewReviewItemView & {
+  status: "due" | "upcoming";
+};
+

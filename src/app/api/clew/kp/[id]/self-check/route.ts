@@ -5,7 +5,8 @@ import { getClewSessionUser } from "@/lib/clew/session-user";
 
 /**
  * Clew 自测提交（「评」环节，thin adapter）：POST { lessonGeneratedAt?, items: [{index, shaky}] }。
- * 标记「还需看」的题目以 wrong-question-added 事件写入统一学习事件流（幂等）。
+ * 标记「还需看」的题目以 wrong-question-added 事件写入统一学习事件流（幂等），
+ * 并按 profile 进入 FSRS 复习调度（ZCODE-M5；返回 review 结果供学习页提示）。
  * 业务逻辑在 src/lib/clew/self-check.ts。
  */
 
@@ -63,5 +64,5 @@ export async function POST(
   if (!result.ok) {
     return clewFailure(result.status, result.code, result.message);
   }
-  return NextResponse.json({ ok: true, recorded: result.recorded });
+  return NextResponse.json({ ok: true, recorded: result.recorded, review: result.review });
 }

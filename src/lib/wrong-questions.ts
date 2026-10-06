@@ -170,6 +170,27 @@ export type FsrsHighRiskItem = {
   hasLesson: boolean;
 };
 
+/**
+ * ZCODE-M5：错题中心 Clew 线条目（自测「还需看」进入 FSRS 调度的知识点）。
+ * 服务端（src/lib/clew/reviews.ts 的 listClewWrongItems）按此形状产出，结构化注入；本模块不查库。
+ */
+export type ClewWrongItem = {
+  /** ClewReviewItem id（打分 PATCH 用）。 */
+  id: string;
+  kpId: string;
+  kpTitle: string;
+  textbookTitle: string;
+  /** "self-check-shaky"（自测标记）| "practice-wrong"（练习错答，ZCODE-M6 起）。 */
+  sourceKind: string;
+  /** 学习页深链（服务端拼好）。 */
+  href: string;
+  /** 下次到期（ISO）。 */
+  dueAt: string;
+  reviewCount: number;
+  lapses: number;
+  lastReviewedAt: string;
+};
+
 /** 错题中心汇总数据。 */
 export type WrongQuestionCenterData = {
   wrongQuestions: readonly WrongQuestionSummary[];
@@ -190,6 +211,8 @@ export type WrongQuestionCenterData = {
     isPrivate: boolean;
     label: string;
   }>;
+  /** ZCODE-M5：Clew 教材线（自测「还需看」进入 FSRS 调度的知识点；服务端注入，默认空）。 */
+  clewItems: readonly ClewWrongItem[];
 };
 
 function computeWrongQBAttempts(
@@ -375,12 +398,14 @@ export function selectPrivateWrongQuestions(
  * 在组件中通过 useMemo 调用，依赖 localStorage 快照。
  * memoryState 为可选第三参：客观错题聚合与原有行为完全一致。
  * privateAttempts 为可选第四参：私人导入单选/填空错答，不查注册课。
+ * clewItems 为可选第五参（ZCODE-M5）：服务端注入的 Clew 复习调度条目，默认空数组，既有调用零破坏。
  */
 export function selectWrongQuestionCenter(
   courses: readonly CourseDefinition[],
   attemptsSnapshot: Record<string, QBAttemptRecord[]>,
   memoryState?: LearningMemoryState | null,
   privateAttempts: Record<string, PrivateObjectiveAttemptRecord[]> = {},
+  clewItems: readonly ClewWrongItem[] = [],
 ): WrongQuestionCenterData {
   const wrongQB = computeWrongQBAttempts(attemptsSnapshot);
   const wrongMock = computeWrongMockExamAnswers(courses);
@@ -550,5 +575,17 @@ export function selectWrongQuestionCenter(
       && Object.keys(memoryState.fsrsState.criteria).length > 0,
     ),
     reviewProposals,
+    // ZCODE-M5：Clew 线排序——已到期在前（dueAt 升序），再按复习轮数降序
+    clewItems: [...clewItems].sort((a, b) => {
+      const aDue = Date.parse(a.dueAt);
+      const bDue = Date.parse(b.dueAt);
+      const now = Date.now();
+      const aOverdue = aDue <= now;
+      const bOverdue = bDue <= now;
+      if (aOverdue !== bOverdue) return aOverdue ? -1 : 1;
+      if (aDue !== bDue) return aDue - bDue;
+      if (b.reviewCount !== a.reviewCount) return b.reviewCount - a.reviewCount;
+      return Date.parse(b.lastReviewedAt) - Date.parse(a.lastReviewedAt);
+    }),
   };
 }

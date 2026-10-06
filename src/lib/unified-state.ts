@@ -84,6 +84,10 @@ function eventSummary(eventType: string, stage: string): string {
       return "完成学习";
     case "wrong-question-added":
       return "自测标记了需要再看的问题";
+    case "review-scheduled":
+      return "安排了一次复习";
+    case "review-completed":
+      return "完成了一次复习打分";
     default:
       return eventType;
   }

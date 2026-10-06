@@ -10,6 +10,7 @@ import {
   selectWeakKnowledgePointHref,
   selectWrongQuestionRedoHref,
   selectWrongQuestionRedoLabel,
+  type ClewWrongItem,
   type FsrsHighRiskItem,
   type StructuralWeakness,
 } from "@/lib/wrong-questions";
@@ -21,9 +22,11 @@ import { PLATFORM_DOCK_PROPS, useNurAgentDockProps } from "@/lib/agent-dock-prop
 
 type WrongQuestionCenterProps = {
   courses: readonly CourseDefinition[];
+  /** ZCODE-M5：服务端注入的 Clew 复习调度条目（未登录为空数组）。 */
+  clewItems?: readonly ClewWrongItem[];
 };
 
-type CenterTab = "objective" | "structural" | "fsrs" | "review";
+type CenterTab = "objective" | "structural" | "fsrs" | "review" | "clew";
 
 const FSRS_STATE_LABELS: Record<FsrsCriterionState["state"], string> = {
   new: "未开始",
@@ -79,8 +82,18 @@ function fsrsEntry(item: FsrsHighRiskItem): { href: string; label: string } {
   return { href: `/courses/${item.courseSlug}/question-bank`, label: "去做题" };
 }
 
-export function WrongQuestionCenter({ courses }: WrongQuestionCenterProps) {
-  const data = useWrongQuestionCenter(courses);
+/** Clew 线条目到期信息：已到期 / 即将到期（7 天内）/ 常规排期。 */
+function clewDueLabel(item: ClewWrongItem): string {
+  const due = Date.parse(item.dueAt);
+  if (Number.isNaN(due)) return "排期未知";
+  const diffDays = (due - Date.now()) / 86_400_000;
+  if (diffDays <= 0) return "已到期待复习";
+  if (diffDays <= 7) return `即将到期（${formatDate(item.dueAt)}）`;
+  return `下次复习 ${formatDate(item.dueAt)}`;
+}
+
+export function WrongQuestionCenter({ courses, clewItems = [] }: WrongQuestionCenterProps) {
+  const data = useWrongQuestionCenter(courses, clewItems);
   useNurAgentDockProps(PLATFORM_DOCK_PROPS);
   const [activeTab, setActiveTab] = useState<CenterTab>("objective");
 
@@ -89,6 +102,7 @@ export function WrongQuestionCenter({ courses }: WrongQuestionCenterProps) {
     { id: "structural", label: "结构薄弱", count: data.structuralWeaknesses.length },
     { id: "fsrs", label: "即将遗忘", count: data.fsrsHighRisk.length },
     { id: "review", label: "复习提案", count: data.reviewProposals.length },
+    { id: "clew", label: "Clew 教材", count: data.clewItems.length },
   ];
 
   return (
@@ -99,7 +113,7 @@ export function WrongQuestionCenter({ courses }: WrongQuestionCenterProps) {
         </Link>
         <h1 className={styles.title}>错题中心 <SyncStatusBadge /></h1>
         <p className={styles.subtitle}>
-          汇总题库与模考的客观错题、写作与案例确认记录中的结构薄弱点、临遗忘的记忆准则，以及私人练习与确认后产生的复习提案。
+          汇总题库与模考的客观错题、写作与案例确认记录中的结构薄弱点、临遗忘的记忆准则、私人练习与确认后产生的复习提案，以及 Clew 教材自测「还需看」的复习排期。
         </p>
       </header>
 
@@ -435,6 +449,62 @@ export function WrongQuestionCenter({ courses }: WrongQuestionCenterProps) {
                     </Link>
                   );
                 })}
+              </div>
+            )}
+          </section>
+        </div>
+      ) : null}
+      {activeTab === "clew" ? (
+        <div className={styles.tabPanel} role="tabpanel">
+          <section>
+            <div className={styles.sectionHeading}>
+              <h2 className={styles.sectionTitle}>Clew 教材 · 待复习知识点</h2>
+              <span className={styles.sectionHint}>自测标记「还需看」后按遗忘曲线排期；重学后在学习页打分回流</span>
+            </div>
+            {data.clewItems.length === 0 ? (
+              <div className={styles.emptyState}>
+                <CircleX size={32} strokeWidth={1.3} />
+                <strong>暂无 Clew 复习条目</strong>
+                <small>
+                  在 Clew 学习页对讲义自测标记「还需看」，该知识点会进入复习调度并汇总到这里。
+                </small>
+                <Link className={styles.emptyStateLink} href="/learn/clew">
+                  去 Clew 学习 <ArrowRight size={16} />
+                </Link>
+              </div>
+            ) : (
+              <div className={styles.weaknessList}>
+                {data.clewItems.map((item, idx) => (
+                  <Link
+                    key={item.id}
+                    href={item.href}
+                    className={styles.weaknessItem}
+                  >
+                    <span className={styles.wrongItemIndex}>{idx + 1}</span>
+                    <span className={styles.weaknessMain}>
+                      <span className={styles.weaknessTitle}>
+                        {item.kpTitle}
+                        <span className={styles.weaknessCriterion}>
+                          {item.sourceKind === "practice-wrong" ? "练习错题 · " : "自测标记 · "}
+                          {clewDueLabel(item)}
+                        </span>
+                      </span>
+                      <span className={styles.weaknessMeta}>
+                        <span>{item.textbookTitle}</span>
+                        <span>·</span>
+                        <span>复习 {item.reviewCount} 次</span>
+                        <span>·</span>
+                        <span>遗忘 {item.lapses} 次</span>
+                        <span>·</span>
+                        <span>最近自测 {formatDate(item.lastReviewedAt)}</span>
+                      </span>
+                    </span>
+                    <span className={styles.weaknessAction}>
+                      重学
+                      <ArrowRight size={14} strokeWidth={1.5} />
+                    </span>
+                  </Link>
+                ))}
               </div>
             )}
           </section>

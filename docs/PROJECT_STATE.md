@@ -1886,3 +1886,19 @@ R4 = R4-1（`feat(design): R4 command palette content search`）+ R4-2（`feat(d
 ## 「我的学习」定位收紧 + 导航改名（2026-10-05 完成，未提交）
 
 Nur 裁决：导航与 /learn h1 「学习主环」→「我的学习」；页面定位收紧为「个人学习状态 + 官方更新」。假案例演示块（硬编码病案/四步推理卡/CTA/双镜演示卡）删除，官方更新节以双栏卡最小实现（静态真实事实，动态数据源待后续）；死 state/handler/36 块死 CSS 清理；`design-v3-density.ts` peer 卡契约 5→3（official-updates 复用 dual-lens 槽位与 compact 隐藏位）。test 495/495 + check exit 0 + 明暗/390 走查全过。**M5 的复习提醒落点由此定案：/learn「我的学习」。**证据见 `design-qa.md` 同名节。
+
+## ZCODE-M5 —「练/复」功能面：FSRS 复习调度 + Clew 线聚合 + 复习提醒（2026-10-05 完成，Hermes 预验收复核通过，未提交）
+
+任务书 `docs/ZCODE-M5-review-scheduling.md`（M5 范围内真相源）。M5-A（服务端与聚合）+ M5-B（消费面）全部完成，把「复（review）」从类型声明变成真实调度。官方更新节动态数据源按任务书 §3.5 明确不做；官方课 KP 的 FSRS 不混入（留 M6+）。
+
+- **数据层**：Prisma 新模型 `ClewReviewItem`（migration `20261005043449_zcode_m5_clew_review_item`，一张表；挂 userId、随 KP 级联删除；`@@unique([userId,kpId,sourceKind])`）。FSRS 状态映射 S/D/reviewCount(=reps)/state 由 reps 推导——`src/lib/fsrs.ts`（Tier 2）**零改动**，打分/前移与 `fsrsScheduleReview` 直算一致由测试锁定（before/after 证据）。
+- **写入**（`src/lib/clew/self-check.ts` 接入）：自测「还需看」upsert——首见建条目（new 态、dueAt=now 即今日到期）、再见按 `again` 前移、**同讲义版本重复提交不动 FSRS 状态**（以「本次是否产生新 shaky 事件」判定，幂等）；**`fsrsEnabled=false`（exploration）不建条目**——该字段的首次真实消费。wrong-question-added 事件语义零变化。
+- **API**：`GET /api/clew/reviews`（`?due=1`/`?kp=ID`）、`PATCH /api/clew/reviews/[id]`（again/hard/good → FSRS 前移）；服务在 `src/lib/clew/reviews.ts`（thin adapter，`getClewSessionUser` 鉴权，跨账号 404）。
+- **统一事件**：`review-scheduled`（建条目一次）/`review-completed`（每轮打分，sourceKey 带轮次）入统一学习事件流；学习动态可见「安排了一次复习 / 完成了一次复习打分」。Tier 4 类型向后兼容扩展。
+- **错题中心 Clew 线**（Tier 2 `wrong-questions.ts`）：`WrongQuestionCenterData.clewItems` + `selectWrongQuestionCenter` 可选注入（默认空，既有调用零破坏）；UI 第五 tab「Clew 教材」（到期信息 + 复习/遗忘计数 + 重学）；`/wrong-questions` 页 async 服务端注入。
+- **消费面**：`/learn`「我的学习」主列新增「今日复习」区（服务端 `selectClewTodayReviews`：已到期 + 7 天内即将到期，status 服务端定死；未登录不渲染、空数据诚实空态）；右栏「错题待复习」计数并入 `totalWrong + pendingReviewCount + clewDueCount` 并小字拆分来源；Clew 学习页自测面板底部三键打分（再来一次/有点难/记住了 → PATCH，成功行内确认 + 从今日到期消失，自测提交按 review 四态诚实提示）；脊柱「复」节点点亮为跳 `/learn#today-reviews`。
+- **验证**：`npm run test` **501/501**（新增 `clew-reviews.test.ts` 6 项 + 既有 self-check 测试收紧）、`npm run check` exit 0（lint 0 error）、`migrate status` 干净；真实链路走查（v4qa）：自测→今日复习出现→重学→打「记住了」→行内确认「下次复习 2026/10/7」→到期顺延为「即将到期」+ Clew 到期清零→错题中心 Clew 行→明暗 × 1440/390 共 9 截图、热态 console 0（首轮 3 处为已记录 dev 冷编译竞态，热 server 复测 5 载全过）。证据见 `design-qa.md` ZCODE-M5 节。
+- **dev.db 走查数据注**：留存 v4qa-kp-01 复习条目（reviewCount=1、dueAt 2026-10-07）与 3 条事件作 QA 证据。
+- **Hermes 预验收复核（2026-10-05，独立脚本 + m2qa + 真实 DB/模型）**：门槛 501/501 / check exit 0 / migrate 干净；代码面（级联/唯一键、new 态重建、create=dueAt:now、scheduled 一次、advance 由新 shaky 判定、fsrsEnabled 跳过、属主 404、dueCount 不受截断、status 服务端定死、错题中心第五参零破坏、`fsrs.ts` 零改动）全对；真实链路：自测→条目+双事件→脊柱「复」跳 `/learn#today-reviews`→今日复习在主列学习动态之上（y 378<521）→重学→「记住了」行内确认+顺延→/learn「即将到期 · 复习 1 次」+计数清零→错题中心第五 tab→**created 与 unchanged 两态活体实测**；**FSRS 纯函数独立复算与 DB 逐位一致**（good S 2.3274/dueAt 10-07、hard S 0.8765/dueAt 10-06）；幂等（同版本重复提交状态与事件零变化）；边界 404/400/401 与未登录不渲染；明暗 1440/390 与审计 r2+r3 全过；「我的学习」定位收紧随手复核通过——**M5 预验收通过**。边界（未独立覆盖）：advanced/exploration 活体路径（隔离测试覆盖）。证据见 `design-qa.md`「预验收复核（Hermes，2026-10-05）· ZCODE-M5」节。
+
+**下一主线**：待 Nur 审阅合并本批与 v4 批 2/3 未提交工作区；此后 M6+（官方课 KP FSRS、跨设备同步官方课记忆、官方更新动态数据源）与部署上线准备（ICP + 商户号 + 生产密钥）并行推进。
