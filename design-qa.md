@@ -1213,3 +1213,152 @@ playwright-core + 系统 Chrome（headless、无扩展），视口 **1440×900 /
   5.（备注）`learning-dashboard` 的 `.reasoningCard` / `.dualLensCard` 规则仍含 `1px solid var(--ink)`，默认态未命中渲染，实际使用面待确认。
 - **范围外残面（批 2 命名范围不含，现状记录）**：`/login`、`/register`（auth-form：v1 硬编码浅色皮，明暗两主题实测均 rgb(247,244,238)，不随 `.dark` 翻转）；`/learn/my-materials`（private-practice-room，R3 桥接、旧语言）；`/learn/course-builder`（page.module.css 同 v1 硬编码）；`material-admission-review`（当前全仓无引用＝死代码候选，module.css 仍含 13 处全墨边）。
 - **结论**：批 2 核心声明（命名面归一、⌘K/抽屉回归、双主题、证据标签零动、教学语义零动）**全部复核成立 → 预验收通过**；上列遗留小项与残面不阻断本批，交终审决定是否并入批 3。
+
+## DESIGN_V4 批 3 + Clew 对话体验批 — 依据范围 / 状态里程碑 / composer chips / 模型名（2026-10-05，Zcode 执行）
+
+任务书 `docs/DESIGN_V4.md` §八第三批 + 2026-10-05 讨论定案（③模型名 / ④thinking 状态行，见 `design-qa.md` 前节讨论记录与 PROJECT_STATE「下一主线」）。全部为 Clew 服务区（Tier 3 模式）向后兼容新增 + Free Change Zone；缺省行为与 M1–M4 现状逐字一致并有测试锁定。
+
+### 落地内容
+
+- **「依据范围」开关（批 3 主件）**：新 `ClewChatScope` 类型（`lesson-only 仅依据讲义 / lesson+source 讲义+教材原文（缺省）/ extended 允许结合背景拓展`）+ client-safe 常量模块 `src/lib/clew/chat-scope.ts`（labels + isClewChatScope + resolveClewChatScope）。`chat-prompt.ts` 增 scope 分支：lesson-only 不注入原文片段且回源规则改为「仅讲义，未覆盖就直说」；extended 保留原文、允许拓展但教材外内容必须整段标注「非本教材内容」；**缺省路径输出逐字不变**（groundingRule/excerpt 两分支默认走原文，测试 deepEqual 锁定）。`chat.ts` 编排：scope 校验（非法 400）、lesson-only 跳过原文读取、notes 上下文措辞三分支（缺省串逐字一致）。
+- **composer chip 排（§五 P0-3 裁决落地）**：右栏 composer 上方两排 chip——风格 4 枚（短标签：中文为主/考点速记/引导追问/英文为主）+ 依据 3 枚；讲解风格与讲义生成**共用同一偏好**（同一 `nur-learn:clew-lesson-style` 键 + 同一 state，不新增第二套风格状态），chip 点击即时生效下一轮讲解；讲义生成行动区的 `<select>` 撤销，改为被动同步显示（「风格：完整标签」）。风格显式传入时服务端沿用「最近一次选择即账户默认」写入机制（与讲义生成同一 prisma.user.update + note 提示）。依据范围偏好本机持久化 `nur-learn:clew-chat-scope`（非法值回落缺省）。
+- **状态里程碑（④ thinking 方案 A）**：`ClewChatEvent` 新增 `{ type:"status", phase:"source"|"compose", message }`；`chat.ts` 在真实节点回调（上下文准备前「正在对照教材原文…」/ lesson-only「正在整理讲义上下文…」；模型流式前「正在组织讲解…」），route 接线为 SSE 下发；客户端流式前渲染状态行（muted 12.5px + 8px 朱砂单色 **opacity 呼吸点**，无位移），首个 delta 到达即让位正文，完成态收敛为既有 notes 摘要（「上下文：讲义 + 第 N 页附近原文…」）。`prefers-reduced-motion: reduce` 下呼吸点静止（opacity 0.7），`role="status"` 播报保留。装饰动画零新增（呼吸 = 状态指示，白名单内）。
+- **模型名清理（③）**：`describeClewLessonGenerator` 去掉 provider——「模型生成（dashscope · qwen3.7-plus）」→「模型生成 · qwen3.7-plus」；讲义面板头/讲义 markdown 引用块/学霸笔记三处显示同步生效（历史落库讲义内的旧格式属历史内容，不回写）。入库格式 `model:{provider}:{model}` 与事件日志不变。
+- **遥测**：`clew_kp_chat` 事件增 `scope` 与（显式时）`styleExplicit` 字段。
+
+### 验证记录
+
+- [x] `npm run test` **494/494**（+4：scope 缺省逐字等价 / lesson-only / extended / chat-scope 常量校验；label 断言同步新格式并断言不含 provider）
+- [x] `npm run check` exit 0（lint 0 error）
+- [x] 原始 SSE 探针（curl，真实 DashScope）：`status(source 正在整理讲义上下文…) → status(compose 正在组织讲解…) → delta×N → result` 顺序正确
+- [x] 浏览器走查（playwright + 真实模型，v4qa 用户）：chips 4+3 渲染与缺省选中；状态行实拍捕获「正在组织讲解…」；缺省 notes 逐字 = 既有语义（「上下文：讲义 + 第 1 页附近原文 + 本章 13 个知识点。」）；lesson-only notes = 「仅讲义（按你的选择，本轮不引用教材原文）…」；extended notes 尾缀「（已允许结合背景拓展）」；风格 chip 点击 → 讲义行动区徽章同步 + localStorage 写入 + 真实一轮讲解 notes 出现「讲解风格已设为…」账户默认提示；讲义面板头「模型生成 · qwen3.7-plus」无 provider；390 档 chips 换行正常（flex-wrap）；console error 0 / pageerror 0
+- [x] 截图：`v4b3-chat-status-light-1440.png`（发送后状态捕获）、`v4b3-chat-chips-light/dark-1440.png`（chips 排明暗，暗色选中药丸 = selected token）
+- [x] 文档更新：本节 + `docs/PROJECT_STATE.md` + `docs/DESIGN_V4.md` 状态行
+
+### 走查环境注
+
+- 真实模型调用共 5 轮（缺省/lesson-only/extended/风格切换/SSE 探针），走查数据留在 dev.db（v4qa 用户对话记录）；v4qa 用户账户讲解风格在验证中被置为 exam-cram（QA 账户，不影响他人）。
+- dev server 清缓存重启后走查；结束时保持运行（localhost:3000）。
+
+### 返工记录（2026-10-05，Nur 否决 chip 墙）
+
+Nur 实拍否决首版 composer chips：七枚药丸换行堆在输入框上方，「太难看、太没有设计」。返工为**单入口安静控制**（对齐 ChatGPT/Claude composer 语言）：一行 muted 设置按钮「⚙ 风格短标签 · 依据短标签」，选项收进向上弹出面板（两段 radiogroup、完整标签、选中 check + selected token、底部一句生效说明）；Escape / 点外部关闭。消息区到输入框之间恢复为一行控制 + 上下文 chip。原 chip 排类（chatPrefs/chatChip*）整体删除。行为逻辑（共用偏好/持久化/请求字段/服务端分支）零变化；面板明暗截图 `v4b3-settings-light/dark-1440.png`，闭合态 `v4b3-settings-closed-light-1440.png`；面板内切 scope → 真实发送 → notes 语义复验通过。
+
+### 最终门槛
+
+- [x] lint 0 error + tsc 通过 + check exit 0
+- [x] test 全绿 494/494（缺省等价测试锁定向后兼容）
+- [x] 零 migration、零 Prisma schema 变更；Clew 服务区改动全部为可选字段 + 缺省不变分支
+- [x] 真实模型端到端 + 明暗走查通过、console 0 错误
+- [x] 文档更新齐
+
+## 交互批 — 侧栏图标轨 / 讲义折叠 / 学霸笔记摘要（2026-10-05，Zcode 执行）
+
+2026-10-05 讨论定案（用户四项交互提升中的 ①②；③④已并入 Clew 对话体验批）的实施。全部 Free Change Zone 改动，零服务端。
+
+### 落地内容
+
+- **侧栏桌面折叠（①）**：顶栏新增面板切换钮（PanelLeftClose/Open，≤900px 隐藏）+ **⌘B** 快捷键；折叠为 56px 图标轨——品牌只留印章、导航只留图标（title 提示）、文字/标签/底部说明/配额 chip/**KP 上下文 slot** 全部隐藏；状态持久化 `nur-learn:shell-rail`（collapsed/expanded）。样式用 `.appRail/.sidebarRail` 修饰类且**包在 ≥901px 媒体查询内**——≤900px 抽屉态完全不受影响。
+- **讲义长文折叠（②）**：讲义正文默认收进 560px 高度帽（`max-height + overflow:hidden` + 底部 88px 渐隐），下方「展开全篇 · 共 N 字 / 收起讲义」文字钮；内容不足一帽时自动不显示控件（渲染后实测 scrollHeight，不猜字数）。**工程决策：不做小节级卸载折叠**——划重点层仅在 bodyVersion/highlights 变化时重锚（`clew-highlights.tsx` paint effect），卸载 DOM 会弄丢已画划线；高度帽保持 DOM 常驻，走查实测展开后 `mark[data-clew-highlight-id]` 保留。
+- **学霸笔记摘要折叠（③）**：>240 字的笔记默认摘要态——取第一条实质内容行（跳过 `#`/`>`/列表符等 markdown 修饰行）截 120 字 + 「展开学霸笔记 · 共 N 字」；展开后底部「收起学霸笔记」。笔记无划重点层，条件渲染安全。章级汇总本就非逐字学习面，默认折叠合理。
+- 复用与克制：折叠钮/摘要共用一套安静文字钮样式（朱砂 13px）；无新增动效（渐隐为静态遮罩）。
+
+### 验证记录
+
+- [x] `npm run test` **494/494**、`npm run check` exit 0（lint 0 error；`design-v3-density` 的 264px 基础断言不受修饰类影响）
+- [x] 浏览器走查（v4qa + 种子笔记）：264↔56 实测、图标态文字隐藏/KP slot 隐藏/`localStorage` 写入、⌘B 往返、顶栏钮切换；讲义默认折叠 560px 帽、展开后划线标记保留（marks=1）、再收起；笔记摘要「本章涵盖卫生统计学基础概念…」干净正文 + 「共 3553 字」、展开/收起往返；390 档溢出 0、rail 钮隐藏、抽屉侧栏正常；暗色图标轨截图
+- [x] 截图：`v4ix-rail-collapsed-light/dark-1440.png`、`v4ix-note-folded-light-1440.png`
+- [x] 走查数据注：`v4qa-textbook-1` 第一章原无学霸笔记，为验证从既有笔记克隆 `v4qa-note-1`（归属已改 v4qa 用户）留 dev.db
+- [x] 文档更新：本节 + `docs/PROJECT_STATE.md`
+
+### 最终门槛
+
+- [x] lint 0 error + tsc + check exit 0；test 494/494
+- [x] 零服务端改动；`nur-learn:` 键规则不变（新增 `nur-learn:shell-rail`）
+- [x] 明暗走查 + 390 通过、console 0 错误
+
+## 图谱改良 + 「学习主环」文案分层（2026-10-05，Zcode 执行）
+
+2026-10-05 讨论定案剩余两件：知识图谱「太生硬」改良 + 主环/辨证叙事分层。证据见本节。
+
+### 落地内容
+
+- **图谱改良（依据讨论调研结论：概念图证据在「自己构建」，只读图偏导航/元认知；多数时刻要「下一步」而非全景）**：
+  - `clew-graph.tsx` 重写为**先修链列表默认视图**：每行 = 序号 + 标题（可点跳转 KP）+「已学过」徽标（hasLesson）+ 先修状态行（`✓标题` 已学过 / `○标题` 未学，后接「术语关联 N 处」）+ 右侧**「先修未学 N」缺口徽标**（error 浅底药丸——哪条链上有洞一眼可见，即「下一步行动」线索）；
+  - SVG 关系图**降为可选视图**（新 `clew-graph-figure.tsx`）：总边数 ≥3 才显示「查看关系图」切换，否则一句诚实注（「关系较少，以列表呈现更清楚」/「暂无程序可确认的关系」）；图节点按掌握状态着色（实心=已学过、空心=未学、加粗环=当前），图注同步；
+  - 面板标题「知识图谱」→「本章知识结构」；列表遵循既有纪律——未匹配/成环如实展示，纯函数层（buildClewKpGraph）零改动，7 个图谱纯函数测试不受影响。
+- **文案分层（主环=机制、辨证=官方课方法论、首页=桥接）**：
+  - `/learn`：h1「从证据开始辨证」→「接着走完你的学习环」+ 副句「学 → 练 → 评 → 诊 → 复 → 迁：按知识点选择适合的环，Clew 陪你啃自己的教材」；病案标签挂归属「当前案例 · 中医诊断学试点课」（辨证推理流程内容保留——它本就是试点课内容）；
+  - 首页 `/`：nav 与期刊标题「辨证札记」→「学习方法札记」（期刊内容本为方法论）；结语辨证句挂「官方试点课里」前缀 + 新增桥接句「任何教材也能用 Clew 建立自己的学习环：上传 → 知识点萃取 → 讲义与追问 → 划重点与笔记」；「证据先行/双镜对照/辨证输出」三特性卡属官方课卖点，保留。
+
+### 验证记录
+
+- [x] `npm run test` **494/494**、`npm run check` exit 0（lint 0 error）
+- [x] 走查（v4qa）：默认列表 13 行（标题/已学过徽标/缺口徽标 4 处/首行「无同章先修」）、切图往返（SVG 13 节点 + 「回到先修链列表」）、390 溢出 0、console 0；/learn h1/副句/试点课标签断言通过；首页三处文案断言通过
+- [x] 截图：`v4gr-structure-list-light/dark-1440.png`、`v4gr-figure-light-1440.png`
+- [x] 零服务端、零 schema、零 localStorage 新键
+
+### 最终门槛
+
+- [x] lint 0 error + tsc + check exit 0；test 494/494
+- [x] 明暗 + 390 走查通过、console 0 错误
+
+### 批 3 补遗执行（2026-10-05，Zcode 执行；清单 = §八「批 3 补遗」/ 批 2 Hermes 复核遗留）
+
+逐条执行（行号按执行时现状，较落稿行号有小漂移）：
+
+1. `/learn` `.primaryAction`（learning-dashboard.module.css:781 起）→ v4 主 CTA：`background: var(--v2-primary)` + 无边框 + `border-radius: var(--v2-radius-sm)` + 白字；hover 墨底反转 → `--brand-600` 加深（与题库/计费/官方课/首页口径一致）。窄屏变体（:1294 仅改 padding/width）与触控断点（:1485 仅 min-height）无需动。
+2. `/learn` `.avatar,.avatarLarge`（:136）→ 删同色冗余 `border: 1px solid var(--ink)`（墨底保留，补遗口径）。
+3. `/learn` `.reasoningCard`（:710）/ `.dualLensCard`（:815）→ **有真实渲染面**（learning-dashboard.tsx:753/770，与 peerCard 组合使用；v3 层 :1428+ 以 `--v3-card-border: transparent` 整体覆写边框）——基规则按口径归一为 `1px solid var(--v2-border)`，防未来覆写层失效回退到墨边。
+4. `question-bank-global.module.css` `.addBtn`（:76）→ `1px solid var(--v2-border)`。
+5. `question-bank-practice.module.css` `.navButton`（:250）→ `1px solid var(--v2-border)`（该页当前渲染面底栏为 favButton/翻页 Link，navButton 规则已归一备用）。
+6. 复验项：swr/cr 全文件 `solid var(--ink)` 引用 = **0**（HEAD 19/27 处 → 0），关闭。
+
+**验证**：`npm run test` **494/494**（一处断言收紧：/learn 入口卡断言原以裸词「Clew」匹配，被文案分层新副句「…Clew 陪你啃自己的教材」误触发——改为完整入口卡短语「Clew 学习台」，断言本意不变）+ `npm run check` exit 0（lint 0 error）；浏览器实测（v4qa）：/learn CTA `rgb(201,100,66)`、圆角 8px、边宽 0、avatar 边宽 0；题库 addBtn 实测 `rgb(218,217,212)`（border-300 细边）；console 0（首轮 2 条为 dev 首编译竞态，复测 0）。截图 `v4b3r-learn-cta-light-1440.png`。全仓主产品面 `1px solid var(--ink)` 清零；剩余 39 处全部位于批 2 复核已记录的「范围外残面」5 文件（auth-form / docx-parsing-review / material-admission-review〔死代码候选〕/ material-intake-review / private-practice-room），待后续批次或清死代码时处理。
+
+## 预验收复核（Hermes，2026-10-05）· 批 3 全家桶（批 3 + 对话体验批 + 交互批 + 图谱/文案批 + 批 3 补遗）
+
+独立复核（自有脚本 `/tmp/hermes-v4-qa/batch3-*.mjs`，非 Zcode 走查脚本；QA 账号 m2qa；走查前重启 dev + 清 `.next` + 路由预热）。
+
+**门槛（独立复跑）**：`npm run test` **494/494**（115 套、0 失败）；`npm run check` exit 0（含生产构建）。零 prisma/migration 变更。
+
+**矩阵（回归）**：通用 13 路由 × 亮 {1440,1200,980,390} + 暗 1440 全路由 + 暗 390 抽 3 = **68 载：0 溢出 / 0 console / 0 pageerror**；Clew 学习页（真实教材数据）× {1200/980/390 亮、1440/390 暗} 5 载全过。
+
+**批 3 + 对话体验批**
+- 契约代码面核对：`chat-scope.ts`（常量/校验/回落）、`chat-prompt.ts` 三分支（缺省 groundingRule 与原文片段默认路径与改前逐字一致，人工比对 + `deepEqual` 测试）、`chat.ts`（style/scope 非法 400、lesson-only 跳过原文读取、notes 三分支、显式风格写入账户默认 + 提示、遥测 `scope`/`styleExplicit`）、`route.ts` status 接线、`types` 扩展——与声明一致。
+- 设置面板（返工版实测）：单入口按钮 + `role=dialog` 面板、风格 4 / 依据 3 两枚 radiogroup、缺省「讲义 + 教材原文」选中、点选写入 `nur-learn:clew-chat-scope` / `nur-learn:clew-lesson-style`、Escape 关闭、风格徽章在讲义行动区同步——全过。
+- **真实模型三连（qwen3.7-plus，m2qa）**：A 缺省——SSE `status(正在对照教材原文…) → status(正在组织讲解…) → delta×13 → result`，notes=「上下文：讲义 + 第 4 页附近原文 + 本章 3 个知识点。」，流式前状态行 `role=status` 实测捕获；B lesson-only——source=「正在整理讲义上下文…」，notes=「仅讲义（按你的选择，本轮不引用教材原文）…」；C extended——notes 尾缀「（已允许结合背景拓展）」。测后复位缺省，缺省路径无额外账户写入。
+- 模型名：讲义面板头「模型生成 · qwen3.7-plus」无 provider ✓；页面 provider 仅为 (a) 历史落库讲义 markdown（2026/10/3 生成，属已声明「历史内容不回写」）(b) RSC flight 脚本数据（非可见文案）；新生成路径（markdown 头部 = 新格式、学霸笔记 contentMd）实测无 provider。
+- **遗留 1 项（非阻塞）**：`来源：模型生成（{provider} · {model}），结构校验通过。` 此类 notes 文案另有 4 处仍带 provider（`lesson.ts:259`、`note.ts:273`、`extraction.ts:209–210`、`toc-recognition.ts:289`），其中 note 一条在本次走查中实测可见（截图 `b3-note-folded`）。已落 `docs/DESIGN_V4.md` §八「批 3 补遗 2」。
+
+**交互批**：⌘B 与顶栏按钮双向实测 264↔56 + `nur-learn:shell-rail` 持久化 + 图标态 `navLinkText` display=none（精确断言）+ aria 语义翻转；390 档折叠钮隐藏、抽屉不受影响；讲义 560px 帽实测（560→964 往返）；学霸笔记真实生成（1673 字）→ 摘要折叠（101 字）→ 展开/收起往返。marks 划线保真性沿用 Zcode v4qa 证据（m2qa 数据无划线，未独立复验）。
+
+**图谱/文案**：本章知识结构列表 + 已学过徽标在位；「查看关系图」按 ≥3 边门禁在本数据面正确不显示（诚实注路径）；SVG 图视图未独立实操（数据面边数不足；代码面检 + Zcode `v4gr-*` 截图覆盖）。/learn h1=「接着走完你的学习环」+ 副句 + 试点课归属；首页「学习方法札记」（旧词清零）+ Clew 桥接句 + 印章——全过。
+
+**批 3 补遗（6 处 ink 硬边）**：三文件 `1px solid var(--ink)` 清零；/learn 主按钮实测 `rgb(201,100,66)`/无边框/8px；qb addBtn 实测 `rgb(218,217,212)`；navButton 静态归一（渲染面为 fav/翻页按钮，规则备用）；账户弹层 `avatarLarge` 边宽 0px 实测；swr/cr `em` 与 `.reasoningCard/.dualLensCard` 归一确认。**6 处全过。**
+
+**暗色审计**：`design-r2`（5 面）+ `design-r3`（15 路由）独立复跑 **0 低对比**。
+
+**复核侧口径修正（记录，非产品问题）**：首跑 3 处 ✗ 均为脚本口径——rail 文字用锚点宽度启发式误判（改 `navLinkText` display 断言后过）、dashscope 断言未排除 RSC 脚本块与历史讲义（上下文定位后属声明边界）、avatar 位于账户弹层默认未渲染（开弹层后实测 0px）。
+
+**边界（未独立覆盖）**：划线保真性（m2qa 无划线数据）；SVG 关系图视图（本数据面边数 <3）；M5「练/复」不在本批范围。
+
+**结论**：批 3 + 对话体验批 + 交互批 + 图谱/文案批 + 补遗——**预验收通过（2026-10-05）**；遗留 1 项（provider notes 文案 4 处）已列补遗 2，非阻塞。全部未提交待提交审阅。
+
+### 批 3 补遗 2 执行（2026-10-05，Zcode 执行；清单 = §八「批 3 补遗 2」/ Hermes 批 3 复核唯一遗留）
+
+- 4 处用户可见「来源：」notes 模板全部去 provider，与 `describeClewLessonGenerator` 同口径：`lesson.ts`/`note.ts` →「来源：模型生成 · {model}，结构校验通过。」；`extraction.ts` 两分支 →「来源：模型萃取 · {model}，…」；`toc-recognition.ts` →「来源：模型解析 · {model}，…」。入库/事件格式不变。
+- 新增锁定测试（`tests/clew-lesson.test.ts`「用户可见『来源：』notes 文案不出现 provider」）：源码级扫描四文件的「来源：」行不得引用 `provider.id`（模型输出不可桩，源码锁定防回退）——`npm run test` **495/495**；`npm run check` exit 0（lint 0 error）。
+- **真实模型端到端抽查**：v4qa-kp-02 重新生成讲义（顺带修复 QA 环境问题——克隆教材此前只有数据库行、缺 `.clew-storage` PDF 文件，讲义生成一直走启发式路径；已补文件），notes 实测 `["原文依据：第 1、2 页（1851 字）。","来源：模型生成 · qwen3.7-plus，结构校验通过。","本次生成覆盖了此前讲义…"]`，面板头 `模型生成 · qwen3.7-plus · 2026/10/5 01:32:35`，console 0。截图 `v4b3r2-lesson-notes-light-1440.png`。萃取/目录路径同模板，由锁定测试覆盖。
+- dev 竞态注记：本轮探针两次超时分别由「QA 缺 PDF → 启发式路径（非模型）」与「ChunkLoadError dev chunk 竞态」导致，清缓存重启后一次通过；均非产品缺陷。
+- **Hermes 复核（2026-10-05）**：独立 grep 核对四处模板全部为 provider-free 的「来源：模型生成/萃取/解析 · {model}…」；确认锁定测试「用户可见『来源：』notes 文案不出现 provider」在 501/501 全绿套件内通过（源码级扫描四文件，防回退）。以源码 + 锁定测试核验；未独立再跑一次真实生成（Zcode 已做 v4qa-kp-02 真实抽查）。**关闭。**
+
+## 「我的学习」定位收紧 + 导航改名（2026-10-05，Nur 裁决，Zcode 执行）
+
+Nur 两条裁决：① 导航「学习主环」→「我的学习」（「学习闭环」叙事属官方课，本页不冒用）；② /learn 定位收紧为「展示用户个人学习状态 + 官方更新状态」，截图所指的假案例演示块（硬编码病案 + 四步辨证推理卡 + 主 CTA + 双镜硬编码卡）删除。
+
+- **导航改名**：`shell-data.ts` PRIMARY_ENTRIES label →「我的学习」（注释记裁决理由）；`course-builder/page.tsx` 两处「学习主环」引用同步。
+- **/learn 主列重排**：删 caseSection/reasoningSection（四步 tab + 卡 + primaryAction CTA）/dualLens 硬编码演示卡；h1「接着走完你的学习环」→「我的学习」+ 副句「你的学习状态与官方更新都在这里；学习本身在官方课程、Clew 与题库进行」；保留真实数据面（学习动态流/继续上次学习/本周进度/错题待复习/弱项回流/周计划抽屉/账户与配额）。
+- **官方更新节（最小诚实实现）**：复用 dualLens 双栏卡槽位为「官方更新」（试点课程/平台能力两条静态事实——均为真实状态陈述，无虚构）；动态数据源（更新日志/课程上新事件流）待 M5 或后续批次接真实数据。
+- **死代码清理**：reasoningSteps 常量、activeStep/caseCompleted state、continueReasoning/primaryActionLabel、36 块死 CSS（case/reasoning/stepRail/primaryAction/flowArrow 等）；右栏 progressNote 硬编码句「完成当前案例后开始」改挂真实 pendingReviewCount。`design-v3-density.ts` 契约同步：LEARN_PEER_CARD_IDS 从 5 项（case/reasoning/dual-lens/progress×2）收紧为 3 项（official-updates/progress×2，official-updates 复用 dual-lens 的 compact 隐藏位），密度断言语义不变（v3 测试原样通过）。
+- **验证**：`npm run test` **495/495**、`npm run check` exit 0（lint 0 error）；明暗 × 1440 + 390 走查——导航/h1 = 「我的学习」、无「当前案例/辨证推理流程/脾失健运」残留、官方更新节在位、peer 卡 3（390 compact 1）、溢出 0、console 0；截图 `v4ml-learn-light-1440.png`。全仓「学习主环」字样清零（代码面）。

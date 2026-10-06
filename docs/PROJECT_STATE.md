@@ -1845,3 +1845,44 @@ R4 = R4-1（`feat(design): R4 command palette content search`）+ R4-2（`feat(d
 - **验证**：`npm run test` **490/490**、`npm run check` exit 0（lint 0 error）；暗色 WCAG 审计 r2（5 面）+ r3（15 路由）均 0 标红；`design-v3-check.mjs` 布局断言全过；14 路由 × 明暗 × 1440/1200/980/390 矩阵横向溢出 0、console 0 错误、关键断言实测通过；截图 14 张 `docs/design-references/v4b2-*.png`。dev 竞态注记：矩阵突发访问偶发随机路由的 `Invalid or unexpected token` pageerror（联合路由顺序复检 6 轮全净；生产认证矩阵本地不可行——`database-url.ts` 守卫构建期内联 NODE_ENV，系设计行为），判定为 dev chunk 服务竞态非产品缺陷。
 - **边界**：零 Prisma/migration/服务端逻辑改动；改动面 = 19 个 css module + globals.css + learning-dashboard.tsx 内联样式 token 化 + page.tsx 印章 markup。**证据分级标签（data-relationship）零触碰。**
 - **Hermes 预验收复核（2026-10-04）**：独立复跑 test 490/490、check exit 0；13 路由 × 明（1440/1200/980/390）+ 暗（1440 全路由、390 抽 3）共 68 载，横向溢出 0 / console 0 / pageerror 0；r2+r3 暗色审计重跑 0 标红（r3 首跑 design-system 段一次脚本竞态，重跑全过）；首页印章与明暗底、⌘K 底部面板、390 抽屉、知识点页「对照」stage 证据标签（data-relationship=3）实测通过——**批 2 预验收通过**。遗留 4 处小项（/learn 主按钮墨底、/question-bank addBtn 墨边、swr/cr `em` 墨边、avatar 同色冗余边）与范围外残面（/login、/register、my-materials、course-builder）清单见 `design-qa.md`「预验收复核（Hermes，2026-10-04）· DESIGN_V4 批 2」节。
+
+## DESIGN_V4 批 3 + Clew 对话体验批 — 依据范围 / 状态里程碑 / composer chips / 模型名（2026-10-05 完成，未提交）
+
+任务书 `docs/DESIGN_V4.md` §八第三批 + 2026-10-05 五题讨论定案（③④两件并入）的合并实施；走查与截图证据见 `design-qa.md`「DESIGN_V4 批 3 + Clew 对话体验批」节。
+
+- **「依据范围」开关**：`ClewChatScope`（仅依据讲义 / 讲义+教材原文（缺省）/ 允许结合背景拓展）+ client-safe `chat-scope.ts`；`chat-prompt.ts` scope 分支——**缺省输出逐字不变（测试 deepEqual 锁定）**，lesson-only 不注入原文并改回源规则、extended 要求教材外内容整段标注；`chat.ts` lesson-only 跳过原文读取，notes 三分支措辞（缺省串逐字一致）。
+- **讲解设置单入口（首版 chip 墙被 Nur 否决后返工，2026-10-05）**：composer 上方一行 muted 设置按钮「风格 · 依据」，选项收进向上弹出面板（radiogroup + selected token，Escape/点外关闭）；风格与讲义生成共用同一偏好键与 state（P0-3「不新增第二套风格状态」），讲义行动区 select → 被动同步显示；显式风格沿用「最近一次选择即账户默认」写入机制。
+- **状态里程碑**：chat SSE 新增 `status` 事件（source「正在对照教材原文…」/ compose「正在组织讲解…」，lesson-only 措辞如实区分）；客户端 muted 状态行 + 8px 朱砂 opacity 呼吸点（reduced-motion 静止），首个 delta 让位正文，完成态收敛为既有 notes 摘要。
+- **模型名**：`describeClewLessonGenerator` 去 provider →「模型生成 · qwen3.7-plus」（讲义头/引用块/学霸笔记三处生效；历史落库内容不回写；入库与事件格式不变）。
+- **验证**：`npm run test` **494/494**（+4，含缺省等价锁定）、`npm run check` exit 0；curl 原始 SSE 探针确认 status→delta→result 顺序；真实模型浏览器走查（chips 渲染/缺省选中/三 scope notes 语义/风格联动账户默认写入/状态行实拍「正在组织讲解…」/390 chips 换行）全过，console 0；截图 `v4b3-*.png` 3 张。零 migration；遥测增 `scope`/`styleExplicit` 字段。
+
+## 交互批 — 侧栏图标轨 / 讲义折叠 / 学霸笔记摘要（2026-10-05 完成，未提交）
+
+2026-10-05 讨论定案四项交互提升中的 ①②（③④已并入 Clew 对话体验批）；证据见 `design-qa.md`「交互批」节。全部 Free Change Zone，零服务端。
+
+- **侧栏桌面折叠**：顶栏切换钮 + **⌘B**；56px 图标轨（印章/图标/title 提示，文字与配额与 KP 上下文 slot 隐藏）；持久化 `nur-learn:shell-rail`；样式包 ≥901px 媒体查询，≤900px 抽屉态零影响。
+- **讲义长文折叠**：默认 560px 高度帽 + 底部渐隐 + 「展开全篇 · 共 N 字/收起」；**工程决策：不做小节级卸载折叠**（划重点层仅随 bodyVersion 重锚，卸载 DOM 会丢已画划线）——高度帽保持 DOM 常驻，实测展开后划线保留；内容不足一帽自动隐藏控件。
+- **学霸笔记摘要**：>240 字默认摘要（跳过 markdown 修饰行取首条实质内容，截 120 字 + 共 N 字），展开/收起；笔记无划重点层，条件渲染安全。
+- **验证**：`npm run test` 494/494、`npm run check` exit 0；走查 264↔56/⌘B/持久化/KP slot 隐藏/讲义折叠展开划线保留/笔记摘要往返/390 零溢出；截图 `v4ix-*.png` 3 张。`nur-learn:shell-rail` 新键符合前缀规则。
+
+## 图谱改良 + 主环文案分层（2026-10-05 完成，未提交）
+
+2026-10-05 讨论定案最后两件；证据见 `design-qa.md`「图谱改良 + 『学习主环』文案分层」节。
+
+- **图谱**：`clew-graph.tsx` 重写为先修链列表默认视图（行 = 知识点 + 已学过徽标 + ✓/○ 先修状态 + 「先修未学 N」缺口徽标）；SVG 关系图降为可选视图（≥3 边才可切，`clew-graph-figure.tsx`，节点按掌握状态着色：实心=已学过/空心=未学/加粗环=当前）；标题改「本章知识结构」；纯函数层零改动。依据：概念图学习证据在「自己构建」，只读图偏导航——多数时刻用户要「下一步」而非全景（Khan/Duolingo/Obsidian local graph 共识，见 2026-10-05 调研）。
+- **文案分层**：/learn h1 →「接着走完你的学习环」（副句讲六环节与 Clew）；病案挂「中医诊断学试点课」归属；首页 nav/期刊「辨证札记」→「学习方法札记」、结语辨证句挂「官方试点课里」+ 新增 Clew 桥接句。主环=机制、辨证=官方课方法论、首页=桥接，三层各归其位。
+- **验证**：test 494/494、check exit 0；走查列表 13 行/缺口徽标/切图往返/390 零溢出/console 0；文案断言（/learn h1、试点课标签、首页三处）全过；截图 `v4gr-*.png` 3 张。
+
+## DESIGN_V4 批 3 补遗执行（2026-10-05 完成，未提交）
+
+§八「批 3 补遗」（批 2 Hermes 复核遗留 6 处 ink 硬边）执行完毕：/learn 主 CTA → 朱砂圆角（hover brand-600）、avatar 删冗余墨边、reasoningCard/dualLensCard 基规则细线化（有真实渲染面）、题库 addBtn/章节 navButton → 细边框；复验项 swr/cr 维持 0 引用关闭。test 494/494（/learn 入口卡断言收紧为完整短语「Clew 学习台」，避免文案分层副句误触发）+ check exit 0 + 浏览器实测通过。主产品面 `1px solid var(--ink)` 清零；剩余为批 2 复核已记录的范围外残面 5 文件。证据见 `design-qa.md`「批 3 补遗执行」节。
+
+**Hermes 预验收复核（2026-10-05，批 3 全家桶含补遗）**：独立复跑 test 494/494、check exit 0；13 路由 × 明（1440/1200/980/390）+ 暗（1440 全路由、390 抽 3）共 68 载与学习页 5 载 0 溢出 0 console；依据范围三连真实模型 e2e（缺省 notes 逐字语义 / lesson-only / extended + `status→delta→result` 事件序 + 流式前状态行 UI）、设置面板（radiogroup + 双 localStorage 键 + Escape）、⌘B 图标轨 264↔56、讲义 560px 帽与笔记摘要折叠、审计 r2+r3 —— 全部实测通过，**批 3 全家桶预验收通过**；遗留 1 项非阻塞（模型名「来源：」notes 文案 4 处仍带 provider）已落 `docs/DESIGN_V4.md` §八「批 3 补遗 2」。证据见 `design-qa.md`「预验收复核（Hermes，2026-10-05）· 批 3 全家桶」节。
+
+## DESIGN_V4 批 3 补遗 2 执行（2026-10-05 完成，未提交）
+
+§八「批 3 补遗 2」（Hermes 批 3 复核唯一遗留：4 处「来源：」notes 文案仍带 provider）执行收口：`lesson.ts`/`note.ts`/`extraction.ts`（两分支）/`toc-recognition.ts` 全部改「来源：模型生成/萃取/解析 · {model}」口径；新增源码级锁定测试（「来源：」行不得引用 `provider.id`，防回退）——test **495/495**、check exit 0；真实模型讲义路径实测 notes/面板头均无 provider（顺带修复 QA 克隆教材缺 PDF 存储文件的环境问题）。证据见 `design-qa.md`「批 3 补遗 2 执行」节。
+
+## 「我的学习」定位收紧 + 导航改名（2026-10-05 完成，未提交）
+
+Nur 裁决：导航与 /learn h1 「学习主环」→「我的学习」；页面定位收紧为「个人学习状态 + 官方更新」。假案例演示块（硬编码病案/四步推理卡/CTA/双镜演示卡）删除，官方更新节以双栏卡最小实现（静态真实事实，动态数据源待后续）；死 state/handler/36 块死 CSS 清理；`design-v3-density.ts` peer 卡契约 5→3（official-updates 复用 dual-lens 槽位与 compact 隐藏位）。test 495/495 + check exit 0 + 明暗/390 走查全过。**M5 的复习提醒落点由此定案：/learn「我的学习」。**证据见 `design-qa.md` 同名节。

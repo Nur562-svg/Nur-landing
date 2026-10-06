@@ -1,7 +1,7 @@
 # 设计系统 v4 提案（Quiet · 安静的 AI 桌面）
 
-日期：2026-10-04。状态：**方向已由 Nur 拍板；Hermes 评审通过（§十一）；P0 四项已全部裁决（裁决记录见 §十一末），P1/P2 已并入实施计划——本文件即第一批任务书。批 1 已于 2026-10-04 实施完成（token 层 + Clew 学习页换装 + 壳侧栏 264 合并 + 复制/重新生成行 + design-system 同步 + 暗色审计与四档×明暗×双模式走查；证据见 `design-qa.md`「DESIGN_V4 批 1」节与 `docs/PROJECT_STATE.md` 对应节），**Hermes 预验收复核通过（2026-10-04）**——独立复跑 test 490/490 / check exit 0 / migrate 与基线一致；暗色 WCAG 审计 r2+r3 独立重跑 0 低对比；双模式 × 1440/1200/980/390 × 明暗矩阵、复制与重新生成端到端、回归 9 路由全过（console 0；见 `design-qa.md`「预验收复核（Hermes，2026-10-04）」），未提交待终审；批 2/批 3 待开工。**
-执行者：Zcode（探针试错 + 本提案 + 批 1 实施）。真相源优先级：设计语言问题以本文件为准 > `docs/DESIGN_V3.md` > `docs/RESTRUCTURE_PLAN.md` > `docs/PROJECT_STATE.md`。
+日期：2026-10-04。状态：**方向已由 Nur 拍板；Hermes 评审通过（§十一）；P0 四项已全部裁决（裁决记录见 §十一末），P1/P2 已并入实施计划——本文件即第一、二批任务书。批 1（token 层 + Clew 学习页换装 + 壳侧栏 264 合并 + 复制/重新生成行 + design-system 同步）已实施、已预验收复核通过、已提交并 push（`44d996b`/`8315ee8`/`518ad48`/`9c4e7b8`）；批 2（工作台壳、/learn、官方课、题库、计费、营销首页 `/` 归一 + ⌘K/抽屉回归）已实施，Hermes 预验收复核（2026-10-04）**通过**——独立复跑 test 490/490 / check exit 0；r2+r3 暗色审计重跑 0 低对比；13 路由 × 明暗 × 四档共 68 载 0 溢出 0 console；首页双主题、⌘K、抽屉、对照 stage 证据标签实测通过；遗留 4 处小项与范围外残面清单见 `design-qa.md`「预验收复核（Hermes，2026-10-04）· DESIGN_V4 批 2」节——批 2 未提交待提交审阅；批 3（「依据范围」）已于 2026-10-05 与「Clew 对话体验批」（状态里程碑 SSE + composer 设置面板〔首版 chip 排经 Nur 否决后返工为单入口安静控制〕 + 模型名去 provider，2026-10-05 讨论定案 ③④ 两件）合并实施完成，真实模型端到端走查通过、缺省行为逐字测试锁定（证据见 `design-qa.md`「DESIGN_V4 批 3 + Clew 对话体验批」节），未提交待验收；批 2 复核遗留已落 §八「批 3 补遗」并已于 2026-10-05 执行完毕——6 处 ink 硬边全部归一（/learn 主 CTA 朱砂圆角、avatar 删冗余墨边、reasoningCard/dualLensCard 基规则细线化、题库 addBtn/章节 navButton 细边框；复验项 swr/cr em 墨边维持 0 引用关闭），全仓 `src/components/` 主产品面 `1px solid var(--ink)` 清零（仅剩批 2 复核「范围外残面」5 文件：auth-form/docx-parsing-review/material-admission-review/material-intake-review/private-practice-room），test 494/494 + check exit 0 + 浏览器实测（CTA rgb(201,100,66)/圆角 8px/边宽 0、addBtn border-300、avatar 边 0），证据见 `design-qa.md`「批 3 补遗执行」节。**Hermes 批 3 全家桶预验收复核（2026-10-05）通过**——独立复跑 test 494/494 / check exit 0；13 路由 × 明暗四档 68 载 + 学习页 5 载 0 溢出 0 console；依据范围三连真实模型 e2e、设置面板、⌘B 图标轨、讲义/笔记折叠、审计 r2+r3 全过；唯一遗留（模型名「来源：」文案 4 处）已于同日执行收口——4 处 notes 模板改「来源：模型生成/萃取/解析 · {model}」口径 + 源码级锁定测试（495/495）+ 真实模型讲义路径实测通过（notes/面板头均无 provider），见 §八「批 3 补遗 2」执行记录与 `design-qa.md`「批 3 补遗 2 执行」节。全部未提交待提交审阅。**
+执行者：Zcode（探针试错 + 本提案 + 批 1–批 3 及微批实施）。真相源优先级：设计语言问题以本文件为准 > `docs/DESIGN_V3.md` > `docs/RESTRUCTURE_PLAN.md` > `docs/PROJECT_STATE.md`。
 
 ## 一、结论（一句话）
 
@@ -87,6 +87,32 @@
 - **批 1 再增（影响面与回归清单，P1-6）**：左栏 264px = 壳侧栏(280) 与 studyAside(240) 合并，涉及共享 `workspace-shell.tsx`；回归清单 = `/learn`、`/courses`、`/question-bank`、`/account/billing`、`/learn/clew` 书架与工作坊、wrong-questions，各 1440/1200/980 档。批 1 全局 token 生效即全站观感变化：按 §四 范围说明（无过渡态）执行，批内逐面回归。
 - **批 1 再增（P0-4 裁决 B 的验收面）**：workspace 与 focus 双模式并行，两模式都进验收矩阵（1440/1200/980/390 × 明暗）；默认模式改为工作台，`nur-learn:clew-study-mode=focus` 老键沿用不删。
 - **文档同批更新（P1-10 细化）**：AGENTS.md 设计规则段按 v4 修订（含「默认工作台」「朱砂唯一强调」「宋体收缩」）并跑 `bash scripts/sync-agent-rules.sh`；`docs/PROJECT_STATE.md` 增设计主线进度节。
+
+### 批 3 补遗（批 2 复核遗留并入；Hermes 复核发现，2026-10-05 落稿，已执行并复核通过）
+
+「交 Zcode 并入批 3」的批 2 预验收复核遗留（原始清单见 `design-qa.md`「预验收复核（Hermes，2026-10-04）· DESIGN_V4 批 2」节）。截至 2026-10-05 00:40 全仓复测：`1px solid var(--ink)` 仅剩 **6 处规则 / 3 个文件**，逐项：
+
+1. `/learn` 主按钮 `.primaryAction`（`learning-dashboard.module.css:781` 起：墨黑实底 + 全墨边）→ v4 主行动 CTA 口径（朱砂圆角 + on-primary 文字；先例 = 题库/计费/官方课/首页已改）。窄屏变体 `:1294` 同步。
+2. `/learn` `.avatarLarge`（`:133`）：墨底 + 同色墨边——边删（同色冗余），墨底保留。
+3. `/learn` `.reasoningCard`（`:708`）与 `.dualLensCard`（`:814`）：两条全墨边规则，默认态未命中渲染——确认实际渲染面后归一为细边框；若无使用面则删规则。
+4. `/question-bank` `.addBtn`（`question-bank-global.module.css:73`）→ 细边框。
+5. 章节题库 `.navButton`（`question-bank-practice.module.css:248`）→ 细边框。
+6. （复验项）写作室/推理室 `em` 墨边：工作区已无 ink 引用（swr/cr 全文件 HEAD 19/27 处 → 现 0），渲染复验确认后关闭。
+
+验收：随批 3 复核一并（`npm run check` + 全量测试 + 明暗 1440/390 抽查 + 上述 6 处逐一实测/复验）；范围外残面（`/login`、`/register`、`/learn/my-materials`、`/learn/course-builder`）维持 `design-qa.md` 记录，是否归一由 Nur 定夺。
+
+### 批 3 补遗 2（模型名「来源：」文案遗留；Hermes 批 3 复核发现，2026-10-05 落稿；已执行并复核关闭）
+
+批 3「模型名清理③」已把 `describeClewLessonGenerator` 与新生成 markdown 头部改为「模型生成 · qwen3.7-plus」（对用户只呈现模型名，原则见 `lesson-heuristic.ts:60` 注释），但 4 处用户可见 notes 文案仍按旧格式输出 provider：
+
+1. `src/lib/clew/lesson.ts:259` — `来源：模型生成（{provider} · {model}），结构校验通过。`（讲义生成 notes 列表）
+2. `src/lib/clew/note.ts:273` — 同上（学霸笔记 notes 列表；实测可见，证据 = design-qa「批 3 全家桶」节截图 `b3-note-folded`）
+3. `src/lib/clew/extraction.ts:209–210` — `来源：模型萃取（{provider} · {model}，N 个知识点…）。`（知识点萃取 notes）
+4. `src/lib/clew/toc-recognition.ts:289` — `来源：模型解析（{provider} · {model}，N 条一级章节）。`（目录识别 notes）
+
+修法与 `describeClewLessonGenerator` 同口径（provider 不出现在界面文案）；补测试断言（notes 行不含 provider）。入库/事件格式（`model:{provider}:{model}`）不变。验收：随补遗 2 复核（补充一次真实笔记/萃取生成路径抽查）。
+
+**执行记录（2026-10-05，Zcode）**：4 处模板全部改为「来源：模型生成/萃取/解析 · {model}，…」口径；新增源码级锁定测试（`clew-lesson.test.ts`——扫描四文件的「来源：」行不得引用 `provider.id`，495/495 全绿）；check exit 0。真实模型端到端抽查：v4qa-kp-02 重新生成讲义（本探针同时修复了 QA 克隆教材缺 PDF 存储文件的问题——此前生成走启发式路径），notes 实测 `来源：模型生成 · qwen3.7-plus，结构校验通过。`、面板头 `模型生成 · qwen3.7-plus`，console 0；截图 `v4b3r2-lesson-notes-light-1440.png`。萃取/目录两条路径同模板同口径，由锁定测试覆盖。
 
 ## 九、边界（不因 v4 改变）
 
