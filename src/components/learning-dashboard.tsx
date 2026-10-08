@@ -28,6 +28,8 @@ import {
   type SyncConflictResolution,
 } from "@/lib/learner-state-sync";
 import { useSyncConflicts } from "@/hooks/use-sync-conflicts";
+import { V2Button } from "@/components/ui/v2/button";
+import { EmptyState, EmptyLampIllustration } from "@/components/ui/v2/empty-state";
 import { SyncStatusBadge } from "./sync-status-badge";
 import { getAdmissionSyncConsents, setAdmissionSyncConsent } from "@/lib/material-admission";
 import { useSyncStatus } from "@/hooks/use-sync-status";
@@ -496,20 +498,12 @@ export function LearningDashboard({
                         本机与云端的同一学习记录都在上次合并后更新过，需要你选择保留哪一份。
                       </p>
                       <div className={styles.conflictBulkRow}>
-                        <button
-                          type="button"
-                          className={styles.conflictBulkButton}
-                          onClick={() => handleResolveAllConflicts("local")}
-                        >
+                        <V2Button variant="secondary" onClick={() => handleResolveAllConflicts("local")}>
                           全部以本机为准
-                        </button>
-                        <button
-                          type="button"
-                          className={styles.conflictBulkButton}
-                          onClick={() => handleResolveAllConflicts("server")}
-                        >
+                        </V2Button>
+                        <V2Button variant="secondary" onClick={() => handleResolveAllConflicts("server")}>
                           全部以云端为准
-                        </button>
+                        </V2Button>
                       </div>
                       <ul className={styles.conflictList}>
                         {conflicts.map((conflict) => (
@@ -610,13 +604,9 @@ export function LearningDashboard({
                 <p className={styles.accountHint}>
                   导出当前浏览器中的本机学习数据快照，便于备份；不是官方成绩单，也不含课程原文与密钥。
                 </p>
-                <button
-                  className={styles.accountExportButton}
-                  type="button"
-                  onClick={handleExportLearnerData}
-                >
+                <V2Button variant="secondary" onClick={handleExportLearnerData}>
                   导出学习数据
-                </button>
+                </V2Button>
                 {exportNotice ? (
                   <p className={styles.accountExportStatus} role="status">{exportNotice}</p>
                 ) : null}
@@ -693,9 +683,11 @@ export function LearningDashboard({
                 ) : null}
               </div>
               {todayReviews.length === 0 ? (
-                <p className={styles.todayReviewsEmpty}>
-                  今天没有到期复习——Clew 自测标记「还需看」的知识点会按遗忘曲线排到这里。
-                </p>
+                <EmptyState
+                  tone="medium"
+                  title="今天没有到期复习"
+                  hint="Clew 自测标记「还需看」的知识点会按遗忘曲线排到这里。"
+                />
               ) : (
                 <ul className={styles.todayReviewsList}>
                   {todayReviews.map((item) => (
@@ -735,7 +727,12 @@ export function LearningDashboard({
                 ) : null}
               </div>
               {unifiedFeed.length === 0 ? (
-                <p className={styles.feedEmpty}>还没有学习记录——从官方课、Clew 或题库开始。</p>
+                <EmptyState
+                  tone="rich"
+                  illustration={<EmptyLampIllustration />}
+                  title="还没有学习记录"
+                  hint="从官方课、Clew 或题库开始。"
+                />
               ) : (
                 <ul className={styles.unifiedFeedList}>
                   {unifiedFeed.map((item) => {

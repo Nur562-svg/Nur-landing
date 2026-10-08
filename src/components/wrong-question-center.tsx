@@ -2,10 +2,11 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { ArrowLeft, ArrowRight, CircleX, BookOpen } from "lucide-react";
+import { ArrowLeft, ArrowRight, BookOpen } from "lucide-react";
 import type { CourseDefinition, FsrsCriterionState } from "@/types/learning";
 import { useWrongQuestionCenter } from "@/hooks/use-wrong-questions";
 import { repeatedOmissionThreshold } from "@/lib/learning-memory";
+import { EmptyState, EmptyBoxIllustration } from "@/components/ui/v2/empty-state";
 import {
   selectWeakKnowledgePointHref,
   selectWrongQuestionRedoHref,
@@ -151,16 +152,17 @@ export function WrongQuestionCenter({ courses, clewItems = [] }: WrongQuestionCe
           </div>
 
           {data.totalWrong === 0 ? (
-            <div className={styles.emptyState}>
-              <CircleX size={32} strokeWidth={1.3} />
-              <strong>暂无错题记录</strong>
-              <small>
-                去题库做题、参加模考，或在「导入」里提交私人单选/填空后，错题会自动汇总到这里。
-              </small>
-              <Link className={styles.emptyStateLink} href="/question-bank">
-                去做题 <ArrowRight size={16} />
-              </Link>
-            </div>
+            <EmptyState
+              tone="rich"
+              illustration={<EmptyBoxIllustration />}
+              title="暂无错题记录"
+              hint="去题库做题、参加模考，或在「导入」里提交私人单选/填空后，错题会自动汇总到这里。"
+              action={
+                <Link className={styles.emptyStateLink} href="/question-bank">
+                  去做题 <ArrowRight size={16} />
+                </Link>
+              }
+            />
           ) : (
             <>
               {/* ── Weak Knowledge Points ── */}
@@ -283,13 +285,12 @@ export function WrongQuestionCenter({ courses, clewItems = [] }: WrongQuestionCe
               </span>
             </div>
             {data.structuralWeaknesses.length === 0 ? (
-              <div className={styles.emptyState}>
-                <CircleX size={32} strokeWidth={1.3} />
-                <strong>暂无结构薄弱记录</strong>
-                <small>
-                  在写作室或案例推理室完成自核并确认保存后，反复漏掉的结构准则会汇总到这里。
-                </small>
-              </div>
+              <EmptyState
+                tone="rich"
+                illustration={<EmptyBoxIllustration />}
+                title="暂无结构薄弱记录"
+                hint="在写作室或案例推理室完成自核并确认保存后，反复漏掉的结构准则会汇总到这里。"
+              />
             ) : (
               <div className={styles.weaknessList}>
                 {data.structuralWeaknesses.map((w, idx) => {
@@ -337,24 +338,21 @@ export function WrongQuestionCenter({ courses, clewItems = [] }: WrongQuestionCe
               <span className={styles.sectionHint}>重学中，或遗忘次数已达 2 次</span>
             </div>
             {data.fsrsHighRisk.length === 0 ? (
-              <div className={styles.emptyState}>
-                <CircleX size={32} strokeWidth={1.3} />
-                {data.hasFsrsMemory ? (
-                  <>
-                    <strong>暂无高危记忆准则</strong>
-                    <small>
-                      已有自评确认记录，但当前没有处于重学中或遗忘次数达到 2 次的准则。继续练习并关注复习计划即可。
-                    </small>
-                  </>
-                ) : (
-                  <>
-                    <strong>尚未产生足够的记忆数据</strong>
-                    <small>
-                      在写作/案例房间完成自评确认后，系统会按准则更新记忆强度；同一准则连续漏掉两次后，会出现在这里。
-                    </small>
-                  </>
-                )}
-              </div>
+              data.hasFsrsMemory ? (
+                <EmptyState
+                  tone="rich"
+                  illustration={<EmptyBoxIllustration />}
+                  title="暂无高危记忆准则"
+                  hint="已有自评确认记录，但当前没有处于重学中或遗忘次数达到 2 次的准则。继续练习并关注复习计划即可。"
+                />
+              ) : (
+                <EmptyState
+                  tone="rich"
+                  illustration={<EmptyBoxIllustration />}
+                  title="尚未产生足够的记忆数据"
+                  hint="在写作/案例房间完成自评确认后，系统会按准则更新记忆强度；同一准则连续漏掉两次后，会出现在这里。"
+                />
+              )
             ) : (
               <div className={styles.weaknessList}>
                 {data.fsrsHighRisk.map((item, idx) => {
@@ -410,13 +408,12 @@ export function WrongQuestionCenter({ courses, clewItems = [] }: WrongQuestionCe
               <span className={styles.sectionHint}>确认后显式提出的回流任务（私人练习会立即产生）</span>
             </div>
             {data.reviewProposals.length === 0 ? (
-              <div className={styles.emptyState}>
-                <CircleX size={32} strokeWidth={1.3} />
-                <strong>暂无复习提案</strong>
-                <small>
-                  在写作室、案例室或私人练习确认作答后，系统会按需生成复习提案。这里会列出待处理的。
-                </small>
-              </div>
+              <EmptyState
+                tone="rich"
+                illustration={<EmptyBoxIllustration />}
+                title="暂无复习提案"
+                hint="在写作室、案例室或私人练习确认作答后，系统会按需生成复习提案。这里会列出待处理的。"
+              />
             ) : (
               <div className={styles.weaknessList}>
                 {data.reviewProposals.map((proposal, idx) => {
@@ -462,16 +459,17 @@ export function WrongQuestionCenter({ courses, clewItems = [] }: WrongQuestionCe
               <span className={styles.sectionHint}>自测标记「还需看」后按遗忘曲线排期；重学后在学习页打分回流</span>
             </div>
             {data.clewItems.length === 0 ? (
-              <div className={styles.emptyState}>
-                <CircleX size={32} strokeWidth={1.3} />
-                <strong>暂无 Clew 复习条目</strong>
-                <small>
-                  在 Clew 学习页对讲义自测标记「还需看」，该知识点会进入复习调度并汇总到这里。
-                </small>
-                <Link className={styles.emptyStateLink} href="/learn/clew">
-                  去 Clew 学习 <ArrowRight size={16} />
-                </Link>
-              </div>
+              <EmptyState
+                tone="rich"
+                illustration={<EmptyBoxIllustration />}
+                title="暂无 Clew 复习条目"
+                hint="在 Clew 学习页对讲义自测标记「还需看」，该知识点会进入复习调度并汇总到这里。"
+                action={
+                  <Link className={styles.emptyStateLink} href="/learn/clew">
+                    去 Clew 学习 <ArrowRight size={16} />
+                  </Link>
+                }
+              />
             ) : (
               <div className={styles.weaknessList}>
                 {data.clewItems.map((item, idx) => (

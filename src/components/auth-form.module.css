@@ -1,13 +1,6 @@
 .container {
-  --ink: #10100f;
-  --paper: #f7f4ee;
-  --muted: #6c6a66;
-  --line: rgb(16 16 15 / 36%);
-  --soft-line: rgb(16 16 15 / 14%);
-  --red: #bf2118;
-  --blue: #17659a;
-  background: var(--paper);
-  color: var(--ink);
+  background: var(--bg-200);
+  color: var(--text-900);
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -20,7 +13,7 @@
   min-height: 44px;
   padding: 10px 0;
   align-items: center;
-  color: var(--ink);
+  color: var(--text-900);
   display: inline-flex;
   font-size: 14px;
   gap: 6px;
@@ -28,19 +21,19 @@
 }
 
 .backLink:hover {
-  color: var(--red);
+  color: var(--error-600);
 }
 
 .card {
   border: 1px solid var(--v2-border);
-  background: var(--paper);
+  background: var(--bg-200);
   max-width: 420px;
   padding: 40px 36px 28px;
   width: 100%;
 }
 
 .cardHeader {
-  border-bottom: 1px solid var(--line);
+  border-bottom: 1px solid var(--v4-line-strong);
   margin-bottom: 28px;
   padding-bottom: 20px;
 }
@@ -54,7 +47,7 @@
 }
 
 .subtitle {
-  color: var(--muted);
+  color: var(--text-500);
   font-size: 13px;
   line-height: 1.7;
   margin: 0;
@@ -79,24 +72,24 @@
 
 .input {
   background: transparent;
-  border: 1px solid var(--line);
-  color: var(--ink);
+  border: 1px solid var(--v4-line-strong);
+  color: var(--text-900);
   font-size: 15px;
   outline: none;
   padding: 11px 12px;
 }
 
 .input:focus {
-  border-color: var(--ink);
+  border-color: var(--text-900);
 }
 
 .input::placeholder {
-  color: var(--muted);
+  color: var(--text-500);
 }
 
 .error {
-  border-left: 3px solid var(--red);
-  color: var(--red);
+  border-left: 3px solid var(--error-600);
+  color: var(--error-600);
   font-size: 13px;
   margin: 0;
   padding: 6px 10px;
@@ -104,9 +97,9 @@
 
 .submitButton {
   align-items: center;
-  background: var(--ink);
+  background: var(--text-900);
   border: 1px solid var(--v2-border);
-  color: var(--paper);
+  color: var(--bg-200);
   cursor: pointer;
   display: inline-flex;
   font-size: 15px;
@@ -117,8 +110,8 @@
 }
 
 .submitButton:hover {
-  background: var(--red);
-  border-color: var(--red);
+  background: var(--error-600);
+  border-color: var(--error-600);
 }
 
 .submitButton:disabled {
@@ -131,8 +124,8 @@
 }
 
 .cardFooter {
-  border-top: 1px solid var(--soft-line);
-  color: var(--muted);
+  border-top: 1px solid var(--v4-line);
+  color: var(--text-500);
   font-size: 13px;
   margin-top: 24px;
   padding-top: 16px;
@@ -144,23 +137,23 @@
   align-items: flex-start;
   gap: 8px;
   font-size: 12px;
-  color: var(--muted);
+  color: var(--text-500);
   line-height: 1.6;
 }
 
 .consentCheckbox {
   margin-top: 2px;
-  accent-color: var(--ink);
+  accent-color: var(--text-900);
 }
 
 .consentLink {
-  color: var(--blue);
+  color: var(--v3-slate-blue);
   text-decoration: underline;
 }
 
 .cardFooter a {
   min-height: 44px;
-  color: var(--blue);
+  color: var(--v3-slate-blue);
   margin-left: 4px;
 }
 
