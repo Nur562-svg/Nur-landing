@@ -1,24 +1,16 @@
 .room {
-  /* R3 token 桥接：局部 token 改引 v2 全局 token（映射口径见 design-qa.md R3 节）；.dark 自动翻转。
-     --blue → --v2-ring 为设计决策，非等值替换。 */
-  --ink: var(--text-900);
-  --paper: var(--bg-200);
-  --muted: var(--text-500);
-  --line: color-mix(in srgb, var(--text-900) 38%, transparent);
   --soft-line: color-mix(in srgb, var(--text-900) 16%, transparent);
-  --red: var(--error-600);
-  --blue: var(--v2-ring);
-  color: var(--ink);
+  color: var(--text-900);
 }
 
 .header {
-  border-bottom: 1px solid var(--line);
+  border-bottom: 1px solid var(--v4-line-strong);
   margin-bottom: 24px;
   padding-bottom: 16px;
 }
 
 .kicker {
-  color: var(--blue);
+  color: var(--v2-ring);
   font-size: 12px;
   letter-spacing: 0.12em;
   margin: 0 0 6px;
@@ -31,7 +23,7 @@
 }
 
 .meta {
-  color: var(--muted);
+  color: var(--text-500);
   font-size: 14px;
   line-height: 1.6;
   margin: 0;
@@ -44,19 +36,19 @@
 }
 
 .filter button {
-  background: var(--paper);
-  border: 1px solid var(--line);
+  background: var(--bg-200);
+  border: 1px solid var(--v4-line-strong);
   min-height: 44px;
   padding: 0 14px;
 }
 
 .filter button[aria-pressed="true"] {
-  border-color: var(--red);
-  color: var(--red);
+  border-color: var(--error-600);
+  color: var(--error-600);
 }
 
 .notice {
-  color: var(--blue);
+  color: var(--v2-ring);
   font-size: 14px;
   margin: 12px 0 0;
 }
@@ -71,12 +63,12 @@
 }
 
 .item {
-  border: 1px solid var(--line);
+  border: 1px solid var(--v4-line-strong);
   padding: 18px 20px;
 }
 
 .itemHeader {
-  color: var(--muted);
+  color: var(--text-500);
   display: flex;
   flex-wrap: wrap;
   gap: 8px 16px;
@@ -110,7 +102,7 @@
 }
 
 .draft {
-  border: 1px solid var(--line);
+  border: 1px solid var(--v4-line-strong);
   font: inherit;
   min-height: 44px;
   padding: 10px 12px;
@@ -125,15 +117,15 @@
 }
 
 .actions button {
-  background: var(--paper);
-  border: 1px solid var(--line);
+  background: var(--bg-200);
+  border: 1px solid var(--v4-line-strong);
   min-height: 44px;
   padding: 0 16px;
 }
 
 .actions button:hover:not(:disabled) {
-  border-color: var(--red);
-  color: var(--red);
+  border-color: var(--error-600);
+  color: var(--error-600);
 }
 
 .actions button:disabled {
@@ -167,17 +159,17 @@
 
 .pass small,
 .fail small {
-  color: var(--muted);
+  color: var(--text-500);
   font-size: 12px;
   font-weight: 400;
 }
 
 .pass {
-  color: var(--blue);
+  color: var(--v2-ring);
 }
 
 .fail {
-  color: var(--red);
+  color: var(--error-600);
 }
 
 .answerBlock {
@@ -185,7 +177,7 @@
 }
 
 .answerLabel {
-  color: var(--muted);
+  color: var(--text-500);
   display: block;
   font-size: 12px;
   letter-spacing: 0.06em;
@@ -207,20 +199,20 @@
 }
 
 .note {
-  color: var(--muted);
+  color: var(--text-500);
   font-size: 13px;
 }
 
 .askAgent {
-  background: var(--paper);
+  background: var(--bg-200);
   border: 1px solid var(--v2-border);
-  color: var(--ink);
+  color: var(--text-900);
   margin-top: 8px;
   min-height: 44px;
   padding: 0 16px;
 }
 
 .askAgent:hover {
-  border-color: var(--red);
-  color: var(--red);
+  border-color: var(--error-600);
+  color: var(--error-600);
 }

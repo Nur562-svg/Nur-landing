@@ -1,16 +1,7 @@
 .appShell {
-  /* R3 token 桥接：局部 token 改引 v2 全局 token（映射口径见 design-qa.md R3 节）；.dark 自动翻转。
-     --blue → --v2-ring（聚焦描边统一 terracotta）为设计决策，非等值替换。 */
-  --ink: var(--text-900);
-  --paper: var(--bg-200);
-  --paper-bright: var(--bg-100);
-  --muted: var(--text-500);
-  --line: color-mix(in srgb, var(--text-900) 12%, transparent);
   --soft-line: color-mix(in srgb, var(--text-900) 6%, transparent);
-  --red: var(--error-600);
-  --blue: var(--v2-ring);
-  background: var(--paper);
-  color: var(--ink);
+  background: var(--bg-200);
+  color: var(--text-900);
   min-height: 100dvh;
   overflow-x: clip;
 }
@@ -21,7 +12,7 @@
 }
 
 .appShell :where(a, button, textarea):focus-visible {
-  outline: 2px solid var(--blue);
+  outline: 2px solid var(--v2-ring);
   outline-offset: 3px;
 }
 
@@ -42,7 +33,7 @@
   min-height: 44px;
   display: inline-flex;
   align-items: center;
-  color: var(--ink);
+  color: var(--text-900);
   font-family: var(--font-serif), "Times New Roman", serif;
   font-size: 26px;
   font-weight: 700;
@@ -60,7 +51,7 @@
 
 .navigation a {
   align-items: center;
-  color: var(--ink);
+  color: var(--text-900);
   display: flex;
   font-size: 17px;
   font-weight: 650;
@@ -70,7 +61,7 @@
 }
 
 .navigation a::after {
-  background: var(--ink);
+  background: var(--text-900);
   bottom: 14px;
   content: "";
   height: 2px;
@@ -96,7 +87,7 @@
   align-items: center;
   background: transparent;
   border: 0;
-  color: var(--ink);
+  color: var(--text-900);
   cursor: pointer;
   display: flex;
   gap: 14px;
@@ -105,11 +96,11 @@
 
 .avatar {
   align-items: center;
-  background: var(--ink);
+  background: var(--text-900);
   border: 1px solid var(--v2-border);
   border-radius: 50%;
-  box-shadow: inset 0 0 0 5px var(--ink), inset 0 0 0 6px color-mix(in srgb, var(--paper-bright) 80%, transparent);
-  color: var(--paper-bright);
+  box-shadow: inset 0 0 0 5px var(--text-900), inset 0 0 0 6px color-mix(in srgb, var(--bg-100) 80%, transparent);
+  color: var(--bg-100);
   display: flex;
   font-family: var(--font-serif), Georgia, serif;
   font-size: 27px;
@@ -125,7 +116,7 @@
 }
 
 .accountPanel {
-  background: var(--paper-bright);
+  background: var(--bg-100);
   border: 1px solid var(--v2-border);
   box-shadow: 8px 8px 0 color-mix(in srgb, var(--text-900) 10%, transparent);
   display: grid;
@@ -145,7 +136,7 @@
 }
 
 .accountPanel > div span {
-  color: var(--muted);
+  color: var(--text-500);
   font-size: 10px;
 }
 
@@ -154,15 +145,15 @@
 }
 
 .accountPanel > div p {
-  color: var(--muted);
+  color: var(--text-500);
   font-size: 11px;
   margin: 0;
 }
 
 .accountPanel > a {
   align-items: center;
-  border-top: 1px solid var(--line);
-  color: var(--ink);
+  border-top: 1px solid var(--v4-line);
+  color: var(--text-900);
   display: flex;
   font-size: 11px;
   justify-content: space-between;
@@ -201,7 +192,7 @@
 
 .breadcrumbs {
   align-items: center;
-  color: var(--muted);
+  color: var(--text-500);
   display: flex;
   flex-wrap: wrap;
   font-size: 12px;
@@ -212,13 +203,13 @@
 .breadcrumbs a {
   min-height: 44px;
   align-items: center;
-  color: var(--ink);
+  color: var(--text-900);
   display: flex;
   gap: 6px;
 }
 
 .breadcrumbs strong {
-  color: var(--ink);
+  color: var(--text-900);
   font-weight: 650;
 }
 
@@ -230,8 +221,8 @@
 
 .learningPath > :is(a, span) {
   align-items: center;
-  border: 1px solid var(--line);
-  color: var(--ink);
+  border: 1px solid var(--v4-line);
+  color: var(--text-900);
   display: grid;
   gap: 3px 9px;
   grid-template-columns: 22px 1fr;
@@ -259,7 +250,7 @@
 }
 
 .learningPath small {
-  color: var(--muted);
+  color: var(--text-500);
   font-size: 9px;
 }
 
@@ -269,7 +260,7 @@
 }
 
 .learningPathCurrent small {
-  color: color-mix(in srgb, var(--paper-bright) 60%, transparent);
+  color: color-mix(in srgb, var(--bg-100) 60%, transparent);
 }
 
 .hero {
@@ -320,7 +311,7 @@
 }
 
 .heroMeta span {
-  border: 1px solid var(--line);
+  border: 1px solid var(--v4-line);
   font-size: 10px;
   letter-spacing: 0.05em;
   padding: 6px 9px;
@@ -341,7 +332,7 @@
 }
 
 .heroProgress > div:first-child > span {
-  color: var(--muted);
+  color: var(--text-500);
   font-size: 11px;
 }
 
@@ -364,19 +355,19 @@
 }
 
 .heroProgress > p {
-  color: var(--muted);
+  color: var(--text-500);
   font-size: 11px;
   margin: 0 0 20px;
 }
 
 .heroProgress > p b {
-  color: var(--ink);
+  color: var(--text-900);
 }
 
 .heroNotice {
   align-items: flex-start;
   border-top: 1px solid var(--soft-line);
-  color: var(--muted);
+  color: var(--text-500);
   display: flex;
   font-size: 11px;
   gap: 9px;
@@ -385,7 +376,7 @@
 }
 
 .heroNotice svg {
-  color: var(--red);
+  color: var(--error-600);
   flex: 0 0 auto;
 }
 
@@ -422,7 +413,7 @@
 }
 
 .railHeading small {
-  color: var(--muted);
+  color: var(--text-500);
   font-size: 8px;
   letter-spacing: 0.12em;
 }
@@ -442,7 +433,7 @@
   background: transparent;
   border: 0;
   border-bottom: 1px solid var(--soft-line);
-  color: var(--ink);
+  color: var(--text-900);
   cursor: pointer;
   display: grid;
   gap: 11px;
@@ -454,7 +445,7 @@
 }
 
 .stageList button > span {
-  color: var(--muted);
+  color: var(--text-500);
   font-family: var(--font-serif), Georgia, serif;
   font-size: 16px;
 }
@@ -465,7 +456,7 @@
 }
 
 .stageList button small {
-  color: var(--muted);
+  color: var(--text-500);
   font-size: 8px;
   letter-spacing: 0.08em;
 }
@@ -476,7 +467,7 @@
 
 .stageList button b {
   bottom: 8px;
-  color: var(--muted);
+  color: var(--text-500);
   font-size: 8px;
   font-weight: 560;
   position: absolute;
@@ -492,7 +483,7 @@
 .stageList .stageActive > span,
 .stageList .stageActive small,
 .stageList .stageActive b {
-  color: color-mix(in srgb, var(--paper-bright) 62%, transparent);
+  color: color-mix(in srgb, var(--bg-100) 62%, transparent);
 }
 
 .evidenceSummary {
@@ -523,12 +514,12 @@
 }
 
 .evidenceSummary strong small {
-  color: var(--muted);
+  color: var(--text-500);
   font-size: 13px;
 }
 
 .evidenceSummary p {
-  color: var(--muted);
+  color: var(--text-500);
   font-size: 10px;
   line-height: 1.65;
   margin: 8px 0 0;
@@ -553,7 +544,7 @@
 }
 
 .caseHeader span {
-  border: 1px solid var(--line);
+  border: 1px solid var(--v4-line);
   font-size: 9px;
   padding: 5px 7px;
 }
@@ -565,7 +556,7 @@
 }
 
 .caseHeader small {
-  color: var(--muted);
+  color: var(--text-500);
   font-size: 9px;
 }
 
@@ -589,7 +580,7 @@
 .caseCard > div {
   align-items: flex-start;
   border-top: 1px solid var(--soft-line);
-  color: var(--muted);
+  color: var(--text-500);
   display: flex;
   font-size: 10px;
   gap: 8px;
@@ -599,7 +590,7 @@
 }
 
 .caseCard > div svg {
-  color: var(--blue);
+  color: var(--v2-ring);
   flex: 0 0 auto;
 }
 
@@ -611,7 +602,7 @@
 
 .reasoningSteps span {
   border-right: 1px solid var(--soft-line);
-  color: var(--muted);
+  color: var(--text-500);
   font-size: 9px;
   padding: 12px 10px;
   text-align: center;
@@ -664,7 +655,7 @@
 
 .sectionHeading > b,
 .sectionHeading > span {
-  color: var(--muted);
+  color: var(--text-500);
   font-size: 9px;
   font-weight: 560;
 }
@@ -678,9 +669,9 @@
 
 .evidenceGrid button {
   align-items: flex-start;
-  background: var(--paper-bright);
-  border: 1px solid var(--line);
-  color: var(--ink);
+  background: var(--bg-100);
+  border: 1px solid var(--v4-line);
+  color: var(--text-900);
   cursor: pointer;
   display: grid;
   gap: 10px;
@@ -693,7 +684,7 @@
 .evidenceGrid button > span,
 .rubricCheck {
   align-items: center;
-  border: 1px solid var(--line);
+  border: 1px solid var(--v4-line);
   display: flex;
   height: 17px;
   justify-content: center;
@@ -707,7 +698,7 @@
 }
 
 .evidenceGrid button small {
-  color: var(--muted);
+  color: var(--text-500);
   font-size: 8px;
 }
 
@@ -716,7 +707,7 @@
 }
 
 .evidenceGrid button small[data-role="missing"] {
-  color: var(--blue);
+  color: var(--v2-ring);
 }
 
 .evidenceGrid button strong {
@@ -724,7 +715,7 @@
 }
 
 .evidenceGrid button p {
-  color: var(--muted);
+  color: var(--text-500);
   font-size: 9px;
   line-height: 1.5;
   margin: 0;
@@ -737,18 +728,18 @@
 }
 
 .evidenceGrid .evidenceSelected > span {
-  border-color: color-mix(in srgb, var(--paper-bright) 48%, transparent);
+  border-color: color-mix(in srgb, var(--bg-100) 48%, transparent);
 }
 
 .evidenceGrid .evidenceSelected small,
 .evidenceGrid .evidenceSelected p {
-  color: color-mix(in srgb, var(--paper-bright) 62%, transparent);
+  color: color-mix(in srgb, var(--bg-100) 62%, transparent);
 }
 
 .stagePrompt {
   align-items: flex-start;
   background: color-mix(in srgb, var(--v2-ring) 6%, transparent);
-  border-left: 3px solid var(--blue);
+  border-left: 3px solid var(--v2-ring);
   display: flex;
   gap: 11px;
   margin: 21px 0;
@@ -756,7 +747,7 @@
 }
 
 .stagePrompt svg {
-  color: var(--blue);
+  color: var(--v2-ring);
   flex: 0 0 auto;
 }
 
@@ -780,9 +771,9 @@
 
 .draftArea textarea,
 .repairCard textarea {
-  background: var(--paper-bright);
+  background: var(--bg-100);
   border: 1px solid var(--v2-border);
-  color: var(--ink);
+  color: var(--text-900);
   line-height: 1.8;
   min-height: 170px;
   padding: 15px;
@@ -793,7 +784,7 @@
 
 .draftArea > span,
 .repairCard > small {
-  color: var(--muted);
+  color: var(--text-500);
   font-size: 9px;
   justify-self: end;
   margin-top: 7px;
@@ -823,13 +814,13 @@
 
 .frameworkSection > button:disabled {
   background: transparent;
-  color: var(--muted);
+  color: var(--text-500);
   cursor: not-allowed;
 }
 
 .frameworkReveal {
-  background: var(--paper-bright);
-  border: 1px solid var(--line);
+  background: var(--bg-100);
+  border: 1px solid var(--v4-line);
   margin-top: 15px;
   padding: 18px;
 }
@@ -863,7 +854,7 @@
 .frameworkReveal > p {
   align-items: flex-start;
   border-top: 1px solid var(--soft-line);
-  color: var(--muted);
+  color: var(--text-500);
   display: flex;
   font-size: 9px;
   gap: 8px;
@@ -896,12 +887,12 @@
 }
 
 .rubricHeading strong small {
-  color: var(--muted);
+  color: var(--text-500);
   font-size: 12px;
 }
 
 .rubricSection > p {
-  color: var(--muted);
+  color: var(--text-500);
   font-size: 9px;
   line-height: 1.6;
   margin: 9px 0 14px;
@@ -915,8 +906,8 @@
 .rubricList button {
   align-items: center;
   background: transparent;
-  border: 1px solid var(--line);
-  color: var(--ink);
+  border: 1px solid var(--v4-line);
+  color: var(--text-900);
   cursor: pointer;
   display: grid;
   gap: 10px;
@@ -932,7 +923,7 @@
 }
 
 .rubricPerspective {
-  border: 1px solid var(--line);
+  border: 1px solid var(--v4-line);
   font-size: 8px;
   padding: 5px 4px;
   text-align: center;
@@ -944,8 +935,8 @@
 }
 
 .rubricPerspective[data-perspective="boundary"] {
-  border-color: var(--red);
-  color: var(--red);
+  border-color: var(--error-600);
+  color: var(--error-600);
 }
 
 .rubricCopy {
@@ -958,7 +949,7 @@
 }
 
 .rubricCopy small {
-  color: var(--muted);
+  color: var(--text-500);
   font-size: 9px;
   line-height: 1.5;
 }
@@ -999,7 +990,7 @@
 }
 
 .confirmationSection p {
-  color: var(--muted);
+  color: var(--text-500);
   font-size: 9px;
   line-height: 1.6;
   margin: 6px 0 0;
@@ -1025,21 +1016,21 @@
 
 .confirmationSection > button:disabled {
   background: transparent;
-  color: var(--muted);
+  color: var(--text-500);
   cursor: not-allowed;
 }
 
 .rubricSelected .rubricCheck {
-  border-color: color-mix(in srgb, var(--paper-bright) 48%, transparent);
+  border-color: color-mix(in srgb, var(--bg-100) 48%, transparent);
 }
 
 .rubricSelected .rubricCopy small,
 .rubricSelected .rubricPerspective {
-  color: color-mix(in srgb, var(--paper-bright) 68%, transparent);
+  color: color-mix(in srgb, var(--bg-100) 68%, transparent);
 }
 
 .rubricSelected .rubricPerspective {
-  border-color: color-mix(in srgb, var(--paper-bright) 38%, transparent);
+  border-color: color-mix(in srgb, var(--bg-100) 38%, transparent);
 }
 
 .deskFooter {
@@ -1054,7 +1045,7 @@
   align-items: center;
   background: transparent;
   border: 0;
-  color: var(--ink);
+  color: var(--text-900);
   cursor: pointer;
   display: flex;
   font-size: 11px;
@@ -1082,7 +1073,7 @@
 }
 
 .cardHeading > span {
-  color: var(--muted);
+  color: var(--text-500);
   font-family: var(--font-serif), Georgia, serif;
   margin-left: auto;
 }
@@ -1103,7 +1094,7 @@
 }
 
 .diagnosticRail dt {
-  color: var(--muted);
+  color: var(--text-500);
 }
 
 .diagnosticRail dd {
@@ -1113,7 +1104,7 @@
 
 .diagnosticRail > section > p,
 .repairCard > p {
-  color: var(--muted);
+  color: var(--text-500);
   font-size: 9px;
   line-height: 1.65;
   margin: 12px 0 0;
@@ -1121,15 +1112,15 @@
 
 .warning,
 .pending {
-  color: var(--red);
+  color: var(--error-600);
 }
 
 .resolved {
-  color: var(--blue);
+  color: var(--v2-ring);
 }
 
 .repairCard > span {
-  border-left: 3px solid var(--red);
+  border-left: 3px solid var(--error-600);
   font-size: 14px;
   font-weight: 700;
   margin-top: 2px;
@@ -1147,7 +1138,7 @@
 .noRepair {
   align-items: flex-start;
   background: color-mix(in srgb, var(--v2-ring) 6%, transparent);
-  color: var(--blue);
+  color: var(--v2-ring);
   display: flex;
   gap: 9px;
   padding: 13px;
@@ -1181,7 +1172,7 @@
 }
 
 .sourceList li span {
-  color: var(--muted);
+  color: var(--text-500);
   font-size: 8px;
 }
 
@@ -1191,7 +1182,7 @@
 }
 
 .sourceList li b {
-  color: var(--muted);
+  color: var(--text-500);
   flex: 0 0 auto;
   font-size: 8px;
 }
@@ -1331,7 +1322,7 @@
   }
 
   .learningPath > :is(a, span) + :is(a, span) {
-    border-left: 1px solid var(--line);
+    border-left: 1px solid var(--v4-line);
     border-top: 0;
   }
 
@@ -1451,19 +1442,19 @@
   flex: 1;
   min-width: 200px;
   font-size: 12px;
-  color: var(--muted);
+  color: var(--text-500);
   line-height: 1.5;
 }
 
 .rewriteUndoBar span b {
-  color: var(--ink);
+  color: var(--text-900);
 }
 
 .rewriteUndoBar button {
   appearance: none;
   background: transparent;
-  border: 1px solid var(--line);
-  color: var(--ink);
+  border: 1px solid var(--v4-line);
+  color: var(--text-900);
   cursor: pointer;
   font-size: 12px;
   padding: 6px 12px;

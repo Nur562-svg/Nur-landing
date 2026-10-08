@@ -1,15 +1,7 @@
 .container {
-  /* R3 token 桥接：局部 token 改引 v2 全局 token（映射口径见 design-qa.md R3 节）；.dark 自动翻转。
-     --blue → --v2-ring 为设计决策，非等值替换。 */
-  --ink: var(--text-900);
-  --paper: var(--bg-200);
-  --muted: var(--text-500);
-  --line: color-mix(in srgb, var(--text-900) 38%, transparent);
-  --red: var(--error-600);
-  --blue: var(--v2-ring);
   align-items: center;
-  background: var(--paper);
-  color: var(--ink);
+  background: var(--bg-200);
+  color: var(--text-900);
   display: flex;
   flex-direction: column;
   min-height: 100dvh;
@@ -22,14 +14,14 @@
 }
 
 .header {
-  border-bottom: 1px solid var(--line);
+  border-bottom: 1px solid var(--v4-line-strong);
   margin-bottom: 40px;
   padding-bottom: 32px;
 }
 
 .backLink {
   align-items: center;
-  color: var(--ink);
+  color: var(--text-900);
   display: inline-flex;
   gap: 6px;
   font-size: 15px;
@@ -38,11 +30,11 @@
 }
 
 .backLink:hover {
-  color: var(--red);
+  color: var(--error-600);
 }
 
 .kicker {
-  color: var(--blue);
+  color: var(--v2-ring);
   font-size: 13px;
   letter-spacing: 0.12em;
   margin: 0 0 8px;
@@ -58,7 +50,7 @@
 
 .subtitle,
 .hint {
-  color: var(--muted);
+  color: var(--text-500);
   font-size: 15px;
   line-height: 1.7;
   margin: 0;
@@ -81,7 +73,7 @@
 }
 
 .panel {
-  border: 1px solid var(--line);
+  border: 1px solid var(--v4-line-strong);
   display: flex;
   flex-direction: column;
   gap: 12px;
@@ -102,15 +94,15 @@
 }
 
 .actions button {
-  background: var(--paper);
-  border: 1px solid var(--line);
+  background: var(--bg-200);
+  border: 1px solid var(--v4-line-strong);
   min-height: 44px;
   padding: 0 16px;
 }
 
 .actions button:hover:not(:disabled) {
-  border-color: var(--red);
-  color: var(--red);
+  border-color: var(--error-600);
+  color: var(--error-600);
 }
 
 .actions button:disabled {
@@ -118,7 +110,7 @@
 }
 
 .error {
-  color: var(--red);
+  color: var(--error-600);
   margin: 12px 0;
   width: 100%;
 }
@@ -157,7 +149,7 @@
   align-items: center;
   padding: 10px 12px;
   border: 1px solid var(--v2-border);
-  background: var(--paper);
+  background: var(--bg-200);
   text-align: left;
   font-size: 13px;
   cursor: pointer;
@@ -168,26 +160,26 @@
 }
 
 .historyItemActive {
-  border-color: var(--red);
-  background: var(--paper-bright);
+  border-color: var(--error-600);
+  background: var(--bg-100);
 }
 
 .historyMeta {
   font-size: 11px;
-  color: var(--muted);
+  color: var(--text-500);
   display: flex;
   gap: 6px;
   align-items: center;
 }
 
 .historyCurrent {
-  color: var(--red);
+  color: var(--error-600);
   font-weight: 500;
 }
 
 .clearHistory {
   font-size: 12px;
-  color: var(--muted);
+  color: var(--text-500);
   background: none;
   border: none;
   padding: 4px 0;

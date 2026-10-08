@@ -1,8 +1,4 @@
 .intake {
-  /* R3 token 桥接：--paper-light 是全局旧 token（:root 仅浅色值，.dark 未覆盖），
-     在此子树改引 v2 --bg-100（浅色下等价，暗色下翻深，随全局暗色成套）。其余 --ink/--muted
-     等已由宿主 private-materials-studio 桥接。 */
-  --paper-light: var(--bg-100);
   border-bottom: 1px solid var(--v2-border);
   margin: 0 auto;
   max-width: 1600px;
@@ -19,7 +15,7 @@
 }
 
 .sectionIndex {
-  color: var(--red);
+  color: var(--error-600);
   font-family: var(--font-serif), Georgia, serif;
   font-size: 19px;
 }
@@ -27,7 +23,7 @@
 .sectionHeader p,
 .reviewHeading > div > span,
 .batchSummary > div > span {
-  color: var(--muted);
+  color: var(--text-500);
   font-size: 10px;
   letter-spacing: 0.14em;
   margin: 0 0 5px;
@@ -40,7 +36,7 @@
 }
 
 .sectionHeader > div:nth-child(2) > span {
-  color: var(--muted);
+  color: var(--text-500);
   display: block;
   font-size: 12px;
   margin-top: 8px;
@@ -48,8 +44,8 @@
 
 .localBadge {
   align-items: center;
-  border: 1px solid var(--blue);
-  color: var(--blue);
+  border: 1px solid var(--v2-ring);
+  color: var(--v2-ring);
   display: flex;
   gap: 10px;
   padding: 10px 13px;
@@ -80,7 +76,7 @@
 
 .workflowSteps li {
   align-items: start;
-  border-right: 1px solid var(--line);
+  border-right: 1px solid var(--v4-line);
   display: grid;
   gap: 10px;
   grid-template-columns: 24px minmax(0, 1fr);
@@ -93,7 +89,7 @@
 }
 
 .workflowSteps li > span {
-  color: var(--muted);
+  color: var(--text-500);
   font-family: var(--font-serif), Georgia, serif;
   font-size: 11px;
 }
@@ -108,27 +104,27 @@
 }
 
 .workflowSteps small {
-  color: var(--muted);
+  color: var(--text-500);
   font-size: 8px;
   line-height: 1.45;
 }
 
 .workflowDone {
-  box-shadow: inset 0 2px 0 var(--blue);
+  box-shadow: inset 0 2px 0 var(--v2-ring);
 }
 
 .workflowDone > span,
 .workflowDone strong {
-  color: var(--blue);
+  color: var(--v2-ring);
 }
 
 .workflowActive {
-  box-shadow: inset 0 2px 0 var(--red);
+  box-shadow: inset 0 2px 0 var(--error-600);
 }
 
 .workflowActive > span,
 .workflowActive strong {
-  color: var(--red);
+  color: var(--error-600);
 }
 
 .workflowLocked {
@@ -156,7 +152,7 @@
 }
 
 .dropArea {
-  background: var(--paper-light);
+  background: var(--bg-100);
   border: 1px solid var(--v2-border);
   min-height: 148px;
   position: relative;
@@ -172,7 +168,7 @@
 }
 
 .dropArea input:focus-visible + label {
-  outline: 2px solid var(--blue);
+  outline: 2px solid var(--v2-ring);
   outline-offset: 3px;
 }
 
@@ -189,7 +185,7 @@
 }
 
 .dropArea svg {
-  color: var(--red);
+  color: var(--error-600);
   margin-bottom: 12px;
 }
 
@@ -199,7 +195,7 @@
 }
 
 .dropArea span {
-  color: var(--muted);
+  color: var(--text-500);
   font-size: 10px;
   line-height: 1.6;
   margin-top: 7px;
@@ -210,15 +206,15 @@
 }
 
 .limits {
-  border-bottom: 1px solid var(--line);
+  border-bottom: 1px solid var(--v4-line);
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
   margin: 0;
 }
 
 .limits div {
-  border-right: 1px solid var(--line);
-  border-top: 1px solid var(--line);
+  border-right: 1px solid var(--v4-line);
+  border-top: 1px solid var(--v4-line);
   display: grid;
   gap: 4px;
   padding: 11px;
@@ -229,7 +225,7 @@
 }
 
 .limits dt {
-  color: var(--muted);
+  color: var(--text-500);
   font-size: 9px;
 }
 
@@ -240,21 +236,21 @@
 
 .boundaryNote,
 .selectionNotice {
-  color: var(--muted);
+  color: var(--text-500);
   font-size: 9px;
   line-height: 1.65;
   margin: 12px 0 0;
 }
 
 .selectionNotice {
-  border-left: 2px solid var(--blue);
-  color: var(--blue);
+  border-left: 2px solid var(--v2-ring);
+  color: var(--v2-ring);
   padding-left: 9px;
 }
 
 .sessionNotice {
-  border-left: 2px solid var(--red);
-  color: var(--muted);
+  border-left: 2px solid var(--error-600);
+  color: var(--text-500);
   font-size: 9px;
   line-height: 1.6;
   margin: 10px 0 0;
@@ -297,7 +293,7 @@
   align-items: center;
   background: transparent;
   border: 0;
-  color: var(--red);
+  color: var(--error-600);
   cursor: pointer;
   display: inline-flex;
   font-size: 9px;
@@ -308,15 +304,15 @@
 .batchActions button:focus-visible,
 .fileActions button:focus-visible,
 .undoBar button:focus-visible {
-  outline: 2px solid var(--blue);
+  outline: 2px solid var(--v2-ring);
   outline-offset: 3px;
 }
 
 .undoBar {
   align-items: center;
-  background: var(--paper-light);
-  border-bottom: 1px solid var(--blue);
-  color: var(--blue);
+  background: var(--bg-100);
+  border-bottom: 1px solid var(--v2-ring);
+  color: var(--v2-ring);
   display: flex;
   font-size: 9px;
   justify-content: space-between;
@@ -324,7 +320,7 @@
 }
 
 .undoBar button {
-  color: var(--blue);
+  color: var(--v2-ring);
 }
 
 .fileList {
@@ -335,7 +331,7 @@
 .fileDuplicate,
 .fileRejected {
   align-items: center;
-  border-bottom: 1px solid var(--line);
+  border-bottom: 1px solid var(--v4-line);
   display: grid;
   gap: 12px;
   grid-template-columns: 22px minmax(0, 1fr) auto;
@@ -343,12 +339,12 @@
 }
 
 .fileCandidate > svg {
-  color: var(--blue);
+  color: var(--v2-ring);
 }
 
 .fileDuplicate > svg,
 .fileRejected > svg {
-  color: var(--red);
+  color: var(--error-600);
 }
 
 .fileCandidate div,
@@ -371,7 +367,7 @@
 .fileRejected span,
 .fileCandidate small,
 .fileDuplicate small {
-  color: var(--muted);
+  color: var(--text-500);
   font-size: 9px;
   overflow-wrap: anywhere;
 }
@@ -386,7 +382,7 @@
 
 .fileActions em {
   border: 1px solid currentColor;
-  color: var(--blue);
+  color: var(--v2-ring);
   font-size: 8px;
   font-style: normal;
   padding: 5px 6px;
@@ -395,21 +391,21 @@
 
 .fileDuplicate .fileActions em,
 .fileRejected .fileActions em {
-  color: var(--red);
+  color: var(--error-600);
 }
 
 .sessionAvailable,
 .sessionMissing {
-  color: var(--blue) !important;
+  color: var(--v2-ring) !important;
 }
 
 .sessionMissing {
-  color: var(--red) !important;
+  color: var(--error-600) !important;
 }
 
 .reviewHeading {
   align-items: start;
-  border-bottom: 1px solid var(--line);
+  border-bottom: 1px solid var(--v4-line);
   display: flex;
   justify-content: space-between;
   padding-bottom: 17px;
@@ -424,14 +420,14 @@
 .statusPending,
 .statusReady {
   border: 1px solid currentColor;
-  color: var(--red);
+  color: var(--error-600);
   font-size: 8px;
   letter-spacing: 0.08em;
   padding: 6px 8px;
 }
 
 .statusReady {
-  color: var(--blue);
+  color: var(--v2-ring);
 }
 
 .formGrid {
@@ -449,16 +445,16 @@
 
 .formGrid > label > span:first-child,
 .privacyFieldset legend {
-  color: var(--muted);
+  color: var(--text-500);
   font-size: 9px;
 }
 
 .formGrid input,
 .formGrid select {
-  background: var(--paper-light);
-  border: 1px solid var(--line);
+  background: var(--bg-100);
+  border: 1px solid var(--v4-line);
   border-radius: 0;
-  color: var(--ink);
+  color: var(--text-900);
   height: 42px;
   min-width: 0;
   padding: 0 11px;
@@ -466,7 +462,7 @@
 }
 
 .formGrid input:disabled {
-  color: var(--blue);
+  color: var(--v2-ring);
   opacity: 1;
 }
 
@@ -494,8 +490,8 @@
 .privacyFieldset {
   align-items: center;
   border: 0;
-  border-bottom: 1px solid var(--line);
-  border-top: 1px solid var(--line);
+  border-bottom: 1px solid var(--v4-line);
+  border-top: 1px solid var(--v4-line);
   display: flex;
   flex-wrap: wrap;
   gap: 14px;
@@ -517,7 +513,7 @@
 
 .privacyFieldset input,
 .reviewChecks input {
-  accent-color: var(--blue);
+  accent-color: var(--v2-ring);
 }
 
 .reviewChecks {
@@ -545,15 +541,15 @@
 }
 
 .reviewChecks input:disabled + span {
-  color: var(--muted);
+  color: var(--text-500);
 }
 
 .confirmButton {
   align-items: center;
-  background: var(--ink);
+  background: var(--text-900);
   border: 1px solid var(--v2-border);
   border-radius: 0;
-  color: var(--paper-light);
+  color: var(--bg-100);
   cursor: pointer;
   display: flex;
   font-size: 11px;
@@ -572,8 +568,8 @@
 
 .passedState {
   align-items: start;
-  border: 1px solid var(--blue);
-  color: var(--blue);
+  border: 1px solid var(--v2-ring);
+  color: var(--v2-ring);
   display: grid;
   gap: 12px;
   grid-template-columns: 27px minmax(0, 1fr);
@@ -586,7 +582,7 @@
 }
 
 .passedState p {
-  color: var(--muted);
+  color: var(--text-500);
   font-size: 9px;
   line-height: 1.6;
   margin: 5px 0 0;
@@ -594,9 +590,9 @@
 
 .nextGate {
   align-items: start;
-  border-bottom: 1px solid var(--line);
-  border-left: 1px solid var(--line);
-  border-right: 1px solid var(--line);
+  border-bottom: 1px solid var(--v4-line);
+  border-left: 1px solid var(--v4-line);
+  border-right: 1px solid var(--v4-line);
   display: grid;
   gap: 11px;
   grid-template-columns: 23px minmax(0, 1fr) auto;
@@ -604,7 +600,7 @@
 }
 
 .nextGate > svg {
-  color: var(--muted);
+  color: var(--text-500);
 }
 
 .nextGate > div {
@@ -613,7 +609,7 @@
 }
 
 .nextGate span {
-  color: var(--muted);
+  color: var(--text-500);
   font-size: 8px;
   letter-spacing: 0.12em;
 }
@@ -623,15 +619,15 @@
 }
 
 .nextGate p {
-  color: var(--muted);
+  color: var(--text-500);
   font-size: 9px;
   line-height: 1.55;
   margin: 0;
 }
 
 .nextGate em {
-  border: 1px solid var(--line);
-  color: var(--muted);
+  border: 1px solid var(--v4-line);
+  color: var(--text-500);
   font-size: 8px;
   font-style: normal;
   padding: 5px 7px;
@@ -640,8 +636,8 @@
 
 .blockers {
   align-items: start;
-  border-left: 2px solid var(--red);
-  color: var(--red);
+  border-left: 2px solid var(--error-600);
+  color: var(--error-600);
   display: grid;
   gap: 10px;
   grid-template-columns: 20px minmax(0, 1fr);
@@ -654,7 +650,7 @@
 }
 
 .blockers ul {
-  color: var(--muted);
+  color: var(--text-500);
   font-size: 9px;
   line-height: 1.55;
   margin: 5px 0 0;
@@ -670,7 +666,7 @@
 
 .boundaryLedger article {
   align-items: start;
-  border: 1px solid var(--line);
+  border: 1px solid var(--v4-line);
   display: grid;
   gap: 8px;
   grid-template-columns: 20px minmax(0, 1fr);
@@ -678,7 +674,7 @@
 }
 
 .boundaryLedger svg {
-  color: var(--blue);
+  color: var(--v2-ring);
 }
 
 .boundaryLedger div {
@@ -691,7 +687,7 @@
 }
 
 .boundaryLedger span {
-  color: var(--muted);
+  color: var(--text-500);
   font-size: 8px;
   line-height: 1.45;
   overflow-wrap: anywhere;
@@ -732,7 +728,7 @@
   }
 
   .workflowSteps li:nth-child(-n + 2) {
-    border-bottom: 1px solid var(--line);
+    border-bottom: 1px solid var(--v4-line);
   }
 
   .sectionHeader {
@@ -768,7 +764,7 @@
 
   .workflowSteps li,
   .workflowSteps li:nth-child(2) {
-    border-bottom: 1px solid var(--line);
+    border-bottom: 1px solid var(--v4-line);
     border-right: 0;
     min-height: auto;
   }

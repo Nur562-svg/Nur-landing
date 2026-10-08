@@ -1,15 +1,7 @@
 .container {
-  /* R3 token 桥接：局部 token 改引 v2 全局 token（映射口径见 design-qa.md R3 节）；.dark 自动翻转。
-     --blue → --v2-ring（聚焦描边统一 terracotta）为设计决策，非等值替换。 */
-  --ink: var(--text-900);
-  --paper: var(--bg-200);
-  --muted: var(--text-500);
-  --line: color-mix(in srgb, var(--text-900) 12%, transparent);
   --soft-line: color-mix(in srgb, var(--text-900) 6%, transparent);
-  --red: var(--error-600);
-  --blue: var(--v2-ring);
-  background: var(--paper);
-  color: var(--ink);
+  background: var(--bg-200);
+  color: var(--text-900);
   min-height: 100dvh;
   padding: 48px 64px 96px;
   max-width: 1280px;
@@ -17,13 +9,13 @@
 }
 
 .header {
-  border-bottom: 1px solid var(--line);
+  border-bottom: 1px solid var(--v4-line);
   margin-bottom: 40px;
   padding-bottom: 32px;
 }
 
 .backLink {
-  color: var(--ink);
+  color: var(--text-900);
   display: inline-flex;
   align-items: center;
   gap: 6px;
@@ -32,11 +24,11 @@
 }
 
 .backLink:hover {
-  color: var(--muted);
+  color: var(--text-500);
 }
 
 .kicker {
-  color: var(--blue);
+  color: var(--v2-ring);
   font-size: 13px;
   letter-spacing: 0.12em;
   margin: 0 0 8px;
@@ -51,7 +43,7 @@
   border-radius: 999px;
   border: 1px solid color-mix(in srgb, var(--text-900) 18%, transparent);
   background: color-mix(in srgb, var(--text-900) 7%, transparent);
-  color: var(--text-700, var(--muted));
+  color: var(--text-700, var(--text-500));
   font-size: 12px;
   font-weight: 600;
   letter-spacing: 0.04em;
@@ -66,7 +58,7 @@
 }
 
 .subtitle {
-  color: var(--muted);
+  color: var(--text-500);
   font-size: 15px;
   line-height: 1.7;
   margin: 0;
@@ -95,7 +87,7 @@
 }
 
 .sectionMeta {
-  color: var(--muted);
+  color: var(--text-500);
   font-size: 13px;
   margin: 0 0 16px;
 }
@@ -103,7 +95,7 @@
 .primaryAction {
   align-items: center;
   background: var(--v2-primary);
-  color: var(--paper);
+  color: var(--bg-200);
   display: inline-flex;
   font-size: 14px;
   gap: 8px;
@@ -112,7 +104,7 @@
 }
 
 .primaryAction:hover {
-  background: var(--red);
+  background: var(--error-600);
 }
 
 .learningList {
@@ -122,7 +114,7 @@
 .learningRow {
   align-items: center;
   border-bottom: 1px solid var(--soft-line);
-  color: var(--ink);
+  color: var(--text-900);
   display: flex;
   font-size: 15px;
   gap: 12px;
@@ -138,7 +130,7 @@
 }
 
 .rowArrow {
-  color: var(--muted);
+  color: var(--text-500);
 }
 
 .chapterGrid {
@@ -148,8 +140,8 @@
 }
 
 .chapterCard {
-  border: 1px solid var(--line);
-  color: var(--ink);
+  border: 1px solid var(--v4-line);
+  color: var(--text-900);
   display: flex;
   flex-direction: column;
   gap: 8px;
@@ -160,12 +152,12 @@
 }
 
 .chapterCard:hover {
-  border-color: var(--muted);
+  border-color: var(--text-500);
   color: var(--v2-primary);
 }
 
 .chapterIndex {
-  color: var(--muted);
+  color: var(--text-500);
   font-size: 11px;
   letter-spacing: 0.14em;
 }
@@ -177,12 +169,12 @@
 }
 
 .chapterCount {
-  color: var(--muted);
+  color: var(--text-500);
   font-size: 13px;
 }
 
 .blueprintCard {
-  border: 1px solid var(--line);
+  border: 1px solid var(--v4-line);
   padding: 20px 24px;
 }
 
@@ -193,20 +185,20 @@
 }
 
 .blueprintMeta {
-  color: var(--muted);
+  color: var(--text-500);
   font-size: 13px;
   margin: 0;
 }
 
 .blueprintNotice {
-  color: var(--muted);
+  color: var(--text-500);
   font-size: 14px;
   line-height: 1.7;
   margin: 0;
 }
 
 .blueprintNotice strong {
-  color: var(--red);
+  color: var(--error-600);
 }
 
 .sourceList {
@@ -231,7 +223,7 @@
 }
 
 .sourceMeta {
-  color: var(--muted);
+  color: var(--text-500);
   font-size: 13px;
 }
 

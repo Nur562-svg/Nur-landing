@@ -1,16 +1,7 @@
 .container {
-  /* R3 token 桥接：局部 token 改引 globals.css 的 v2 全局 token（映射口径见 design-qa.md R3 节）。
-     引用点不改；.dark 下随全局暗色自动翻转。
-     注意：--blue 桥接为 --v2-ring（聚焦描边统一 terracotta）是设计决策，非等值替换。 */
-  --ink: var(--text-900);
-  --paper: var(--bg-200);
-  --muted: var(--text-500);
-  --line: color-mix(in srgb, var(--text-900) 12%, transparent);
   --soft-line: color-mix(in srgb, var(--text-900) 6%, transparent);
-  --red: var(--error-600);
-  --blue: var(--v2-ring);
-  background: var(--paper);
-  color: var(--ink);
+  background: var(--bg-200);
+  color: var(--text-900);
   min-height: 100dvh;
   padding: 48px 64px 96px;
   max-width: 1280px;
@@ -18,13 +9,13 @@
 }
 
 .header {
-  border-bottom: 1px solid var(--line);
+  border-bottom: 1px solid var(--v4-line);
   margin-bottom: 40px;
   padding-bottom: 32px;
 }
 
 .backLink {
-  color: var(--ink);
+  color: var(--text-900);
   display: inline-flex;
   align-items: center;
   gap: 6px;
@@ -34,11 +25,11 @@
 }
 
 .backLink:hover {
-  color: var(--muted);
+  color: var(--text-500);
 }
 
 .kicker {
-  color: var(--blue);
+  color: var(--v2-ring);
   font-size: 13px;
   letter-spacing: 0.12em;
   margin: 0 0 8px;
@@ -53,7 +44,7 @@
 }
 
 .subtitle {
-  color: var(--muted);
+  color: var(--text-500);
   font-size: 15px;
   line-height: 1.7;
   margin: 0;
@@ -80,8 +71,8 @@
 }
 
 .card {
-  border: 1px solid var(--line);
-  color: var(--ink);
+  border: 1px solid var(--v4-line);
+  color: var(--text-900);
   display: flex;
   flex-direction: column;
   min-height: 44px;
@@ -101,11 +92,11 @@
 }
 
 .card:hover {
-  border-color: var(--muted);
+  border-color: var(--text-500);
 }
 
 .cardKicker {
-  color: var(--muted);
+  color: var(--text-500);
   font-size: 11px;
   letter-spacing: 0.14em;
 }
@@ -115,7 +106,7 @@
   background: color-mix(in srgb, var(--text-900) 8%, transparent);
   border: 1px solid color-mix(in srgb, var(--text-900) 18%, transparent);
   border-radius: 999px;
-  color: var(--text-700, var(--muted));
+  color: var(--text-700, var(--text-500));
   display: inline-flex;
   font-size: 11px;
   font-weight: 600;
@@ -124,7 +115,7 @@
 }
 
 .sectionHint {
-  color: var(--muted);
+  color: var(--text-500);
   font-size: 13px;
   line-height: 1.6;
   margin: -4px 0 16px;
@@ -138,7 +129,7 @@
 }
 
 .cardMeta {
-  color: var(--muted);
+  color: var(--text-500);
   font-size: 13px;
   margin: 0;
 }
@@ -159,7 +150,7 @@
 }
 
 .cardLinks a {
-  color: var(--muted);
+  color: var(--text-500);
   font-size: 13px;
   min-height: 44px;
   display: inline-flex;

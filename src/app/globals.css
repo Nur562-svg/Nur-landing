@@ -53,9 +53,8 @@
   --font-sans: system-ui, -apple-system, BlinkMacSystemFont, "PingFang SC", "Hiragino Sans GB", "Noto Sans SC", "Microsoft YaHei", "Segoe UI", sans-serif;
   --font-serif: "Songti SC", "STSong", "Noto Serif SC", "SimSun", "Times New Roman", serif;
   --font-heading: var(--font-serif);
-  --ink: #10100f;
-  --paper: #f7f4ee;
-  --paper-light: #f7f4ee;
+  /* 纸墨代 --ink/--paper/--paper-light 已于 2026-10-08 P1-A/P1-C 退役删除（映射见
+     docs/DESIGN_V4.md §十二续：→ --text-900 / --bg-200 / --bg-100）。全仓零引用。 */
   --background: oklch(1 0 0);
   --foreground: oklch(0.145 0 0);
   --card: oklch(1 0 0);
@@ -326,6 +325,12 @@ button:not(.icon-only-large),
   --v3-font-kai: "Kaiti SC", "STKaiti", "KaiTi", "Noto Serif SC", serif;
   --v4-doc-size: 15px;
   --v4-doc-leading: 1.85;
+  /* 细边框三档（设计评审 P1-A token 归一口径，docs/DESIGN_V4.md §十二续）：
+     基于 --text-900 的透明度混合，随 .dark 自动翻转；纸墨代 --line/--line-soft 的替换目标。
+     strong 档承接 private-practice-room / private-materials-studio 原有 38% 强线语义。 */
+  --v4-line: color-mix(in srgb, var(--text-900) 12%, transparent);
+  --v4-line-soft: color-mix(in srgb, var(--text-900) 6%, transparent);
+  --v4-line-strong: color-mix(in srgb, var(--text-900) 38%, transparent);
   /* 阴影 */
   --v2-shadow-2xs: 0 1px 3px 0px rgba(0, 0, 0, 0.05);
   --v2-shadow-xs: 0 1px 3px 0px rgba(0, 0, 0, 0.05);
@@ -335,6 +340,48 @@ button:not(.icon-only-large),
   --v2-shadow-lg: 0 1px 3px 0px rgba(0, 0, 0, 0.1), 0 4px 6px -1px rgba(0, 0, 0, 0.1);
   --v2-shadow-xl: 0 1px 3px 0px rgba(0, 0, 0, 0.1), 0 8px 10px -1px rgba(0, 0, 0, 0.1);
   --v2-shadow-2xl: 0 1px 3px 0px rgba(0, 0, 0, 0.25);
+
+  /* ===== 设计评审 P0/V-1（2026-10-07）：动效与深度 token（Quiet v5 方向，docs/DESIGN_V4.md v5 节）=====
+     动效只留状态性（v4 裁决不变）——token 化时长与缓动，供 hover/进入过渡统一取用；
+     深度三级：rest（平涂+细边，即现状）/ raised（hover 浮起：阴影 + 1px 内高光）/ overlay（浮层两层阴影）。
+     暗色深度用暖炭亮度分层，不引入冷灰。 */
+  --motion-fast: 150ms;
+  --motion-slow: 250ms;
+  --ease-out-quart: cubic-bezier(0.25, 1, 0.5, 1);
+  --elevation-raised-shadow:
+    0 1px 2px rgba(0, 0, 0, 0.05),
+    0 2px 6px rgba(0, 0, 0, 0.06),
+    inset 0 1px 0 rgba(255, 255, 255, 0.6);
+  --elevation-overlay-shadow:
+    0 4px 12px rgba(0, 0, 0, 0.08),
+    0 12px 32px rgba(0, 0, 0, 0.12),
+    inset 0 1px 0 rgba(255, 255, 255, 0.7);
+  --surface-raised: #ffffff;
+  /* 文档/统计数字等宽（页码、配额、成绩不跳动） */
+  --font-numtab: ui-monospace, "SF Mono", SFMono-Regular, Menlo, monospace;
+}
+
+/* 全局键盘焦点兜底（评审 P0-A）：模块内更具体的 :focus-visible 规则自然覆盖本条 */
+:focus-visible {
+  outline: 2px solid color-mix(in srgb, var(--v2-primary) 65%, transparent);
+  outline-offset: 2px;
+}
+
+/* 中文长文排版（评审 V-1）：正文流中的页码/题号/统计等宽数字，不随内容跳动 */
+[class*="lessonBody"],
+[class*="studyKpMeta"] {
+  font-variant-numeric: tabular-nums;
+}
+
+/* reduced-motion：过渡类全局降级；animation（spinner/呼吸点/caret）是状态反馈不冻结，
+   由各组件既有 prefers-reduced-motion 分支自行处理（图谱/chatStatusBreath 已有先例） */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
 }
 
 @media (max-width: 480px) {
@@ -345,6 +392,16 @@ button:not(.icon-only-large),
 
 /* v2 暗色模式：暖炭灰体系（库 .dark 现成值）；本期不强制任何页面启用 */
 .dark {
+  /* 设计评审 V-1：暗色深度分层（暖炭亮度阶梯，不引入冷灰）；内高光换成低透明白 */
+  --elevation-raised-shadow:
+    0 1px 2px rgba(0, 0, 0, 0.2),
+    0 2px 6px rgba(0, 0, 0, 0.25),
+    inset 0 1px 0 rgba(255, 255, 255, 0.04);
+  --elevation-overlay-shadow:
+    0 4px 12px rgba(0, 0, 0, 0.3),
+    0 12px 32px rgba(0, 0, 0, 0.4),
+    inset 0 1px 0 rgba(255, 255, 255, 0.05);
+  --surface-raised: #26241e;
   /* ===== 1) 原色阶（暗）===== */
   --brand-50: #3a2a22;
   --brand-100: #4d3528;

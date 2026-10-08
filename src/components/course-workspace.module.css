@@ -1,16 +1,7 @@
 .appShell {
-  /* R3 token 桥接：局部 token 改引 v2 全局 token（映射口径见 design-qa.md R3 节）；.dark 自动翻转。
-     --blue → --v2-ring（聚焦描边统一 terracotta）为设计决策，非等值替换。 */
-  --ink: var(--text-900);
-  --paper: var(--bg-200);
-  --paper-bright: var(--bg-100);
-  --muted: var(--text-500);
-  --line: color-mix(in srgb, var(--text-900) 12%, transparent);
   --soft-line: color-mix(in srgb, var(--text-900) 6%, transparent);
-  --red: var(--error-600);
-  --blue: var(--v2-ring);
-  background: var(--paper);
-  color: var(--ink);
+  background: var(--bg-200);
+  color: var(--text-900);
   min-height: 100dvh;
   overflow-x: clip;
 }
@@ -21,7 +12,7 @@
 }
 
 .appShell :where(a):focus-visible {
-  outline: 2px solid var(--blue);
+  outline: 2px solid var(--v2-ring);
   outline-offset: 3px;
 }
 
@@ -42,7 +33,7 @@
   min-height: 44px;
   display: inline-flex;
   align-items: center;
-  color: var(--ink);
+  color: var(--text-900);
   font-family: var(--font-serif), "Times New Roman", serif;
   font-size: 26px;
   font-weight: 700;
@@ -62,7 +53,7 @@
   align-items: center;
   background: transparent;
   border: 0;
-  color: var(--ink);
+  color: var(--text-900);
   cursor: pointer;
   display: flex;
   font-size: 17px;
@@ -99,7 +90,7 @@
   align-items: center;
   background: transparent;
   border: 0;
-  color: var(--ink);
+  color: var(--text-900);
   cursor: pointer;
   display: flex;
   gap: 14px;
@@ -108,11 +99,11 @@
 
 .avatar {
   align-items: center;
-  background: var(--ink);
+  background: var(--text-900);
   border: 1px solid var(--v2-border);
   border-radius: 50%;
-  box-shadow: inset 0 0 0 5px var(--ink), inset 0 0 0 6px color-mix(in srgb, var(--paper-bright) 80%, transparent);
-  color: var(--paper-bright);
+  box-shadow: inset 0 0 0 5px var(--text-900), inset 0 0 0 6px color-mix(in srgb, var(--bg-100) 80%, transparent);
+  color: var(--bg-100);
   display: flex;
   font-family: var(--font-serif), Georgia, serif;
   font-size: 27px;
@@ -128,7 +119,7 @@
 }
 
 .accountPanel {
-  background: var(--paper-bright);
+  background: var(--bg-100);
   border: 1px solid var(--v2-border);
   box-shadow: 8px 8px 0 color-mix(in srgb, var(--text-900) 10%, transparent);
   display: grid;
@@ -148,7 +139,7 @@
 }
 
 .accountPanel > div span {
-  color: var(--muted);
+  color: var(--text-500);
   font-size: 10px;
 }
 
@@ -157,15 +148,15 @@
 }
 
 .accountPanel > div p {
-  color: var(--muted);
+  color: var(--text-500);
   font-size: 11px;
   margin: 0;
 }
 
 .accountPanel > a {
   align-items: center;
-  border-top: 1px solid var(--line);
-  color: var(--ink);
+  border-top: 1px solid var(--v4-line);
+  color: var(--text-900);
   display: flex;
   font-size: 11px;
   justify-content: space-between;
@@ -206,7 +197,7 @@
 
 .breadcrumbs {
   align-items: center;
-  color: var(--muted);
+  color: var(--text-500);
   display: flex;
   flex-wrap: wrap;
   font-size: 12px;
@@ -218,13 +209,13 @@
   min-height: 44px;
   padding: 8px 0;
   align-items: center;
-  color: var(--ink);
+  color: var(--text-900);
   display: flex;
   gap: 6px;
 }
 
 .breadcrumbs strong {
-  color: var(--ink);
+  color: var(--text-900);
   font-weight: 650;
 }
 
@@ -270,7 +261,7 @@
 }
 
 .courseMeta span {
-  border: 1px solid var(--line);
+  border: 1px solid var(--v4-line);
   font-size: 11px;
   padding: 7px 10px;
 }
@@ -335,13 +326,13 @@
 }
 
 .courseProgress > p {
-  color: var(--muted);
+  color: var(--text-500);
   font-size: 11px;
   margin: 9px 0 18px;
 }
 
 .courseProgress > p b {
-  color: var(--ink);
+  color: var(--text-900);
   font-family: var(--font-serif), Georgia, serif;
   font-size: 17px;
   font-weight: 400;
@@ -369,8 +360,8 @@
 
 .courseProgress > button:hover,
 .continueLearning:hover {
-  background: var(--paper-bright);
-  color: var(--ink);
+  background: var(--bg-100);
+  color: var(--text-900);
 }
 
 .courseProgress > button span,
@@ -417,7 +408,7 @@
 }
 
 .guidedPathIntro p {
-  color: var(--muted);
+  color: var(--text-500);
   font-size: 11px;
   line-height: 1.65;
   margin: 0;
@@ -430,8 +421,8 @@
 }
 
 .guidedPathLinks > a {
-  border: 1px solid var(--line);
-  color: var(--ink);
+  border: 1px solid var(--v4-line);
+  color: var(--text-900);
   display: grid;
   gap: 7px;
   min-height: 118px;
@@ -445,7 +436,7 @@
 
 .guidedPathLinks > a:hover {
   background: transparent;
-  border-color: var(--muted);
+  border-color: var(--text-500);
 }
 
 .guidedPathLinks > a:hover > span {
@@ -460,14 +451,14 @@
 
 .guidedPathLinks small {
   align-items: center;
-  color: var(--muted);
+  color: var(--text-500);
   display: flex;
   font-size: 10px;
   gap: 5px;
 }
 
 .guidedPathLinks > a:hover small {
-  color: color-mix(in srgb, var(--paper-bright) 70%, transparent);
+  color: color-mix(in srgb, var(--bg-100) 70%, transparent);
 }
 
 .scopeBar {
@@ -483,7 +474,7 @@
 
 .scopeBar > p {
   align-items: center;
-  color: var(--muted);
+  color: var(--text-500);
   display: flex;
   font-size: 11px;
   gap: 8px;
@@ -498,8 +489,8 @@
 .scopeTrigger {
   align-items: center;
   background: transparent;
-  border: 1px solid var(--line);
-  color: var(--ink);
+  border: 1px solid var(--v4-line);
+  color: var(--text-900);
   cursor: pointer;
   display: inline-flex;
   font-family: inherit;
@@ -513,22 +504,22 @@
 
 .scopeTrigger:hover {
   background: color-mix(in srgb, var(--text-900) 5%, transparent);
-  border-color: var(--ink);
+  border-color: var(--text-900);
 }
 
 .scopeTriggerLabel {
-  color: var(--muted);
+  color: var(--text-500);
   font-weight: 500;
 }
 
 .scopeTriggerValue {
-  color: var(--ink);
+  color: var(--text-900);
   font-size: 13px;
   letter-spacing: 0.01em;
 }
 
 .scopeTriggerChevron {
-  color: var(--muted);
+  color: var(--text-500);
   margin-left: 2px;
   transition: transform 180ms ease;
 }
@@ -542,7 +533,7 @@
 .scopeSwitcherOpen .scopeTriggerLabel,
 .scopeSwitcherOpen .scopeTriggerValue,
 .scopeSwitcherOpen .scopeTriggerChevron {
-  color: var(--paper-bright);
+  color: var(--bg-100);
 }
 
 .scopeSwitcherOpen .scopeTriggerChevron {
@@ -551,7 +542,7 @@
 
 .scopeOptions {
   align-items: stretch;
-  background: var(--paper-bright);
+  background: var(--bg-100);
   border: 1px solid var(--v2-border);
   /* 软阴影：紧贴边框、向外柔化，避免硬偏移方块越界 */
   box-shadow: 0 2px 6px color-mix(in srgb, var(--text-900) 6%, transparent), 0 1px 2px color-mix(in srgb, var(--text-900) 4%, transparent);
@@ -579,8 +570,8 @@
   align-items: center;
   background: transparent;
   border: 0;
-  border-left: 1px solid var(--line);
-  color: var(--ink);
+  border-left: 1px solid var(--v4-line);
+  color: var(--text-900);
   cursor: pointer;
   display: flex;
   font-family: inherit;
@@ -649,7 +640,7 @@
 .railHeading,
 .cardHeading {
   align-items: center;
-  border-bottom: 1px solid var(--line);
+  border-bottom: 1px solid var(--v4-line);
   display: flex;
 }
 
@@ -669,7 +660,7 @@
 
 .railHeading span,
 .cardHeading span {
-  color: var(--muted);
+  color: var(--text-500);
   font-size: 10px;
 }
 
@@ -688,7 +679,7 @@
 }
 
 .chapterIndex {
-  color: var(--muted);
+  color: var(--text-500);
   font-family: var(--font-serif), Georgia, serif;
   font-size: 17px;
 }
@@ -707,12 +698,12 @@
 }
 
 .chapterName small {
-  color: var(--muted);
+  color: var(--text-500);
   font-size: 9px;
 }
 
 .chapterActive .chapterName small {
-  color: color-mix(in srgb, var(--paper-bright) 56%, transparent);
+  color: color-mix(in srgb, var(--bg-100) 56%, transparent);
 }
 
 .chapterPercent {
@@ -763,12 +754,12 @@
 }
 
 .chapterSummary span {
-  color: var(--muted);
+  color: var(--text-500);
   font-size: 10px;
 }
 
 .chapterFocus {
-  color: var(--muted);
+  color: var(--text-500);
   font-size: 14px;
   line-height: 1.6;
   margin: 12px 0 16px;
@@ -799,7 +790,7 @@
 }
 
 .routeTabs button > span {
-  color: var(--muted);
+  color: var(--text-500);
   font-size: 10px;
 }
 
@@ -809,7 +800,7 @@
 }
 
 .routeTabs button small {
-  color: var(--muted);
+  color: var(--text-500);
   font-size: 9px;
   line-height: 1.45;
 }
@@ -824,7 +815,7 @@
 }
 
 .routeTabs .routeActive small {
-  color: color-mix(in srgb, var(--paper-bright) 56%, transparent);
+  color: color-mix(in srgb, var(--bg-100) 56%, transparent);
 }
 
 .unitHeading {
@@ -848,12 +839,12 @@
 }
 
 .unitHeading > div small {
-  color: var(--muted);
+  color: var(--text-500);
   font-size: 9px;
 }
 
 .unitHeading > span {
-  color: var(--muted);
+  color: var(--text-500);
   font-size: 9px;
   text-align: right;
 }
@@ -867,7 +858,7 @@
   align-items: center;
   background: transparent;
   border: 0;
-  border-bottom: 1px solid var(--line);
+  border-bottom: 1px solid var(--v4-line);
   cursor: pointer;
   display: grid;
   gap: 12px;
@@ -890,7 +881,7 @@
 
 .unitStatus {
   align-items: center;
-  border: 1px solid var(--line);
+  border: 1px solid var(--v4-line);
   border-radius: 50%;
   display: flex;
   height: 20px;
@@ -928,13 +919,13 @@
 }
 
 .unitCopy small {
-  color: var(--muted);
+  color: var(--text-500);
   font-size: 9px;
 }
 
 .frequency {
-  border: 1px solid var(--line);
-  color: var(--muted);
+  border: 1px solid var(--v4-line);
+  color: var(--text-500);
   font-size: 9px;
   padding: 3px 6px;
 }
@@ -963,7 +954,7 @@
 }
 
 .selectedAction > div span {
-  color: var(--muted);
+  color: var(--text-500);
   font-size: 9px;
 }
 
@@ -972,7 +963,7 @@
 }
 
 .selectedAction > div small {
-  color: var(--muted);
+  color: var(--text-500);
   font-size: 9px;
 }
 
@@ -1001,14 +992,14 @@
 .selectedAction > button:disabled {
   background: color-mix(in srgb, var(--text-900) 8%, transparent);
   border-color: color-mix(in srgb, var(--text-900) 8%, transparent);
-  color: var(--muted);
+  color: var(--text-500);
   cursor: not-allowed;
 }
 
 .selectedAction > .fallbackLink {
   min-height: 44px;
   align-items: center;
-  color: var(--ink);
+  color: var(--text-900);
   display: inline-flex;
   font-size: 12px;
   font-weight: 650;
@@ -1045,7 +1036,7 @@
 
 .sourceCard li {
   align-items: center;
-  border-bottom: 1px dotted var(--line);
+  border-bottom: 1px dotted var(--v4-line);
   display: flex;
   font-size: 10px;
   justify-content: space-between;
@@ -1059,7 +1050,7 @@
 
 .sourceCard > p,
 .examNotice {
-  color: var(--muted);
+  color: var(--text-500);
   font-size: 10px;
   line-height: 1.6;
   margin: 14px 0 0;
@@ -1067,7 +1058,7 @@
 
 .examConfigBar {
   align-items: center;
-  border-bottom: 1px dotted var(--line);
+  border-bottom: 1px dotted var(--v4-line);
   display: flex;
   justify-content: space-between;
   margin-bottom: 12px;
@@ -1075,7 +1066,7 @@
 }
 
 .examConfigBar > span {
-  color: var(--muted);
+  color: var(--text-500);
   font-size: 9px;
 }
 
@@ -1146,7 +1137,7 @@
 
 .sessionCard li {
   align-items: center;
-  border-bottom: 1px dotted var(--line);
+  border-bottom: 1px dotted var(--v4-line);
   display: grid;
   gap: 10px;
   grid-template-columns: 34px 1fr;
@@ -1169,7 +1160,7 @@
 }
 
 .sessionCard li small {
-  color: var(--muted);
+  color: var(--text-500);
   font-size: 9px;
 }
 
@@ -1198,16 +1189,16 @@
 
 .sessionCard > button:disabled {
   background: transparent;
-  border-color: var(--line);
-  color: var(--muted);
+  border-color: var(--v4-line);
+  color: var(--text-500);
   cursor: not-allowed;
 }
 
 .fallbackLink {
   align-items: center;
   background: transparent;
-  border: 1px solid var(--line);
-  color: var(--muted);
+  border: 1px solid var(--v4-line);
+  color: var(--text-500);
   cursor: pointer;
   display: flex;
   font-size: 11px;
@@ -1219,20 +1210,20 @@
 }
 
 .fallbackLink:hover {
-  border-color: var(--ink);
-  color: var(--ink);
+  border-color: var(--text-900);
+  color: var(--text-900);
 }
 
 .examLink {
-  color: var(--paper-bright);
-  border-color: var(--blue);
+  color: var(--bg-100);
+  border-color: var(--v2-ring);
   margin-top: 10px;
 }
 
 .examLink:hover {
   background: color-mix(in srgb, var(--v2-ring) 12%, transparent);
-  border-color: var(--blue);
-  color: var(--paper-bright);
+  border-color: var(--v2-ring);
+  color: var(--bg-100);
 }
 
 .trainingShortcuts {
@@ -1256,14 +1247,14 @@
 }
 
 .trainingShortcuts > div small {
-  color: var(--muted);
+  color: var(--text-500);
   font-size: 9px;
 }
 
 .trainingShortcuts > a {
   align-items: center;
-  border-top: 1px dotted var(--line);
-  color: var(--ink);
+  border-top: 1px dotted var(--v4-line);
+  color: var(--text-900);
   display: grid;
   gap: 9px;
   grid-template-columns: 20px minmax(0, 1fr) auto;
@@ -1281,7 +1272,7 @@
 }
 
 .trainingShortcuts > a small {
-  color: var(--muted);
+  color: var(--text-500);
   font-size: 9px;
 }
 
@@ -1301,7 +1292,7 @@
 
 .sessionDrawer {
   animation: drawer-in 260ms cubic-bezier(0.22, 1, 0.36, 1);
-  background: var(--paper-bright);
+  background: var(--bg-100);
   border-left: 1px solid var(--v2-border);
   box-shadow: -12px 0 0 color-mix(in srgb, var(--text-900) 7%, transparent);
   display: flex;
@@ -1346,7 +1337,7 @@
 
 .drawerUnit {
   border-bottom: 1px solid var(--v2-border);
-  color: var(--muted);
+  color: var(--text-500);
   font-size: 14px;
   margin: 17px 0 27px;
   padding-bottom: 20px;
@@ -1371,7 +1362,7 @@
 }
 
 .drawerPlan article span {
-  color: var(--muted);
+  color: var(--text-500);
   font-size: 10px;
 }
 
@@ -1393,7 +1384,7 @@
   align-items: center;
   background: var(--v2-primary);
   border-radius: 50%;
-  color: var(--paper-bright);
+  color: var(--bg-100);
   display: flex;
   height: 52px;
   justify-content: center;
@@ -1406,7 +1397,7 @@
 }
 
 .readyState p {
-  color: var(--muted);
+  color: var(--text-500);
   font-size: 11px;
   line-height: 1.7;
   margin: 0;
@@ -1414,7 +1405,7 @@
 
 .readyState .readyUnavailable {
   border-top: 1px solid var(--soft-line);
-  color: var(--red);
+  color: var(--error-600);
   margin-top: 16px;
   padding-top: 14px;
 }
@@ -1437,8 +1428,8 @@
 }
 
 .readyLink:hover {
-  background: var(--paper-bright);
-  color: var(--ink);
+  background: var(--bg-100);
+  color: var(--text-900);
 }
 
 .drawerAction {
@@ -1459,7 +1450,7 @@
 }
 
 .drawerNote {
-  color: var(--muted);
+  color: var(--text-500);
   font-size: 9px;
   line-height: 1.5;
   margin-top: 12px;
@@ -1473,7 +1464,7 @@
 
 .examDrawerLead {
   border-bottom: 1px solid var(--v2-border);
-  color: var(--muted);
+  color: var(--text-500);
   font-size: 13px;
   line-height: 1.7;
   margin: 16px 0 22px;
@@ -1489,7 +1480,7 @@
 }
 
 .examDraftHeading {
-  color: var(--muted);
+  color: var(--text-500);
   font-size: 9px;
   padding: 0 0 8px;
   text-align: center;
@@ -1526,9 +1517,9 @@
 
 .examDraftRows input {
   background: transparent;
-  border: 1px solid var(--line);
+  border: 1px solid var(--v4-line);
   border-radius: 0;
-  color: var(--ink);
+  color: var(--text-900);
   font: inherit;
   font-size: 11px;
   min-height: 44px;
@@ -1542,8 +1533,8 @@
 }
 
 .examDraftRows input:focus {
-  border-color: var(--blue);
-  outline: 1px solid var(--blue);
+  border-color: var(--v2-ring);
+  outline: 1px solid var(--v2-ring);
   outline-offset: -1px;
 }
 
@@ -1560,8 +1551,8 @@
 .addExamRow {
   align-items: center;
   background: transparent;
-  border: 1px dashed var(--line);
-  color: var(--ink);
+  border: 1px dashed var(--v4-line);
+  color: var(--text-900);
   cursor: pointer;
   display: flex;
   font-size: 10px;
@@ -1573,14 +1564,14 @@
 }
 
 .addExamRow:disabled {
-  color: var(--muted);
+  color: var(--text-500);
   cursor: not-allowed;
   opacity: 0.55;
 }
 
 .examDraftIssues {
-  border: 1px solid var(--red);
-  color: var(--red);
+  border: 1px solid var(--error-600);
+  color: var(--error-600);
   display: grid;
   font-size: 10px;
   gap: 4px;
@@ -1608,7 +1599,7 @@
 
 .examDraftSummary span,
 .examDraftSummary p {
-  color: var(--muted);
+  color: var(--text-500);
   font-size: 10px;
 }
 
@@ -1706,7 +1697,7 @@
   }
 
   .navigation {
-    background: var(--paper);
+    background: var(--bg-200);
     border-bottom: 1px solid var(--v2-border);
     gap: 31px;
     height: 49px;
@@ -1844,7 +1835,7 @@
   }
 
   .guidedPathLinks > a + a {
-    border-left: 1px solid var(--line);
+    border-left: 1px solid var(--v4-line);
     border-top: 0;
   }
 
@@ -1932,7 +1923,7 @@
   }
 
   .sessionCard li {
-    border-bottom: 1px dotted var(--line);
+    border-bottom: 1px dotted var(--v4-line);
   }
 
   .sessionDrawer {
