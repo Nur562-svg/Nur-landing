@@ -1,0 +1,56 @@
+/* 行内二段确认（设计评审 P0-A）：安静形态——问句 muted、确认哑红、取消 ghost。
+   token 全部用 :root 级 --v2-*（审查修正：此前用页面级作用域 token --line-soft/--paper-bright，
+   在无桥接块的页面〔如 /learn/my-materials〕会退化——「取消」无边框、hover 无底色、文字近白）。 */
+.trigger {
+  color: var(--v2-foreground);
+  cursor: pointer;
+}
+.trigger:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+
+.group {
+  display: inline-flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.title {
+  font-size: 12px;
+  line-height: 1.5;
+  color: var(--v2-muted-foreground);
+}
+
+.confirm,
+.cancel {
+  padding: 3px 10px;
+  font-size: 12px;
+  line-height: 1.5;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: background-color var(--motion-fast, 150ms) var(--ease-out-quart, ease-out);
+}
+.confirm {
+  color: #ffffff;
+  background: var(--error-600);
+  border: 1px solid var(--error-600);
+}
+.confirm:hover:not(:disabled) {
+  background: color-mix(in srgb, var(--error-600) 88%, #000000);
+}
+.cancel {
+  color: var(--v2-muted-foreground);
+  background: none;
+  border: 1px solid var(--v2-border);
+}
+.cancel:hover:not(:disabled) {
+  color: var(--v2-foreground);
+  background: color-mix(in srgb, var(--v2-muted-foreground) 10%, transparent);
+}
+.confirm:disabled,
+.cancel:disabled {
+  opacity: 0.5;
+  cursor: default;
+}

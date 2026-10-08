@@ -25,6 +25,8 @@ import { ClewMarkdown } from "./clew-markdown";
 import { ClewPathGuide } from "./clew-path-guide";
 import { V2Badge } from "@/components/ui/v2/badge";
 import { V2Button } from "@/components/ui/v2/button";
+import { InlineConfirm } from "@/components/ui/v2/inline-confirm";
+import { EmptyBoxIllustration, EmptyState } from "@/components/ui/v2/empty-state";
 import styles from "./clew.module.css";
 
 /**
@@ -125,10 +127,6 @@ export function ClewWorkshopRoom({ initialDetail }: ClewWorkshopRoomProps) {
 
   async function onDeleteFile(item: ClewWorkshopFileView) {
     if (uploading || streaming) {
-      return;
-    }
-    const confirmed = window.confirm(`从课题中删除材料「${item.fileName}」？服务器上的文件会一并移除。`);
-    if (!confirmed) {
       return;
     }
     setUploadError(null);
@@ -264,7 +262,12 @@ export function ClewWorkshopRoom({ initialDetail }: ClewWorkshopRoomProps) {
           <span>{detail.files.length} 份</span>
         </div>
         {detail.files.length === 0 ? (
-          <p className={styles.emptyState}>还没有材料。上传一份短材料后，就可以就材料内容追问。</p>
+          <EmptyState
+            tone="rich"
+            illustration={<EmptyBoxIllustration />}
+            title="还没有材料"
+            hint="上传一份短材料后，就可以就材料内容追问。"
+          />
         ) : (
           <ul className={styles.textbookList}>
             {detail.files.map((item) => (
@@ -282,15 +285,19 @@ export function ClewWorkshopRoom({ initialDetail }: ClewWorkshopRoomProps) {
                   </V2Badge>
                 </div>
                 <div className={styles.textbookActions}>
-                  <button
-                    type="button"
+                  <InlineConfirm
                     className={styles.ghostButton}
+                    label={
+                      <>
+                        <Trash2 aria-hidden="true" size={15} strokeWidth={1.6} />
+                        删除
+                      </>
+                    }
+                    confirmTitle={`从课题中删除材料「${item.fileName}」？服务器文件一并移除。`}
+                    confirmLabel="确认删除"
                     disabled={uploading || streaming}
-                    onClick={() => onDeleteFile(item)}
-                  >
-                    <Trash2 aria-hidden="true" size={15} strokeWidth={1.6} />
-                    删除
-                  </button>
+                    onConfirm={() => onDeleteFile(item)}
+                  />
                 </div>
               </li>
             ))}
@@ -359,7 +366,7 @@ export function ClewWorkshopRoom({ initialDetail }: ClewWorkshopRoomProps) {
         ) : null}
 
         {chatError ? (
-          <p className={styles.errorBox} role="alert">
+          <p className={styles.errorBox} role="alert" id="workshop-chat-error">
             <CircleAlert aria-hidden="true" size={16} strokeWidth={1.8} />
             <span>{chatError}</span>
           </p>
@@ -405,6 +412,7 @@ export function ClewWorkshopRoom({ initialDetail }: ClewWorkshopRoomProps) {
               rows={2}
               placeholder={readyFileCount > 0 ? "就这份课题的材料提问…" : "请先上传材料"}
               disabled={streaming || readyFileCount === 0}
+              aria-describedby={chatError ? "workshop-chat-error" : undefined}
               onChange={(event) => setChatDraft(event.target.value)}
               onKeyDown={(event) => {
                 if (event.key === "Enter" && !event.shiftKey && !event.nativeEvent.isComposing) {

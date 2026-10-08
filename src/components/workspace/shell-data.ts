@@ -12,12 +12,13 @@ export type ShellEntry = {
   href: string;
 };
 
-/** 主入口：我的学习为默认工作台（个人学习状态 + 官方更新）；Clew / 题库为从属入口（IA 拍板 2026-09-21；命名 2026-10-05 改定——「学习闭环」叙事属官方课，本页不冒用）。 */
+/** 主入口：我的学习为默认工作台（个人学习状态 + 官方更新）；Clew / 题库为从属入口（IA 拍板 2026-09-21；命名 2026-10-05 改定——「学习闭环」叙事属官方课，本页不冒用）。错题中心 2026-10-07 进侧栏（评审 P0-A：原为导航孤岛，仅学习面板深链可达）。 */
 export const PRIMARY_ENTRIES: readonly ShellEntry[] = [
   { id: "learn", label: "我的学习", href: "/learn" },
   { id: "clew", label: "Clew", href: "/learn/clew" },
   { id: "courses", label: "官方课程", href: "/courses" },
   { id: "question-bank", label: "题库", href: "/question-bank" },
+  { id: "wrong-questions", label: "错题中心", href: "/wrong-questions" },
   { id: "membership", label: "会员", href: "/account/billing" },
 ];
 
