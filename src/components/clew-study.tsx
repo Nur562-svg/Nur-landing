@@ -16,41 +16,36 @@ import {
 } from "lucide-react";
 import type {
   ClewChapterStudyView,
-  ClewChatEvent,
-  ClewChatMessage,
-  ClewChatScope,
   ClewKnowledgePointStudySummary,
   ClewKnowledgePointStudyView,
-  ClewLessonEvent,
-  ClewLessonStyle,
-  ClewLessonView,
-  ClewPracticeEvent,
-  ClewPracticeQuestionView,
-  ClewPracticeSetView,
-  ClewReviewItemStudyView,
 } from "@/types/clew";
 import { LOOP_PROFILES, type LoopProfileId, type LoopStage } from "@/types/loop-profile";
-import { consumeClewSse, readClewFailure } from "@/lib/clew/client-api";
-import { CLEW_CHAT_SCOPES, CLEW_CHAT_SCOPE_LABELS, isClewChatScope } from "@/lib/clew/chat-scope";
+import { readClewFailure } from "@/lib/clew/client-api";
+import { CLEW_CHAT_SCOPES, CLEW_CHAT_SCOPE_LABELS } from "@/lib/clew/chat-scope";
 import {
   CLEW_LESSON_STYLES,
   CLEW_LESSON_STYLE_LABELS,
   CLEW_LESSON_STYLE_SHORT_LABELS,
   describeClewLessonGenerator,
-  isClewLessonStyle,
-  parseClewLessonSelfTest,
 } from "@/lib/clew/lesson-heuristic";
 import { formatClewKpPageLabel, formatClewPageRange, isClewDocx } from "@/lib/clew/source-label";
 import { resolveClewGuide } from "@/lib/clew/step-guide";
+import { useStudyAssessment } from "@/hooks/use-study-assessment";
+import { useStudyChat } from "@/hooks/use-study-chat";
+import { useStudyLesson } from "@/hooks/use-study-lesson";
+import { useStudyPractice } from "@/hooks/use-study-practice";
 import {
   CLEW_LESSON_VARIANT_LABELS,
   CLEW_LESSON_VARIANT_SHORT_LABELS,
   CLEW_LESSON_VARIANTS,
   deriveClewLessonVariant,
-  isClewLessonVariant,
-  type ClewLessonVariant,
 } from "@/lib/clew/lesson-variants";
 import { V2Button } from "@/components/ui/v2/button";
+import {
+  STUDY_MODE_STORAGE_KEY,
+  readStoredValue,
+  writeStoredValue,
+} from "@/lib/clew/study-preferences";
 import { ClewHighlightLayer } from "./clew-highlights";
 import {
   ClewLoopProfileBadge,
@@ -91,62 +86,65 @@ const statusLabels: Record<ClewChapterStudyView["chapter"]["status"], string> = 
 
 /** 学习页显示模式（ZCODE-M3 Phase 4）：focus = 单任务（追问下置）；workspace = 工作台三栏。 */
 type ClewStudyMode = "focus" | "workspace";
-const STUDY_MODE_STORAGE_KEY = "nur-learn:clew-study-mode";
-/** 讲解风格偏好（浏览器本地；讲解与生成共用同一偏好，并由服务端更新账户默认）。 */
-const LESSON_STYLE_STORAGE_KEY = "nur-learn:clew-lesson-style";
-/** 讲解「依据范围」偏好（批 3；浏览器本地；每轮提问显式发送，缺省 = 讲义+教材原文）。 */
-const CHAT_SCOPE_STORAGE_KEY = "nur-learn:clew-chat-scope";
-/** 讲义视图偏好（初学/复习/备考；仅影响正文显示文本，同一份讲义确定性派生）。 */
-const LESSON_VARIANT_STORAGE_KEY = "nur-learn:clew-lesson-view";
-/** 自测标记存储键前缀（按知识点隔离；换讲义版本自动重置）。 */
-const SELF_CHECK_STORAGE_PREFIX = "nur-learn:clew-selfcheck:";
-/** 问 Clew 思考强度偏好（浏览器本地；深度档服务端校验会员档位）。 */
-const CHAT_INTENSITY_STORAGE_KEY = "nur-learn:clew-chat-intensity";
 /** 讲义折叠高度帽（交互批；px。长文默认收进帽内，展开/收起不卸载 DOM，划重点层零影响）。 */
 const LESSON_FOLD_MAX_HEIGHT = 560;
-
-type SelfCheckMark = "ok" | "shaky";
-type SelfCheckStored = {
-  lessonGeneratedAt: string;
-  marks: Record<string, SelfCheckMark>;
-};
 
 export function ClewStudyRoom({ textbookId, chapter, selected }: ClewStudyRoomProps) {
   const knowledgePoint = selected.knowledgePoint;
   const router = useRouter();
 
-  const [lesson, setLesson] = useState<ClewLessonView | null>(selected.lesson);
-  const [lessonDraft, setLessonDraft] = useState("");
-  const [lessonLog, setLessonLog] = useState<string[]>([]);
-  const [lessonNotes, setLessonNotes] = useState<string[]>([]);
-  const [lessonError, setLessonError] = useState<string | null>(null);
-  const [generating, setGenerating] = useState(false);
-  const [confirmingRegenerate, setConfirmingRegenerate] = useState(false);
-  /** 生成讲义时发送的讲解风格（默认跟随本机最近选择；服务端保存为账户默认）。 */
-  const [lessonStyle, setLessonStyle] = useState<ClewLessonStyle>("zh-primary");
-  // ZCODE-M4 Phase 1：讲义三视图（首渲染默认值避免 hydration mismatch，挂载后读实际值）
-  const [lessonVariant, setLessonVariant] = useState<ClewLessonVariant>("full");
 
-  const [messages, setMessages] = useState<ClewChatMessage[]>(selected.messages);
-  const [chatDraft, setChatDraft] = useState("");
-  const [chatError, setChatError] = useState<string | null>(null);
-  const [chatNotes, setChatNotes] = useState<string[]>([]);
-  const [streaming, setStreaming] = useState(false);
-  const [chatChipOpen, setChatChipOpen] = useState(false);
-  /** 讲解「依据范围」（批 3；首渲染缺省避免 hydration mismatch，挂载后读本机偏好）。 */
-  const [chatScope, setChatScope] = useState<ClewChatScope>("lesson+source");
-  /** 流式前的真实阶段文案（SSE status 里程碑；首个 delta 到达即让位给正文）。 */
-  const [chatStatus, setChatStatus] = useState<string | null>(null);
-  /** ZCODE-M6（D8）：问 Clew 思考强度（standard 缺省 / deep=Pro·Max，服务端校验）。 */
-  const [chatIntensity, setChatIntensity] = useState<"standard" | "deep">("standard");
-  /** ZCODE-M6（D10）：跨 KP 跳转建议（回答结束后服务端确定性匹配；发送新问题时清空）。 */
-  const [chatSuggestions, setChatSuggestions] = useState<{ kpId: string; title: string; href: string }[]>([]);
-  /** 讲解设置弹出面板（风格 + 依据范围的单入口）。 */
-  const [chatSettingsOpen, setChatSettingsOpen] = useState(false);
+  // 讲义生成行为（P1-B 第二刀：状态/流式消费/风格与视图偏好搬入 useStudyLesson，行为不变）
+  const {
+    lesson,
+    lessonDraft,
+    lessonLog,
+    lessonNotes,
+    lessonError,
+    generating,
+    confirmingRegenerate,
+    setConfirmingRegenerate,
+    lessonStyle,
+    onSelectLessonStyle,
+    lessonVariant,
+    onSwitchLessonVariant,
+    onGenerateLesson,
+  } = useStudyLesson({
+    knowledgePointId: knowledgePoint.id,
+    knowledgePointTitle: knowledgePoint.title,
+    initialLesson: selected.lesson,
+    onLessonReady,
+    onGenerationStart: () => setSelfCheckNote(null),
+  });
+
+  // 「问 Clew」行为（P1-B 第一刀：状态/事件解析/持久化搬入 useStudyChat，行为不变）
+  const {
+    messages,
+    chatDraft,
+    setChatDraft,
+    chatError,
+    chatNotes,
+    streaming,
+    chatChipOpen,
+    setChatChipOpen,
+    chatScope,
+    chatStatus,
+    chatIntensity,
+    chatSuggestions,
+    chatSettingsOpen,
+    setChatSettingsOpen,
+    copiedIndex,
+    chatListRef,
+    onSwitchChatScope,
+    onSwitchChatIntensity,
+    onSendMessage,
+    onRegenerateAnswer,
+    onCopyAnswer,
+  } = useStudyChat({ knowledgePointId: knowledgePoint.id, lessonStyle, initialMessages: selected.messages });
+
   /** 讲义长文折叠（交互批）：默认收进高度帽；DOM 常驻（划重点层零风险），仅 CSS 裁剪。 */
   const [lessonFolded, setLessonFolded] = useState(true);
   const [lessonTooShort, setLessonTooShort] = useState(false);
-  const chatListRef = useRef<HTMLDivElement>(null);
   const lessonBodyRef = useRef<HTMLDivElement>(null);
   const lessonPanelRef = useRef<HTMLElement>(null);
   const selfCheckPanelRef = useRef<HTMLElement>(null);
@@ -166,30 +164,67 @@ export function ClewStudyRoom({ textbookId, chapter, selected }: ClewStudyRoomPr
   const [activeStage, setActiveStage] = useState<LoopStage | undefined>(undefined);
   const sessionIdRef = useRef<string | null>(null);
 
-  // 体验补丁：「评」自测（标记存浏览器本地；「还需看」提交到统一学习事件流）
-  const [selfCheckMarks, setSelfCheckMarks] = useState<Record<string, SelfCheckMark>>({});
-  const [selfCheckRevealed, setSelfCheckRevealed] = useState<Record<string, boolean>>({});
-  const [selfCheckShakyOnly, setSelfCheckShakyOnly] = useState(false);
-  const [selfCheckSubmitting, setSelfCheckSubmitting] = useState(false);
-  const [selfCheckNote, setSelfCheckNote] = useState<string | null>(null);
+  const activeProfile = LOOP_PROFILES[profileId] ?? LOOP_PROFILES["full-loop"];
 
-  // ZCODE-M5：FSRS 复习调度（服务端注入该知识点的复习条目；自测提交/打分后本地刷新）
-  const [reviewItem, setReviewItem] = useState<ClewReviewItemStudyView | null>(selected.reviewItem);
-  const [reviewRating, setReviewRating] = useState(false);
-  const [reviewRateNote, setReviewRateNote] = useState<string | null>(null);
+  // 「评」自测 + 复习打分行为（P1-B 第四刀：标记/揭示/过滤/提交/FSRS 打分搬入 useStudyAssessment，行为不变）
+  const {
+    selfTestItems,
+    selfCheckMarks,
+    selfCheckRevealed,
+    selfCheckShakyOnly,
+    setSelfCheckShakyOnly,
+    selfCheckSubmitting,
+    selfCheckNote,
+    setSelfCheckNote,
+    shakyCount,
+    markedCount,
+    allMarksDone,
+    visibleSelfCheckItems,
+    reviewItem,
+    reviewRating,
+    reviewRateNote,
+    onMarkSelfCheck,
+    onToggleSelfCheckReveal,
+    onRateReview,
+  } = useStudyAssessment({
+    knowledgePointId: knowledgePoint.id,
+    lesson,
+    initialReviewItem: selected.reviewItem,
+    activeProfileName: activeProfile.name,
+    onAssessComplete: () => {
+      setCompletedStages((current) => (current.includes("assess") ? current : [...current, "assess"]));
+      markSessionStage("assess", { status: "completed", completedAt: new Date().toISOString() });
+      setActiveStage("assess");
+    },
+  });
 
-  // ZCODE-M6：自教材练习（题组服务端注入；生成/作答后本地更新）
-  const [practiceSet, setPracticeSet] = useState<ClewPracticeSetView>(selected.practice);
-  const [practiceGenerating, setPracticeGenerating] = useState(false);
+  // ZCODE-M6：自教材练习（P1-B 第三刀：行为搬入 useStudyPractice；确认态留视图层）
   const [practiceConfirmRegenerate, setPracticeConfirmRegenerate] = useState(false);
-  const [practiceLog, setPracticeLog] = useState<string[]>([]);
-  const [practiceNotes, setPracticeNotes] = useState<string[]>([]);
-  const [practiceError, setPracticeError] = useState<string | null>(null);
-  const [practiceWrongOnly, setPracticeWrongOnly] = useState(false);
-  const [practiceRevealed, setPracticeRevealed] = useState<Record<string, boolean>>({});
-  const [practiceAttemptBusy, setPracticeAttemptBusy] = useState<string | null>(null);
-  const [practiceNote, setPracticeNote] = useState<string | null>(null);
   const practicePanelRef = useRef<HTMLElement>(null);
+  const {
+    practiceSet,
+    practiceGenerating,
+    practiceLog,
+    practiceNotes,
+    practiceError,
+    practiceWrongOnly,
+    setPracticeWrongOnly,
+    practiceRevealed,
+    setPracticeRevealed,
+    practiceAttemptBusy,
+    practiceNote,
+    onGeneratePractice: generatePractice,
+    onPracticeAttempt,
+  } = useStudyPractice({
+    knowledgePointId: knowledgePoint.id,
+    knowledgePointTitle: knowledgePoint.title,
+    initialPractice: selected.practice,
+  });
+  /** 生成入口（视图层包装）：进入生成前复位重生成确认态——原 onGeneratePractice 首行语义。 */
+  const onGeneratePractice = (intensity: "standard" | "deep"): Promise<void> => {
+    setPracticeConfirmRegenerate(false);
+    return generatePractice(intensity);
+  };
   /** 键盘流提示（N 无选区时短暂显示）。 */
   const [kbdHint, setKbdHint] = useState<string | null>(null);
 
@@ -207,11 +242,10 @@ export function ClewStudyRoom({ textbookId, chapter, selected }: ClewStudyRoomPr
 
   // v4 侧栏上下文 slot：本章知识点列表 portal 进壳侧栏（workspace-shell 的 data-sidebar-context-slot）
   const [railSlot, setRailSlot] = useState<HTMLElement | null>(null);
-  const [copiedIndex, setCopiedIndex] = useState<number | null>(null);
 
   useEffect(() => {
     try {
-      const raw = window.localStorage.getItem(STUDY_MODE_STORAGE_KEY);
+      const raw = readStoredValue(STUDY_MODE_STORAGE_KEY);
       if (raw === "focus" || raw === "workspace") {
         setStudyMode(raw);
       }
@@ -273,139 +307,10 @@ export function ClewStudyRoom({ textbookId, chapter, selected }: ClewStudyRoomPr
     }
   };
 
-  // 讲解风格偏好：本机记住上次选择；没有记录时跟随当前讲义（都没有则 zh-primary）
-  useEffect(() => {
-    try {
-      const stored = window.localStorage.getItem(LESSON_STYLE_STORAGE_KEY);
-      if (stored && isClewLessonStyle(stored)) {
-        setLessonStyle(stored);
-      } else if (selected.lesson) {
-        setLessonStyle(selected.lesson.style);
-      }
-    } catch {
-      // localStorage 不可用时保持默认
-    }
-  }, [selected.lesson]);
-
-  // 讲义视图偏好：本机记住上次选择（派生零请求；localStorage 不可用时保持初学）
-  useEffect(() => {
-    try {
-      const stored = window.localStorage.getItem(LESSON_VARIANT_STORAGE_KEY);
-      if (isClewLessonVariant(stored)) {
-        setLessonVariant(stored);
-      }
-    } catch {
-      // localStorage 不可用时保持默认 full
-    }
-  }, []);
-
-  // 依据范围偏好：本机记住上次选择（非法值回落缺省讲义+原文；localStorage 不可用时保持缺省）
-  useEffect(() => {
-    try {
-      const stored = window.localStorage.getItem(CHAT_SCOPE_STORAGE_KEY);
-      if (isClewChatScope(stored)) {
-        setChatScope(stored);
-      }
-    } catch {
-      // localStorage 不可用时保持默认 lesson+source
-    }
-  }, []);
-
-  // 思考强度偏好：本机记住上次选择（非法值回落标准档）
-  useEffect(() => {
-    try {
-      const stored = window.localStorage.getItem(CHAT_INTENSITY_STORAGE_KEY);
-      if (stored === "standard" || stored === "deep") {
-        setChatIntensity(stored);
-      }
-    } catch {
-      // localStorage 不可用时保持标准档
-    }
-  }, []);
-
-  // 讲解设置面板：Escape 关闭 + 点外部关闭
-  useEffect(() => {
-    if (!chatSettingsOpen) {
-      return;
-    }
-    const onKey = (event: KeyboardEvent) => {
-      if (event.key === "Escape") {
-        setChatSettingsOpen(false);
-      }
-    };
-    const onPointerDown = (event: PointerEvent) => {
-      const target = event.target as Element | null;
-      if (!target?.closest(`.${styles.chatSettingsWrap}`)) {
-        setChatSettingsOpen(false);
-      }
-    };
-    window.addEventListener("keydown", onKey);
-    window.addEventListener("pointerdown", onPointerDown);
-    return () => {
-      window.removeEventListener("keydown", onKey);
-      window.removeEventListener("pointerdown", onPointerDown);
-    };
-  }, [chatSettingsOpen]);
-
-  function onSwitchChatScope(scope: ClewChatScope): void {
-    setChatScope(scope);
-    try {
-      window.localStorage.setItem(CHAT_SCOPE_STORAGE_KEY, scope);
-    } catch {
-      // 持久化失败不影响本次切换
-    }
-  }
-
-  function onSwitchChatIntensity(intensity: "standard" | "deep"): void {
-    setChatIntensity(intensity);
-    try {
-      window.localStorage.setItem(CHAT_INTENSITY_STORAGE_KEY, intensity);
-    } catch {
-      // 持久化失败不影响本次切换
-    }
-  }
-
-  function onSwitchLessonVariant(variant: ClewLessonVariant): void {
-    setLessonVariant(variant);
-    try {
-      window.localStorage.setItem(LESSON_VARIANT_STORAGE_KEY, variant);
-    } catch {
-      // 持久化失败不影响本次切换
-    }
-  }
-
-  // 自测标记：按知识点 + 讲义版本恢复；换版本（重新生成）视为新一次自测
-  useEffect(() => {
-    setSelfCheckMarks({});
-    setSelfCheckRevealed({});
-    setSelfCheckShakyOnly(false);
-    setSelfCheckNote(null);
-    if (!lesson) {
-      return;
-    }
-    try {
-      const raw = window.localStorage.getItem(`${SELF_CHECK_STORAGE_PREFIX}${knowledgePoint.id}`);
-      if (!raw) {
-        return;
-      }
-      const parsed = JSON.parse(raw) as SelfCheckStored;
-      if (
-        parsed &&
-        parsed.lessonGeneratedAt === lesson.generatedAt &&
-        parsed.marks &&
-        typeof parsed.marks === "object"
-      ) {
-        setSelfCheckMarks(parsed.marks);
-      }
-    } catch {
-      // localStorage 不可用 / 数据损坏：从零开始，不猜测
-    }
-  }, [lesson, knowledgePoint.id]);
-
   function onSwitchStudyMode(mode: ClewStudyMode): void {
     setStudyMode(mode);
     try {
-      window.localStorage.setItem(STUDY_MODE_STORAGE_KEY, mode);
+      writeStoredValue(STUDY_MODE_STORAGE_KEY, mode);
     } catch {
       // 持久化失败不影响本次切换
     }
@@ -532,183 +437,6 @@ export function ClewStudyRoom({ textbookId, chapter, selected }: ClewStudyRoomPr
     });
   }
 
-  function onSelectLessonStyle(next: string): void {
-    if (!isClewLessonStyle(next)) {
-      return;
-    }
-    setLessonStyle(next);
-    try {
-      window.localStorage.setItem(LESSON_STYLE_STORAGE_KEY, next);
-    } catch {
-      // 持久化失败不影响本次选择
-    }
-  }
-
-  async function onGenerateLesson() {
-    if (generating) {
-      return;
-    }
-    setConfirmingRegenerate(false);
-    setGenerating(true);
-    setLessonError(null);
-    setLessonNotes([]);
-    setLessonLog([`开始为「${knowledgePoint.title}」生成讲义（风格：${CLEW_LESSON_STYLE_LABELS[lessonStyle]}）…`]);
-    setLessonDraft("");
-    setSelfCheckNote(null);
-
-    try {
-      const response = await fetch(`/api/clew/kp/${knowledgePoint.id}/lesson`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ style: lessonStyle }),
-      });
-      if (!response.ok || !response.body) {
-        let message = "讲义生成失败：服务暂时不可用，请稍后重试。";
-        try {
-          message = readClewFailure(await response.json());
-        } catch {
-          // 保持默认提示
-        }
-        setLessonError(message);
-        setLessonDraft("");
-        return;
-      }
-      await consumeClewSse(response, (raw) => {
-        const event = raw as ClewLessonEvent;
-        if (event.type === "progress") {
-          setLessonLog((log) => [...log, event.message]);
-        } else if (event.type === "delta") {
-          setLessonDraft((draft) => draft + event.text);
-        } else if (event.type === "result") {
-          setLesson(event.lesson);
-          setLessonNotes(event.notes);
-          setLessonDraft("");
-          onLessonReady();
-        } else {
-          setLessonError(event.error);
-          setLessonDraft("");
-        }
-      });
-    } catch {
-      setLessonError("讲义生成失败：网络或服务暂时不可用，请稍后重试。");
-      setLessonDraft("");
-    } finally {
-      setGenerating(false);
-    }
-  }
-
-  async function sendChat(question: string) {
-    if (question.length === 0 || streaming) {
-      return;
-    }
-    setStreaming(true);
-    setChatError(null);
-    setChatNotes([]);
-    setChatStatus(null);
-    setChatSuggestions([]);
-    setMessages((current) => [
-      ...current,
-      { role: "user", content: question, createdAt: new Date().toISOString() },
-    ]);
-    let answer = "";
-
-    try {
-      const response = await fetch(`/api/clew/kp/${knowledgePoint.id}/chat`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ message: question, style: lessonStyle, scope: chatScope, intensity: chatIntensity }),
-      });
-      if (!response.ok || !response.body) {
-        let message = "讲解失败：服务暂时不可用，请稍后重试。";
-        try {
-          message = readClewFailure(await response.json());
-        } catch {
-          // 保持默认提示
-        }
-        setChatError(message);
-        return;
-      }
-      await consumeClewSse(response, (raw) => {
-        const event = raw as ClewChatEvent;
-        if (event.type === "status") {
-          setChatStatus(event.message);
-        } else if (event.type === "delta") {
-          setChatStatus(null);
-          answer += event.text;
-          setMessages((current) => {
-            const last = current[current.length - 1];
-            return last?.role === "assistant"
-              ? [...current.slice(0, -1), { ...last, content: answer }]
-              : [...current, { role: "assistant", content: answer, createdAt: new Date().toISOString() }];
-          });
-        } else if (event.type === "result") {
-          setChatStatus(null);
-          setMessages(event.conversation.messages);
-          setChatNotes(event.notes);
-        } else if (event.type === "suggestions") {
-          setChatSuggestions(event.items);
-        } else {
-          setChatStatus(null);
-          setChatError(event.error);
-        }
-      });
-      if (chatListRef.current) {
-        chatListRef.current.scrollTop = chatListRef.current.scrollHeight;
-      }
-    } catch {
-      setChatError("讲解失败：网络或服务暂时不可用，请稍后重试。");
-    } finally {
-      setChatStatus(null);
-      setStreaming(false);
-      if (chatListRef.current) {
-        chatListRef.current.scrollTop = chatListRef.current.scrollHeight;
-      }
-    }
-  }
-
-  async function onSendMessage() {
-    const question = chatDraft.trim();
-    if (question.length === 0 || streaming) {
-      return;
-    }
-    setChatDraft("");
-    await sendChat(question);
-  }
-
-  /** 「重新生成」（DESIGN_V4 §五 P2 语义）：对同一条提问重新请求一次——计入一次问答配额，
-   *  结果作为新回答追加在历史之后，不静默覆盖任何已保存内容。 */
-  function onRegenerateAnswer(index: number) {
-    if (streaming) {
-      return;
-    }
-    for (let i = index - 1; i >= 0; i -= 1) {
-      if (messages[i]?.role === "user") {
-        void sendChat(messages[i].content);
-        return;
-      }
-    }
-  }
-
-  /** 「复制」= 纯前端复制该回答 markdown（DESIGN_V4 §五）。剪贴板不可用时静默失败。 */
-  async function onCopyAnswer(index: number, content: string) {
-    try {
-      await navigator.clipboard.writeText(content);
-      setCopiedIndex(index);
-      window.setTimeout(() => {
-        setCopiedIndex((current) => (current === index ? null : current));
-      }, 1600);
-    } catch {
-      // 隐私模式/权限拒绝：不打断阅读
-    }
-  }
-
-  /* ---------------- 「评」自测（体验补丁） ---------------- */
-
-  const selfTestItems = useMemo(
-    () => (lesson ? parseClewLessonSelfTest(lesson.contentMd) : []),
-    [lesson],
-  );
-
   /* ---------------- 讲义三视图（ZCODE-M4 Phase 1：确定性派生，零请求） ---------------- */
 
   const derivedLesson = useMemo(
@@ -731,180 +459,6 @@ export function ClewStudyRoom({ textbookId, chapter, selected }: ClewStudyRoomPr
   }, [lesson, lessonVariant, lessonFolded]);
   const lessonCharCount = derivedLesson?.contentMd.length ?? 0;
 
-  const shakyCount = selfTestItems.filter(
-    (item) => selfCheckMarks[String(item.index)] === "shaky",
-  ).length;
-  const markedCount = selfTestItems.filter(
-    (item) => selfCheckMarks[String(item.index)] !== undefined,
-  ).length;
-  const allMarksDone = selfTestItems.length > 0 && markedCount === selfTestItems.length;
-  const visibleSelfCheckItems = selfCheckShakyOnly
-    ? selfTestItems.filter((item) => selfCheckMarks[String(item.index)] === "shaky")
-    : selfTestItems;
-
-  function persistSelfCheckMarks(next: Record<string, SelfCheckMark>): void {
-    setSelfCheckMarks(next);
-    if (!lesson) {
-      return;
-    }
-    try {
-      const payload: SelfCheckStored = { lessonGeneratedAt: lesson.generatedAt, marks: next };
-      window.localStorage.setItem(
-        `${SELF_CHECK_STORAGE_PREFIX}${knowledgePoint.id}`,
-        JSON.stringify(payload),
-      );
-    } catch {
-      // localStorage 不可用：本次会话内仍生效
-    }
-  }
-
-  /** 全部标记完成后提交：「还需看」写入统一学习事件流（幂等）+ FSRS 复习调度，并完成「评」环节。 */
-  async function submitSelfCheck(marks: Record<string, SelfCheckMark>): Promise<void> {
-    if (!lesson || selfCheckSubmitting) {
-      return;
-    }
-    setSelfCheckSubmitting(true);
-    try {
-      const response = await fetch(`/api/clew/kp/${knowledgePoint.id}/self-check`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          lessonGeneratedAt: lesson.generatedAt,
-          items: selfTestItems.map((item) => ({
-            index: item.index,
-            shaky: marks[String(item.index)] === "shaky",
-          })),
-        }),
-      });
-      if (!response.ok) {
-        setSelfCheckNote("自测记录暂时未能提交（网络或服务问题），本地标记已保留，可稍后改动任意标记重试。");
-        return;
-      }
-      const payload = (await response.json()) as {
-        ok?: boolean;
-        review?: "created" | "advanced" | "unchanged" | "skipped-profile" | "skipped-no-shaky";
-      };
-      setCompletedStages((current) => (current.includes("assess") ? current : [...current, "assess"]));
-      markSessionStage("assess", { status: "completed", completedAt: new Date().toISOString() });
-      setActiveStage("assess");
-      const shaky = selfTestItems.filter((item) => marks[String(item.index)] === "shaky").length;
-      switch (payload.review) {
-        case "created":
-          setSelfCheckNote(
-            `已把 ${shaky} 道「还需看」记入学习动态，并安排复习（今日到期，可在下方「复习打分」回流）。`,
-          );
-          break;
-        case "advanced":
-          setSelfCheckNote("已重新计为「还需看」，复习安排按遗忘曲线前移。");
-          break;
-        case "unchanged":
-          setSelfCheckNote("已记录；本次提交没有改变复习安排。");
-          break;
-        case "skipped-profile":
-          setSelfCheckNote(
-            `已把 ${shaky} 道「还需看」记入学习动态；当前闭环（${activeProfile.name}）不进复习调度。`,
-          );
-          break;
-        default:
-          setSelfCheckNote("全部标记「会了」——「评」环节完成。");
-      }
-      if (payload.review === "created" || payload.review === "advanced") {
-        await refreshReviewItem();
-      }
-    } catch {
-      setSelfCheckNote("自测记录暂时未能提交（网络问题），本地标记已保留。");
-    } finally {
-      setSelfCheckSubmitting(false);
-    }
-  }
-
-  /** 自测提交后刷新本知识点的复习条目（服务端按 FSRS 状态返回最新排期）。 */
-  async function refreshReviewItem(): Promise<void> {
-    try {
-      const response = await fetch(`/api/clew/reviews?kp=${knowledgePoint.id}`, {
-        credentials: "include",
-      });
-      if (!response.ok) {
-        return;
-      }
-      const payload = (await response.json()) as {
-        ok?: boolean;
-        items?: Array<{ id: string; dueAt: string; reviewCount: number; lapses: number; suspended: boolean }>;
-      };
-      const item = payload.items?.find((entry) => !entry.suspended) ?? null;
-      if (!item) {
-        return;
-      }
-      setReviewItem({
-        id: item.id,
-        dueAt: item.dueAt,
-        due: Date.parse(item.dueAt) <= Date.now(),
-        reviewCount: item.reviewCount,
-        lapses: item.lapses,
-      });
-    } catch {
-      // 刷新失败不打断自测流程（下次进页面由服务端注入最新状态）
-    }
-  }
-
-  /** ZCODE-M5：复习打分三键（再来一次/有点难/记住了 → again/hard/good）→ FSRS 前移 + 到期重排。 */
-  async function onRateReview(rating: "again" | "hard" | "good"): Promise<void> {
-    if (!reviewItem || reviewRating) {
-      return;
-    }
-    setReviewRating(true);
-    setReviewRateNote(null);
-    try {
-      const response = await fetch(`/api/clew/reviews/${reviewItem.id}`, {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ rating }),
-      });
-      if (!response.ok) {
-        setReviewRateNote("打分暂时未能记录（网络或服务问题），可稍后重试。");
-        return;
-      }
-      const payload = (await response.json()) as {
-        ok?: boolean;
-        item?: { id: string; dueAt: string; reviewCount: number; lapses: number };
-      };
-      if (!payload.item) {
-        return;
-      }
-      const dueLabel = new Date(payload.item.dueAt).toLocaleString("zh-CN", {
-        hour12: false,
-        timeZone: "Asia/Shanghai",
-      });
-      setReviewItem({
-        id: payload.item.id,
-        dueAt: payload.item.dueAt,
-        due: false,
-        reviewCount: payload.item.reviewCount,
-        lapses: payload.item.lapses,
-      });
-      setReviewRateNote(`已记录：下次复习 ${dueLabel}（「我的学习 · 今日复习」同步更新）。`);
-    } catch {
-      setReviewRateNote("打分暂时未能记录（网络问题），可稍后重试。");
-    } finally {
-      setReviewRating(false);
-    }
-  }
-
-  function onMarkSelfCheck(index: number, mark: SelfCheckMark): void {
-    const next = { ...selfCheckMarks, [String(index)]: mark };
-    persistSelfCheckMarks(next);
-    if (selfTestItems.length > 0 && selfTestItems.every((item) => next[String(item.index)] !== undefined)) {
-      void submitSelfCheck(next);
-    }
-  }
-
-  function onToggleSelfCheckReveal(index: number): void {
-    setSelfCheckRevealed((current) => ({
-      ...current,
-      [String(index)]: !current[String(index)],
-    }));
-  }
-
   /* ---------------- ZCODE-M6：自教材练习 ---------------- */
 
   const practiceWrongCount = practiceSet.summary.wrong;
@@ -913,55 +467,6 @@ export function ClewStudyRoom({ textbookId, chapter, selected }: ClewStudyRoomPr
     : practiceSet.questions;
 
   /** 生成练习题组（SSE；缺省 deep=deepseek-flash 深度思考计 2 次额度）。 */
-  async function onGeneratePractice(intensity: "standard" | "deep"): Promise<void> {
-    if (practiceGenerating) {
-      return;
-    }
-    setPracticeConfirmRegenerate(false);
-    setPracticeGenerating(true);
-    setPracticeError(null);
-    setPracticeNotes([]);
-    setPracticeNote(null);
-    setPracticeLog([
-      `开始为「${knowledgePoint.title}」生成练习题（${intensity === "deep" ? "深度思考 · 计 2 次额度" : "标准档 · 计 1 次额度"}）…`,
-    ]);
-
-    try {
-      const response = await fetch(`/api/clew/kp/${knowledgePoint.id}/practice`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ intensity }),
-      });
-      if (!response.ok || !response.body) {
-        let message = "练习生成失败：服务暂时不可用，请稍后重试。";
-        try {
-          message = readClewFailure(await response.json());
-        } catch {
-          // 保持默认提示
-        }
-        setPracticeError(message);
-        return;
-      }
-      await consumeClewSse(response, (raw) => {
-        const event = raw as ClewPracticeEvent;
-        if (event.type === "progress") {
-          setPracticeLog((log) => [...log, event.message]);
-        } else if (event.type === "result") {
-          setPracticeSet(event.set);
-          setPracticeNotes(event.notes);
-          setPracticeLog([]);
-          setPracticeWrongOnly(false);
-        } else {
-          setPracticeError(event.error);
-        }
-      });
-    } catch {
-      setPracticeError("练习生成失败：网络或服务暂时不可用，请稍后重试。");
-    } finally {
-      setPracticeGenerating(false);
-    }
-  }
-
   /** 生成/重新生成控制区（覆盖语义：重新生成清空当前题组与作答记录）。 */
   function practiceRegenerateControls() {
     if (practiceGenerating) {
@@ -985,12 +490,17 @@ export function ClewStudyRoom({ textbookId, chapter, selected }: ClewStudyRoomPr
       );
     }
     if (practiceConfirmRegenerate) {
+      // 评审 P0-A：深度/标准两档都必须过确认（原「标准档重生成」绕过确认直接覆盖题组——双标已修）；
+      // 「省额度」诚实披露在重生成态同样出现（与首生态文案平行）
       return (
         <>
           <span className={styles.confirmNote}>重新生成将覆盖当前题组并清空作答记录，确认继续？</span>
           <V2Button className={styles.v2Button} onClick={() => void onGeneratePractice("deep")}>
             确认重新生成（深度）
           </V2Button>
+          <button type="button" className={styles.ghostButton} onClick={() => void onGeneratePractice("standard")}>
+            确认标准档重生成（省额度）
+          </button>
           <button type="button" className={styles.ghostButton} onClick={() => setPracticeConfirmRegenerate(false)}>
             取消
           </button>
@@ -998,93 +508,11 @@ export function ClewStudyRoom({ textbookId, chapter, selected }: ClewStudyRoomPr
       );
     }
     return (
-      <>
-        <button type="button" className={styles.ghostButton} onClick={() => setPracticeConfirmRegenerate(true)}>
-          <RefreshCw aria-hidden="true" size={15} strokeWidth={1.6} />
-          重新生成
-        </button>
-        <button type="button" className={styles.ghostButton} onClick={() => void onGeneratePractice("standard")}>
-          标准档重生成
-        </button>
-      </>
+      <button type="button" className={styles.ghostButton} onClick={() => setPracticeConfirmRegenerate(true)}>
+        <RefreshCw aria-hidden="true" size={15} strokeWidth={1.6} />
+        重新生成
+      </button>
     );
-  }
-
-  /** 作答提交：本地更新该题 myAttempt 与 summary（服务端判分/自评 + FSRS 回流）。 */
-  async function onPracticeAttempt(
-    question: ClewPracticeQuestionView,
-    payload: { selectedIndex: number } | { selfRating: "correct" | "wrong" },
-  ): Promise<void> {
-    if (practiceAttemptBusy) {
-      return;
-    }
-    setPracticeAttemptBusy(question.id);
-    setPracticeNote(null);
-    try {
-      const response = await fetch(`/api/clew/practice/${question.id}/attempt`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload),
-      });
-      const payloadJson = (await response.json()) as {
-        ok?: boolean;
-        attempt?: {
-          isCorrect: boolean;
-          correctIndex: number | null;
-          answerText: string | null;
-          explanation: string;
-          review: string;
-        };
-        error?: string;
-      };
-      if (!response.ok || !payloadJson.ok || !payloadJson.attempt) {
-        setPracticeNote(payloadJson.error ?? "作答暂时未能提交（网络或服务问题），请稍后重试。");
-        return;
-      }
-      const a = payloadJson.attempt;
-      const attemptedAt = new Date().toISOString();
-      setPracticeSet((current) => {
-        const questions = current.questions.map((q) =>
-          q.id === question.id
-            ? {
-                ...q,
-                myAttempt: {
-                  isCorrect: a.isCorrect,
-                  selectedIndex: "selectedIndex" in payload ? payload.selectedIndex : null,
-                  selfRating: "selfRating" in payload ? payload.selfRating : null,
-                  correctIndex: a.correctIndex,
-                  explanation: a.explanation,
-                  attemptedAt,
-                },
-              }
-            : q,
-        );
-        const answered = questions.filter((q) => q.myAttempt !== null);
-        return {
-          ...current,
-          questions,
-          summary: {
-            total: questions.length,
-            answered: answered.length,
-            correct: answered.filter((q) => q.myAttempt?.isCorrect).length,
-            wrong: answered.filter((q) => q.myAttempt && !q.myAttempt.isCorrect).length,
-          },
-        };
-      });
-      setPracticeNote(
-        a.review === "created"
-          ? "已记入复习调度（今日到期）——可在「我的学习 · 今日复习」回流。"
-          : a.review === "advanced"
-            ? a.isCorrect
-              ? "已按「记住了」巩固，复习安排顺延。"
-              : "已按「再来一次」前移遗忘曲线。"
-            : null,
-      );
-    } catch {
-      setPracticeNote("作答暂时未能提交（网络问题），请稍后重试。");
-    } finally {
-      setPracticeAttemptBusy(null);
-    }
   }
 
   /* ---------------- ZCODE-M6-C：键盘流（RESTRUCTURE §1.1 兑现：J/K 切 KP / E 生成讲义 / N 写批注） ---------------- */
@@ -1147,8 +575,6 @@ export function ClewStudyRoom({ textbookId, chapter, selected }: ClewStudyRoomPr
   }, [chapter.knowledgePoints, chapter.chapter.order, knowledgePoint.id, textbookId, generating, lesson, router]);
 
   /* ---------------- 闭环脊柱（体验补丁：环节 = 真实动作入口） ---------------- */
-
-  const activeProfile = LOOP_PROFILES[profileId] ?? LOOP_PROFILES["full-loop"];
 
   function computeSpineItems(): ClewStageSpineItem[] {
     return activeProfile.stages.map((stage) => {
@@ -1385,6 +811,8 @@ export function ClewStudyRoom({ textbookId, chapter, selected }: ClewStudyRoomPr
                   placeholder={knowledgePoint.sourcePageAnnotated ? String(knowledgePoint.sourcePage) : "页码"}
                   onChange={(event) => setPageAnnotateValue(event.target.value)}
                   aria-label="知识点页码"
+                  aria-invalid={pageAnnotateError ? true : undefined}
+                  aria-describedby={pageAnnotateError ? "clew-page-annotate-error" : undefined}
                 />
                 页
               </label>
@@ -1409,7 +837,7 @@ export function ClewStudyRoom({ textbookId, chapter, selected }: ClewStudyRoomPr
                   清除标注
                 </button>
               ) : null}
-              {pageAnnotateError ? <span className={styles.pageAnnotateError}>{pageAnnotateError}</span> : null}
+              {pageAnnotateError ? <span className={styles.pageAnnotateError} role="alert" id="clew-page-annotate-error">{pageAnnotateError}</span> : null}
             </form>
           ) : null}
           {pageAnnotateNote ? (
@@ -2058,7 +1486,7 @@ export function ClewStudyRoom({ textbookId, chapter, selected }: ClewStudyRoomPr
           </div>
 
           {chatError ? (
-            <p className={styles.errorBox} role="alert">
+            <p className={styles.errorBox} role="alert" id="clew-chat-error">
               <CircleAlert aria-hidden="true" size={16} strokeWidth={1.8} />
               <span>{chatError}</span>
             </p>
@@ -2085,7 +1513,7 @@ export function ClewStudyRoom({ textbookId, chapter, selected }: ClewStudyRoomPr
           ) : null}
 
           {/* 讲解设置：单入口安静控制（对齐 ChatGPT/Claude composer 语言），选项收进弹出面板 */}
-          <div className={styles.chatSettingsWrap}>
+          <div className={styles.chatSettingsWrap} data-chat-settings-wrap="true">
             {chatSettingsOpen ? (
               <div className={styles.chatSettingsPanel} role="dialog" aria-label="讲解设置">
                 <p className={styles.chatSettingsHead}>讲解风格</p>
@@ -2204,8 +1632,15 @@ export function ClewStudyRoom({ textbookId, chapter, selected }: ClewStudyRoomPr
                 maxLength={1000}
                 placeholder="就这个知识点继续问…"
                 aria-label="追问（Enter 发送）"
+                aria-describedby={chatError ? "clew-chat-error" : undefined}
                 disabled={streaming}
                 onChange={(event) => setChatDraft(event.target.value)}
+                onKeyDown={(event) => {
+                  // 评审 P0-A：IME 守卫（对齐课题房间）——中文输入法选词回车不发送
+                  if (event.key === "Enter" && (event.nativeEvent.isComposing || event.keyCode === 229)) {
+                    event.preventDefault();
+                  }
+                }}
               />
             </label>
             <button
