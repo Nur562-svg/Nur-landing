@@ -28,6 +28,7 @@ import type {
 import type { ReviewedMaterialOverlayDraft } from "@/types/material-parsing";
 import { MaterialIntakeReview } from "./material-intake-review";
 import { PLATFORM_DOCK_PROPS, useNurAgentDockProps } from "@/lib/agent-dock-props";
+import { InlineConfirm } from "@/components/ui/v2/inline-confirm";
 import { PrivatePracticeRoom } from "./private-practice-room";
 import styles from "./private-materials-studio.module.css";
 
@@ -264,19 +265,17 @@ export function PrivateMaterialsStudio() {
               );
             })}
           </div>
-          <button
-            type="button"
+          <InlineConfirm
             className={styles.clearHistory}
-            onClick={() => {
-              if (confirm("清除所有私人练习历史与状态？此操作不可恢复。")) {
-                clearPrivateAnalysisHistory();
-                setHistory([]);
-                setResult(null);
-              }
+            label="清除全部历史"
+            confirmTitle="清除所有私人练习历史与状态？此操作不可恢复。"
+            confirmLabel="确认清除"
+            onConfirm={() => {
+              clearPrivateAnalysisHistory();
+              setHistory([]);
+              setResult(null);
             }}
-          >
-            清除全部历史
-          </button>
+          />
         </section>
       ) : null}
 

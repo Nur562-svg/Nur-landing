@@ -19,6 +19,8 @@ import { formatClewExtent } from "@/lib/clew/source-label";
 import { resolveClewGuide } from "@/lib/clew/step-guide";
 import { V2Badge } from "@/components/ui/v2/badge";
 import { V2Button } from "@/components/ui/v2/button";
+import { InlineConfirm } from "@/components/ui/v2/inline-confirm";
+import { EmptyState, EmptyScrollIllustration } from "@/components/ui/v2/empty-state";
 import { ClewPathGuide } from "./clew-path-guide";
 import styles from "./clew.module.css";
 
@@ -111,12 +113,6 @@ export function ClewBookshelf({ initialShelf, tier }: ClewBookshelfProps) {
 
   async function onDelete(textbook: ClewTextbookView) {
     if (busy !== null) {
-      return;
-    }
-    const confirmed = window.confirm(
-      `删除《${textbook.title}》后，服务器上的文件会立即移除，当月名额同时释放。确定删除？`,
-    );
-    if (!confirmed) {
       return;
     }
     setBusy("delete");
@@ -236,7 +232,12 @@ export function ClewBookshelf({ initialShelf, tier }: ClewBookshelfProps) {
           <span>{activeTextbooks.length} 本</span>
         </div>
         {activeTextbooks.length === 0 ? (
-          <p className={styles.emptyState}>本月还没有激活的教材。上传一本文字版 PDF 或 DOCX 开始。</p>
+          <EmptyState
+            tone="rich"
+            illustration={<EmptyScrollIllustration />}
+            title="本月还没有激活的教材"
+            hint="上传一本文字版 PDF 或 DOCX 开始——萃取知识点、生成讲义、练习与复习都在这里发生。"
+          />
         ) : (
           <ul className={styles.textbookList}>
             {activePresentation.visible.map(({ book: textbook, compactHide }) => (
@@ -263,15 +264,20 @@ export function ClewBookshelf({ initialShelf, tier }: ClewBookshelfProps) {
                     <BookOpen aria-hidden="true" size={15} strokeWidth={1.6} />
                     进入教材
                   </Link>
-                  <button
-                    type="button"
+                  <InlineConfirm
                     className={styles.ghostButton}
+                    label={
+                      <>
+                        <Trash2 aria-hidden="true" size={15} strokeWidth={1.6} />
+                        删除
+                      </>
+                    }
+                    confirmTitle={`删除《${textbook.title}》后，服务器文件立即移除，当月名额同时释放。`}
+                    confirmLabel="确认删除"
+                    busy={busy !== null}
                     disabled={busy !== null}
-                    onClick={() => onDelete(textbook)}
-                  >
-                    <Trash2 aria-hidden="true" size={15} strokeWidth={1.6} />
-                    删除
-                  </button>
+                    onConfirm={() => onDelete(textbook)}
+                  />
                 </div>
               </li>
             ))}
@@ -333,15 +339,20 @@ export function ClewBookshelf({ initialShelf, tier }: ClewBookshelfProps) {
                     )}
                     重新激活
                   </button>
-                  <button
-                    type="button"
+                  <InlineConfirm
                     className={styles.ghostButton}
+                    label={
+                      <>
+                        <Trash2 aria-hidden="true" size={15} strokeWidth={1.6} />
+                        删除
+                      </>
+                    }
+                    confirmTitle={`删除《${textbook.title}》后，服务器文件立即移除，当月名额同时释放。`}
+                    confirmLabel="确认删除"
+                    busy={busy !== null}
                     disabled={busy !== null}
-                    onClick={() => onDelete(textbook)}
-                  >
-                    <Trash2 aria-hidden="true" size={15} strokeWidth={1.6} />
-                    删除
-                  </button>
+                    onConfirm={() => onDelete(textbook)}
+                  />
                 </div>
               </li>
             ))}

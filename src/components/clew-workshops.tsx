@@ -8,6 +8,8 @@ import type { ClewApiFailure, ClewWorkshopListView, ClewWorkshopView } from "@/t
 import { getMembershipTierLabel } from "@/lib/membership";
 import { resolveClewGuide } from "@/lib/clew/step-guide";
 import { V2Button } from "@/components/ui/v2/button";
+import { InlineConfirm } from "@/components/ui/v2/inline-confirm";
+import { EmptyBubbleIllustration, EmptyState } from "@/components/ui/v2/empty-state";
 import { ClewPathGuide } from "./clew-path-guide";
 import styles from "./clew.module.css";
 
@@ -74,12 +76,6 @@ export function ClewWorkshopList({ initialList, tier }: ClewWorkshopListProps) {
 
   async function onDelete(workshop: ClewWorkshopView) {
     if (busy !== null) {
-      return;
-    }
-    const confirmed = window.confirm(
-      `删除课题「${workshop.title}」后，其中的 ${workshop.fileCount} 份材料（服务器文件）与答疑记录会一并删除。确定删除？`,
-    );
-    if (!confirmed) {
       return;
     }
     setBusy("delete");
@@ -170,9 +166,12 @@ export function ClewWorkshopList({ initialList, tier }: ClewWorkshopListProps) {
           <span>{list.workshops.length} 个</span>
         </div>
         {list.workshops.length === 0 ? (
-          <p className={styles.emptyState}>
-            还没有课题。新建一个课题，上传短材料（≤100 页），就能就材料内容追问答疑。
-          </p>
+          <EmptyState
+            tone="rich"
+            illustration={<EmptyBubbleIllustration />}
+            title="还没有课题"
+            hint="新建一个课题，上传短材料（≤100 页），就能就材料内容追问答疑。"
+          />
         ) : (
           <ul className={styles.textbookList}>
             {list.workshops.map((workshop) => (
@@ -191,15 +190,20 @@ export function ClewWorkshopList({ initialList, tier }: ClewWorkshopListProps) {
                     <FolderOpen aria-hidden="true" size={15} strokeWidth={1.6} />
                     进入课题
                   </Link>
-                  <button
-                    type="button"
+                  <InlineConfirm
                     className={styles.ghostButton}
+                    label={
+                      <>
+                        <Trash2 aria-hidden="true" size={15} strokeWidth={1.6} />
+                        删除
+                      </>
+                    }
+                    confirmTitle={`删除课题「${workshop.title}」后，其中 ${workshop.fileCount} 份材料（服务器文件）与答疑记录一并删除。`}
+                    confirmLabel="确认删除"
+                    busy={busy !== null}
                     disabled={busy !== null}
-                    onClick={() => onDelete(workshop)}
-                  >
-                    <Trash2 aria-hidden="true" size={15} strokeWidth={1.6} />
-                    删除
-                  </button>
+                    onConfirm={() => onDelete(workshop)}
+                  />
                 </div>
               </li>
             ))}

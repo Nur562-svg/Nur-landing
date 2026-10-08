@@ -1,0 +1,40 @@
+/* 空态三层级（评审 V-3）：安静、居中、功能性引导。 */
+.box {
+  align-items: center;
+  border: 1px dashed color-mix(in srgb, currentColor 22%, transparent);
+  border-radius: var(--v3-card-radius);
+  color: var(--v2-muted-foreground);
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  justify-content: center;
+  padding: 28px 20px;
+  text-align: center;
+}
+
+.rich {
+  padding: 36px 20px;
+}
+
+.art {
+  color: color-mix(in srgb, var(--v2-muted-foreground) 72%, transparent);
+  margin-bottom: 6px;
+}
+
+.title {
+  color: var(--v2-foreground);
+  font-size: 14px;
+  font-weight: 600;
+  margin: 0;
+}
+
+.hint {
+  font-size: 12.5px;
+  line-height: 1.7;
+  margin: 0;
+  max-width: 40em;
+}
+
+.action {
+  margin-top: 10px;
+}
