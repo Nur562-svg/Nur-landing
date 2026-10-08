@@ -1210,8 +1210,8 @@ playwright-core + 系统 Chrome（headless、无扩展），视口 **1440×900 /
   2. `/question-bank` `addBtn` 全墨 1px 边；
   3. `subjective-writing` / `case-reasoning` 各 1 处 `em` 元素全墨 1px 边；
   4. `/learn` `avatarLarge` 墨底 + 同色墨边（视觉无害，规则残留）；
-  5.（备注）`learning-dashboard` 的 `.reasoningCard` / `.dualLensCard` 规则仍含 `1px solid var(--ink)`，默认态未命中渲染，实际使用面待确认。
-- **范围外残面（批 2 命名范围不含，现状记录）**：`/login`、`/register`（auth-form：v1 硬编码浅色皮，明暗两主题实测均 rgb(247,244,238)，不随 `.dark` 翻转）；`/learn/my-materials`（private-practice-room，R3 桥接、旧语言）；`/learn/course-builder`（page.module.css 同 v1 硬编码）；`material-admission-review`（当前全仓无引用＝死代码候选，module.css 仍含 13 处全墨边）。
+  5.（备注）`learning-dashboard` 的 `.reasoningCard` / `.dualLensCard` 规则仍含 `1px solid var(--ink)`，默认态未命中渲染，实际使用面待确认。〔2026-10-07 口径统一：两规则已于批 3 补遗细线化归一；「死代码候选」判断已被后文推翻——2026-10-06 复核确认 5 个残面文件均为活代码。〕
+- **范围外残面（批 2 命名范围不含，现状记录）**：`/login`、`/register`（auth-form：v1 硬编码浅色皮，明暗两主题实测均 rgb(247,244,238)，不随 `.dark` 翻转）；`/learn/my-materials`（private-practice-room，R3 桥接、旧语言）；`/learn/course-builder`（page.module.css 同 v1 硬编码）；`material-admission-review`（当前全仓无引用＝死代码候选，module.css 仍含 13 处全墨边）。〔2026-10-07 口径统一：5 残面均为活代码（M6-C 复核结论），归一与否待 Nur 定夺。〕
 - **结论**：批 2 核心声明（命名面归一、⌘K/抽屉回归、双主题、证据标签零动、教学语义零动）**全部复核成立 → 预验收通过**；上列遗留小项与残面不阻断本批，交终审决定是否并入批 3。
 
 ## DESIGN_V4 批 3 + Clew 对话体验批 — 依据范围 / 状态里程碑 / composer chips / 模型名（2026-10-05，Zcode 执行）
@@ -1594,3 +1594,147 @@ Nur 实测 DOCX 教材生成练习题被 M6-A 的硬门禁拦下（「教材原�
 - [x] **真实链路走查**（解剖名词解释 DOCX + 真实模型，curl + playwright）：① 无标注生成（原 503 点）→ **成功 6 题**，`sourcePage=0`、解析「本章原文指出：…」、notes「本教材无页码，解析引用『本章原文』」；② 标注第 12 页 → PATCH ok；③ 重新生成 → 6 题 `sourcePage=12`、notes「依据你标注的第 12 页——人工标注不做文本核验，请对照原文」、进度行「使用你标注的页码」；④ 作答 → 判分正确、解析「根据本章原文（学生标注的第 12 页）…」；⑤ UI：元信息行「第 12 页 · 你标注的 + 修改标注」、问答 chip「胸骨角 · 第 12 页 · 你标注的」、明色截图 `zcode-m6-docx-page-annotate-light-1440.png`、console 0
 - [x] 走查注记（如实）：走查账号（解剖名词解释属主）密码以 bcrypt 预置走查专用值（QA 夹具口径）；标注数据（第 12 页）与练习题组留存 dev.db 作为功能演示夹具；PDF paged 路径 prompt 逐字未动（回归测试锁定越界拒收不变）
 - [x] **对抗式审查工作流**（3 维度 + 逐条反驳，19 agent）：确认 4 条全部修复——① **P1 过期闭包**：「清除标注」先 setState 再同步读旧值，输入框非空时会把旧值重新写库而非清除 → 改 `submitPageAnnotation(pageOverride)` 显式传参（清除 = null），并活体复现验证（填 57 → 清除 → 真清除）；② **P1 陈旧声明**：清除/改标注后，已生成讲义页首与练习解析里的旧标注是烙进 contentMd 的静态文本 → 成功后持久提示行「已生成的讲义与练习仍按旧标注记录，重新生成后更新」（不改写生成物，披露 + 重新生成出口）；③ **P2** 教材详情页 KP 列表不感知标注 → 切 `formatClewKpPageLabel`；④ **P2** `parseInt` 静默截断（"12a"→12）→ 改 `Number` 严格校验。另 4 条验证因限流未完成，主线核验：2 条可接受（错误标签名前端不消费 / PDF 缺标记假想分支落 pageless 诚实不编造）、1 条由 ② 覆盖、1 条重复
+
+## 设计评审批 — P0-A 交互清债 + V-1 视觉 token 先行（2026-10-07，Nur 批准评审计划后首批执行）
+
+### 背景
+
+Nur 发起全仓设计评审（三路只读勘查：设计真相源 / 组件与 CSS 工程 / 页面版图与交互盘点，证据与完整结论见会话评审记录；要点：token 五代同堂〔--muted×424/--ink×246 与 v2/v3/v4 并存〕、@media 57 max vs 3 min 断点 19 种且 390 全仓仅 1 条查询、clew-study.tsx 2229 行/57 useState、clew.module.css 3097 行/435 类被 18 tsx 共享、ui/v2 采用率 10%、交互不一致 12 处）。Nur 批准分层路线：P0 交互清债 + 390 专项、V 系列视觉升级（Quiet v5 方向）、P1 token 归一/巨石拆分/ui-v2 迁移。本批 = P0-A 全部 7 项 + V-1 token 先行。
+
+### 落地内容（P0-A）
+
+- **标准档重生成补确认**：练习重生成确认流重设计——「重新生成」进确认态后，深度/标准两档并列确认（「确认标准档重生成（省额度）」），原「标准档重生成」绕过确认直接覆盖题组的双标已修（clew-study.tsx）；「省额度」披露重生态与首生态平行。
+- **Page Chat IME 守卫**：输入框 onKeyDown 对 Enter 的 isComposing/keyCode 229 preventDefault（对齐课题房间既有模式）——中文输入法选词回车不再可能直接发送。
+- **破坏性确认统一**：新共享组件 `ui/v2/inline-confirm`（行内二段确认：问句 muted + 确认哑红 + 取消 ghost，Esc/取消收起，确认自动聚焦）替换 4 处 window.confirm——书架删教材 ×2 / 课题列表删课题 / 课题房间删材料 / 私人练习清空全部历史；全部后果披露文案逐字保留原意。模考交卷 modal 保留（三选项语义不同）。
+- **错题中心进侧栏**：PRIMARY_ENTRIES 增「错题中心」（题库与会员之间，BookX 图标）+ resolveActivePrimaryId 映射——原为导航孤岛（仅学习面板 3 处深链可达、无高亮）。
+- **全局 focus-visible 兜底**：globals.css 一条 `:focus-visible` outline 规则（terracotta 65% mix、offset 2）——组件级更具体规则自然覆盖，35 处散落规则从此有下限。
+- **reduced-motion 过渡降级**：`prefers-reduced-motion: reduce` 下全局 transition 压到 0.01ms + scroll-behavior auto；animation（spinner/呼吸点/caret）是状态反馈不冻结，由组件既有降级分支处理。
+
+### 落地内容（V-1 视觉 token 先行）
+
+- **动效 token**：`--motion-fast:150ms / --motion-slow:250ms / --ease-out-quart`（动效只留状态性的 v4 裁决不变，token 化供统一取用）。
+- **深度三级 token（Quiet v5 方向，Linear 式阴影+内高光组合）**：`--elevation-raised-shadow`（hover 浮起：两层阴影 + 1px 内高光）/ `--elevation-overlay-shadow`（浮层两层阴影）/ `--surface-raised`；暗色为暖炭亮度分层 + 低透明白内高光（不引入冷灰）。
+- **中文排版**：lessonBody/studyKpMeta 数字 `tabular-nums`（页码/题号/统计不跳动）。
+- **骨架屏三件套**：`ui/v2/skeleton`（SkeletonList/SkeletonCard/SkeletonDoc + 基块，shimmer reduced-motion 静置）——预备渐进采用（首屏骨架），长任务（讲义/笔记/练习生成）保留 progressLog 诚实披露阶段。
+- **文档对齐**：DESIGN_V4 状态行标注历史「未提交」表述以 git 为准；DESIGN_V3 头部标注已被 V4 取代；design-qa 残面「死代码候选」口径统一为「均为活代码（M6-C 复核结论）」。
+
+### 验证记录
+
+- [x] `npm run test` **571/571**；`npm run check` exit 0；tsc/lint 干净
+- [x] **浏览器走查**（playwright，v4qa 走查账号）：① 错题中心侧栏入口 + active 高亮 ✓；② 书架删除 → 行内确认（确认/取消/复原）✓ console 0；③ 练习重生成 → 确认态双档并列（深度 primary + 标准档省额度 ghost + 取消）✓；④ 全局 focus-visible 生效（Tab 后 outline 2px solid）✓；⑤ reduced-motion 模拟（transition 1e-05s）✓；全程 console 0
+- [x] 走查注记（如实）：IME 守卫与 workshop 已验证模式同构（isComposing + keyCode 229），headless 无法真实模拟输入法组合态，以代码路径审查为准；骨架组件暂无消费方（渐进采用预备，V-1 范围内不强制迁移）；elevation/surface-raised token 为后续批次的取用基础，本批不改动既有面的视觉呈现
+- [x] **对抗式审查工作流**（3 维度 + 逐条反驳，24 agent）：确认 7 条全部处置——
+  - **P1×2（同族，真上线路径）**：InlineConfirm 引用页面级作用域 token（`--line-soft/--paper-bright/--muted`），在无桥接块的页面（/learn/my-materials）上「取消」无边框、hover 无底色、文字有近白风险 → **组件全部改用 :root 级 `--v2-*` token**（--v2-muted-foreground/--v2-border/--v2-foreground），页面作用域依赖从结构上消除；skeleton `.card` 同族 `--line-soft` 一并换 `--v2-border`；
+  - **P2 busy 契约**：确认后先收起再执行 → 自身操作无在途保护 → 改为 pending 生命周期（「处理中…」+ 全按钮禁用，Promise settle 才收起，失败不无声消失）；
+  - **P2 触发键样式竞争**：`.trigger` 硬重置与调用方类同特异性竞争（胜负取决于打包顺序）→ 组件不再重置按钮外观，样式完全由调用方 className 提供（5 处调用均已有）；
+  - **P2 焦点丢失**：Esc/取消后焦点落 body（相对被替换的 window.confirm 是可及性回退）→ trigger 常驻挂载 + 收起后 effect 归焦；补 `aria-haspopup/aria-expanded`；
+  - **P2** skeleton `.block` keyframes 无全局冲突（核查通过）；private-materials-studio 未传 busy 由 pending 生命周期覆盖；
+  - 另 7 条验证因限流未完成，主线核验：确认按钮聚焦后 Enter 双触发不存在（面板先卸载）、材料删除双发由 pending 覆盖、「对齐课题房间」注释指模式同构（保留）、错误标签名前端不消费（保留）；
+  - 修复后复验：test 571/571 + check exit 0 + tsc 干净；InlineConfirm 在书架页活体行为复验通过；/learn/my-materials 的计算样式以「token 已全部 :root 化」构造性论证（其历史种数据被本地存储校验丢弃，无法活体触发——如实记录）
+
+## 设计评审批续 — P0-B 390 专项 + V-3 空态 + V-2 dataviz + P1 切片（2026-10-07，按批准计划执行）
+
+### P0-B 390 移动端专项
+
+- **审计先行**（`scripts/p0b-390-audit.mjs`，只读）：Top 6 高频面 390 实测——横向溢出全部 0（640 规则在兜），但触控目标不足：FSRS 三键 30px、面包屑/footNote 链接 17–18px、「继续上次学习」20px。
+- **DESIGN_V4 §十二 响应式/触控标准**：三标准断点（≤768 移动单列触控≥44px / 769–1199 窄桌面 / ≥1200 完整三栏；390 为验收基准视口不做独立断点）+ 19 种存量断点的收编方向。
+- **触控修复**：FSRS 三键 30→40px（≤768 档 44px）；学习页面包屑、教材详情 footNote 返回链接、「继续上次学习」链接——热区扩展法（padding+负边距，视觉不变）。
+- 复验：390 下三键实测 **44/44/44**，溢出维持 0。
+
+### V-3 空态统一 + 纸墨线稿（Nur 2026-10-07 批准计划视为拍板通过）
+
+- 新组件 `ui/v2/empty-state`：三层级（rich=插画+标题+提示+CTA / medium=标题+提示）；4 幅纸墨线稿 SVG（EmptyScroll 书卷 / EmptyLamp 灯 / EmptyBox 匣 / EmptyBubble 气泡，单色 stroke=currentColor 随主题适配，aria-hidden）。
+- 迁移：书架（书卷）、课题列表（气泡）、课题房间材料（匣）三处虚线框 → rich 空态；clew-study 区块级提示（讲义/练习未生成）保留原样式（渐进）。错题中心既有富空态不动。
+- 复验：亮/暗截图（`zcode-review-empty-rich-{light,dark}-1440.png`）暗色文字可读、console 0。
+
+### V-2 数据可视化（dataviz skill 流程）
+
+- **图谱三改**（`clew-graph-figure.tsx` + CSS）：① 已学节点 ink→**橄榄状态色**（--v2-success；dataviz 规则=状态语义用状态色，非系列轮换；aria/结构清单不变）；② **悬停邻接高亮**——hover/focus 节点时相邻边转朱砂加粗、非邻居节点退隐 0.32（focus 同样触发，键盘可达）；③ 连线退隐（先修边 muted→line、术语边 line-soft）。figcaption 同步更新语义描述。
+- 学习面板统计数字 tabular-nums。
+- 分类色板（明暗双模式验证器五项全过，Ariadne 真实表面）记录于计划文件，供未来图表采用；趋势线图表因暂无时序数据源**不做**（如实——数据沉淀后再上）。
+
+### P1-A token 归一（第一切片）
+
+- **course-builder 破窗收回**：v1 硬编码（--ink #10100f/--paper #f7f4ee/--blue 石板蓝）→ clew 同款 v2 桥接映射——该页暗色恢复翻转（此前不随 .dark）；--blue→朱砂为 v4 语义决策，可见变化已记录。
+- **归一映射表**落 DESIGN_V4 §十二续（纸墨代 9 token → v2/v4 终态，含 `--muted` 同名异义警告：盲改危险，须专门批次逐使用点替换 + 明暗全矩阵走查）。
+
+### P1-C AsyncState + P1-B 第一切片
+
+- `ui/v2/async-state`：loading（骨架）/error（明确报错+重试出口）/empty（EmptyState）三态归一组件——新代码强制，旧面渐进。
+- `lib/clew/study-preferences.ts`：clew-study 的 localStorage 6 键收敛到单一模块（键名/语义逐字不变，解析失败回落 null），clew-study 直连 localStorage 清零；组件四刀拆分（Chat/SelfCheckPractice/Spine）留专门批次——半截拆分比不拆更糟，如实记录。
+
+### 验证记录
+
+- [x] `npm run test` **571/571**；`npm run check` exit 0；tsc 干净
+- [x] 浏览器走查：课题富空态（插画+标题+暗色可读）、FSRS 390 实测 44px×3、图谱邻接高亮（node#1 悬停 5 边转朱砂、非邻居退隐）、明暗截图 3 张、console 0
+- [x] 走查注记（如实）：390 溢出本就为 0（勘查的「真空」指无显式 390 设计而非布局破损）；V-2 趋势图与 P1-B 组件拆分为诚实的不做/延后
+- [x] **对抗式审查工作流**（3 维度 + 逐条反驳，16 agent 全部完成）：确认 8 条全部修复——
+  - **P1 图谱邻接方向错位**（三维度同抓）：isEdgeAdjacent 把 hoveredId 当出边源查询（edgePairs 单向存储）——入边不亮、二跳边误亮、约半数悬停方向失效 → 改端点判断（hoveredId === from || to），逐节点复验 28 = 14 边 × 2 端全亮；
+  - **P1 figcaption 失实**：「朱砂环 = 当前知识点」但 .graphNodeActive 只加粗无颜色 → 补 `stroke: var(--v2-primary)`；
+  - **P2 焦点驻留**：onFocus 设高亮无复位，键盘离开图谱后半透明驻留 → figure onBlur（relatedTarget 出容器即复位）；figcaption 补「悬停或聚焦」；
+  - **P2 已学节点序号白字**：暗色对橄榄底 2.85:1 → 改 `var(--v2-success-foreground)`（明暗各取正确值）；
+  - **P2 行内散文链接竖向热区 10px 越入相邻行**（headless 实测复现）→ footNote/railEmpty 竖向收敛 4px（面包屑/continueLink/FSRS 维持——勘查确认无重叠）；
+  - **P1 AsyncState 文档把调用方义务写成组件保证** → JSDoc 写明受控语义（status 完全受控、重试失败保持 error 是调用方责任）；
+  - 复验：逐节点悬停 13 节点无矛盾态（孤立节点零亮边=正确）、test 571/571、check exit 0
+
+## 设计评审批三 — P1-B 拆分第一刀：useStudyChat + 存储收敛复验（2026-10-08，按批准计划执行）
+
+- **`src/hooks/use-study-chat.ts`（248 行）**：「问 Clew」行为簇从 clew-study.tsx 纯搬移——messages/streaming/scope/intensity/suggestions/设置面板/复制与重新生成，事件解析与持久化逐字不变；依赖注入 knowledgePointId/lessonStyle/initialMessages（组件按 KP remount，挂载即历史初值——语义与原 `useState(selected.messages)` 一致）；设置面板点外关闭选择器从 CSS module 类改为 `data-chat-settings-wrap` 属性（hook 与样式解耦）。
+- **`lib/clew/study-preferences.ts` 复验**：clew-study 直连 `window.localStorage` 清零（6 键全部经模块读写）。
+- clew-study.tsx **2231 → 2063 行**（−168；后续刀：讲义生成 hook、练习 hook、自测/复习 hook，按计划逐刀走查）。
+- 验证：test 571/571、check exit 0、tsc/lint 干净（未用导入清零）；**真实模型活体走查**——经 hook 发问 → 流式答案完整渲染（含 D-4 定向提示与 notes）、console 0；lint 迁移中抓出 7 个未用导入全部清理。
+
+### P1-B 拆分第二/三刀（2026-10-08 续）＋ 每刀活体验证
+
+- **第二刀 `src/hooks/use-study-lesson.ts`（161 行）**：讲义状态/流式消费/风格与视图偏好（localStorage）/重生成确认态；依赖注入 knowledgePointId/Title/initialLesson + onLessonReady 回调（脊柱与会话归父级）+ onGenerationStart（清自测提示）。
+- **第三刀 `src/hooks/use-study-practice.ts`（172 行）**：题组/生成/作答/只练错题/揭示态；确认态（confirmingRegenerate）留视图层，视图包装函数保留原「进入生成先复位确认」语义。
+- clew-study.tsx **2231 → 1855 行**（三刀累计 −376）；未用导入随迁清理（type/常量级，lint 0 warning）。
+- **活体验证（真实模型）**：① chat 经 hook 真实问答（答案+D-4 定向提示+notes 完整）；② 讲义经 hook 真实生成（v4qa-kp-03 无讲义→生成→「结构校验通过」notes + 进度日志全程）；③ 练习经 hook 重生成（deepseek-flash 腿：确认流 → 6 题 → 「依据你标注的第 12 页——人工标注不做文本核验」语义完整）+ **失败路径**（DashScope 403 限流与额度 5/5 两个真实故障均诚实报错、旧题组未覆盖——「成败均记账」期间额度耗尽如实呈现，QA 账号计数已复原）；console 0 全程。
+- 走查注记（如实）：第四刀（自测/复习 hook）与脊柱/面板组件化留下一批；浏览器探针曾出现 locator 竞态假阴性（getByRole 点击 vs React 渲染时序），改 DOM-click + waitFor 后消除——探针方法学注记，非产品缺陷。
+
+### P1-B 拆分第四刀（2026-10-08 续）＋ 对抗式审查 + 真实链路走查
+
+- **第四刀 `src/hooks/use-study-assessment.ts`（266 行）**：「评」自测 + FSRS 复习打分行为簇纯搬移——selfCheckMarks/Revealed/ShakyOnly/Submitting/Note、reviewItem/reviewRating/reviewRateNote、按知识点+讲义版本恢复 effect、selfTestItems/shakyCount/markedCount/allMarksDone/visibleSelfCheckItems 五派生、persist/submitSelfCheck/refreshReviewItem/onRateReview/onMarkSelfCheck/onToggleSelfCheckReveal。依赖注入 knowledgePointId/lesson/initialReviewItem（服务端注入复习条目，同前三刀初值模式）/activeProfileName + **onAssessComplete 回调**（脊柱 assess 完成三行留在视图层；调用点时序与搬移前逐位一致：payload 解析后、写结果提示前）。
+- clew-study.tsx **1855 → 1661 行**（四刀累计 **2231 → 1661，−570 / −25%**）；视图 useState 57 → 19；直连 localStorage 维持 0（仅注释提及）；`SelfCheckMark` 类型随迁 hook 并导出；残留引用 grep 清零、未用导入随迁清理（lint 0 warning）。
+- **对抗式审查工作流**（3 维度独立审查：行为等价 / React 语义〔TDZ、过期闭包、StrictMode、hook 顺序〕/ 回归面 → 逐条反驳验证）：3 finder 均零发现，Verify 无条目——纯搬移等价性独立佐证。
+- 验证：test **571/571**、check exit 0、tsc 干净；**真实链路活体走查**（`scripts/p1b-cut4-walkthrough.mjs`，18 项断言全过、console 0）：
+  - 打分**错误路径**：route.abort 注入网络失败 →「打分暂时未能记录（网络问题）」诚实报错（catch 分支文案）；
+  - 打分**成功路径**：真实 FSRS 前移 →「已记录：下次复习 …（「我的学习 · 今日复习」同步更新）」+ 三键替换为「复习排期中：下次…」排期文案（due=false）；
+  - 自测链路：标记「还需看」→ data-mark=shaky + localStorage 经 study-preferences 写入（键 `nur-learn:clew-selfcheck:v4qa-kp-01` / 结构逐字一致）→ 全标记自动提交（真实服务端，本次命中 unchanged 分支「已记录；本次提交没有改变复习安排」；前一轮命中 advanced 分支「已重新计为…」）→ meta「· 已完成」；「只看还需看」过滤 3→1；
+  - **恢复路径**：reload 后标记按讲义版本恢复（3/3 道 + shaky 保留，等 hydration 后断言）；
+  - 明暗 × 1440/390 截图 4 张（`p1b-cut4-selfcheck-*`）+ 横向溢出 0 + console 0。
+- 走查注记（如实）：
+  - **探针方法学**（同类竞态再确认）：恢复断言最初固定 600ms 后读取——读到 SSR 首屏 HTML（恢复在 hydration 后的 effect 里），造成 3 轮「reload 后标记 0 道」假阴性；单变量隔离（预置存储 / 应用内写入 / goto vs reload / 有无筛选点击）证明恢复路径在两视口均正常，改「等待 meta 与存储一致（8s 超时）」后稳定全绿——非产品缺陷。另错误路径初版正则写成 !ok 分支文案「（网络或服务问题）」，route.abort 实走 catch 分支「（网络问题）」——探针笔误已修。
+  - **QA 夹具副作用与复原**：v4qa-kp-01 到期复习条目 cmuuryfko0004i 在 6 轮走查/诊断中真实打分 6 次（FSRS stability/difficulty 真实前移）+ 自测提交事件若干（UnifiedLearningEvent，QA 账号预期用途）——**dueAt/reviewCount/lapses 已复原走查前值（2026-10-07T04:54:16 / 1 / 0）**；stability/difficulty 无法精确回滚（仅影响该 QA 条目后续间隔估算，如实注记）。nuradilab007 未触碰。
+
+## 设计评审批四 — P1-A token 归一 codemod（2026-10-08，按批准计划执行）
+
+- **落 token**：globals.css 新增 `--v4-line`（text-900 12%）/ `--v4-line-soft`（6%）/ `--v4-line-strong`（38%）三档细边框——映射表「建议落成 --v4-line 后替换」兑现；strong 档承接 private-practice-room / private-materials-studio 原 38% 强线桥语义（映射表未预见，执行中勘出并如实扩充）。`:root` 纸墨代静态定义加「迁移期」注记（残面仍消费，P2 退役）。
+- **codemod**（`scripts/p1a-token-codemod.mjs`，可审计、逐替换计数、幂等）：**21 个消费面 1208 处替换**——18 个 R3 局部桥接面（使用点直替换 + 桥接别名层删除）+ 2 个宿主宾客面（material-intake-review / docx-parsing-review：渲染在 studio `.container` 内，语义由宿主桥证明，宿主桥删除会使其回落 :root 静态值造成暗色回归，故并入本批同映射迁移）+ ui/v2/skeleton（新 UI 禁用纸墨代规则，color-mix 基色 → text-900 随暗色翻转）。孤儿注释清理 18 文件；clew `.page`/studio `.container` 等桥接层全部退役，纸墨代引用在这些文件**清零**。
+- **`--muted` 纪律（本批最危险点）**：仅在「桥接/宿主桥证明语义 = 次级文字」的面内替换（→ text-500，机械安全）；shadcn `--muted`（近白背景）与其解析路径上的残面一律不动。
+- **验证**：test **571/571**、check exit 0；**明暗 × 1440/390 前后截图对比**（`p1a-before/after-*` 共 42 张，探针 `scripts/p1a-codemod-walkthrough.mjs`）——代表性目检 learn/clew-study/my-materials/wrong-questions 明暗**逐像素级一致**（尺寸 Δ 均为会话同步时序：改前首轮抓到登出头/数据未加载，billing 改前张为加载中间态不可用作对比、改后张完整正确）；横向溢出双跑 0。逆映射校验（改后文件施加逆替换 vs HEAD）确认差异仅「别名行删除 + 注释清理 + 三处顺带修复」。
+- **三处顺带修复（如实注记，均为原断链/违规）**：① learning-dashboard `--line-soft`×2 有使用无定义（全仓无该定义，解析失败回落 currentColor）→ `--v4-line-soft` 兑现原意；② studio `.historyItemActive` 的 `--paper-bright` 有使用无定义（回落透明）→ `--bg-100` 兑现高亮原意；③ docx-parsing `--paper-light`×3 解析 :root 静态 #f7f4ee（无暗色翻转）→ `--bg-100` 暗色修复（亮色 #f7f4ee→#faf9f5 微调）。
+- 走查注记（如实）：① **探针 console 出现瞬态 `SyntaxError: Invalid or unexpected token` pageerror（before/after 轮均出现，每轮 0–9 条不等）**——隔离证据：单上下文顺序导航 9 路由两轮全零、复刻探针上下文参数暖服后全零、渲染与溢出零影响——判定为 dev server 按需编译/HMR 瞬态，非产品缺陷；批四 codemod 前后出现率无差异（与本批无关的既有现象）。② billing「改前」基线因加载时序不可用，以「构造等价（替换值=桥接值）+ 改后张完整正确 + 逆向校验」替代该面对比。③ material-admission-review.module.css 为无引用孤儿组件（含纸墨代用法），未动——P2 清理候选；auth-form（v1 硬编码皮，暗色不翻转）与 forgot-password 一处内联 `--muted` 维持 P2 待 Nur 定夺。
+
+## 设计评审批五 — P1-C ui/v2 面迁移 + auth 去硬编码 + 纸墨代退役（2026-10-08，Nur 指示「不要硬编码」）
+
+- **auth 面 token 化（P2 项经 Nur 拍板提前）**：auth-form.module.css v1 硬编码皮全量替换为标准映射（18 处；`--blue #17659a` = `--v3-slate-blue` 原值且语义为链接信息色 → 按值等价映射 slate；`--red #bf2118 → --error-600` 色相对齐注记）——登录/注册/找回/重置四页**暗色首次可用**（原皮不翻转：暗色下米色卡+黑字）。forgot-password 一处内联 `--muted` → `--text-500`（宿主 --muted 删除后必须随迁）。
+- **纸墨代正式退役**：material-admission-review（无引用孤儿组件，tsc 删除后 0 error 实证）组件+css 删除（types/lib 存活保留）；`:root` `--ink/--paper/--paper-light` 静态定义删除（全仓零引用 grep 实证）。**纸墨代全仓清零，v2/v3/v4 一代 + shadcn oklch 底层达成。**
+- **P1-C 面迁移（本批 2 面）**：① wrong-question-center 5 个自造空态块 → `EmptyState rich + EmptyBoxIllustration`（V-3 批为错题中心画好却未迁的线稿落地；CTA 入 action 区）；② learning-dashboard 3 个自造动作钮 → `V2Button secondary`（冲突批量解决×2 + 导出学习数据；头像触发钮为自定义视觉合理保留）+ 2 个一句话空态 → `EmptyState`（今日复习 = medium；学习动态 = rich + `EmptyLampIllustration`——组件文档指定的「学习面板/动态空态」用途）。死类清理 9 块（dashboard 4 类 6 块、wqc emptyState 3 块；`emptyStateLink` 仍用保留）。
+- **顺带修复（如实注记）**：wrong-question-center `.weaknessItem:hover` 背景误写 `40%`（HEAD 已有，同面 `.wrongItem:hover` 为 4%）——hover 呈深色色块，纠正为 4%。
+- **验证**：test **571/571**、check exit 0、tsc 0；明暗截图核验——**login 暗色修复成立**（暖炭底/卡片浮起/宋体暖白/提交钮翻转/链接石板蓝；390 同验）、亮色与原设计几乎全等；wrong-questions 明暗空态（空匣线稿 currentColor 继承 + CTA 朱砂）正确；溢出 0；console 0（排除 dev 编译瞬态口径）。
+- 走查注记（如实）：/learn 的两处新 EmptyState 属空数据路径，本 QA 账号当前有复习到期与学习记录，未走活体路径——组件本体经 V-3 批双模式验证 + tsc/渲染覆盖，如实记录不做夹具改造。
+
+## 设计评审批六 — P1-C 续批：QB 三面 + mock-exam 收尾（2026-10-09）
+
+- **QB 家族 3 面空数据态 → `EmptyState medium`**：question-bank-home（当前筛选范围内暂无题目）/ question-bank-chapter（此选题型暂无题目）/ question-bank-global（当前搜索范围内暂无课程）——strong+small 自造块与统一组件同构，迁移 + 死类清理（3 文件 ×3 块）。
+- **mock-exam-room 按钮收尾**：discardButton（放弃并重新开始）→ `V2Button ghost`（与相邻 resume V2Button 同排统一）；numberButton/prevButton/nextButton 为分页控件自定义视觉，合理保留（同头像触发钮先例）。
+- **诚实不做（记录）**：clew-study ×3 / clew-textbook ×2 / clew-note ×1 的「行动前引导文案」（还没有讲义/未包含自测题/练习构成说明/请先确认章节结构等）——非空数据态而是紧邻动作行的引导段落，现有 quiet 段落形态已是统一语言（dashed + text-500），迁移到居中 EmptyState 盒收益近零且动战役核心面；留待该面下次设计改动时顺带。
+- **验证**：test **571/571**、check exit 0、tsc 0；**活体走查**：/question-bank 真实搜索交互触发「暂无课程」空态（light+dark 截图，emptyShown 双真，console 0 排除瞬态口径）。
+
+## 设计评审批七 — P2 收官：表单 aria 接线 + 键盘 skip link（2026-10-09）
+
+- **表单 aria（审计「describedby/invalid 全缺」清账）**：经典表单全接线——auth-form（登录/注册共用，email+password）、forgot-password、reset-password、clew-study 页码标注表单（error span 补 `role="alert"`）、clew-study 追问 composer（transport 错误 → describedby 条件关联）、clew-workshop-room composer 同模式。模式 = `aria-invalid={error ? true : undefined}` + `aria-describedby={error ? "<id>" : undefined}` + error 元素持 id 且已有 role="alert"——记为 DESIGN_V4 a11y 基线，其余输入面（subjective/case/private-practice 等已有 role=alert 的房间）按此渐进。
+- **键盘导航扩展**：壳层 skip link「跳到主内容」——视口上方隐藏、键盘聚焦滑入（`--motion-fast` + `--ease-out-quart`），首个 Tab 停留点，`#main-content` 落主画布。遮罩层 Esc 关闭三处已核实全有（command-palette/drawer/agent-dock），Tab 序原生（自定义交互件均为原生 button/Link）。
+- **验证**：test **571/571**、check exit 0、tsc 0；**活体探针**：①首 Tab 停留 = skip link、150ms 过渡后可见（top=12px）、Enter → `#main-content` 命中主画布；②登录页空提交（真实 API 往返）→ error 出现 → `aria-invalid="true"` + `aria-describedby="auth-form-error"` 读回一致（「请输入有效的邮箱地址。」）；③溢出 0、console 0（瞬态口径）。
+- 走查注记（如实）：forgot-password 的 error 路径经真实提交**不可触发**——API 对空/不存在邮箱一律返回成功（防枚举设计，诚实 UX），接线与 login 同模式由 tsc + 模式一致性覆盖；reset-password 同（token 守卫）。

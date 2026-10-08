@@ -1,6 +1,6 @@
 # 设计系统 v4 提案（Quiet · 安静的 AI 桌面）
 
-日期：2026-10-04。状态：**方向已由 Nur 拍板；Hermes 评审通过（§十一）；P0 四项已全部裁决（裁决记录见 §十一末），P1/P2 已并入实施计划——本文件即第一、二批任务书。批 1（token 层 + Clew 学习页换装 + 壳侧栏 264 合并 + 复制/重新生成行 + design-system 同步）已实施、已预验收复核通过、已提交并 push（`44d996b`/`8315ee8`/`518ad48`/`9c4e7b8`）；批 2（工作台壳、/learn、官方课、题库、计费、营销首页 `/` 归一 + ⌘K/抽屉回归）已实施，Hermes 预验收复核（2026-10-04）**通过**——独立复跑 test 490/490 / check exit 0；r2+r3 暗色审计重跑 0 低对比；13 路由 × 明暗 × 四档共 68 载 0 溢出 0 console；首页双主题、⌘K、抽屉、对照 stage 证据标签实测通过；遗留 4 处小项与范围外残面清单见 `design-qa.md`「预验收复核（Hermes，2026-10-04）· DESIGN_V4 批 2」节——批 2 未提交待提交审阅；批 3（「依据范围」）已于 2026-10-05 与「Clew 对话体验批」（状态里程碑 SSE + composer 设置面板〔首版 chip 排经 Nur 否决后返工为单入口安静控制〕 + 模型名去 provider，2026-10-05 讨论定案 ③④ 两件）合并实施完成，真实模型端到端走查通过、缺省行为逐字测试锁定（证据见 `design-qa.md`「DESIGN_V4 批 3 + Clew 对话体验批」节），未提交待验收；批 2 复核遗留已落 §八「批 3 补遗」并已于 2026-10-05 执行完毕——6 处 ink 硬边全部归一（/learn 主 CTA 朱砂圆角、avatar 删冗余墨边、reasoningCard/dualLensCard 基规则细线化、题库 addBtn/章节 navButton 细边框；复验项 swr/cr em 墨边维持 0 引用关闭），全仓 `src/components/` 主产品面 `1px solid var(--ink)` 清零（仅剩批 2 复核「范围外残面」5 文件：auth-form/docx-parsing-review/material-admission-review/material-intake-review/private-practice-room），test 494/494 + check exit 0 + 浏览器实测（CTA rgb(201,100,66)/圆角 8px/边宽 0、addBtn border-300、avatar 边 0），证据见 `design-qa.md`「批 3 补遗执行」节。**Hermes 批 3 全家桶预验收复核（2026-10-05）通过**——独立复跑 test 494/494 / check exit 0；13 路由 × 明暗四档 68 载 + 学习页 5 载 0 溢出 0 console；依据范围三连真实模型 e2e、设置面板、⌘B 图标轨、讲义/笔记折叠、审计 r2+r3 全过；唯一遗留（模型名「来源：」文案 4 处）已于同日执行收口——4 处 notes 模板改「来源：模型生成/萃取/解析 · {model}」口径 + 源码级锁定测试（495/495）+ 真实模型讲义路径实测通过（notes/面板头均无 provider），见 §八「批 3 补遗 2」执行记录与 `design-qa.md`「批 3 补遗 2 执行」节。全部未提交待提交审阅。**
+日期：2026-10-04。状态：**方向已由 Nur 拍板；Hermes 评审通过（§十一）；P0 四项已全部裁决（裁决记录见 §十一末），P1/P2 已并入实施计划——本文件即第一、二批任务书。批 1（token 层 + Clew 学习页换装 + 壳侧栏 264 合并 + 复制/重新生成行 + design-system 同步）已实施、已预验收复核通过、已提交并 push（`44d996b`/`8315ee8`/`518ad48`/`9c4e7b8`）；批 2（工作台壳、/learn、官方课、题库、计费、营销首页 `/` 归一 + ⌘K/抽屉回归）已实施，Hermes 预验收复核（2026-10-04）**通过**——独立复跑 test 490/490 / check exit 0；r2+r3 暗色审计重跑 0 低对比；13 路由 × 明暗 × 四档共 68 载 0 溢出 0 console；首页双主题、⌘K、抽屉、对照 stage 证据标签实测通过；遗留 4 处小项与范围外残面清单见 `design-qa.md`「预验收复核（Hermes，2026-10-04）· DESIGN_V4 批 2」节；批 3（「依据范围」）已于 2026-10-05 与「Clew 对话体验批」（状态里程碑 SSE + composer 设置面板〔首版 chip 排经 Nur 否决后返工为单入口安静控制〕 + 模型名去 provider，2026-10-05 讨论定案 ③④ 两件）合并实施完成，真实模型端到端走查通过、缺省行为逐字测试锁定（证据见 `design-qa.md`「DESIGN_V4 批 3 + Clew 对话体验批」节）；批 2 复核遗留已落 §八「批 3 补遗」并已于 2026-10-05 执行完毕——6 处 ink 硬边全部归一（/learn 主 CTA 朱砂圆角、avatar 删冗余墨边、reasoningCard/dualLensCard 基规则细线化、题库 addBtn/章节 navButton 细边框；复验项 swr/cr em 墨边维持 0 引用关闭），全仓 `src/components/` 主产品面 `1px solid var(--ink)` 清零（仅剩批 2 复核「范围外残面」5 文件：auth-form/docx-parsing-review/material-admission-review/material-intake-review/private-practice-room），test 494/494 + check exit 0 + 浏览器实测（CTA rgb(201,100,66)/圆角 8px/边宽 0、addBtn border-300、avatar 边 0），证据见 `design-qa.md`「批 3 补遗执行」节。**Hermes 批 3 全家桶预验收复核（2026-10-05）通过**——独立复跑 test 494/494 / check exit 0；13 路由 × 明暗四档 68 载 + 学习页 5 载 0 溢出 0 console；依据范围三连真实模型 e2e、设置面板、⌘B 图标轨、讲义/笔记折叠、审计 r2+r3 全过；唯一遗留（模型名「来源：」文案 4 处）已于同日执行收口——4 处 notes 模板改「来源：模型生成/萃取/解析 · {model}」口径 + 源码级锁定测试（495/495）+ 真实模型讲义路径实测通过（notes/面板头均无 provider），见 §八「批 3 补遗 2」执行记录与 `design-qa.md`「批 3 补遗 2 执行」节。**〔2026-10-07 状态对齐：批 2/3 及其验收证据均已提交（`303b622`/`48fc87c`/`e4294a1`，其后的 M5 `ee336ca`、M6 系列亦已落地），本段历史性「未提交待审阅」表述以 git 为准；后续设计演进（v5 方向：深度/动效 token、骨架屏、dataviz 色板）见 design-qa 评审节。〕**
 执行者：Zcode（探针试错 + 本提案 + 批 1–批 3 及微批实施）。真相源优先级：设计语言问题以本文件为准 > `docs/DESIGN_V3.md` > `docs/RESTRUCTURE_PLAN.md` > `docs/PROJECT_STATE.md`。
 
 ## 一、结论（一句话）
@@ -167,3 +167,46 @@
 - P1-5～P1-10、P2 各项已并入 §三/§五/§八（上方「P0 裁决与 P1/P2 并入」小节）；P2 顺带定案：正文单值 15px、`--v3-font-kai` 楷体栈、重新生成语义（见 §五）、选中态统一 token。
 
 **至此 P0 全部闭环，本文件即为第一批任务书。**
+
+## §十二 v5 响应式与触控标准（2026-10-07 设计评审批 P0-B）
+
+**背景**：全仓 @media 57 max-width vs 3 min-width、断点 19 种（640/760/768/820/880/900/901/980/1200…各自发明），390 档全仓仅 1 条查询——390 的布局从未被单独设计，现状靠 640 规则顺带覆盖（P0-B 审计实测：Top 6 高频面 390 横向溢出为 0，但触控目标普遍不足：FSRS 三键 30px、面包屑链接 17–18px）。
+
+**标准断点（三档 + 语义）**：
+| 断点 | 语义 | 收编方向 |
+|---|---|---|
+| **≤768px** | 移动/单列：侧栏抽屉态、右栏下置/抽屉化、触控目标 ≥44px | 现存 640/700/760/768 归并 |
+| **769–1199px** | 窄桌面：三栏压缩、右栏 320→280 | 现存 880/900/901/980/1050/1100 归并 |
+| **≥1200px** | 完整三栏工作台 | 现存 1180/1200/1201/1260 归并 |
+| 390 | 验收基准视口（iPhone 直板），不做独立断点——≤768 档内以 390 验收 | — |
+
+**触控目标**：可交互元素（button/a[interactive]/input）热区 ≥40px，移动档（≤768）≥44px。行内文本链接用「padding + 负边距」热区扩展法（视觉不变）。存量按高频面渐进收敛（FSRS 三键、学习页/教材详情面包屑、「继续上次学习」已于 P0-B 修复）。
+
+**新增 token**（V-1，同批）：`--motion-fast/--motion-slow/--ease-out-quart`、`--elevation-raised-shadow/--elevation-overlay-shadow/--surface-raised`（暗色暖炭亮度分层）；正文流数字 `tabular-nums`。
+
+### §十二续 P1-A token 归一映射表（✅ 归一完成 2026-10-08；残量见下）
+
+原现状：globals.css 五代并存（shadcn oklch 代 / 纸墨代 / v2 / v3 / v4）。目标终态 = **v2/v3/v4 一代**（shadcn oklch 组保留为底层原色别名；纸墨代退役）。归一映射（来源 = clew.module.css `.page` 桥接，2026-10-07 起为唯一口径）：
+
+| 纸墨代（退役） | 归一至 | 备注 |
+|---|---|---|
+| `--ink` | `var(--text-900)` | |
+| `--paper` | `var(--bg-200)` | |
+| `--paper-bright` | `var(--bg-100)` | |
+| `--paper-light` | `var(--bg-100)` | |
+| `--muted`（clew 桥接语义 = 次级文字） | `var(--text-500)` | ⚠️ 与 shadcn `--muted`（近白背景 oklch）同名不同义——逐使用点确认语义，禁止盲目 codemod |
+| `--line` | `var(--v4-line)`（12%） | 强线变体 → `--v4-line-strong`（38%，private-practice/materials 两面语义） |
+| `--line-soft` | `var(--v4-line-soft)`（6%） | 三档均落 `:root`，基于 text-900 自动翻转 |
+| `--blue` | `var(--v2-ring)` | 设计决策（非等值）：聚焦/信息强调统一朱砂 |
+| `--slate` | `var(--v3-slate-blue)` | 信息色 |
+| `--red` | `var(--error-600)` | |
+
+**归一执行（2026-10-08 批，`scripts/p1a-token-codemod.mjs` 可审计）**：21 个消费面 1208 处替换 + 20 文件桥接层删除（18 桥接面 + 2 宿主宾客面 material-intake/docx-parsing）+ skeleton v2 组件去纸墨代。替换值 = 各面桥接现值（构造上零视觉变化，明暗 × 1440/390 前后截图对比核验）；三处如实注记的顺带修复：learning-dashboard `--line-soft` 断链（原解析失败回落 currentColor）、studio `.historyItemActive` 的 `--paper-bright` 断链（原回落透明）、skeleton 基色随暗色翻转。
+
+**残量清账（2026-10-08 P1-C 批，Nur 指示「不要硬编码」）**：① auth-form v1 硬编码皮 → 全量 token 化（映射 = 本表口径；特例：其 `--blue #17659a` 恰为 `--v3-slate-blue` 原值且语义为链接信息色，按值等价映射 slate 而非 v2-ring；`--red #bf2118 → --error-600` 有色相对齐）——**暗色修复**（原不翻转）；② forgot-password 一处内联 `--muted` → `--text-500`；③ material-admission-review 无引用孤儿组件+css 删除（types/lib 存活保留）；④ `:root` 的 `--ink/--paper/--paper-light` 静态定义**正式退役删除**（全仓零引用）。**纸墨代至此全仓清零；新 UI 禁止引用已删 token。**
+
+### §十二续二 a11y 基线（P2 收官，2026-10-09）
+
+- **表单错误关联模式**：`aria-invalid={error ? true : undefined}` + `aria-describedby={error ? "<error-id>" : undefined}`；error 元素持 id + `role="alert"`（条件渲染即播报）。已接线：auth 三页 / 页码标注 / 两处追问 composer；其余输入面按此渐进（subjective/case/private-practice 等已有 role=alert 的房间为下一梯队）。
+- **键盘**：壳层 skip link「跳到主内容」（首 Tab 停留点，视口上方隐藏 → 聚焦滑入，`#main-content`）；所有浮层 Esc 关闭（command-palette / 侧栏抽屉 / agent-dock 已核实）；自定义交互件一律原生 button/Link（Tab 序免维护）。
+- **原 P2 残项对照**：残面 token（批五清账）、表单 aria（本批）、键盘导航（本批）——批准计划 P2 全部完成。
