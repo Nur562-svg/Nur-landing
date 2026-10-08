@@ -1,6 +1,25 @@
 /* NUR Workspace 壳 — v4 Quiet：264px 固定侧栏 + 单一主画布（DESIGN_V4 §四/P1-6：壳侧栏 280 与 Clew 学习页 studyAside 240 合并为一栏 264）。
    只消费 globals.css 的 v2/v3/v4 token。 */
 
+/* 键盘导航（P2）：跳到主内容——视口上方隐藏，键盘聚焦滑入（首个 Tab 停留点） */
+.skipLink {
+  background: var(--surface-raised);
+  border: 1px solid var(--v2-border);
+  border-radius: var(--v2-radius-sm);
+  color: var(--v2-foreground);
+  font: 600 13px/1 var(--v2-font-sans);
+  left: 16px;
+  padding: 10px 14px;
+  position: fixed;
+  top: -52px;
+  transition: top var(--motion-fast) var(--ease-out-quart);
+  z-index: 60;
+}
+
+.skipLink:focus {
+  top: 12px;
+}
+
 .app {
   background: var(--v2-background);
   color: var(--v2-foreground);

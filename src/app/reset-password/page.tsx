@@ -69,10 +69,12 @@ export default function ResetPasswordPage() {
               autoComplete="new-password"
               minLength={8}
               required
+              aria-invalid={error ? true : undefined}
+              aria-describedby={error ? "reset-password-error" : undefined}
             />
           </label>
           {error ? (
-            <p className={styles.error} role="alert">{error}</p>
+            <p className={styles.error} role="alert" id="reset-password-error">{error}</p>
           ) : null}
           <button className={styles.submitButton} type="submit" disabled={submitting || !token}>
             {submitting ? <Loader2 className={styles.spinner} size={16} aria-hidden="true" /> : null}

@@ -7,6 +7,7 @@ import {
   BookMarked,
   BookOpen,
   Home,
+  BookX,
   CreditCard,
   GraduationCap,
   ListChecks,
@@ -45,6 +46,7 @@ const PRIMARY_ICONS: Readonly<Record<string, NavIcon>> = {
   clew: BookOpen,
   courses: GraduationCap,
   "question-bank": ListChecks,
+  "wrong-questions": BookX,
   membership: CreditCard,
 };
 
@@ -55,6 +57,7 @@ function resolveActivePrimaryId(pathname: string | null): string | null {
   if (pathname === "/learn" || pathname.startsWith("/learn/")) return "learn";
   if (pathname.startsWith("/courses")) return "courses";
   if (pathname.startsWith("/question-bank")) return "question-bank";
+  if (pathname.startsWith("/wrong-questions")) return "wrong-questions";
   if (pathname.startsWith("/account")) return "membership";
   return null;
 }
@@ -282,6 +285,10 @@ export function WorkspaceShell({
       // 折叠状态暴露给页面 CSS：学习页等按此放宽内容上限（ZCODE-M6 UI 热修①）
       data-shell-rail={railCollapsed ? "collapsed" : "expanded"}
     >
+      {/* 键盘导航（P2）：首个可聚焦元素 = 跳过侧栏直达主内容；聚焦滑入、失焦隐藏 */}
+      <a className={styles.skipLink} href="#main-content">
+        跳到主内容
+      </a>
       <aside
         ref={drawerRef}
         data-shell-drawer={drawerOpen ? "open" : undefined}
@@ -319,7 +326,7 @@ export function WorkspaceShell({
         ) : null}
       </aside>
       {drawerOpen ? <div className={styles.scrim} onClick={() => setDrawerOpen(false)} aria-hidden="true" /> : null}
-      <div className={styles.main} data-workspace-canvas="">
+      <div className={styles.main} id="main-content" data-workspace-canvas="">
         <header className={styles.topbar}>
           <div className={styles.topbarLeft}>
             <button

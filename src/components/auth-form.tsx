@@ -105,6 +105,8 @@ export function AuthForm({ mode }: AuthFormProps) {
               placeholder="you@example.edu.cn"
               autoComplete="email"
               required
+              aria-invalid={error ? true : undefined}
+              aria-describedby={error ? "auth-form-error" : undefined}
             />
           </label>
           <label className={styles.field}>
@@ -118,6 +120,8 @@ export function AuthForm({ mode }: AuthFormProps) {
               autoComplete={isRegister ? "new-password" : "current-password"}
               minLength={isRegister ? 8 : 1}
               required
+              aria-invalid={error ? true : undefined}
+              aria-describedby={error ? "auth-form-error" : undefined}
             />
           </label>
 
@@ -140,7 +144,7 @@ export function AuthForm({ mode }: AuthFormProps) {
           ) : null}
 
           {error ? (
-            <p className={styles.error} role="alert">
+            <p className={styles.error} role="alert" id="auth-form-error">
               {error}
             </p>
           ) : null}

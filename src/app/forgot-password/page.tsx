@@ -50,7 +50,7 @@ export default function ForgotPasswordPage() {
 
         {done ? (
           <div className={styles.form}>
-            <p style={{ fontSize: 14, lineHeight: 1.7, color: "var(--muted)" }}>
+            <p style={{ fontSize: 14, lineHeight: 1.7, color: "var(--text-500)" }}>
               如该邮箱已注册，重置链接已发送。请检查邮箱（包括垃圾邮件文件夹）。
             </p>
             <Link href="/login" className={styles.submitButton} style={{ textDecoration: "none", justifyContent: "center" }}>
@@ -69,10 +69,12 @@ export default function ForgotPasswordPage() {
                 placeholder="you@example.edu.cn"
                 autoComplete="email"
                 required
+                aria-invalid={error ? true : undefined}
+                aria-describedby={error ? "forgot-password-error" : undefined}
               />
             </label>
             {error ? (
-              <p className={styles.error} role="alert">{error}</p>
+              <p className={styles.error} role="alert" id="forgot-password-error">{error}</p>
             ) : null}
             <button className={styles.submitButton} type="submit" disabled={submitting}>
               {submitting ? <Loader2 className={styles.spinner} size={16} aria-hidden="true" /> : null}
