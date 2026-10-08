@@ -22,6 +22,7 @@ import type { CourseDefinition } from "@/types/learning";
 import { getQBAttempts } from "@/lib/question-bank-store";
 import { courseHasAuthoredLesson, flattenCourseAssessmentItems } from "@/lib/course-selectors";
 import styles from "./question-bank-global.module.css";
+import { EmptyState } from "@/components/ui/v2/empty-state";
 
 /* ── Filter type definitions ── */
 type LeftFilter = "wrong" | "favorite" | "notes" | "comments";
@@ -318,10 +319,11 @@ export function QuestionBankGlobal({ courses }: QuestionBankGlobalProps) {
               </Link>
             );
           }) : (
-            <div className={styles.emptyState}>
-              <strong>当前搜索范围内暂无课程</strong>
-              <small>调整关键词或清除搜索条件。</small>
-            </div>
+            <EmptyState
+              tone="medium"
+              title="当前搜索范围内暂无课程"
+              hint="调整关键词或清除搜索条件。"
+            />
           )}
         </div>
       </div>

@@ -1,15 +1,7 @@
 .container {
-  /* R3 token 桥接：局部 token 改引 v2 全局 token（映射口径见 design-qa.md R3 节）；.dark 自动翻转。
-     --blue → --v2-ring 为设计决策，非等值替换。 */
-  --ink: var(--text-900);
-  --paper: var(--bg-200);
-  --muted: var(--text-500);
-  --line: color-mix(in srgb, var(--text-900) 12%, transparent);
   --soft-line: color-mix(in srgb, var(--text-900) 6%, transparent);
-  --red: var(--error-600);
-  --blue: var(--v2-ring);
-  background: var(--paper);
-  color: var(--ink);
+  background: var(--bg-200);
+  color: var(--text-900);
   min-height: 100dvh;
   padding: 36px 28px 80px;
   max-width: 960px;
@@ -28,7 +20,7 @@
 }
 
 .backLink {
-  color: var(--ink);
+  color: var(--text-900);
   display: inline-flex;
   align-items: center;
   gap: 4px;
@@ -36,16 +28,16 @@
 }
 
 .backLink:hover {
-  color: var(--red);
+  color: var(--error-600);
 }
 
 .breadcrumbSep {
-  color: var(--muted);
+  color: var(--text-500);
   font-size: 14px;
 }
 
 .chapterLabel {
-  color: var(--muted);
+  color: var(--text-500);
   font-size: 13px;
 }
 
@@ -58,7 +50,7 @@
 }
 
 .subtitle {
-  color: var(--muted);
+  color: var(--text-500);
   font-size: 14px;
   margin: 0;
 }
@@ -72,13 +64,13 @@
 
 .progressTrack {
   appearance: none;
-  border: 1px solid var(--line);
+  border: 1px solid var(--v4-line);
   flex: 1;
   height: 6px;
 }
 
 .progressTrack::-webkit-progress-bar {
-  background: var(--paper);
+  background: var(--bg-200);
 }
 
 .progressTrack::-webkit-progress-value {
@@ -90,7 +82,7 @@
 }
 
 .progressLabel {
-  color: var(--muted);
+  color: var(--text-500);
   font-size: 13px;
   white-space: nowrap;
 }
@@ -107,10 +99,10 @@
 }
 
 .kindTag {
-  border: 1px solid var(--line);
+  border: 1px solid var(--v4-line);
   border-radius: var(--v2-radius-sm);
   background: transparent;
-  color: var(--ink);
+  color: var(--text-900);
   cursor: pointer;
   font-size: 12px;
   padding: 4px 10px;
@@ -151,7 +143,7 @@
 .startFilteredButton {
   background: transparent;
   border-color: var(--v2-border);
-  color: var(--ink);
+  color: var(--text-900);
 }
 
 .startButton:hover,
@@ -172,12 +164,12 @@
   flex-direction: column;
   gap: 1px;
   background: var(--soft-line);
-  border: 1px solid var(--line);
+  border: 1px solid var(--v4-line);
 }
 
 .itemRow {
   align-items: center;
-  background: var(--paper);
+  background: var(--bg-200);
   display: grid;
   gap: 12px;
   grid-template-columns: 32px 1fr auto auto auto;
@@ -194,7 +186,7 @@
 }
 
 .itemIndex {
-  color: var(--muted);
+  color: var(--text-500);
   font-size: 13px;
   text-align: center;
 }
@@ -207,7 +199,7 @@
 }
 
 .itemKind {
-  border: 1px solid var(--line);
+  border: 1px solid var(--v4-line);
   border-radius: var(--v2-radius-sm);
   font-size: 12px;
   padding: 2px 8px;
@@ -215,7 +207,7 @@
 }
 
 .itemAnswerStatus {
-  color: var(--muted);
+  color: var(--text-500);
   font-size: 12px;
 }
 
@@ -230,7 +222,7 @@
 }
 
 .itemStatusDone {
-  color: var(--blue);
+  color: var(--v2-ring);
 }
 
 .itemStatusCorrect {
@@ -240,21 +232,21 @@
 .favoriteStar {
   background: none;
   border: none;
-  color: var(--muted);
+  color: var(--text-500);
   cursor: pointer;
   font-size: 16px;
   padding: 2px;
 }
 
 .favoriteStarActive {
-  color: var(--ink);
+  color: var(--text-900);
 }
 
 .practiceLink {
   align-items: center;
   border: 1px solid var(--v2-border);
   border-radius: var(--v2-radius-sm);
-  color: var(--ink);
+  color: var(--text-900);
   display: inline-flex;
   font-size: 13px;
   gap: 4px;
@@ -268,27 +260,12 @@
 }
 
 .readonlyLabel {
-  color: var(--muted);
+  color: var(--text-500);
   font-size: 12px;
 }
 
-.emptyState {
-  border: 1px dashed var(--line);
-  border-radius: var(--v3-card-radius);
-  padding: 48px 24px;
-  text-align: center;
-}
 
-.emptyState strong {
-  display: block;
-  font-size: 18px;
-  margin-bottom: 8px;
-}
 
-.emptyState small {
-  color: var(--muted);
-  font-size: 14px;
-}
 
 @media (max-width: 640px) {
   .container {

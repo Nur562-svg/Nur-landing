@@ -1,21 +1,12 @@
 /* ── Design tokens (from existing Ariadne editorial system) ── */
 .container {
-  /* R3 token 桥接：局部 token 改引 v2 全局 token（映射口径见 design-qa.md R3 节）；.dark 自动翻转。
-     --blue → --v2-ring 为设计决策，非等值替换。 */
-  --ink: var(--text-900);
-  --paper: var(--bg-200);
-  --paper-bright: var(--bg-100);
-  --muted: var(--text-500);
-  --line: color-mix(in srgb, var(--text-900) 12%, transparent);
   --soft-line: color-mix(in srgb, var(--text-900) 6%, transparent);
-  --red: var(--error-600);
-  --blue: var(--v2-ring);
   --radius-card: 12px;
   --radius-pill: 24px;
   --radius-tag: 8px;
 
-  background: var(--paper);
-  color: var(--ink);
+  background: var(--bg-200);
+  color: var(--text-900);
   min-height: 100dvh;
   overflow-x: clip;
   padding: 0;
@@ -30,7 +21,7 @@
 }
 
 .container :where(a, button):focus-visible {
-  outline: 2px solid var(--blue);
+  outline: 2px solid var(--v2-ring);
   outline-offset: 3px;
 }
 
@@ -65,7 +56,7 @@
 }
 
 .titleSub {
-  color: var(--muted);
+  color: var(--text-500);
   font-size: 12px;
   margin: 0;
 }
@@ -75,7 +66,7 @@
   background: transparent;
   border: 1px solid var(--v2-border);
   border-radius: var(--radius-tag);
-  color: var(--ink);
+  color: var(--text-900);
   cursor: pointer;
   display: flex;
   font-size: 14px;
@@ -86,8 +77,8 @@
 }
 
 .addBtn:hover {
-  background: var(--ink);
-  color: var(--paper-bright);
+  background: var(--text-900);
+  color: var(--bg-100);
 }
 
 /* ── 2. Search bar ── */
@@ -96,10 +87,10 @@
 }
 
 .searchInput {
-  background: var(--paper-bright);
-  border: 1px solid var(--line);
+  background: var(--bg-100);
+  border: 1px solid var(--v4-line);
   border-radius: var(--radius-pill);
-  color: var(--ink);
+  color: var(--text-900);
   font-size: 15px;
   height: 44px;
   padding: 0 20px 0 48px;
@@ -107,7 +98,7 @@
 }
 
 .searchInput::placeholder {
-  color: var(--muted);
+  color: var(--text-500);
 }
 
 .searchInput:focus {
@@ -140,10 +131,10 @@
 /* Left: ad area */
 .adArea {
   align-items: center;
-  background: var(--paper-bright);
+  background: var(--bg-100);
   border: 1px solid var(--soft-line);
   border-radius: var(--radius-card);
-  color: var(--muted);
+  color: var(--text-500);
   display: flex;
   font-size: 14px;
   justify-content: center;
@@ -161,7 +152,7 @@
 /* Stats card */
 .statsCard,
 .toolsCard {
-  background: var(--paper-bright);
+  background: var(--bg-100);
   border: 1px solid var(--soft-line);
   border-radius: var(--radius-card);
   padding: 16px;
@@ -183,7 +174,7 @@
 }
 
 .statsHint {
-  color: var(--muted);
+  color: var(--text-500);
   font-size: 10px;
   line-height: 1.4;
   margin: 0;
@@ -208,7 +199,7 @@
 }
 
 .statsLabel {
-  color: var(--muted);
+  color: var(--text-500);
   font-size: 11px;
   margin-top: 6px;
 }
@@ -221,7 +212,7 @@
 }
 
 .toolsNotice {
-  color: var(--muted);
+  color: var(--text-500);
   font-size: 11px;
   margin: 10px 0 0;
 }
@@ -232,7 +223,7 @@
   background: transparent;
   border: 1px solid var(--soft-line);
   border-radius: var(--radius-tag);
-  color: var(--ink);
+  color: var(--text-900);
   cursor: pointer;
   display: flex;
   flex-direction: column;
@@ -245,11 +236,11 @@
 
 .toolItem:hover {
   background: color-mix(in srgb, var(--text-900) 4%, transparent);
-  border-color: var(--line);
+  border-color: var(--v4-line);
 }
 
 .toolItem svg {
-  color: var(--ink);
+  color: var(--text-900);
 }
 
 /* ── 4. Filter section ── */
@@ -291,7 +282,7 @@
   background: transparent;
   border: 0;
   border-radius: var(--radius-tag);
-  color: var(--muted);
+  color: var(--text-500);
   cursor: pointer;
   display: flex;
   font-size: 13px;
@@ -305,7 +296,7 @@
 
 .filterBtn:hover {
   background: color-mix(in srgb, var(--text-900) 4%, transparent);
-  color: var(--ink);
+  color: var(--text-900);
 }
 
 .filterBtn:active {
@@ -315,7 +306,7 @@
 /* Active state — animated underline + bg highlight + text emphasis */
 .filterActive {
   background: color-mix(in srgb, var(--text-900) 7%, transparent);
-  color: var(--ink);
+  color: var(--text-900);
   font-weight: 700;
 }
 
@@ -371,7 +362,7 @@
   background: transparent;
   border: 1px solid var(--soft-line);
   border-radius: var(--radius-tag);
-  color: var(--muted);
+  color: var(--text-500);
   cursor: pointer;
   font-size: 13px;
   font-weight: 500;
@@ -381,8 +372,8 @@
 }
 
 .secondaryBtn:hover {
-  border-color: var(--line);
-  color: var(--ink);
+  border-color: var(--v4-line);
+  color: var(--text-900);
 }
 
 .secondaryBtn:active {
@@ -390,9 +381,9 @@
 }
 
 .secondaryActive {
-  background: var(--ink);
-  border-color: var(--ink);
-  color: var(--paper-bright);
+  background: var(--text-900);
+  border-color: var(--text-900);
+  color: var(--bg-100);
   font-weight: 700;
 }
 
@@ -403,29 +394,12 @@
   flex-direction: column;
 }
 
-.emptyState {
-  align-items: center;
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-  min-height: 80px;
-  justify-content: center;
-  padding: 24px 16px;
-}
 
-.emptyState strong {
-  font-size: 14px;
-  font-weight: 600;
-}
 
-.emptyState small {
-  color: var(--muted);
-  font-size: 12px;
-}
 
 /* Filter notice */
 .filterNotice {
-  color: var(--muted);
+  color: var(--text-500);
   font-size: 11px;
   margin: 0;
   padding: 4px 0 0;
@@ -434,7 +408,7 @@
 .courseItem {
   align-items: center;
   border-bottom: 1px solid var(--soft-line);
-  color: var(--ink);
+  color: var(--text-900);
   display: flex;
   font-size: 14px;
   font-weight: 600;
@@ -451,12 +425,12 @@
 }
 
 .courseArrow {
-  color: var(--muted);
+  color: var(--text-500);
   flex: 0 0 auto;
 }
 
 .courseMeta {
-  color: var(--muted);
+  color: var(--text-500);
   font-family: var(--font-sans);
   font-size: 11px;
   font-weight: 400;
@@ -473,7 +447,7 @@
 .drillOnlyBadge {
   border: 1px solid color-mix(in srgb, var(--text-900) 18%, transparent);
   border-radius: 999px;
-  color: var(--text-700, var(--muted));
+  color: var(--text-700, var(--text-500));
   flex: 0 0 auto;
   font-family: var(--font-sans);
   font-size: 10px;

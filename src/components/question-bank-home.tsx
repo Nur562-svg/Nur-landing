@@ -18,6 +18,7 @@ import type {
 } from "@/types/learning";
 import { QUESTION_KIND_OPTIONS } from "@/lib/question-kind-labels";
 import styles from "./question-bank-home.module.css";
+import { EmptyState } from "@/components/ui/v2/empty-state";
 import { SyncStatusBadge } from "./sync-status-badge";
 
 type QuestionBankHomeProps = {
@@ -201,10 +202,11 @@ export function QuestionBankHome({ course }: QuestionBankHomeProps) {
           })}
         </div>
       ) : (
-        <div className={styles.emptyState}>
-          <strong>当前筛选范围内暂无题目</strong>
-          <small>调整筛选条件或切换到其他章节查看。</small>
-        </div>
+        <EmptyState
+          tone="medium"
+          title="当前筛选范围内暂无题目"
+          hint="调整筛选条件或切换到其他章节查看。"
+        />
       )}
     </div>
   );

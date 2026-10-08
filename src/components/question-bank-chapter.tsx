@@ -19,6 +19,7 @@ import type {
 import type { ChapterQBProgress } from "@/types/question-bank";
 import { QUESTION_KIND_OPTIONS, questionKindShortLabel, serializeQuestionBankKindQuery, filterQuestionBankItemsByKinds } from "@/lib/question-kind-labels";
 import styles from "./question-bank-chapter.module.css";
+import { EmptyState } from "@/components/ui/v2/empty-state";
 
 function getAnswerStatusLabel(
   item: AssessmentItemDefinition,
@@ -238,10 +239,11 @@ export function QuestionBankChapter({
           })}
         </div>
       ) : (
-        <div className={styles.emptyState}>
-          <strong>此选题型暂无题目</strong>
-          <small>切换上方题型筛选查看其他题目。</small>
-        </div>
+        <EmptyState
+          tone="medium"
+          title="此选题型暂无题目"
+          hint="切换上方题型筛选查看其他题目。"
+        />
       )}
     </div>
   );

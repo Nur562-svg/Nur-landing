@@ -524,9 +524,9 @@ export function MockExamRoom({ course }: MockExamRoomProps) {
             <V2Button className={styles.resumeButton} onClick={resumeExam}>
               继续模考 <SyncStatusBadge /> <ArrowRight size={15} aria-hidden="true" />
             </V2Button>
-            <button type="button" className={styles.discardButton} onClick={discardActiveAndStart}>
+            <V2Button variant="ghost" onClick={discardActiveAndStart}>
               放弃并重新开始
-            </button>
+            </V2Button>
           </div>
         </section>
       ) : null}
